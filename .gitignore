@@ -1,0 +1,5 @@
+/build
+/dist
+/.idea
+/gwsumm.egg-info
+.DS_store

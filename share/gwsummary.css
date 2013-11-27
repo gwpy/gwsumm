@@ -1,0 +1,296 @@
+/*
+ *
+ * Summary page (and friends) standard style sheet
+ * Duncan M. Macleod <duncan.macleod@ligo.org>.
+ *
+ */
+
+/*****************************************************************************/
+/* DOCUMENT                                                                  */
+
+html, body {
+    height: 100%;
+}
+
+#wrap {
+    min-height: 100%;
+}
+
+#main {
+    overflow: auto;
+    padding-bottom: 141px;
+}
+
+.inline-block {
+    display: inline-block;
+    padding-right: 10px;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.container {
+    padding: 0 40px;
+}
+
+/* below required to get the navbar indented correctly in full page */
+@media (min-width: 1200px) {
+    #wrap .container {
+        width:1170px;
+    }
+}
+@media (min-width: 979px) and (max-width: 1200px) {
+    #wrap .container {
+        width:960px;
+    }
+}
+@media (min-width: 768px) and (max-width: 979px) {
+    #wrap .container {
+        width:744px;
+    }
+}
+
+/* ------------------------------------------------------------------------- */
+/* Header                                                                     */
+
+#header {
+    margin-top: 2px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+}
+
+@media (min-width: 768px) {
+    .header-left > h1 {
+        text-align: right;
+    }
+}
+
+.header-right > h1 {
+    font-weight: normal;
+}
+
+#state-button {
+    text-align: right;
+}
+
+#state-button > div > ul.dropdown-menu {
+    min-width: 0px;
+    width: auto;
+}
+
+
+/* ------------------------------------------------------------------------- */
+/* Navigation bar                                                            */
+
+.navbar-inner,
+.navbar {
+    background-color: #008000;
+    background-image: none;
+    color: white;
+    border: 0;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #fff;
+    // auto-gradient
+    background-image: -ms-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
+    background-image: -moz-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
+    background-image: -o-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
+    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #008000), color-stop(1, #74CF0C));
+    background-image: -webkit-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
+    background-image: linear-gradient(to top, #008000 0%, #74CF0C 100%);
+    position: relative;
+    margin-top: -1px !important;
+}
+
+
+@media (min-width: 768px) {
+  .navbar {
+    border-radius: 0px;
+  }
+}
+
+
+.nav li.dropdown ul.dropdown-menu:before, .nav li.dropdown ul.dropdown-menu:after {
+    display: none;
+}
+
+.navbar .nav > li > a {
+    text-decoration: none;
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+    color:  #ddd;
+}
+
+.navbar .nav > li > a:link,
+.navbar .nav > li > a:hover,
+.navbar .nav > li > a:focus,
+.navbar .nav > li > a:visited,
+.navbar .nav > li > a:active {
+    background-color: inherit !important;
+    color: white !important;
+}
+
+
+.caret {
+    border-bottom-color: #ddd !important;
+    border-top-color: #ddd !important;
+}
+
+#nav.affix {
+    position: fixed;
+    top: 0;
+}
+
+#nav > .navbar {
+    -webkit-border-radius: 0;
+    -moz-border-radius: 0;
+    -o-border-radius: 0;
+}
+
+#state {
+    margin-top: 8px;
+    color: #555;
+}
+
+#statemenu {
+    width: auto;
+    text-align: right;
+}
+
+
+#state,
+button.navbar-toggle {
+    background-color: #eee;
+    border: 1px solid #aaa;
+}
+
+button.navbar-toggle .icon-bar {
+    background-color: #ccc;
+}
+
+@media (max-width: 767px) {
+    .navbar-collapse {
+        margin-top: -1px;
+        color: black;
+    }
+}
+
+.narbar-collapse li > a {
+    color: white !important;
+}
+
+.navbar-collapse .dropdown-menu {
+    background-color: white;
+}
+
+.navbar-collapse .dropdown-menu .divider {
+    background-color: #ccc;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Main                                                                      */
+
+#main {
+    padding-top: 10px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Calendar                                                                  */
+
+a#calendar {
+    cursor: pointer;
+    color: white;
+}
+
+a#calendar:active,
+a#calendar:hover {
+    background-color: inherit;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Accordion                                                                 */
+
+#accordion {
+    padding-top: 10px;
+}
+
+.panel-default {
+    margin-top: 10px;
+}
+
+.panel-default > a {
+    text-decoration: none;
+    padding-top: 10px;
+}
+
+.panel-default .panel-heading {
+    color: #333333;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid;
+    border-color: #dddddd;
+}
+
+.panel-body {
+    padding-bottom: 5px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Footer                                                                    */
+
+footer {
+    position: relative;
+    margin-top: -121px;
+    height: 120px;
+    clear: both;
+    // margin-top = height + padding-top + padding-bottom
+    padding-top: 20px;
+    border-top: 1px solid;
+    background-color: #f8f8f8;
+    border-color: #e7e7e7;
+    color: #aaa;
+    font-size: small;
+}
+
+footer a {
+    color: #aaa;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+footer > div {
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+footer p,
+footer a {
+    padding: 2px 0px;
+    margin: 0;
+    display: block;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Table                                                                     */
+
+table.data th {
+    border-bottom: 1px solid #333;
+}
+
+table.data th,
+table.data td {
+    padding-left: 20px;
+    text-align: left;
+}
+
+table.data th:first-child,
+table.data td:first-child {
+    padding-left: 0px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Image                                                                     */
+
+img {
+    width: 100%;
+}

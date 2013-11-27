@@ -3,3 +3,4 @@
 /.idea
 /gwsumm.egg-info
 .DS_store
+*.pyc

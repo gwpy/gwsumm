@@ -1,40 +1,67 @@
 #!/usr/bin/env python
-
-import sys
-import imp
-try:
-    # This incantation forces distribute to be used (over setuptools) if it is
-    # available on the path; otherwise distribute will be downloaded.
-    import pkg_resources
-    distribute = pkg_resources.get_distribution('distribute')
-    if pkg_resources.get_distribution('setuptools') != distribute:
-        sys.path.insert(1, distribute.location)
-        distribute.activate()
-        imp.reload(pkg_resources)
-except:  # There are several types of exceptions that can occur here
-    from distribute_setup import use_setuptools
-    use_setuptools()
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2013)
+#
+# This file is part of GWSumm.
+#
+# GWSumm is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GWSumm is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
 import glob
-import os
+import os.path
 from setuptools import setup, find_packages
+
+utils = __import__('utils', fromlist=['version'], level=1)
 
 PACKAGENAME = 'gwsumm'
 DESCRIPTION = 'Gravitational-wave interferometer summary information system'
+LONG_DESCRIPTION = ''
 AUTHOR = 'Duncan Macleod'
 AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
-LICENSE = 'BSD'
-VERSION = '0.0.dev'
-RELEASE = 'dev' not in VERSION
+LICENSE = 'GPLv3'
 
-from astropy.version_helpers import get_git_devstr, generate_version_py
-generate_version_py(PACKAGENAME, VERSION, RELEASE)
+# set version information
+VERSION_PY = '%s/version.py' % PACKAGENAME
+vcinfo = utils.version.GitStatus()
+vcinfo(VERSION_PY, PACKAGENAME, AUTHOR, AUTHOR_EMAIL)
+
+# VERSION should be PEP386 compatible (http://www.python.org/dev/peps/pep-0386)
+VERSION = vcinfo.version
+
+# Indicates if this version is a release version
+RELEASE = vcinfo.version != vcinfo.id and 'dev' not in VERSION
+
+# Use the find_packages tool to locate all packages and modules
+packagenames = find_packages()
+
+# glob for all scripts
+if os.path.isdir('bin'):
+    scripts = glob.glob(os.path.join('bin', '*'))
+else:
+    scripts = []
 
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
-      packages=find_packages(),
+      packages=packagenames,
+      ext_modules=[],
+      scripts=scripts,
       requires=['gwpy'],
+      provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
-      licence=LICENSE)
+      license=LICENSE,
+      long_description=LONG_DESCRIPTION,
+      zip_safe=False,
+      use_2to3=True
+      )

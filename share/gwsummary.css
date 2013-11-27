@@ -54,43 +54,35 @@ html, body {
 /* ------------------------------------------------------------------------- */
 /* Header                                                                     */
 
-#header {
-    margin-top: 2px;
-    padding-top: 0px;
-    padding-bottom: 0px;
-}
-
 @media (min-width: 768px) {
     .header-left > h1 {
         text-align: right;
     }
 }
 
-.header-right > h1 {
+#header .row:first-child {
+    padding: 8px 0;
+}
+
+#header h1 {
+    padding: 0;
+    margin: 0;
+}
+
+h1.normal {
     font-weight: normal;
 }
-
-#state-button {
-    text-align: right;
-}
-
-#state-button > div > ul.dropdown-menu {
-    min-width: 0px;
-    width: auto;
-}
-
 
 /* ------------------------------------------------------------------------- */
 /* Navigation bar                                                            */
 
 .navbar-inner,
 .navbar {
-    background-color: #008000;
+    background-color: #eee;
     background-image: none;
-    color: white;
     border: 0;
     border-top: 1px solid #eee;
-    border-bottom: 1px solid #fff;
+    border-bottom: 1px solid #555;
     // auto-gradient
     background-image: -ms-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
     background-image: -moz-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
@@ -98,20 +90,26 @@ html, body {
     background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #008000), color-stop(1, #74CF0C));
     background-image: -webkit-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
     background-image: linear-gradient(to top, #008000 0%, #74CF0C 100%);
+    background-size: 100% 41px;
+    background-repeat: no-repeat;
     position: relative;
     margin-top: -1px !important;
 }
 
 
 @media (min-width: 768px) {
-  .navbar {
-    border-radius: 0px;
-  }
+    .navbar {
+        border-radius: 0px;
+    }
 }
 
 
 .nav li.dropdown ul.dropdown-menu:before, .nav li.dropdown ul.dropdown-menu:after {
     display: none;
+}
+
+.navbar-text {
+    color: white;
 }
 
 .navbar .nav > li > a {
@@ -126,9 +124,13 @@ html, body {
 .navbar .nav > li > a:visited,
 .navbar .nav > li > a:active {
     background-color: inherit !important;
-    color: white !important;
 }
 
+.navbar .nav > li > a:focus,
+.navbar .nav > li > a:active,
+.navbar .nav > li > a:hover {
+    color: white;
+}
 
 .caret {
     border-bottom-color: #ddd !important;
@@ -140,15 +142,23 @@ html, body {
     top: 0;
 }
 
-#nav > .navbar {
-    -webkit-border-radius: 0;
-    -moz-border-radius: 0;
-    -o-border-radius: 0;
+.navbar,
+.navbar .dropdown{
+    line-height: 10px;
+    min-height: 20px;
+}
+
+.navbar a {
+    line-height: 10px !important;
+}
+
+.navbar .dropdown-menu a {
+    line-height: 20px !important;
 }
 
 #state {
     margin-top: 8px;
-    color: #555;
+    color: #ddd;
 }
 
 #statemenu {
@@ -157,25 +167,56 @@ html, body {
 }
 
 
-#state,
-button.navbar-toggle {
-    background-color: #eee;
+.navbar-toggle {
+    min-height: none;
+    background-color: none;
     border: 1px solid #aaa;
+    border: none;
+    height: 25px;
+    padding: 4px 10px 5px;
 }
 
-button.navbar-toggle .icon-bar {
-    background-color: #ccc;
+.navbar-toggle .icon-bar {
+    margin-top: 2px !important;
+    width: 15px;
+    color: white;
+    background-color: white;
 }
 
 @media (max-width: 767px) {
-    .navbar-collapse {
-        margin-top: -1px;
-        color: black;
+    .navbar-collapse a {
+        color: #777 !important;
+        text-shadow: none !important;
+        padding-left: 22px !important;
     }
+
+    .navbar-collapse a:hover {
+        color: black !important;
+    }
+
+    .navbar-collapse a:not(.dropdown-toggle):hover {
+       background-color: inherit;
+    }
+
+    .navbar-collapse .dropdown-menu li {
+        margin-left: 20px;
+    }
+
+    .navbar-collapse .active {
+        border-left: 2px solid #428bca !important;
+        padding-left: -2px;
 }
 
-.narbar-collapse li > a {
-    color: white !important;
+    .navbar-collapse .active > a {
+        background-color: inherit !important;
+    }
+
+    .navbar-collapse .active > a:before {
+       content: "";
+       width: 2px;
+       background-color: #428bca;
+    }
+
 }
 
 .navbar-collapse .dropdown-menu {
@@ -191,6 +232,32 @@ button.navbar-toggle .icon-bar {
 
 #main {
     padding-top: 10px;
+}
+
+
+@media (min-width: 1000px) {
+    #main .row > div:after{
+        content: "";
+        background: #eee;
+        position: absolute;
+        bottom: 20%;
+        right: 0;
+        height: 60%;
+        width: 1px;
+    }
+
+    #main .row > div:last-child:after {
+        content: none;
+    }
+}
+
+#main h1 {
+    margin-top: 0;
+}
+
+.row-divider {
+    margin: 30px 10%;
+    width: 80%;
 }
 
 /* ------------------------------------------------------------------------- */

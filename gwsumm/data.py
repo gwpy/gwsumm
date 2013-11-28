@@ -2,9 +2,7 @@
 """Utilities for data handling and display
 """
 
-from .version import version as __version__
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
+from math import (floor, ceil)
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -13,15 +11,94 @@ except ImportError:
 import numpy
 import nds2
 
-from gwpy.segments import DataQualityFlag
+from glue import datafind
+from glue.lal import Cache
+
+from gwpy.segments import (DataQualityFlag, SegmentList)
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.spectrogram import SpectrogramList
 
-import globalv
+from . import (globalv, version)
 from .utils import *
 
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
-def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
+def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
+                urltype='file', gaps='warn'):
+    """Query the datafind server for GWF files for the given type
+    """
+    # find datafind host:port
+    try:
+        host = config.get('datafind', 'server')
+    except (NoOptionError, NoSectionError):
+        try:
+            host = os.environ['LIGO_DATAFIND_SERVER']
+        except KeyError:
+            host = None
+            port = None
+        else:
+            host, port = host.split(':')
+            port = int(port)
+    else:
+        port = config.getint('datafind', 'port')
+    # check certificates
+    if not port == 80:
+        cert, key = datafind.find_credential()
+    else:
+        cert, key = None, None
+    # connect with security
+    if cert and key:
+        dfconn = datafind.GWDataFindHTTPSConnection(host=host, port=port,
+                                                    cert_file=cert,
+                                                    key_file=key)
+    else:
+        dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
+    # query frames
+    ifo = ifo[0].upper()
+    gpsstart = int(floor(gpsstart))
+    gpsend = int(ceil(gpsend))
+    return dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
+                                  urltype=urltype, on_gaps=gaps)
+
+
+def find_cache_segments(*caches):
+    """Construct a :class:`~gwpy.segments.segments.SegmentList` describing
+    the validity of a given :class:`~glue.lal.Cache`, or list of them.
+
+    Parameters
+    ----------
+    cache : :class:`~glue.lal.Cache`
+        Cache of frame files to check
+
+    Returns
+    -------
+    segments : :class:`~gwpy.segments.segments.SegmentList`
+        list of segments containing in cache
+    """
+    out = SegmentList()
+    nframes = sum(len(c) for c in caches)
+    if nframes == 0:
+        return out
+    for cache in caches:
+        # build segment for this cache
+        if not len(cache):
+            continue
+        seg = cache[0].segment
+        for e in cache:
+            # if new segment doesn't overlap, append and start again
+            if e.segment.disjoint(seg):
+                out.append(seg)
+                seg = e.segment
+            # otherwise, append to current segment
+            else:
+                seg |= e.segment
+    # append final segment and return
+    out.append(seg)
+    return out
+
+
+def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                    query=True, nds=False):
     """Retrieve the data (time-series) for a given channel
     """
@@ -44,8 +121,9 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
     # read new data
     globalv.DATA.setdefault(str(channel), TimeSeriesList())
     query &= (abs(new) != 0)
-    if query and nds:
-        if config.has_option('nds', 'host'):
+    if query:
+        # open NDS connection
+        if nds and config.has_option('nds', 'host'):
             host = config.get('nds', 'host')
             port = config.getint('nds', 'port')
             try:
@@ -55,13 +133,58 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                     from gwpy.io.nds import kinit
                     kinit()
                     ndsconnection = nds2.connection(host, port)
-        else:
+            source = 'nds'
+        elif nds:
             ndsconnection = None
-        vprint("    Fetching data for %s" % str(channel))
-        type_ = channel.type
-        for segment in segments:
-            data = TimeSeries.fetch(channel, segment[0], segment[1],
-                                    connection=ndsconnection)
+            source = 'nds'
+        # or find frame type and check cache
+        else:
+            try:
+                ftype = channel.frametype
+            except AttributeError:
+                try:
+                    ndstype = channel.type
+                except AttributeError:
+                    ndstype = nds2.channel.CHANNEL_TYPE_RAW
+                if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
+                    new = type(new)([s for s in new if abs(s) >= 60.])
+                    ftype = 'M'
+                elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
+                    new = type(new)([s for s in new if abs(s) >= 1.])
+                    ftype = 'T'
+                elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
+                    ftype = 'LDAS_C02_L2'
+                elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
+                    ftype = 'lldetchar'
+                else:
+                    ftype = 'R'
+                ftype = '%s_%s' % (channel.ifo, ftype)
+                # XXX: remove me when L1 moves frame type
+                if channel.ifo[0] == 'L' and len(ftype) == 4:
+                    ftype = ftype[-1]
+            fcache = cache.sieve(description=ftype, exact_match=True)
+            if len(fcache) == 0 and len(new):
+                span = new.extent()
+                fcache = find_frames(channel.ifo, ftype, span[0], span[1],
+                                     config=config)
+            # parse discontiguous cache blocks and rebuild segment list
+            cachesegments = find_cache_segments(fcache)
+            new &= cachesegments
+            source = 'frames'
+
+        # loop through segments, recording data for each
+        if len(new):
+            vprint("    Fetching data (from %s) for %s"
+                   % (source, str(channel)))
+        for segment in new:
+            if nds:
+                data = TimeSeries.fetch(channel, segment[0], segment[1],
+                                        connection=ndsconnection,
+                                        ndschanneltype=channel.type)
+            else:
+                segcache = fcache.sieve(segment=segment)
+                data = TimeSeries.read(segcache, channel, segment[0],
+                                       segment[1], verbose=globalv.VERBOSE)
             if not channel.sample_rate:
                 channel.sample_rate = data.sample_rate
             if filter_:
@@ -72,7 +195,6 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
         vprint("\n")
 
     # return correct data
-
     out = TimeSeriesList()
     for seg in segments:
         for ts in globalv.DATA[str(channel)]:

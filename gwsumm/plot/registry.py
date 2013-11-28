@@ -22,11 +22,11 @@ All plot types should be registered for easy identification from the
 configuration INI files
 """
 
-from gwsumm import version
+import re
 
+from .. import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
-
 
 _PLOTS = {}
 
@@ -60,6 +60,7 @@ def get_plot(name):
     """Query the registry for the plot class registered to the given
     name
     """
+    name = re.sub('[\'\"]', '', name)
     try:
         return _PLOTS[name]
     except KeyError:

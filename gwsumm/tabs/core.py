@@ -423,8 +423,10 @@ class SummaryTab(object):
         navlinks = []
         for tab in tabs:
             links = [(child.name, child.href) for child in tab.children]
-            if self in tab.children:
-                active = tab.children.index(self)
+            if self is tab:
+                active = 0
+            elif self in tab.children:
+                active = tab.children.index(self) + 2
             else:
                 active = None
             if len(links):

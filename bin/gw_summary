@@ -270,19 +270,15 @@ for section in config.sections():
 # read custom channel definitions
 for section in config.sections():
     if re_channel.match(section):
-        if section not in globalv.CHANNELS:
-            try:
-                globalv.CHANNELS[section] = Channel.query(section)
-            except ValueError:
-                globalv.CHANNELS[section] = Channel(section)
+        channel = get_channel(section)
         for key, val in sorted(config.nditems(section), key=lambda x: x[0]):
             key = re_cchar.sub('_', key.rstrip())
             if key.isdigit():
-                if not hasattr(globalv.CHANNELS[section], 'bitmask'):
-                    globalv.CHANNELS[section].bitmask = []
-                globalv.CHANNELS[section].bitmask.append(val)
+                if not hasattr(channel, 'bitmask'):
+                    channel.bitmask = []
+                channel.bitmask.append(val)
             else:
-                setattr(globalv.CHANNELS[section], key, eval(val.rstrip()))
+                setattr(channel, key, eval(val.rstrip()))
 
 # read states
 load_states(config)

@@ -31,15 +31,57 @@ import nds2
 from glue import datafind
 from glue.lal import Cache
 
+from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList)
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.spectrogram import SpectrogramList
+from gwpy.io import nds as ndsio
 
 from . import (globalv, version)
 from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+
+def get_channel(channel):
+    """Define a new :class:`~gwpy.detector.channel.Channel`
+
+    Parameters
+    ----------
+    channel : `str`
+        name of new channel
+
+    Returns
+    -------
+    Channel : :class:`~gwpy.detector.channel.Channel`
+        new channel.
+    """
+    if ',' in str(channel):
+        name, type_ = str(channel).rsplit(',', 1)
+        if type_.isdigit():
+            type_ = int(type_)
+        else:
+            type_ = ndsio.NDS2_CHANNEL_TYPE[type_]
+        found = globalv.CHANNELS.sieve(name=name, type=type_)
+    else:
+        name = str(channel)
+        found = globalv.CHANNELS.sieve(name=str(channel))
+    if len(found) == 1:
+        return found[0]
+    elif len(found) > 1:
+        raise ValueError("Ambiguous channel request '%s', multiple existing "
+                         "channels recovered" % str(channel))
+    else:
+        try:
+            new = Channel.query(name)
+        except ValueError:
+            new = Channel(channel)
+        else:
+            new.name = str(channel)
+        globalv.CHANNELS.append(new)
+        return get_channel(str(channel))
+
 
 def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
                 urltype='file', gaps='warn'):
@@ -121,22 +163,23 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
     """
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
+    channel = get_channel(channel)
+    name = str(channel)
+
     # read segments from global memory
     havesegs = globalv.DATA.get(str(channel), TimeSeriesList()).segments
     new = segments - havesegs
 
     # read channel information
     filter_ = None
-    if config.has_section(channel):
-        channel = channel
-    if config.has_section(channel):
-        if config.has_option(channel, 'unit'):
-            channel.unit = config.get(channel, 'unit')
-        if config.has_option(channel, 'filter'):
-            filter_ = eval(config.get(channel, 'filter'))
+    if config.has_section(name):
+        if config.has_option(name, 'unit'):
+            name.unit = config.get(name, 'unit')
+        if config.has_option(name, 'filter'):
+            filter_ = eval(config.get(name, 'filter'))
 
     # read new data
-    globalv.DATA.setdefault(str(channel), TimeSeriesList())
+    globalv.DATA.setdefault(name, TimeSeriesList())
     query &= (abs(new) != 0)
     if query:
         # open NDS connection
@@ -192,7 +235,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
         # loop through segments, recording data for each
         if len(new):
             vprint("    Fetching data (from %s) for %s"
-                   % (source, str(channel)))
+                   % (source, name))
         for segment in new:
             if nds:
                 data = TimeSeries.fetch(channel, segment[0], segment[1],
@@ -206,15 +249,16 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                 channel.sample_rate = data.sample_rate
             if filter_:
                 data = data.filter(*filter_)
-            globalv.DATA[str(channel)].append(data)
-            globalv.DATA[str(channel)].coalesce()
+            globalv.DATA[name].append(data)
+            globalv.DATA[name].coalesce()
             vprint(".")
-        vprint("\n")
+        if len(new):
+            vprint("\n")
 
     # return correct data
     out = TimeSeriesList()
     for seg in segments:
-        for ts in globalv.DATA[str(channel)]:
+        for ts in globalv.DATA[name]:
             if ts.span.intersects(seg):
                 out.append(ts.crop(*seg))
     return out.coalesce()
@@ -243,13 +287,6 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             filter_ = None
 
         # read FFT params
-        if hasattr(channel, 'stride'):
-            stride = channel.stride
-        elif 'stride' in fftparams:
-            stride = fftparams.pop('stride', 0)
-        else:
-            stride = fftparams['fftlength']
-        stride = float(stride)
         fftparams.setdefault('method', 'medianmean')
         for param in ['fftlength', 'fftstride']:
             if hasattr(channel, param):
@@ -257,11 +294,11 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             elif param in fftparams:
                 fftparams[param] = float(fftparams[param])
         if hasattr(channel, 'stride'):
-            stride = channel.stride
+            stride = float(channel.stride)
         elif 'stride' in fftparams:
-            stride = fftparams.pop('stride', 0)
-        if stride:
-            stride = float(stride)
+            stride = float(fftparams.pop('stride', 0))
+        else:
+            stride = None
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, query=query, nds=nds)

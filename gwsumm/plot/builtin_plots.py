@@ -22,16 +22,18 @@
 import sys
 import hashlib
 
-from gwsumm import version
+from gwpy.detector import Channel
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
-
+from .. import version
 from ..utils import re_cchar
 from ..data import (get_timeseries, get_spectrogram, get_spectrum)
 from ..segments import get_segments
+from ..state import ALLSTATE
 from .core import TabPlot
 from .registry import register_plot
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
 __all__ = ['TimeSeriesTabPlot', 'SegmentTabPlot', 'SpectrumTabPlot',
            'SpectrogramPlot', 'StateVectorTabPlot']
@@ -53,6 +55,11 @@ class TimeSeriesTabPlot(TabPlot):
             self._tag = hashlib.md5("".join(map(str,
                                             self.channels))).hexdigest()[:6]
             return self.tag
+
+    def add_data_source(self, source):
+        if isinstance(source, basestring):
+            source = Channel(source)
+        self.channels.append(source)
 
     def process(self):
         plot = self.FigureClass()
@@ -90,8 +97,7 @@ class SpectrumTabPlot(TabPlot):
     FigureClass = SpectrumPlot
     AxesClass = SpectrumAxes
     type = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True}
+    defaults = {'logx': True, 'logy': True}
 
     @property
     def tag(self):
@@ -101,6 +107,11 @@ class SpectrumTabPlot(TabPlot):
             self._tag = hashlib.md5("".join(map(str,
                                             self.channels))).hexdigest()[:6]
             return self.tag
+
+    def add_data_source(self, source):
+        if isinstance(source, basestring):
+            source = Channel(source)
+        self.channels.append(source)
 
     def process(self):
         """Load all data, and generate this `SpectrumTabPlot`
@@ -163,12 +174,21 @@ class SegmentTabPlot(TabPlot):
             self._tag = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
             return self.tag
 
+    def add_data_source(self, source):
+        self.flags.append(str(source))
+
     @property
     def ifos(self):
         """Interferometer set for this `SegmentTabPlot`
         """
         allflags = [f for flag in self.flags for f in flag.split(',')]
         return set([f[:2] for f in allflags])
+
+    @classmethod
+    def from_ini(cls, cp, section, state=ALLSTATE, **kwargs):
+        return super(SegmentTabPlot, cls).from_ini(cp, section, state=state,
+                                                   source='data-quality-flags',
+                                                   **kwargs)
 
     def process(self):
         # separate plot arguments

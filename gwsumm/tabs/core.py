@@ -33,8 +33,9 @@ from gwpy.io import nds as ndsio
 
 from ..plot import (PlotList, registry as plotregistry)
 from .. import globalv
-from ..data import (get_timeseries, get_spectrogram, get_spectrum)
+from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum)
 from ..segments import get_segments
+from ..triggers import get_triggers
 from ..utils import (re_cchar, vprint)
 from ..config import *
 from .. import html
@@ -42,6 +43,12 @@ from .. import html
 from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+try:
+    TriggerPlot = plotregistry.get_plot('triggers')
+except ValueError:
+    from types import NoneType
+    TriggerPlot = NoneType
 
 
 class SummaryTab(object):
@@ -109,7 +116,18 @@ class SummaryTab(object):
         """
         out = set()
         for plot in self.plots:
-            if hasattr(plot, 'channels'):
+            if (not isinstance(plot, TriggerPlot) and
+                    hasattr(plot, 'channels')):
+                out.update(plot.channels)
+        return out
+
+    @property
+    def trigchannels(self):
+        """Set of all trigger channels used by this tab
+        """
+        out = set()
+        for plot in self.plots:
+            if isinstance(plot, TriggerPlot):
                 out.update(plot.channels)
         return out
 
@@ -229,101 +247,61 @@ class SummaryTab(object):
             statenames = ['All']
         states = [globalv.STATES[s] for s in statenames]
 
-        # -------------------
-        # parse plot requests
-
         # define new job
         job = cls(name, parent=parent, states=states, span=[start, end])
         job._config = cp._sections[section]
-        # find plots:
-        #    all config entries whose key is a single integer is
-        #    interpreted as a requested plot
-        #    these plots are ordered and parsed
-        requests = sorted([(opt, val) for (opt, val) in cp.nditems(section) if
-                           opt.isdigit()], key=lambda a: a[0])
-        for opt, val in requests:
-            # if plot is defined in its own section, retrieve it
-            if cp.has_section(val):
-                pparams = dict(cp.nditems(val))
-                type_ = pparams.pop('type')
-                if type_ in ['segments']:
-                    channels = split_channels(pparams.pop('data-quality-flags',
-                                                          ''))
-                else:
-                    channels = split_channels(pparams.pop('channels', ''))
-                for key, v in pparams.iteritems():
+
+        # -------------------
+        # parse plot requests
+        #    All config entries whose key is a single integer is
+        #    interpreted as a requested plot.
+
+        # find and order the plots
+        requests = sorted([(int(opt), val) for (opt, val) in
+                               cp.nditems(section) if opt.isdigit()],
+                          key=lambda a: a[0])
+
+        # parse plot definition
+        for index, definition in requests:
+            # find plot customisations within this section
+            mods = {}
+            for key, val in cp.nditems(section):
+                if key.startswith('%d-' % index):
+                    opt = key.split('-', 1)[1].lower()
                     try:
-                        pparams[key] = eval(v)
+                        mods[opt] = eval(val)
                     except NameError:
                         pass
-            # otherwise plot should be a list of channels, and a type
+
+            # parse definition for section references
+            try:
+                pdef, sources = [s[::-1] for s in
+                                  re.split('[\s,]', definition[::-1], 1)]
+            except ValueError:
+                pdef = definition
+                sources = []
             else:
-                type_, channels = re.split('[\s,]', val[::-1], 1)
-                type_ = type_[::-1]
-                channels = split_channels(channels[::-1])
-                pparams = {}
-            # customisations can be given via keys of the form 'X-xxx'
-            # where 'X' is the integer identifier for the plot
-            for popt, val in cp.nditems(section):
-                if not popt.startswith('%s-' % opt):
-                    continue
-                popt = popt.split('-', 1)[1].lower()
-                if popt == 'href':
-                    pparams['href'] = val
+                sources = split_channels(sources)
+
+            # define one copy of this plot for each state
+            for state in job.states:
+                # if pdef refers to another config section, look there
+                # for a detailed definition
+                if cp.has_section(pdef):
+                    type_ = cp.get(pdef, 'type')
+                    PlotClass = plotregistry.get_plot(type_)
+                    plot = PlotClass.from_ini(cp, pdef, state=state,
+                                              outdir=plotdir, **mods)
+                    for source in sources:
+                        plot.add_data_source(source)
+                # otherwise pdef should be a registered plot type
                 else:
-                    pparams[popt] = eval(val)
+                    PlotClass = plotregistry.get_plot(pdef)
+                    plot = PlotClass(sources, state=state, outdir=plotdir,
+                                     **mods)
+                job.plots.append(plot)
 
-            # get channels from CIS
-            cischannels = []
-            if type_ in ['segments']:
-                flags = channels
-            else:
-                for channel in channels:
-                    if not channel in globalv.CHANNELS:
-                        try:
-                            globalv.CHANNELS[channel] = Channel.query(channel)
-                        except ValueError:
-                            globalv.CHANNELS[channel] = Channel(channel)
-                    cischannels.append(globalv.CHANNELS[channel])
-
-            # define plots
-            type_ = type_.strip('\'"').rstrip('\'"')
-            if type_ in ['segments']:
-                job.add_plot(flags, type_, outdir=plotdir, **pparams)
-            elif type_ in ['timeseries', 'spectrum', 'statevector']:
-                job.add_plot(cischannels, type_, outdir=plotdir, **pparams)
-            elif type_ in ['spectrogram']:
-                for channel in cischannels:
-                    if 'spectrogram-stride' in pparams:
-                        channel._stride = pparams.pop('spectrogram-stride')
-                    job.add_plot([channel], type_, outdir=plotdir, **pparams)
-            else:
-                raise ValueError("Invalid plot type '%s'" % type_)
         return job
-
-    def add_plot(self, channellist, type_, **plotargs):
-        """Define a new plot to be displayed on this `SummaryTab`
-
-        Parameters
-        ----------
-        channellist : :class:`~gwpy.detector.channel.ChannelList`
-            list of channels to display on this `Plot`
-        type_ : `str`
-            type of plot to display, one of:
-
-                - ``'timeseries'``
-                - ``'psd'``
-                - ``'asd'``
-                - ``'spectrogram'``
-                - ``'coherence'``
-
-        **plotargs
-            all other keyword arguments passed to the plotter
-        """
-        for state in self.states:
-            class_ = plotregistry.get_plot(type_)
-            plot = class_(channellist, state, **plotargs)
-            self.plots.append(plot)
 
     # -------------------------------------------
     # SummaryTab processing
@@ -523,6 +501,7 @@ class SummaryTab(object):
             headers = ['Channel', 'Sample rate', 'Units']
             data = []
             for channel in self.channels:
+                channel = get_channel(channel)
                 if channel.url:
                     link = html.markup.oneliner.a(str(channel),
                                                   href=channel.url,

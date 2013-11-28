@@ -23,14 +23,16 @@
 import time
 
 from gwpy.segments import DataQualityDict
+from gwpy.detector import ChannelList
 
-CHANNELS = {}
+CHANNELS = ChannelList()
 STATES = {}
 
 DATA = {}
 SPECTROGRAMS = {}
 SPECTRUM = {}
 SEGMENTS = DataQualityDict()
+TRIGGERS = {}
 
 VERBOSE = False
 PROFILE = False

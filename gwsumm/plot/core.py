@@ -23,6 +23,7 @@ for GWSumm
 
 import os
 import re
+import warnings
 from math import (floor, ceil)
 
 try:
@@ -33,6 +34,8 @@ except ImportError:
 from gwpy.detector import (Channel, ChannelList)
 
 from .. import globalv
+from ..data import get_channel
+from ..state import ALLSTATE
 
 __all__ = ['TabPlot', 'PlotList']
 
@@ -80,10 +83,11 @@ class TabPlot(object):
     -----
     All sub-classes of this object must provide the following methods
 
-    ==============  ===================================================
-    :math`process`  to method by which the data are loaded/generated \
-                    and the plot actually written
-    ==============  ===================================================
+    =======================  =================================================
+    :meth:`add_data_source`  routine for appending data sources to the plot
+    :meth:`process`          method by which the data are loaded/generated \
+                             and the plot actually written
+    =======================  ===================================================
     """
     #: Figure subclass
     FigureClass = None
@@ -94,7 +98,8 @@ class TabPlot(object):
     #: dict of default plotting kwargs
     defaults = {}
 
-    def __init__(self, channels, state='all', outdir='.', href=None, **kwargs):
+    def __init__(self, channels, state=ALLSTATE, outdir='.', href=None,
+                 **kwargs):
         self.channels = channels
         self.state = state
         self.outdir = outdir
@@ -112,15 +117,11 @@ class TabPlot(object):
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
-        return self._channels
+        return ChannelList(get_channel(c) for c in self._channels)
 
     @channels.setter
     def channels(self, channellist):
-        self._channels = ChannelList()
-        for ch in channellist:
-            if not isinstance(ch, Channel):
-                ch = Channel(ch)
-            self._channels.append(ch)
+        self._channels = channellist
 
     @property
     def state(self):
@@ -223,6 +224,36 @@ class TabPlot(object):
                                         order.index(c.name.split('.')[-1])+1 or
                                         10)
         return out
+
+    @classmethod
+    def from_ini(cls, cp, section, state=ALLSTATE, source='channels',
+                 **kwargs):
+        """Define a new `TabPlot` from a an INI-format `ConfigParser`
+        section.
+        """
+        # read parameters
+        try:
+            params = dict(cp.nditems(section))
+        except AttributeError:
+            params = dict(cp.items(section))
+        # get and check type
+        ptype = re.sub('[\'\"]', '', params.pop('type'))
+        if ptype != cls.type:
+            warnings.warn("'%s' plot definition from configuration being "
+                          "parsed by different plotting class '%s'"
+                          % (ptype, cls.__name__))
+        # get channels
+        from ..tabs.core import split_channels
+        sources = split_channels(params.pop(source, ''))
+        # parse other parameters
+        for key, val in params.iteritems():
+            try:
+                params[key] = eval(val)
+            except NameError:
+                pass
+        params.update(kwargs)
+        # format and return
+        return cls(sources, state, **params)
 
     # ------------------------------------------------------------------------
     # TabPlot comparisons

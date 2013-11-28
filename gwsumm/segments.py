@@ -47,6 +47,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     out = DataQualityDict()
     for f in flags:
         out[f] = DataQualityFlag(f, valid=validity, active=validity)
+        globalv.SEGMENTS.setdefault(f, DataQualityFlag(f))
     # read segments from global memory and get the union of needed times
     try:
         old = reduce(operator.or_, (globalv.SEGMENTS.get(

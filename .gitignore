@@ -4,3 +4,4 @@
 /gwsumm.egg-info
 .DS_store
 *.pyc
+/gwsumm/version.py

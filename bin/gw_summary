@@ -6,28 +6,35 @@ This module provides the command-line interface to the GWSumm package,
 allowing generation of detector summary information
 """
 
-from .version import version as __version__
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 import os
 import datetime
 import optparse
 import re
 import calendar
+import getpass
 
 from dateutil.relativedelta import relativedelta
 
 from lal import gpstime
 
+try:
+    from collections import OrderedDict
+except:
+    from astropy.utils import OrderedDict
+
 from gwpy.detector import Channel
 from gwpy.segments import Segment
 from gwpy.time import Time
 
-from . import globalv
-from .config import *
-from .tabs import *
-from .utils import *
-from .state import *
+from gwsumm import (globalv, version)
+from gwsumm.config import *
+from gwsumm.tabs import *
+from gwsumm.utils import *
+from gwsumm.state import *
+
+__version__ = version.version
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # set matplotlib backend
 from matplotlib import use
@@ -84,6 +91,8 @@ copts = parser.add_option_group("Configuration options",
 copts.add_option('-f', '--config-file', action='append', type='string',
                  metavar='FILE', default=[],
                  help="INI file for analysis, may be given multiple times")
+copts.add_option('--nds', action='store_true', default=False,
+                 help='use NDS as the data source, default: %default')
 
 outopts = parser.add_option_group("Output options")
 outopts.add_option('-o', '--output-dir', action='store', type='string',
@@ -110,10 +119,11 @@ topts.add_option("-e", "--gps-end-time", action="store", type="int",
 opts, args = parser.parse_args()
 
 # read configuration file
-config = GWSummConfigParser()
+config = GWSummConfigParser(dict_type=OrderedDict)
 config.optionxform = str
 if opts.ifo:
     config.set(None, 'ifo', opts.ifo)
+config.set(None, 'user', getpass.getuser())
 config.read(opts.config_file)
 config.files = map(os.path.abspath, opts.config_file)
 
@@ -318,7 +328,7 @@ tabs = tabs.values()
 tabs.sort(key=lambda t: t.name == 'Summary' and '_' or t.name.lower())
 
 for tab in alltabs:
-    tab.process(config=config)
+    tab.process(config=config, nds=opts.nds)
 
 # -----------------------------------------------------------------------------
 # Write HTML

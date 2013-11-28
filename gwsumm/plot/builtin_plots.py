@@ -19,6 +19,7 @@
 """Definitions for the standard plots
 """
 
+import sys
 import hashlib
 
 from gwsumm import version
@@ -132,6 +133,10 @@ class SpectrumTabPlot(TabPlot):
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         plot.subplots_adjust(left=0.1, right=0.9)
+        if sys.platform.startswith('linux'):
+            for ax in plot.axes:
+                ax.tick_params(axis='x', pad=10)
+                ax.xaxis.labelpad = 10
         plot.save(self.outputfile)
 
 

@@ -335,7 +335,7 @@ class SummaryTab(object):
             state.fetch(config=config)
         self.states.sort(key=lambda s: abs(s.active), reverse=True)
 
-    def process(self, config=GWSummConfigParser()):
+    def process(self, nds=True, config=GWSummConfigParser()):
         """Process data for this tab
         """
         vprint("\n-------------------------------------------------\n")
@@ -346,9 +346,9 @@ class SummaryTab(object):
         self.finalize_states(config=config)
         vprint("States finalised\n")
         for state in self.states:
-            self.process_state(state, config=config)
+            self.process_state(state, nds=nds, config=config)
 
-    def process_state(self, state, config=GWSummConfigParser()):
+    def process_state(self, state, nds=True, config=GWSummConfigParser()):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
@@ -361,7 +361,7 @@ class SummaryTab(object):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
         for channel in self.channels:
-            get_timeseries(channel, state.active, config=config, nds=True)
+            get_timeseries(channel, state.active, config=config, nds=nds)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
 

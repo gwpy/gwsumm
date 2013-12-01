@@ -44,11 +44,7 @@ from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-try:
-    TriggerPlot = plotregistry.get_plot('triggers')
-except ValueError:
-    from types import NoneType
-    TriggerPlot = NoneType
+TriggerPlot = plotregistry.get_plot('triggers')
 
 
 class SummaryTab(object):
@@ -373,6 +369,17 @@ class SummaryTab(object):
             vprint("    %d data-quality flags identified for SegDB query\n"
                    % len(self.dataqualityflags))
             get_segments(self.dataqualityflags, state.active, config=config)
+
+        # --------------------------------------------------------------------
+        # process triggers
+
+        tchannels = set()
+        for plot in self.plots:
+            if isinstance(plot, TriggerPlot):
+                for channel in plot.channels:
+                    tchannels.update(set([(plot.etg, channel)]))
+        for etg, channel in tchannels:
+            get_triggers(channel, etg, state.active, config=config)
 
         # make plots
         vprint("    Plotting... \n")

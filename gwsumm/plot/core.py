@@ -117,7 +117,8 @@ class TabPlot(object):
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
-        return ChannelList(get_channel(c) for c in self._channels)
+        self._channels = ChannelList(get_channel(c) for c in self._channels)
+        return self._channels
 
     @channels.setter
     def channels(self, channellist):

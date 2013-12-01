@@ -165,8 +165,8 @@ def dropdown(text, links, active=None):
     return page
 
 
-def calendar(date, tag='a', class_='dropdown-toggle', id_='calendar',
-             dateformat='%B %d %Y', mode='days'):
+def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
+             id_='calendar', dateformat='%B %d %Y', mode='days'):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -184,10 +184,16 @@ def calendar(date, tag='a', class_='dropdown-toggle', id_='calendar',
     """
     datestring = date.strftime(dateformat)
     data_date = date.strftime('%d-%m-%Y')
-    return markup.element(tag)(datestring, id_=id_, class_=class_,
-                               **{'data-date': data_date,
-                                  'data-date-format': 'dd-mm-yyyy',
-                                  'data-viewmode': mode})
+    page = markup.page()
+    page.a(id_=id_, class_=class_,
+           **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
+              'data-viewmode': mode})
+    page.add(datestring)
+    page.b('', class_='caret')
+    page.a.close()
+    page.li.close()
+    page.ul.close()
+    return page
 
 
 def wrap_content(page):

@@ -309,7 +309,7 @@ class SummaryTab(object):
             state.fetch(config=config)
         self.states.sort(key=lambda s: abs(s.active), reverse=True)
 
-    def process(self, nds=True, config=GWSummConfigParser()):
+    def process(self, nds='guess', config=GWSummConfigParser()):
         """Process data for this tab
         """
         vprint("\n-------------------------------------------------\n")
@@ -322,7 +322,7 @@ class SummaryTab(object):
         for state in self.states:
             self.process_state(state, nds=nds, config=config)
 
-    def process_state(self, state, nds=True, config=GWSummConfigParser()):
+    def process_state(self, state, nds='guess', config=GWSummConfigParser()):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)

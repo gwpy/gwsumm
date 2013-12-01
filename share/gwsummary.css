@@ -103,7 +103,6 @@ h1.normal {
     }
 }
 
-
 .nav li.dropdown ul.dropdown-menu:before, .nav li.dropdown ul.dropdown-menu:after {
     display: none;
 }
@@ -183,7 +182,26 @@ h1.normal {
     background-color: white;
 }
 
+.navbar-header #calendar {
+    font-size: inherit !important;
+}
+
 @media (max-width: 767px) {
+
+    .navbar-header > .navbar-nav {
+        padding: 0;
+        margin: 0;
+    }
+
+    .navbar-header > .navbar-nav > li {
+        padding-top: 4px;
+        display: inline-block !important;
+    }
+
+    .navbar-header > .navbar-nav > li > a {
+        
+    }
+
     .navbar-collapse a {
         color: #777 !important;
         text-shadow: none !important;

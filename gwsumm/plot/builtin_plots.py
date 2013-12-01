@@ -58,8 +58,6 @@ class TimeSeriesTabPlot(TabPlot):
             return self.tag
 
     def add_data_source(self, source):
-        if isinstance(source, basestring):
-            source = Channel(source)
         self.channels.append(source)
 
     def process(self):
@@ -89,6 +87,7 @@ class TimeSeriesTabPlot(TabPlot):
         plot.add_state_segments(self.state, plotargs={'color':'green'})
         plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
+        plot.close()
 
 
 class SpectrumTabPlot(TabPlot):
@@ -149,6 +148,7 @@ class SpectrumTabPlot(TabPlot):
                 ax.tick_params(axis='x', pad=10)
                 ax.xaxis.labelpad = 10
         plot.save(self.outputfile)
+        plot.close()
 
 
 class SegmentTabPlot(TabPlot):
@@ -220,6 +220,7 @@ class SegmentTabPlot(TabPlot):
         ax.set_ylim(ylim[0] - pad, ylim[1] + pad)
         plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
+        plot.close()
 
 
 class SpectrogramPlot(TimeSeriesTabPlot):
@@ -275,6 +276,7 @@ class SpectrogramPlot(TimeSeriesTabPlot):
             ax.set_xlim(self.gpsstart, self.gpsend)
         plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
+        plot.close()
 
 
 class StateVectorTabPlot(TimeSeriesTabPlot):

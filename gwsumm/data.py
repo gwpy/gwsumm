@@ -19,6 +19,7 @@
 """Utilities for data handling and display
 """
 
+import os
 from math import (floor, ceil)
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
@@ -171,16 +172,23 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
     new = segments - havesegs
 
     # read channel information
-    filter_ = None
-    if config.has_section(name):
-        if config.has_option(name, 'unit'):
-            name.unit = config.get(name, 'unit')
-        if config.has_option(name, 'filter'):
-            filter_ = eval(config.get(name, 'filter'))
+    try:
+        filter_ = channel.filter
+    except AttributeError:
+        filter_ = None
+    try:
+        resample = float(channel.resample)
+    except AttributeError:
+        resample = None
+    resample = None
+
+    # work out whether to use NDS or not
+    if nds == 'guess':
+        nds = 'LIGO_DATAFIND_SERVER' not in os.environ
 
     # read new data
     globalv.DATA.setdefault(name, TimeSeriesList())
-    query &= (abs(new) != 0)
+    query &= (abs(new) > 0)
     if query:
         # open NDS connection
         if nds and config.has_option('nds', 'host'):
@@ -244,12 +252,19 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                                         ndschanneltype=channel.type)
             else:
                 segcache = fcache.sieve(segment=segment)
-                data = TimeSeries.read(segcache, channel, segment[0],
-                                       segment[1], verbose=globalv.VERBOSE)
+                data = TimeSeries.read(segcache, channel, float(segment[0]),
+                                       float(segment[1]),
+                                       verbose=globalv.VERBOSE)
             if not channel.sample_rate:
                 channel.sample_rate = data.sample_rate
             if filter_:
                 data = data.filter(*filter_)
+            if resample:
+                factor = data.sample_rate.value / resample
+                if numpy.isclose(factor, int(factor)):
+                    data = data.decimate(factor)
+                else:
+                    data = data.resample(resample)
             globalv.DATA[name].append(data)
             globalv.DATA[name].coalesce()
             vprint(".")

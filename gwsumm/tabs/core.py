@@ -359,10 +359,12 @@ class SummaryTab(object):
 
         spectrumchannels = set()
         for plot in self.plots.spectra:
-            spectrumchannels.update(map(str, plot.channels))
+            spectrumchannels.update(plot.channels)
         for channel in spectrumchannels:
             get_spectrum(channel, state.active, config=config, **fftparams)
 
+        # --------------------------------------------------------------------
+        # process segments
 
         # find flags that need a DataQualityFlag
         if len(self.dataqualityflags):
@@ -397,7 +399,7 @@ class SummaryTab(object):
     def write_calendar_link(self):
         if globalv.MODE < 4:
             date = gpstime.gps_to_utc(self.states[0].extent[0])
-            cal = html.calendar(date, mode=globalv.MODE % 3)
+            cal = str(html.calendar(date, mode=globalv.MODE % 3))
         else:
             start, end = self.states[0].extent
             cal = html.markup.oneliner.p('%d-%d' % (start, end),
@@ -415,8 +417,11 @@ class SummaryTab(object):
             else:
                 active = None
             if len(links):
-                navlinks.append((tab.name,
-                                [('Summary', tab.href), None] + links, active))
+                navlinks.append([tab.name, []])
+                if tab.states is not None:
+                    navlinks[-1][1].extend([('Summary', tab.href), None])
+                navlinks[-1][1].extend(links)
+                navlinks[-1].append(active)
             else:
                 navlinks.append((tab.name, tab.href))
         return navlinks

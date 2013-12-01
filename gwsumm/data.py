@@ -158,7 +158,7 @@ def find_cache_segments(*caches):
 
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
-                   query=True, nds=False):
+                   query=True, nds='guess'):
     """Retrieve the data (time-series) for a given channel
     """
     if isinstance(segments, DataQualityFlag):
@@ -222,8 +222,9 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                 # XXX: remove me when L1 moves frame type
                 if channel.ifo[0] == 'L' and len(ftype) == 4:
                     ftype = ftype[-1]
-            fcache = cache.sieve(description=ftype, exact_match=True)
-            if len(fcache) == 0 and len(new):
+            if cache is not None:
+                fcache = cache.sieve(description=ftype, exact_match=True)
+            if cache is None or len(fcache) == 0 and len(new):
                 span = new.extent()
                 fcache = find_frames(channel.ifo, ftype, span[0], span[1],
                                      config=config)
@@ -257,15 +258,19 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
 
     # return correct data
     out = TimeSeriesList()
-    for seg in segments:
-        for ts in globalv.DATA[name]:
+    for ts in globalv.DATA[name]:
+        for seg in segments:
+            if abs(seg) == 0:
+                continue
             if ts.span.intersects(seg):
-                out.append(ts.crop(*seg))
+                cropped = ts.crop(*seg)
+                if cropped.size:
+                    out.append(cropped)
     return out.coalesce()
 
 
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
-                    query=True, nds=False, format='power', **fftparams):
+                    query=True, nds='guess', format='power', **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -287,6 +292,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             filter_ = None
 
         # read FFT params
+        fftparams = fftparams.copy()
         fftparams.setdefault('method', 'medianmean')
         for param in ['fftlength', 'fftstride']:
             if hasattr(channel, param):
@@ -311,6 +317,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                 stride = fftparams['fftlength'] * 1.5
             elif not stride:
                 stride = fftparams['fftlength']
+            if abs(ts.span) < stride:
+                continue
             specgram = ts.spectrogram(stride, **fftparams)
             if filter_:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
@@ -321,19 +329,22 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
     # return correct data
     out = SpectrogramList()
-    for seg in segments:
-        for specgram in globalv.SPECTROGRAMS[str(channel)]:
+    for specgram in globalv.SPECTROGRAMS[str(channel)]:
+        for seg in segments:
+            if abs(seg) < specgram.dt.value:
+                continue
             if specgram.span.intersects(seg):
                 if format in ['amplitude', 'asd']:
-                    out.append(specgram.crop(*seg) ** (1/2.))
+                    s = specgram.crop(*seg) ** (1/2.)
                 else:
-                    out.append(specgram.crop(*seg))
+                    s = specgram.crop(*seg)
+                if s.shape[0]:
+                    out.append(s)
     return out.coalesce()
 
 
 def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
-                 query=True, nds=False, format='power',
-                 **fftparams):
+                 query=True, nds='guess', format='power', **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """

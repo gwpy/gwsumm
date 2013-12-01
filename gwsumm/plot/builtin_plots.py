@@ -23,6 +23,7 @@ import sys
 import hashlib
 
 from gwpy.detector import Channel
+from gwpy.plotter import *
 
 from .. import version
 from ..utils import re_cchar
@@ -42,7 +43,6 @@ __all__ = ['TimeSeriesTabPlot', 'SegmentTabPlot', 'SpectrumTabPlot',
 class TimeSeriesTabPlot(TabPlot):
     """Request for a time-series plot
     """
-    from gwpy.plotter import (TimeSeriesPlot, TimeSeriesAxes)
     FigureClass = TimeSeriesPlot
     AxesClass = TimeSeriesAxes
     type = 'timeseries'
@@ -93,7 +93,6 @@ class TimeSeriesTabPlot(TabPlot):
 class SpectrumTabPlot(TabPlot):
     """Spectrum plot for a `SummaryTab`
     """
-    from gwpy.plotter import (SpectrumPlot, SpectrumAxes)
     FigureClass = SpectrumPlot
     AxesClass = SpectrumAxes
     type = 'spectrum'
@@ -154,7 +153,6 @@ class SpectrumTabPlot(TabPlot):
 class SegmentTabPlot(TabPlot):
     """Segment plot for a `SummaryTab`
     """
-    from gwpy.plotter import (SegmentPlot, SegmentAxes)
     FigureClass = SegmentPlot
     AxesClass = SegmentAxes
     type = 'segments'
@@ -279,7 +277,6 @@ class SpectrogramPlot(TimeSeriesTabPlot):
 
 
 class StateVectorTabPlot(TimeSeriesTabPlot):
-    from gwpy.plotter import (SegmentAxes, SegmentPlot)
     type = 'statevector'
     FigureClass = SegmentAxes
     AxesClass = SegmentPlot

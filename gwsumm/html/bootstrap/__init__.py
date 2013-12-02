@@ -185,14 +185,16 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     datestring = date.strftime(dateformat)
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()
-    page.a(id_=id_, class_=class_,
+    page.a('&laquo;', class_='navbar-brand step-back', title='Step back',
+           onclick='stepDate(-1)')
+    page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
               'data-viewmode': mode})
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()
-    page.li.close()
-    page.ul.close()
+    page.a('&raquo;', class_='navbar-brand step-forward',
+           title='Step forwards', onclick='stepDate(1)')
     return page
 
 
@@ -278,7 +280,7 @@ def state_switcher(states, default=0):
     page = markup.page()
     page.div(class_="btn-group pull-right")
     page.a(class_='btn dropdown-toggle', href='#', id_='state',
-           **{'data-toggle': 'dropdown'})
+           title="Show/hide state menu", **{'data-toggle': 'dropdown'})
     page.add(current.name)
     page.b('', class_='caret')
     page.a.close()

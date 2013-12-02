@@ -16,14 +16,17 @@ import getpass
 
 from dateutil.relativedelta import relativedelta
 
+from matplotlib import use
+use('Agg')
+
 from lal import gpstime
 
+# set matplotlib backend
 try:
     from collections import OrderedDict
-except:
+except ImportError:
     from astropy.utils import OrderedDict
 
-from gwpy.detector import Channel
 from gwpy.segments import Segment
 from gwpy.time import Time
 
@@ -37,9 +40,6 @@ from gwsumm.state import *
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# set matplotlib backend
-from matplotlib import use
-use('Agg')
 
 # find channels
 re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')

@@ -28,6 +28,7 @@ from gwpy.segments import Segment
 from gwpy.time import Time
 
 from gwsumm import (globalv, version)
+from gwsumm.mode import *
 from gwsumm.config import *
 from gwsumm.tabs import *
 from gwsumm.utils import *
@@ -49,18 +50,6 @@ GWSummConfigParser.OPTCRE = re.compile(
 
 VERBOSE = False
 PROFILE = False
-
-# set mode enum
-SUMMARY_MODE_DAY = 0
-SUMMARY_MODE_MONTH = 1
-SUMMARY_MODE_YEAR = 2
-SUMMARY_MODE_WEEK = 3
-SUMMARY_MODE_GPS = 4
-MODE_NAME = {SUMMARY_MODE_GPS: 'GPS',
-             SUMMARY_MODE_DAY: 'DAY',
-             SUMMARY_MODE_WEEK: 'WEEK',
-             SUMMARY_MODE_MONTH: 'MONTH',
-             SUMMARY_MODE_YEAR: 'YEAR'}
 
 # ----------------------------------------------------------------------------
 # Command-line options

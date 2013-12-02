@@ -215,19 +215,27 @@ finally:
 globalv.VERBOSE = opts.verbose
 globalv.PROFILE = opts.profile
 
-# set mode
+# set mode and output directory
+outdir = opts.output_dir
+utc = gpstime.gps_to_utc(opts.gps_start_time)
 if opts.day:
     mode = SUMMARY_MODE_DAY
+    base = os.path.join('day', utc.strftime('%Y%m%d'))
 elif opts.week:
     mode = SUMMARY_MODE_WEEK
+    base = os.path.join('week', str(utc.isocalendar()[1]))
 elif opts.month:
     mode = SUMMARY_MODE_MONTH
+    base = os.path.join('month', utc.strftime('%Y%m'))
 elif opts.year:
     mode = SUMMARY_MODE_YEAR
+    base = os.path.join('year', utc.strftime('%Y'))
 else:
     mode = SUMMARY_MODE_GPS
+    base = os.path.join('%d-%d' % (opts.gps_start_time, opts.gps_end_time))
 
 globalv.MODE = mode
+
 
 # -----------------------------------------------------------------------------
 # Setup
@@ -273,10 +281,9 @@ for section in config.sections():
 load_states(config)
 
 # build directories
-outdir = opts.output_dir
 mkdir(outdir)
 os.chdir(outdir)
-plotdir = 'plots'
+plotdir = os.path.join(base, 'plots')
 mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
@@ -294,7 +301,7 @@ javascript = [jval for (key, jval) in config.items('html') if
 alltabs = []
 for section in filter(lambda n: re.match('tab[-\s]', n),
                       config.sections()):
-    tab = SummaryTab.from_ini(config, section, plotdir=plotdir)
+    tab = SummaryTab.from_ini(config, section, plotdir=plotdir, base=base)
     alltabs.append(tab)
 
 # sort tabs into hierarchical list

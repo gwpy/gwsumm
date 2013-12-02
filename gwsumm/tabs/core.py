@@ -27,7 +27,8 @@ from numpy import isclose
 
 from lal import gpstime
 
-from gwpy.detector import Channel
+from glue.segmentsUtils import tosegwizard
+
 from gwpy.segments import Segment
 from gwpy.io import nds as ndsio
 
@@ -198,7 +199,7 @@ class SummaryTab(object):
     # SummaryTab configuration parser
 
     @classmethod
-    def from_ini(cls, cp, section, plotdir='plots'):
+    def from_ini(cls, cp, section, plotdir='plots', **kwargs):
         """Define a new `SummaryTab` from the given section of the
         `ConfigParser`.
 
@@ -244,7 +245,8 @@ class SummaryTab(object):
         states = [globalv.STATES[s] for s in statenames]
 
         # define new job
-        job = cls(name, parent=parent, states=states, span=[start, end])
+        job = cls(name, parent=parent, states=states, span=[start, end],
+                  **kwargs)
         job._config = cp._sections[section]
 
         # -------------------
@@ -565,7 +567,15 @@ class SummaryTab(object):
                 page.a.close()
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')
                 page.div(class_='panel-body')
-                # write to fake file
+                # write segment summary
+                page.p('This flag was defined and had a known state during '
+                       'the following segments:')
+                segwizard = StringIO()
+                tosegwizard(segwizard, flag.valid)
+                page.pre(segwizard.getvalue())
+                segwizard.close()
+                # write segment table
+                page.p('This flag was active during the following segments:')
                 segwizard = StringIO()
                 flag.write(segwizard, format='segwizard')
                 page.pre(segwizard.getvalue())

@@ -23,7 +23,7 @@ import os
 import re
 from StringIO import StringIO
 
-from numpy import isclose
+from numpy import (cumsum, isclose)
 
 from lal import gpstime
 
@@ -52,8 +52,10 @@ class SummaryTab(object):
     """A `SummaryTab` is a summary of a single data set, producing output
     on a single HTML web-page
     """
+    type = 'default'
+
     def __init__(self, name, parent=None, children=list(), states=None,
-                 base='', span=None):
+                 base='', layout=None, span=None):
         """Initialise a new `SummaryTab`
         """
         self.name = name
@@ -62,6 +64,7 @@ class SummaryTab(object):
         self.base = base
         self.plots = PlotList()
         self.states = states
+        self.layout = layout
         if span is None:
             self.span = None
         else:
@@ -244,9 +247,20 @@ class SummaryTab(object):
             statenames = ['All']
         states = [globalv.STATES[s] for s in statenames]
 
+        # get layout
+        if cp.has_option(section, 'layout'):
+            try:
+                layout = eval(cp.get(section, 'layout'))
+            except NameError:
+                raise ValueError("Cannot parse 'layout' for '%s' tab. Layout "
+                                 "should be given as a comma-separated list "
+                                 "of integers")
+        else:
+            layout = None
+
         # define new job
         job = cls(name, parent=parent, states=states, span=[start, end],
-                  **kwargs)
+                  layout=layout, **kwargs)
         job._config = cp._sections[section]
 
         # -------------------
@@ -487,23 +501,34 @@ class SummaryTab(object):
         """
         plots = [p for p in self.plots if p.state.name == state.name]
         page = html.markup.page()
-        n = len(plots)
-        if n == 1:
-            span = 12
+
+        # get layout
+        if self.layout:
+            layout = list(self.layout)
         else:
-            span = 12 // 2
-            n = 2
-        for i, plot in enumerate(plots):
-            if i % n == 0:
+            layout = len(plots) == 1 and [1] or [2]
+        while sum(layout) < len(plots):
+            layout.append(layout[-1])
+        l = i = 0
+        for plot in plots:
+            # start new row
+            if i == 0:
                 page.div(class_='row')
-            page.div(class_='col-md-%d' % span)
+            # make plot in its own column
+            page.div(class_='col-md-%d' % (12 // layout[l]))
             page.a(href=plot.outputfile, class_='fancybox plot',
                    **{'data-fancybox-group': '1'})
             page.img(src=plot.outputfile)
             page.a.close()
             page.div.close()
-            if i % n == (n - 1) or i == len(plots) - 1:
+            # detect end of row
+            if (i + 1) == layout[l] or plot == plots[-1]:
+                i = 0
+                l += 1
                 page.div.close()
+            # or move to next column
+            else:
+                i += 1
         # link data
         page.hr(class_='row-divider')
         page.div(class_='row')

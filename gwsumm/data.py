@@ -255,6 +255,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                 data = TimeSeries.read(segcache, channel, float(segment[0]),
                                        float(segment[1]),
                                        verbose=globalv.VERBOSE)
+            data.channel = channel
             if not channel.sample_rate:
                 channel.sample_rate = data.sample_rate
             if filter_:

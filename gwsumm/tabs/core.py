@@ -21,6 +21,7 @@
 
 import os
 import re
+import warnings
 from StringIO import StringIO
 
 from numpy import (cumsum, isclose)
@@ -46,6 +47,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 TriggerPlot = plotregistry.get_plot('triggers')
+re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
+
 
 
 class SummaryTab(object):
@@ -119,7 +122,7 @@ class SummaryTab(object):
             if (not isinstance(plot, TriggerPlot) and
                     hasattr(plot, 'channels')):
                 out.update(plot.channels)
-        return out
+        return sorted(out, key=lambda ch: ch.name)
 
     @property
     def trigchannels(self):
@@ -255,6 +258,14 @@ class SummaryTab(object):
                 raise ValueError("Cannot parse 'layout' for '%s' tab. Layout "
                                  "should be given as a comma-separated list "
                                  "of integers")
+            for l in layout:
+                if not l in [1, 2, 3, 4, 6, 12]:
+                    raise ValueError("Cannot print more than %d plots in a "
+                                     "single row. The chosen layout value for "
+                                     "each row must be a divisor of 12 to fit "
+                                     "the Bootstrap scaffolding. For details "
+                                     "see http://getbootstrap.com/2.3.2/"
+                                     "scaffolding.html")
         else:
             layout = None
 
@@ -293,6 +304,8 @@ class SummaryTab(object):
                 pdef = definition
                 sources = []
             else:
+                if not re_channel.match(sources) and cp.has_section(sources):
+                   sources = cp.get(sources, 'channels')
                 sources = split_channels(sources)
 
             # define one copy of this plot for each state
@@ -350,7 +363,7 @@ class SummaryTab(object):
         if len(self.channels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
-        for channel in self.channels:
+        for channel in sorted(self.channels, key=lambda c: c.name):
             get_timeseries(channel, state.active, config=config, nds=nds)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
@@ -510,22 +523,32 @@ class SummaryTab(object):
         while sum(layout) < len(plots):
             layout.append(layout[-1])
         l = i = 0
-        for plot in plots:
+        for j, plot in enumerate(plots):
             # start new row
             if i == 0:
                 page.div(class_='row')
             # make plot in its own column
-            page.div(class_='col-md-%d' % (12 // layout[l]))
+            try:
+                page.div(class_='col-md-%d' % (12 // layout[l]))
+            except IndexError:
+                warnings.warn("Something went wrong with the layout. "
+                              "Tried to access element %d of ths following "
+                              "layout (%d plots): %s" % (l, len(plots), layout))
+                page.div(class_='col-md-%d' % 12 // layout[-1])
             page.a(href=plot.outputfile, class_='fancybox plot',
                    **{'data-fancybox-group': '1'})
             page.img(src=plot.outputfile)
             page.a.close()
             page.div.close()
             # detect end of row
-            if (i + 1) == layout[l] or plot == plots[-1]:
+            if (i + 1) == layout[l]:
                 i = 0
                 l += 1
                 page.div.close()
+            # detect last plot
+            elif j == (len(plots) - 1):
+                page.div.close()
+                break
             # or move to next column
             else:
                 i += 1

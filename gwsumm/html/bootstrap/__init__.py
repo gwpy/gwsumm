@@ -324,6 +324,8 @@ def about_this_page(cmdline=True, config=None):
         if sys.argv[0].endswith('__main__.py'):
             package = sys.argv[0].rsplit(os.path.sep, 2)[1]
             cmdline = 'python -m %s %s' % (package, ' '.join(sys.argv[1:]))
+        elif os.path.split(sys.argv[0])[0] in sys.path:
+            cmdline = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         else:
             cmdline = ' '.join(sys.argv)
         page.pre(cmdline)

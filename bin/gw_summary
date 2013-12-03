@@ -340,7 +340,8 @@ for tab in alltabs:
 # Write HTML
 
 # write config page
-about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]])
+about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]],
+                 base=base)
 mkdir(about.path)
 about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
 

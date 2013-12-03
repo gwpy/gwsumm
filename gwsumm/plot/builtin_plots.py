@@ -67,11 +67,18 @@ class TimeSeriesTabPlot(TabPlot):
         mmmchans = self.find_mmm_channels()
         labels = self.plotargs.pop('labels', mmmchans.keys())
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
-            data = [get_timeseries(str(c), self.state, query=False).join() for c in channels]
+            data = [get_timeseries(str(c), self.state, query=False).join() for
+                    c in channels]
             if len(channels) > 1:
                 ax.plot_timeseries_mmm(*data, label=label.replace('_', r'\_'))
             else:
                 ax.plot_timeseries(data[0])
+
+            # allow channel data to set parameters
+            if hasattr(data[0].channel, 'amplitude_range'):
+                self.plotargs.setdefault('ylim',
+                                         data[0].channel.amplitude_range)
+
         ax.set_epoch(self.gpsstart)
         for key, val in self.plotargs.iteritems():
             try:
@@ -127,12 +134,24 @@ class SpectrumTabPlot(TabPlot):
         for label, channel in zip(labels, self.channels):
             data = get_spectrum(str(channel), self.state, query=False,
                                 format=sdform)
+
             if 'logx' in self.plotargs and self.plotargs['logx']:
                 data = [s[1:] for s in data]
             if 'logy' in self.plotargs and self.plotargs['logy']:
                 for sp in data:
                     sp[sp.data == 0] = 1e-100
             ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'))
+
+            # allow channel data to set parameters
+            if hasattr(data[0].channel, 'frequency_range'):
+                self.plotargs.setdefault('xlim',
+                                         data[0].channel.frequency_range)
+            if (sdform in ['amplitude', 'asd'] and
+                hasattr(data[0].channel, 'asd_range')):
+                self.plotargs.setdefault('ylim', data[0].channel.asd_range)
+            elif hasattr(data[0].channel, 'psd_range'):
+                self.plotargs.setdefault('ylim', data[0].channel.psd_range)
+
         for key, val in self.plotargs.iteritems():
             try:
                 setattr(plot, key, val)
@@ -261,6 +280,16 @@ class SpectrogramPlot(TimeSeriesTabPlot):
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
             ax.plot_spectrogram(specgram)
+
+            # allow channel data to set parameters
+            if hasattr(specgram.channel, 'frequency_range'):
+                self.plotargs.setdefault('ylim',
+                                         specgram.channel.frequency_range)
+            if ratio is None and (sdform in ['amplitude', 'asd'] and
+                    hasattr(specgram.channel, 'asd_range') and clim is None):
+                clim = specgram.channel.asd_range
+            elif ratio is None and hasattr(specgram.channel, 'psd_range') and clim is None:
+                clim = specgram.channel.psd_range
         ax.auto_gps_scale()
         ax.set_epoch(self.gpsstart)
         # add colorbar

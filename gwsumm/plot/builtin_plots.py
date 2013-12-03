@@ -27,7 +27,7 @@ from gwpy.plotter import *
 
 from .. import version
 from ..utils import re_cchar
-from ..data import (get_timeseries, get_spectrogram, get_spectrum)
+from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum)
 from ..segments import get_segments
 from ..triggers import get_triggers
 from ..state import ALLSTATE
@@ -66,13 +66,18 @@ class TimeSeriesTabPlot(TabPlot):
         # add data
         mmmchans = self.find_mmm_channels()
         labels = self.plotargs.pop('labels', mmmchans.keys())
+        if isinstance(labels, basestring):
+            labels = labels.split(',')
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
             data = [get_timeseries(str(c), self.state, query=False).join() for
                     c in channels]
+            if 'logy' in self.plotargs and self.plotargs['logy']:
+                for ts in data:
+                    ts[ts.data == 0] = 1e-100
             if len(channels) > 1:
                 ax.plot_timeseries_mmm(*data, label=label.replace('_', r'\_'))
             else:
-                ax.plot_timeseries(data[0])
+                ax.plot_timeseries(data[0], label=label.replace('_', r'\_'))
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):
@@ -131,6 +136,8 @@ class SpectrumTabPlot(TabPlot):
         ax = plot._add_new_axes(self.AxesClass.name)
         # add data
         labels = self.plotargs.pop('labels', map(str, self.channels))
+        if isinstance(labels, basestring):
+            labels = labels.split(',')
         for label, channel in zip(labels, self.channels):
             data = get_spectrum(str(channel), self.state, query=False,
                                 format=sdform)

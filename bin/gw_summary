@@ -275,7 +275,10 @@ for section in config.sections():
                     channel.bitmask = []
                 channel.bitmask.append(val)
             else:
-                setattr(channel, key, eval(val.rstrip()))
+                try:
+                    setattr(channel, key, eval(val.rstrip()))
+                except NameError:
+                    setattr(channel, key, val.rstrip())
 
 # read states
 load_states(config)

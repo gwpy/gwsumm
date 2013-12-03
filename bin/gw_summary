@@ -260,9 +260,11 @@ for section in config.sections():
         except KeyError:
             raise NoOptionError('channels', section)
         for name in names:
-            config.add_section(name)
+            if not config.has_section(name):
+                config.add_section(name)
             for key, val in items.iteritems():
-                config.set(name, key, val)
+                if not config.has_option(name, key):
+                    config.set(name, key, val)
 
 # read custom channel definitions
 for section in config.sections():

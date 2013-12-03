@@ -80,10 +80,7 @@ class SummaryTab(object):
         try:
             return self._href
         except AttributeError:
-            if self.base:
-                self._href = os.path.join(self.base, self.path) + os.sep
-            else:
-                self._href = self.path + os.sep
+            self._href = self.path + os.sep
             return self.href
 
     @href.setter
@@ -108,7 +105,10 @@ class SummaryTab(object):
         while tab_.parent:
             p = os.path.join(re_cchar.sub('_', tab_.parent.name).lower(), p)
             tab_ = tab_.parent
-        return os.path.normpath(p)
+        if self.base:
+            return os.path.normpath(os.path.join(self.base, p))
+        else:
+            return os.path.normpath(p)
 
     @property
     def channels(self):

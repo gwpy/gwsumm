@@ -35,6 +35,7 @@ from glue.lal import Cache
 from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList)
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
+from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
 
@@ -364,23 +365,33 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
+    channel = get_channel(channel)
     if isinstance(segments, DataQualityFlag):
+        name = ','.join([str(channel), segments.name])
         segments = segments.active
+    else:
+        name = str(channel)
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
 
-    if not (str(channel) in globalv.SPECTRUM):
+    if name not in globalv.SPECTRUM:
         speclist = get_spectrogram(channel, segments, config=config,
                                    cache=cache, query=query, nds=nds,
                                    **fftparams)
         specgram = speclist.join(gap='ignore')
-        globalv.SPECTRUM[str(channel)] = specgram.percentile(50)
-        cmin = '%s.min' % str(channel)
-        globalv.SPECTRUM[cmin] = specgram.percentile(5)
-        cmax = '%s.max' % str(channel)
-        globalv.SPECTRUM[cmax] = specgram.percentile(95)
+        try:
+            globalv.SPECTRUM[name] = specgram.percentile(50)
+        except ValueError:
+            globalv.SPECTRUM[name] = Spectrum([], channel=channel, f0=0, df=1)
+            globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
+            globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
+        else:
+            globalv.SPECTRUM[cmin] = specgram.percentile(5)
+            globalv.SPECTRUM[cmax] = specgram.percentile(95)
 
-    cmin = '%s.min' % str(channel)
-    cmax = '%s.max' % str(channel)
-    out = (globalv.SPECTRUM[str(channel)], globalv.SPECTRUM[cmin],
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+    out = (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
            globalv.SPECTRUM[cmax])
     if format in ['amplitude', 'asd']:
         out = [s ** (1/2.) for s in out]

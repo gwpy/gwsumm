@@ -97,7 +97,6 @@ class TimeSeriesTabPlot(TabPlot):
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         plot.add_state_segments(self.state, plotargs={'color':'green'})
-        plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
         plot.close()
 
@@ -168,7 +167,6 @@ class SpectrumTabPlot(TabPlot):
             plot.add_legend(ax=ax)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        plot.subplots_adjust(left=0.1, right=0.9)
         for ax in plot.axes:
             ax.tick_params(axis='x', pad=10)
             ax.xaxis.labelpad = 10
@@ -243,7 +241,6 @@ class SegmentTabPlot(TabPlot):
         ylim = ax.get_ylim()
         pad = (ylim[1] - ylim[0]) * 0.05
         ax.set_ylim(ylim[0] - pad, ylim[1] + pad)
-        plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
         plot.close()
 
@@ -276,7 +273,6 @@ class SpectrogramPlot(TimeSeriesTabPlot):
         # make figure
         plot = self.FigureClass()
         ax = plot._add_new_axes(self.AxesClass.name)
-        ax.grid(True, which='major')
         # add data
         specgrams = get_spectrogram(self.channels[0], self.state, query=False,
                                     format=sdform)
@@ -299,8 +295,8 @@ class SpectrogramPlot(TimeSeriesTabPlot):
                 clim = specgram.channel.psd_range
         if len(specgrams) == 0:
             ax.scatter([1], [1], c=[1], visible=False)
-        ax.auto_gps_scale()
         ax.set_epoch(self.gpsstart)
+        ax.auto_gps_scale(self.gpsend-self.gpsstart)
         # add colorbar
         plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
         for key, val in self.plotargs.iteritems():
@@ -311,10 +307,11 @@ class SpectrogramPlot(TimeSeriesTabPlot):
         stateax = plot.add_state_segments(self.state,
                                           plotargs={'edgecolor': 'black',
                                                     'facecolor': 'green'})
-        stateax.tick_params(axis='y', which='major', labelsize=16)
+        stateax.tick_params(axis='y', which='major', labelsize=12)
+        stateax.set_epoch(self.gpsstart)
         if 'xlim' not in self.plotargs.keys():
             ax.set_xlim(self.gpsstart, self.gpsend)
-        plot.subplots_adjust(left=0.1, right=0.9)
+        ax.grid(b=True, axis='y', which='major')
         plot.save(self.outputfile)
         plot.close()
 
@@ -350,6 +347,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
             nflags += len(channel.bitmask)
             ax.plot(*data.to_dqflags()[::-1], **plotargs)
         ax.set_epoch(self.gpsstart)
+        ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():
             try:
                 setattr(plot, key, val)
@@ -361,7 +359,6 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
             ax.set_ylim(-0.5, nflags-0.5)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
         plot.close()
 
@@ -419,7 +416,7 @@ class TriggerTabPlot(TimeSeriesTabPlot):
                           size_by=size_by, size_by_log=size_by_log,
                           size_range=size_range, **plotargs)
         ax.set_epoch(self.gpsstart)
-        ax.auto_gps_scale()
+        ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():
             try:
                 setattr(plot, key, val)
@@ -438,7 +435,6 @@ class TriggerTabPlot(TimeSeriesTabPlot):
         if isinstance(plot, TimeSeriesPlot):
             plot.add_state_segments(self.state, ax=ax,
                                     plotargs={'color':'green'})
-        plot.subplots_adjust(left=0.1, right=0.9)
         plot.save(self.outputfile)
         plot.close()
 

@@ -438,17 +438,17 @@ class SummaryTab(object):
     def build_navigation_links(self, tabs=[]):
         navlinks = []
         for tab in tabs:
-            links = [(child.name, child.href) for child in tab.children]
-            if self is tab:
-                active = 0
-            elif self in tab.children:
-                active = tab.children.index(self) + 2
-            else:
-                active = None
-            if len(links):
+            if len(tab.children):
                 navlinks.append([tab.name, []])
-                if links[0][0] == 'Summary':
+                links = [(child.name, child.href) for child in tab.children]
+                if self in tab.children:
+                    active = tab.children.index(self)
+                else:
+                    active = None
+                if tab.children[0].name == 'Summary':
                     links.insert(1, None)
+                    if active > 0:
+                        active += 1
                 navlinks[-1][1].extend(links)
                 navlinks[-1].append(active)
             else:

@@ -258,6 +258,8 @@ class SummaryTab(object):
                 raise ValueError("Cannot parse 'layout' for '%s' tab. Layout "
                                  "should be given as a comma-separated list "
                                  "of integers")
+            if isinstance(layout, int):
+                layout = [layout]
             for l in layout:
                 if not l in [1, 2, 3, 4, 6, 12]:
                     raise ValueError("Cannot print more than %d plots in a "

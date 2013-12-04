@@ -19,10 +19,10 @@
 """Definitions for the standard plots
 """
 
-import sys
 import hashlib
 
 from gwpy.detector import Channel
+from gwpy.timeseries import StateVector
 from gwpy.plotter import *
 
 from .. import version
@@ -169,10 +169,9 @@ class SpectrumTabPlot(TabPlot):
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         plot.subplots_adjust(left=0.1, right=0.9)
-        if sys.platform.startswith('linux'):
-            for ax in plot.axes:
-                ax.tick_params(axis='x', pad=10)
-                ax.xaxis.labelpad = 10
+        for ax in plot.axes:
+            ax.tick_params(axis='x', pad=10)
+            ax.xaxis.labelpad = 10
         plot.save(self.outputfile)
         plot.close()
 
@@ -277,6 +276,7 @@ class SpectrogramPlot(TimeSeriesTabPlot):
         # make figure
         plot = self.FigureClass()
         ax = plot._add_new_axes(self.AxesClass.name)
+        ax.grid(True, which='major')
         # add data
         specgrams = get_spectrogram(self.channels[0], self.state, query=False,
                                     format=sdform)
@@ -297,6 +297,8 @@ class SpectrogramPlot(TimeSeriesTabPlot):
                 clim = specgram.channel.asd_range
             elif ratio is None and hasattr(specgram.channel, 'psd_range') and clim is None:
                 clim = specgram.channel.psd_range
+        if len(specgrams) == 0:
+            ax.scatter([1], [1], c=[1], visible=False)
         ax.auto_gps_scale()
         ax.set_epoch(self.gpsstart)
         # add colorbar
@@ -306,8 +308,10 @@ class SpectrogramPlot(TimeSeriesTabPlot):
                 setattr(plot, key, val)
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
-        plot.add_state_segments(self.state, plotargs={'edgecolor': 'black',
-                                                      'facecolor': 'green'})
+        stateax = plot.add_state_segments(self.state,
+                                          plotargs={'edgecolor': 'black',
+                                                    'facecolor': 'green'})
+        stateax.tick_params(axis='y', which='major', labelsize=16)
         if 'xlim' not in self.plotargs.keys():
             ax.set_xlim(self.gpsstart, self.gpsend)
         plot.subplots_adjust(left=0.1, right=0.9)
@@ -317,8 +321,8 @@ class SpectrogramPlot(TimeSeriesTabPlot):
 
 class StateVectorTabPlot(TimeSeriesTabPlot):
     type = 'statevector'
-    FigureClass = SegmentAxes
-    AxesClass = SegmentPlot
+    FigureClass = SegmentPlot
+    AxesClass = SegmentAxes
 
     def process(self):
         # separate plot arguments
@@ -335,10 +339,16 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
 
         # add data
         labels = self.plotargs.pop('labels', self.channels)
-        for label, channels in zip(labels, self.channels):
-            data = [get_timeseries(str(c), self.state, query=False).join() for c in channels]
-            data.bitmask = c.bitmask
-            ax.plot(*data.to_dqflags(), **plotargs)
+        nflags = 0
+        for label, channel in zip(labels, self.channels[::-1]):
+            data = get_timeseries(str(channel), self.state, query=False).join()
+            if not data.size:
+                data.epoch = self.gpsstart
+                data.sample_rate = channel.sample_rate
+            data = data.view(StateVector)
+            data.bitmask = channel.bitmask
+            nflags += len(channel.bitmask)
+            ax.plot(*data.to_dqflags()[::-1], **plotargs)
         ax.set_epoch(self.gpsstart)
         for key, val in self.plotargs.iteritems():
             try:
@@ -347,6 +357,8 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
                 getattr(plot, 'get_%s' % key)(val)
         if 'xlim' not in self.plotargs.keys():
             ax.set_xlim(self.gpsstart, self.gpsend)
+        if 'ylim' not in self.plotargs.keys():
+            ax.set_ylim(-0.5, nflags-0.5)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         plot.subplots_adjust(left=0.1, right=0.9)

@@ -181,8 +181,11 @@ class SegmentTabPlot(TabPlot):
     AxesClass = SegmentAxes
     type = 'segments'
 
-    def __init__(self, flags, state='all', outdir='.', href=None, **kwargs):
+    def __init__(self, flags, start, end, state='all', outdir='.', href=None,
+                 **kwargs):
         self.flags = flags
+        self.gpsstart = start
+        self.gpsend = end
         self.state = state
         self.outdir = outdir
         self.plotargs = kwargs
@@ -215,18 +218,29 @@ class SegmentTabPlot(TabPlot):
     def process(self):
         # separate plot arguments
         axargs = self.plotargs.copy()
+        labels = self.plotargs.pop('labels',
+                                   self.plotargs.pop('label', self.flags))
+        addlabel = self.plotargs.pop('add_label', None)
+        if addlabel is None:
+            inset = self.plotargs.pop('inset_labels', True)
+            if inset is not False:
+                addlabel = 'inset'
+            else:
+                addlabel = True
+        if isinstance(labels, basestring):
+            labels = labels.split(',')
         plotargs = {}
         plotargs['color'] = axargs.pop('color', None)
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
         plotargs['facecolor'] = axargs.pop('facecolor', None)
-        plotargs.setdefault('add_label', 'inset')
+        plotargs['add_label'] = addlabel
 
         # make plot
         plot = self.FigureClass()
         ax = plot._add_new_axes(self.AxesClass.name)
-        for flag in self.flags:
+        for flag, label in zip(self.flags, labels)[::-1]:
             segs = get_segments(flag, validity=self.state.active, query=False)
-            ax.plot(segs, **plotargs)
+            ax.plot(segs, label=label, **plotargs)
         ax.set_epoch(self.gpsstart)
         for key, val in axargs.iteritems():
             try:

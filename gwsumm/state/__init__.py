@@ -38,8 +38,7 @@ class SummaryState(DataQualityFlag):
     """Tab run state - defining an interferometer operating mode and
     associated segments over which to generate summary information
     """
-    def __init__(self, name, start, stop, description=None,
-                 include=[], exclude=[]):
+    def __init__(self, name, start, stop, description=None, definition=None):
         """Initialise a new `SummaryState`
         """
         super(SummaryState, self).__init__()
@@ -47,8 +46,7 @@ class SummaryState(DataQualityFlag):
         self.valid = [(start, stop)]
         self.active = [(start, stop)]
         self.description = description
-        self.include = include
-        self.exclude = exclude
+        self.definition = definition
         self.ready = False
 
     @property
@@ -88,9 +86,6 @@ class SummaryState(DataQualityFlag):
         name = params.pop('name', section)
         if re.match('state[-\s]', name):
             name = section[6:]
-        good, bad = cls.parse_definition(params.pop('definition', ''))
-        params['include'] = good
-        params['exclude'] = bad
         return cls(name, start, end, **params)
 
     def fetch(self, config=configparser.ConfigParser()):
@@ -106,38 +101,9 @@ class SummaryState(DataQualityFlag):
             self.ready = True
             return self
         # otherwise find out which flags we need
-        get_segments(self.include + self.exclude, self.valid, config=config)
-        for flag in self.exclude:
-            self -= get_segments(flag, self.valid, config=config, query=False)
-        for flag in self.include:
-            self &= get_segments(flag, self.valid, config=config, query=False)
+        self &= get_segments(self.definition, self.valid, config=config)
         self.ready = True
         return self
-
-    @staticmethod
-    def parse_definition(definition):
-        """Parse the configuration for this state.
-
-        Returns
-        -------
-        flags : `tuple`
-            a 2-tuple containing lists of flags defining required ON
-            and OFF segments respectively for this state
-        """
-        # find flags
-        div = re.compile("[&!]")
-        divs = div.findall(definition)
-        keys = div.split(definition)
-        # load flags and vetoes
-        flags = []
-        vetoes = []
-        for i,key in enumerate(keys):
-            # get veto bit
-            if key.startswith("-") or (i != 0 and divs[i-1] == "!"):
-                vetoes.append(key)
-            else:
-                flags.append(key)
-        return flags, vetoes
 
     def copy(self):
         new = super(SummaryState, self).copy()

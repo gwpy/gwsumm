@@ -19,6 +19,8 @@
 """Utilities for segment handling and display
 """
 
+import re
+
 from .version import version as __version__
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -33,6 +35,8 @@ from gwpy.segments import (DataQualityFlag, DataQualityDict, SegmentList)
 
 import globalv
 from .utils import *
+
+FLAGDIV = re.compile("[&!\|]")
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
@@ -55,16 +59,21 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         flags = flag.split(',')
     else:
         flags = flag
+    allflags = [f for cf in flags for f in FLAGDIV.split(cf)]
+
     # check validity
     if validity is None:
         start = config.get('general', 'gps-start-time')
         end = config.get('general', 'gps-end-time')
         validity = [(start, end)]
+
     # generate output object
     out = DataQualityDict()
     for f in flags:
         out[f] = DataQualityFlag(f, valid=validity, active=validity)
+    for f in allflags:
         globalv.SEGMENTS.setdefault(f, DataQualityFlag(f))
+
     # read segments from global memory and get the union of needed times
     try:
         old = reduce(operator.or_, (globalv.SEGMENTS.get(
@@ -86,16 +95,52 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 kwargs['url'] = config.get('segment-database', 'url')
             except (NoSectionError, NoOptionError):
                 pass
-            new = DataQualityDict.query(flags, newsegs, **kwargs)
-            for f in flags:
+            new = DataQualityDict.query(allflags, newsegs, **kwargs)
+            for f in allflags:
                 vprint("Downloaded %d new segments from database for %s.\n"
                        % (len(new[f].active), f))
         # record new segments
         globalv.SEGMENTS += new
+
     # return what was asked for
-    for f in flags:
-        out[f] &= globalv.SEGMENTS[f]
+    for compound in flags:
+        union, intersection, exclude = split_compound_flag(compound)
+        for f in exclude:
+            out[compound] -= globalv.SEGMENTS[f]
+        for f in intersection:
+            out[compound] &= globalv.SEGMENTS[f]
+        for f in union:
+            out[compound] |= globalv.SEGMENTS[f]
     if isinstance(flag, basestring):
         return out[flag]
     else:
         return out
+
+
+def split_compound_flag(compound):
+    """Parse the configuration for this state.
+
+    Returns
+    -------
+    flags : `tuple`
+        a 2-tuple containing lists of flags defining required ON
+        and OFF segments respectively for this state
+    """
+    # find flags
+    divs = FLAGDIV.findall(compound)
+    keys = FLAGDIV.split(compound)
+    # load flags and vetoes
+    union = []
+    intersection = []
+    exclude = []
+    for i,key in enumerate(keys):
+        if not key:
+            continue
+        # get veto bit
+        if i != 0 and divs[i-1] == '!':
+            exclude.append(key)
+        elif i != 0 and divs[i-1] == '|':
+            union.append(key)
+        else:
+            intersection.append(key)
+    return union, intersection, exclude

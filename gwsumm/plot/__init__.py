@@ -19,6 +19,15 @@
 """Plotting utilities for GWSummary
 """
 
+from gwpy.plotter import rcParams
+rcParams.update({
+    'figure.subplot.bottom': 0.17,
+    'figure.subplot.left': 0.1,
+    'figure.subplot.right': 0.9,
+    'figure.subplot.top': 0.90,
+})
+rcParams['axes.labelsize'] = 20
+
 from gwsumm import version
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

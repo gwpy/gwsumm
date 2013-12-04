@@ -38,7 +38,8 @@ class SummaryState(DataQualityFlag):
     """Tab run state - defining an interferometer operating mode and
     associated segments over which to generate summary information
     """
-    def __init__(self, name, start, stop, description=None):
+    def __init__(self, name, start, stop, description=None,
+                 include=[], exclude=[]):
         """Initialise a new `SummaryState`
         """
         super(SummaryState, self).__init__()
@@ -46,8 +47,8 @@ class SummaryState(DataQualityFlag):
         self.valid = [(start, stop)]
         self.active = [(start, stop)]
         self.description = description
-        self.goodflags = []
-        self.badflags = []
+        self.include = include
+        self.exclude = exclude
         self.ready = False
 
     @property
@@ -70,6 +71,28 @@ class SummaryState(DataQualityFlag):
     def end(self):
         return self.extent[1]
 
+    @classmethod
+    def from_ini(cls, section, config=configparser.ConfigParser()):
+        """Create a new `SummaryState` object from its definition in
+        a :class:`configparser.ConfigParser` object.
+        """
+        # get span times
+        start = config.getint('general', 'gps-start-time')
+        end = config.getint('general', 'gps-end-time')
+        # get parameters
+        try:
+            params = dict(config.nditems(section))
+        except AttributeError:
+            params = dict(config.items(section))
+        # parse name
+        name = params.pop('name', section)
+        if re.match('state[-\s]', name):
+            name = section[6:]
+        good, bad = cls.parse_definition(params.pop('definition', ''))
+        params['include'] = good
+        params['exclude'] = bad
+        return cls(name, start, end, **params)
+
     def fetch(self, config=configparser.ConfigParser()):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
@@ -83,15 +106,16 @@ class SummaryState(DataQualityFlag):
             self.ready = True
             return self
         # otherwise find out which flags we need
-        goodflags, badflags = self.parse_description()
-        for flag in badflags:
-            self -= get_segments(flag, self.valid, config=config)
-        for flag in goodflags:
-            self &= get_segments(flag, self.valid, config=config)
+        get_segments(self.include + self.exclude, self.valid, config=config)
+        for flag in self.exclude:
+            self -= get_segments(flag, self.valid, config=config, query=False)
+        for flag in self.include:
+            self &= get_segments(flag, self.valid, config=config, query=False)
         self.ready = True
         return self
 
-    def parse_description(self):
+    @staticmethod
+    def parse_definition(definition):
         """Parse the configuration for this state.
 
         Returns
@@ -102,8 +126,8 @@ class SummaryState(DataQualityFlag):
         """
         # find flags
         div = re.compile("[&!]")
-        divs = div.findall(self.description)
-        keys = div.split(self.description)
+        divs = div.findall(definition)
+        keys = div.split(definition)
         # load flags and vetoes
         flags = []
         vetoes = []
@@ -118,8 +142,9 @@ class SummaryState(DataQualityFlag):
     def copy(self):
         new = super(SummaryState, self).copy()
         new.description = self.description
-        new.goodflags = self.goodflags
-        new.badflags = self.badflags
+        new.definition = self.definition
+        new.include = self.include
+        new.exclude = self.exclude
         new.ready = self.ready
         return new
     copy.__doc__ = DataQualityFlag.copy.__doc__
@@ -133,18 +158,25 @@ def load_states(config, section='states'):
     start = config.getint('general', 'gps-start-time')
     end = config.getint('general', 'gps-end-time')
 
+    # parse the [states] section into individual state definitions
     try:
-        items = list(config.nditems('states'))
+        states = dict(config.nditems(section))
     except configparser.NoSectionError:
-        items = []
-    if ALLSTATE not in map(str.lower, zip(*items)[0]):
-        items.insert(0, (ALLSTATE, None))
+        states = {}
+    for state in states:
+        if not (config.has_section('state-%s' % state) or
+                config.has_section('state %s' % state)):
+            section = 'state-%s' % state
+            config.add_section(section)
+            config.set(section, 'name', state)
+            config.set(section, 'definition', states[state])
 
-    for name, def_ in items:
-        if not def_:
-            try:
-                def_ = config.get('state-%s' % name.lower(), 'description')
-            except (configparser.NoSectionError, configparser.NoOptionError):
-                def_ = None
-        globalv.STATES[name] = SummaryState(name, start, end,
-                                            description=def_)
+    # parse each state section into a new state
+    for section in config.sections():
+        if re.match('state[-\s]', section):
+            globalv.STATES[section[6:]] = SummaryState.from_ini(section, config)
+
+    # force All state
+    if not ALLSTATE in globalv.STATES:
+        globalv.STATES[ALLSTATE] = SummaryState(ALLSTATE, start, end)
+    return globalv.STATES

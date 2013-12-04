@@ -293,8 +293,8 @@ class SummaryTab(object):
                     opt = key.split('-', 1)[1].lower()
                     try:
                         mods[opt] = eval(val)
-                    except NameError:
-                        pass
+                    except (NameError, SyntaxError):
+                        mods[opt] = val
 
             # parse definition for section references
             try:

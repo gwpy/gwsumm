@@ -158,13 +158,17 @@ class SpectrumTabPlot(TabPlot):
             elif hasattr(data[0].channel, 'psd_range'):
                 self.plotargs.setdefault('ylim', data[0].channel.psd_range)
 
+        # set plotting params
+        legendargs = {}
         for key, val in self.plotargs.iteritems():
+            if re.match('legend-', key):
+                legendargs[key[7:]] = val
             try:
                 setattr(plot, key, val)
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax)
+            plot.add_legend(ax=ax, **legendargs)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         for ax in plot.axes:

@@ -98,12 +98,14 @@ class TabPlot(object):
     #: dict of default plotting kwargs
     defaults = {}
 
-    def __init__(self, channels, state=ALLSTATE, outdir='.', href=None,
-                 **kwargs):
+    def __init__(self, channels, start, end, state=ALLSTATE, outdir='.',
+                 href=None, **kwargs):
         self.channels = channels
         self.state = state
         self.outdir = outdir
         self.plotargs = kwargs
+        self.gpsstart = start
+        self.gpsend = end
         self.href = href
 
     # ------------------------------------------------------------------------
@@ -137,18 +139,6 @@ class TabPlot(object):
             self._state = globalv.STATES[state_]
         else:
             self._state = state_
-
-    @property
-    def gpsstart(self):
-        """GPS start time for this `TabPlot`
-        """
-        return self.state.extent[0]
-
-    @property
-    def gpsend(self):
-        """GPS end time for this `TabPlot`
-        """
-        return self.state.extent[1]
 
     @property
     def href(self):
@@ -185,7 +175,7 @@ class TabPlot(object):
                          self.type.upper()])
         return os.path.join(self.outdir, '%s-%s-%d-%d.png'
                                          % (ifos, desc, floor(self.gpsstart),
-                                            ceil(abs(self.state.extent))))
+                                            ceil(self.gpsend)))
 
     # ------------------------------------------------------------------------
     # TabPlot methods
@@ -232,6 +222,9 @@ class TabPlot(object):
         """Define a new `TabPlot` from a an INI-format `ConfigParser`
         section.
         """
+        # get [start, stop) job interval
+        start = cp.getint('general', 'gps-start-time')
+        end = cp.getint('general', 'gps-end-time')
         # read parameters
         try:
             params = dict(cp.nditems(section))
@@ -254,7 +247,7 @@ class TabPlot(object):
                 pass
         params.update(kwargs)
         # format and return
-        return cls(sources, state, **params)
+        return cls(sources, start, end, state, **params)
 
     # ------------------------------------------------------------------------
     # TabPlot comparisons

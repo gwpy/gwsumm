@@ -322,8 +322,8 @@ class SummaryTab(object):
                 # otherwise pdef should be a registered plot type
                 else:
                     PlotClass = plotregistry.get_plot(pdef)
-                    plot = PlotClass(sources, state=state, outdir=plotdir,
-                                     **mods)
+                    plot = PlotClass(sources, start, end, state=state,
+                                     outdir=plotdir, **mods)
                 job.plots.append(plot)
 
         return job
@@ -447,8 +447,8 @@ class SummaryTab(object):
                 active = None
             if len(links):
                 navlinks.append([tab.name, []])
-                if tab.states is not None:
-                    navlinks[-1][1].extend([('Summary', tab.href), None])
+                if links[0][0] == 'Summary':
+                    links.insert(1, None)
                 navlinks[-1][1].extend(links)
                 navlinks[-1].append(active)
             else:

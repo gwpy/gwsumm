@@ -290,7 +290,7 @@ class SummaryTab(object):
             mods = {}
             for key, val in cp.nditems(section):
                 if key.startswith('%d-' % index):
-                    opt = key.split('-', 1)[1].lower()
+                    opt = re_cchar.sub('_', key.split('-', 1)[1].lower())
                     try:
                         mods[opt] = eval(val)
                     except (NameError, SyntaxError):

@@ -56,7 +56,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     else:
         flags = flag
     # check validity
-    if not validity:
+    if validity is None:
         start = config.get('general', 'gps-start-time')
         end = config.get('general', 'gps-end-time')
         validity = [(start, end)]

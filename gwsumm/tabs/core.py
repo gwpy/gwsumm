@@ -487,7 +487,7 @@ class SummaryTab(object):
             # initialise page
             page = html.markup.page()
             page.init(doctype=html.DOCTYPE, css=css, script=js, title=title,
-                      base=base)
+                      base=base, metainfo=html.META)
             page.div(id_='wrap')
             page.add(str(html.banner(title, subtitle=subtitle)))
             if len(self.states) > 1:
@@ -501,8 +501,6 @@ class SummaryTab(object):
             # add footer
             page.div.close()
             page.add(str(html.footer(about=about)))
-            page.body.close()
-            page.html.close()
             # write
             with open(shtml, 'w') as fobj:
                 fobj.write(str(page))

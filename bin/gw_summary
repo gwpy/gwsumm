@@ -16,6 +16,8 @@ import getpass
 
 from dateutil.relativedelta import relativedelta
 
+import numpy
+
 from matplotlib import use
 use('Agg')
 
@@ -42,7 +44,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # find channels
-re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
+re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\.[a-z]+)?(,[a-z\-]+)?\Z')
 
 # XXX HACK: disable colon separator in ConfigParser
 GWSummConfigParser.OPTCRE = re.compile(
@@ -200,16 +202,18 @@ else:
     opts.gps_end_time = int(gpstime.utc_to_gps(opts.day +
                                                datetime.timedelta(days=1)))
 
-starttime = Time(float(opts.gps_start_time), format='gps')
-endtime = Time(float(opts.gps_end_time), format='gps')
-span = Segment(starttime.gps, endtime.gps)
+span = Segment(opts.gps_start_time, opts.gps_end_time)
 try:
-    config.set('general', 'gps-start-time', str(int(starttime.gps)))
+    config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
 except config.NoSectionError:
     config.add_section('general')
-    config.set('general', 'gps-start-time', str(int(starttime.gps)))
+    config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
 finally:
-    config.set('general', 'gps-end-time', str(int(endtime.gps)))
+    config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
+
+
+starttime = Time(float(opts.gps_start_time), format='gps')
+endtime = Time(float(opts.gps_end_time), format='gps')
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose
@@ -256,7 +260,7 @@ for section in config.sections():
     if re.match('channels[-\s]', section):
         items = dict(config.nditems(section))
         try:
-            names = items.pop('channels').split(',')
+            names = split_channels(items.pop('channels'))
         except KeyError:
             raise NoOptionError('channels', section)
         for name in names:

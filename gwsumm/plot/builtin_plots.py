@@ -386,9 +386,9 @@ class TriggerTabPlot(TimeSeriesTabPlot):
     FigureClass = EventTablePlot
     AxesClass = EventTableAxes
 
-    def __init__(self, channels, state=ALLSTATE, outdir='.', href=None,
-                 etg=None, **kwargs):
-        super(TriggerTabPlot, self).__init__(channels, state=state,
+    def __init__(self, channels, start, end, state=ALLSTATE, outdir='.',
+                 href=None, etg=None, **kwargs):
+        super(TriggerTabPlot, self).__init__(channels, start, end, state=state,
                                              outdir=outdir, href=href, **kwargs)
         if etg is None:
             raise ValueError("An 'etg' option must be given in the INI "
@@ -397,12 +397,21 @@ class TriggerTabPlot(TimeSeriesTabPlot):
 
     @property
     def tag(self):
+        """Unique identifier for this `TriggerTabPlot`.
+
+        Extends the standard `TimeSeriesTabPlot` tag with the ETG
+        and each of the column names.
+        """
         try:
             return self._tag
         except AttributeError:
             self._tag = hashlib.md5("".join(map(str,
                                             self.channels))).hexdigest()[:6]
             self._tag += '_%s' % re_cchar.sub('_', self.etg).upper()
+            for column in ('x', 'y', 'color'):
+                if column in self.plotargs:
+                    self._tag += '_%s' % re_cchar.sub('_',
+                                                      self.plotargs[column])
             return self.tag
 
     def process(self):
@@ -427,12 +436,33 @@ class TriggerTabPlot(TimeSeriesTabPlot):
         # add data
         ntrigs = 0
         for channel in self.channels:
+            channel = get_channel(channel)
             table = get_triggers(str(channel), self.etg, self.state,
                                  query=False)
             ntrigs += len(table)
+            # access channel parameters for limits
+            for c,column in zip(('x', 'y', 'c'), (xcolumn, ycolumn, ccolumn)):
+                if not column:
+                    continue
+                # hack for SnglBurst frequency nonsense
+                if column in ['peak_frequency', 'central_freq']:
+                    column = 'frequency'
+                # set x and y in plotargs
+                param = '%s_range' % column
+                lim = '%slim' % column
+                if hasattr(channel, param) and c in ('x', 'y'):
+                    self.plotargs.setdefault(lim, getattr(channel, param))
+                # set clim separately
+                elif hasattr(channel, param):
+                    if not clim:
+                        clim = getattr(channel, param)
+                    if not size_range:
+                        size_range = getattr(channel, param)
+
             ax.plot_table(table, xcolumn, ycolumn, color=ccolumn,
                           size_by=size_by, size_by_log=size_by_log,
                           size_range=size_range, **plotargs)
+
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():

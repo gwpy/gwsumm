@@ -175,7 +175,7 @@ class TabPlot(object):
                          self.type.upper()])
         return os.path.join(self.outdir, '%s-%s-%d-%d.png'
                                          % (ifos, desc, floor(self.gpsstart),
-                                            ceil(self.gpsend)))
+                                            ceil(self.gpsend-self.gpsstart)))
 
     # ------------------------------------------------------------------------
     # TabPlot methods

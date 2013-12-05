@@ -31,6 +31,9 @@ __version__ = version.version
 from .. import markup
 from ..utils import highlight_syntax
 
+# set <meta> for bootstrap
+META = {'viewport': 'width=device-width, initial-scale=1.0'}
+
 
 def banner(title, subtitle=None):
     """Construct a banner heading in bootstrap format
@@ -324,7 +327,8 @@ def about_this_page(cmdline=True, config=None):
         if sys.argv[0].endswith('__main__.py'):
             package = sys.argv[0].rsplit(os.path.sep, 2)[1]
             cmdline = 'python -m %s %s' % (package, ' '.join(sys.argv[1:]))
-        elif os.path.split(sys.argv[0])[0] in sys.path:
+        elif (os.path.split(sys.argv[0])[0] in
+              os.environ.get('PATH', '').split(os.pathsep)):
             cmdline = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         else:
             cmdline = ' '.join(sys.argv)

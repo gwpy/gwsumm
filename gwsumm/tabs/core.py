@@ -366,7 +366,7 @@ class SummaryTab(object):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
         for channel in sorted(self.channels, key=lambda c: c.name):
-            get_timeseries(channel, state.active, config=config, nds=nds)
+            get_timeseries(channel, state, config=config, nds=nds)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
 
@@ -383,7 +383,7 @@ class SummaryTab(object):
         for plot in self.plots.spectrograms + self.plots.spectra:
             spectrochannels.update(plot.channels)
         for channel in spectrochannels:
-            get_spectrogram(channel, state.active, config=config, **fftparams)
+            get_spectrogram(channel, state, config=config, **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
@@ -392,7 +392,7 @@ class SummaryTab(object):
         for plot in self.plots.spectra:
             spectrumchannels.update(plot.channels)
         for channel in spectrumchannels:
-            get_spectrum(channel, state.active, config=config, **fftparams)
+            get_spectrum(channel, state, config=config, **fftparams)
 
         # --------------------------------------------------------------------
         # process segments
@@ -401,7 +401,7 @@ class SummaryTab(object):
         if len(self.dataqualityflags):
             vprint("    %d data-quality flags identified for SegDB query\n"
                    % len(self.dataqualityflags))
-            get_segments(self.dataqualityflags, state.active, config=config)
+            get_segments(self.dataqualityflags, state, config=config)
 
         # --------------------------------------------------------------------
         # process triggers

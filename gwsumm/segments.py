@@ -66,6 +66,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         start = config.get('general', 'gps-start-time')
         end = config.get('general', 'gps-end-time')
         validity = [(start, end)]
+    elif isinstance(validity, DataQualityFlag):
+        validity = validity.active
 
     # generate output object
     out = DataQualityDict()
@@ -97,7 +99,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 pass
             new = DataQualityDict.query(allflags, newsegs, **kwargs)
             for f in allflags:
-                vprint("Downloaded %d new segments from database for %s.\n"
+                vprint("    Downloaded %d new segments from database for %s.\n"
                        % (len(new[f].active), f))
         # record new segments
         globalv.SEGMENTS += new

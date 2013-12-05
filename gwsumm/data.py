@@ -76,6 +76,9 @@ def get_channel(channel):
                          "channels recovered" % str(channel))
     else:
         try:
+            # trends are not stored in CIS
+            if re.search('.[a-z]+\Z', name):
+                raise ValueError()
             new = Channel.query(name)
         except ValueError:
             new = Channel(channel)

@@ -257,6 +257,7 @@ class SegmentTabPlot(TabPlot):
             segs = get_segments(flag, validity=self.state.active, query=False)
             ax.plot(segs, label=label, **plotargs)
         ax.set_epoch(self.gpsstart)
+        ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in axargs.iteritems():
             try:
                 setattr(plot, key, val)

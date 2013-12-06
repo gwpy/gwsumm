@@ -80,6 +80,8 @@ class TimeSeriesTabPlot(TabPlot):
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
             data = [get_timeseries(str(c), self.state, query=False).join() for
                     c in channels]
+            if not 'epoch' in data[0].metadata:
+                data[0].epoch = self.gpsstart
             if 'logy' in self.plotargs and self.plotargs['logy']:
                 for ts in data:
                     ts[ts.data == 0] = 1e-100

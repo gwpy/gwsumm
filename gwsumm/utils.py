@@ -65,3 +65,25 @@ def mkdir(path):
     path = os.path.normpath(path)
     if not os.path.isdir(path):
         os.makedirs(path)
+
+
+def nat_sorted(l, key=None):
+    """Sorted a list in the way that humans expect.
+
+    Parameters
+    ----------
+    l : `iterable`
+        iterable to sort
+    key : `callable`
+        sorting key
+
+    Returns
+    -------
+    lsorted : `list`
+        sorted() version of input ``l``
+    """
+    k = key and map(key, l) or l
+    convert = lambda text: int(text) if text.isdigit() else text
+    alphanum_key = lambda key: [convert(c) for c in
+                                re.split('([0-9]+)', k[l.index(key)])]
+    return sorted(l, key=alphanum_key)

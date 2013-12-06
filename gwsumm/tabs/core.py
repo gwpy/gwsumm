@@ -23,6 +23,7 @@ import os
 import re
 import warnings
 from StringIO import StringIO
+from multiprocessing import Process
 
 from numpy import (cumsum, isclose)
 
@@ -340,7 +341,8 @@ class SummaryTab(object):
             state.fetch(config=config)
         self.states.sort(key=lambda s: abs(s.active), reverse=True)
 
-    def process(self, nds='guess', config=GWSummConfigParser()):
+    def process(self, nds='guess', multiprocess=True,
+                config=GWSummConfigParser()):
         """Process data for this tab
         """
         vprint("\n-------------------------------------------------\n")
@@ -351,9 +353,11 @@ class SummaryTab(object):
         self.finalize_states(config=config)
         vprint("States finalised\n")
         for state in self.states:
-            self.process_state(state, nds=nds, config=config)
+            self.process_state(state, nds=nds, multiprocess=multiprocess,
+                               config=config)
 
-    def process_state(self, state, nds='guess', config=GWSummConfigParser()):
+    def process_state(self, state, nds='guess', multiprocess=True,
+                      config=GWSummConfigParser()):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
@@ -366,7 +370,8 @@ class SummaryTab(object):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
         for channel in sorted(self.channels, key=lambda c: c.name):
-            get_timeseries(channel, state, config=config, nds=nds)
+            get_timeseries(channel, state, config=config, nds=nds,
+                           multiprocess=multiprocess)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
 
@@ -416,12 +421,27 @@ class SummaryTab(object):
 
         # make plots
         vprint("    Plotting... \n")
-        for plot in self.plots:
+        processes = []
+        for plot in sorted(self.plots, key=lambda p:
+                                        isinstance(p, TriggerPlot) and 2 or 1):
             if (plot.state.name == state.name and not
                     plot.outputfile in globalv.WRITTEN_PLOTS):
-                plot.process()
-                vprint("        %s written\n" % plot.outputfile)
                 globalv.WRITTEN_PLOTS.append(plot.outputfile)
+                if multiprocess and not isinstance(plot, TriggerPlot):
+                    p = Process(target=plot.process)
+                    processes.append(p)
+                    p.start()
+                else:
+                    plot.process()
+                    vprint("        %s written\n" % plot.outputfile)
+        if len(processes):
+            vprint("        %d plot processes spawned, waiting"
+                   % len(processes))
+        for process in processes:
+            p.join()
+            vprint(".")
+        if len(processes):
+            vprint("\n")
         vprint("    Done.\n")
 
     # -------------------------------------------------------------------------

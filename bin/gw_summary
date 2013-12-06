@@ -279,7 +279,7 @@ for section in config.sections():
 for section in config.sections():
     if re_channel.match(section):
         channel = get_channel(section)
-        for key, val in sorted(config.nditems(section), key=lambda x: x[0]):
+        for key, val in nat_sorted(config.nditems(section), key=lambda x: x[0]):
             key = re_cchar.sub('_', key.rstrip())
             if key.isdigit():
                 if not hasattr(channel, 'bitmask'):

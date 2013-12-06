@@ -122,8 +122,16 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     ifo = ifo[0].upper()
     gpsstart = int(floor(gpsstart))
     gpsend = int(ceil(gpsend))
-    return dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
-                                  urltype=urltype, on_gaps=gaps)
+    cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
+                                   urltype=urltype, on_gaps=gaps)
+    # XXX: HACK for L1 frame type change:
+    if ifo[0].upper() == 'L' and frametype in ['R', 'M', 'T']:
+        start = len(cache) and cache[-1].segment[1] or gpsstart
+        cache.extend(dfconn.find_frame_urls(ifo[0].upper(), 'L1_%s' % frametype,
+                                            start, gpsend, urltype=urltype,
+                                            on_gaps=gaps)[1:])
+    cache, _ = cache.checkfilesexist()
+    return cache
 
 
 def find_cache_segments(*caches):
@@ -231,9 +239,6 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                 else:
                     ftype = 'R'
                 ftype = '%s_%s' % (channel.ifo, ftype)
-                # XXX: remove me when L1 moves frame type
-                if channel.ifo[0] == 'L' and len(ftype) == 4:
-                    ftype = ftype[-1]
             if cache is not None:
                 fcache = cache.sieve(description=ftype, exact_match=True)
             if cache is None or len(fcache) == 0 and len(new):

@@ -84,6 +84,10 @@ copts.add_option('-f', '--config-file', action='append', type='string',
                  help="INI file for analysis, may be given multiple times")
 copts.add_option('--nds', action='store_true', default='guess',
                  help='use NDS as the data source, default: %default')
+copts.add_option('--single-process', action='store_false', default=True,
+                 dest='multiprocess',
+                 help="restrict %s to a single process, mainly for debugging "
+                      "purposes, default: False" % os.path.basename(__file__))
 
 outopts = parser.add_option_group("Output options")
 outopts.add_option('-o', '--output-dir', action='store', type='string',
@@ -340,7 +344,7 @@ for tab in tabs:
 
 alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
-    tab.process(config=config, nds=opts.nds)
+    tab.process(config=config, nds=opts.nds, multiprocess=opts.multiprocess)
 
 # -----------------------------------------------------------------------------
 # Write HTML

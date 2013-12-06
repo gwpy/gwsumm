@@ -60,6 +60,15 @@ class TimeSeriesTabPlot(TabPlot):
     def add_data_source(self, source):
         self.channels.append(source)
 
+    def add_state_segments(self, plot, ax, color='green', **kwargs):
+        sax = plot.add_state_segments(self.state, ax,
+                                     plotargs={'edgecolor': 'black',
+                                               'facecolor': 'green'})
+        sax.tick_params(axis='y', which='major', labelsize=12)
+        sax.set_epoch(self.gpsstart)
+        sax.auto_gps_scale(self.gpsend - self.gpsstart)
+        return sax
+
     def process(self):
         plot = self.FigureClass()
         ax = plot._add_new_axes(self.AxesClass.name)
@@ -96,7 +105,7 @@ class TimeSeriesTabPlot(TabPlot):
             plot.add_legend(ax=ax)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        plot.add_state_segments(self.state, plotargs={'color':'green'})
+        self.add_state_segments(plot, ax)
         plot.save(self.outputfile)
         plot.close()
 
@@ -322,11 +331,7 @@ class SpectrogramPlot(TimeSeriesTabPlot):
                 setattr(plot, key, val)
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
-        stateax = plot.add_state_segments(self.state,
-                                          plotargs={'edgecolor': 'black',
-                                                    'facecolor': 'green'})
-        stateax.tick_params(axis='y', which='major', labelsize=12)
-        stateax.set_epoch(self.gpsstart)
+        self.add_state_segments(plot, ax)
         if 'xlim' not in self.plotargs.keys():
             ax.set_xlim(self.gpsstart, self.gpsend)
         ax.grid(b=True, axis='y', which='major')
@@ -481,8 +486,7 @@ class TriggerTabPlot(TimeSeriesTabPlot):
         else:
             plot.add_colorbar(ax=ax, visible=False)
         if isinstance(plot, TimeSeriesPlot):
-            plot.add_state_segments(self.state, ax=ax,
-                                    plotargs={'color':'green'})
+            self.add_state_segments(plot, ax)
         plot.save(self.outputfile)
         plot.close()
 

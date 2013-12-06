@@ -49,7 +49,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
 
     # work out columns
     try:
-        columns = config.get(etg, 'columns')
+        columns = config.get(etg, 'columns').split(',')
     except (NoSectionError, NoOptionError):
         columns = TableClass.validcolumns.keys()
     else:

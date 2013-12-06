@@ -703,6 +703,7 @@ def split_channels(channelstring):
     """
     out = []
     while True:
+        channelstring = channelstring.strip(' \n')
         if ',' not in channelstring:
             break
         for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:

@@ -613,10 +613,15 @@ class SummaryTab(object):
             for flag in self.dataqualityflags:
                 flag = globalv.SEGMENTS[flag]
                 v = flag.version and str(flag.version) or ''
-                valid = '%.2f (%.2f%%)' % (abs(flag.valid),
-                                           abs(flag.valid) / pc)
-                active = '%.2f (%.2f%%)' % (abs(flag.active),
-                                            abs(flag.active) / pc)
+                try:
+                    valid = '%.2f (%.2f%%)' % (abs(flag.valid),
+                                               abs(flag.valid) / pc)
+                except ZeroDivisionError:
+                    valid = '0.00 (0.00%)'
+                    active = '0.00 (0.00%)'
+                else:
+                    active = '%.2f (%.2f%%)' % (abs(flag.active),
+                                                abs(flag.active) / pc)
                 data.append([flag.ifo, flag.name, v, valid, active])
             page.add(str(html.data_table(headers, data, table='data')))
             # print segment lists

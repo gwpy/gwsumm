@@ -202,9 +202,8 @@ class TabPlot(object):
         """
         all_ = self.channels
         out = OrderedDict()
-        all_.sort(key=lambda c: str(c))
         for c in all_:
-            name = str(c).split('.')[0]
+            name = str(c).rsplit('.', 1)[0]
             if name in out.keys():
                 out[name].append(c)
             else:

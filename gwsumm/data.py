@@ -171,7 +171,7 @@ def find_cache_segments(*caches):
 
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
-                   query=True, nds='guess'):
+                   query=True, nds='guess', multiprocess=True):
     """Retrieve the data (time-series) for a given channel
     """
     if isinstance(segments, DataQualityFlag):
@@ -263,6 +263,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                 segcache = fcache.sieve(segment=segment)
                 data = TimeSeries.read(segcache, channel, float(segment[0]),
                                        float(segment[1]),
+                                       multiprocess=multiprocess,
                                        verbose=globalv.VERBOSE)
             data.channel = channel
             if not channel.sample_rate:

@@ -434,7 +434,9 @@ class TriggerTabPlot(TimeSeriesTabPlot):
         clabel = self.plotargs.pop('colorlabel', None)
         size_by = self.plotargs.pop('size_by', None)
         size_by_log = self.plotargs.pop('size_by_log', None)
-        size_range = self.plotargs.pop('size_range', clim)
+        size_range = self.plotargs.pop('size_range', None)
+        if size_range is None and (size_by or size_by_log) and clim is not None:
+            size_range = clim
         # generate figure
         base = xcolumn == 'time' and TimeSeriesPlot or None
         plot = self.FigureClass(base=base)
@@ -455,7 +457,7 @@ class TriggerTabPlot(TimeSeriesTabPlot):
                     column = 'frequency'
                 # set x and y in plotargs
                 param = '%s_range' % column
-                lim = '%slim' % column
+                lim = '%slim' % c
                 if hasattr(channel, param) and c in ('x', 'y'):
                     self.plotargs.setdefault(lim, getattr(channel, param))
                 # set clim separately

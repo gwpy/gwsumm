@@ -267,10 +267,8 @@ class SegmentTabPlot(TabPlot):
             ax.set_xlim(self.gpsstart, self.gpsend)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        ax.autoscale(axis='y', tight=True)
-        ylim = ax.get_ylim()
-        pad = (ylim[1] - ylim[0]) * 0.05
-        ax.set_ylim(ylim[0] - pad, ylim[1] + pad)
+        if 'ylim' not in axargs:
+            ax.set_ylim(-0.5, len(self.flags) - 0.5)
         plot.save(self.outputfile)
         plot.close()
 

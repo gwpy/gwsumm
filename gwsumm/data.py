@@ -261,6 +261,16 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                                         ndschanneltype=channel.type)
             else:
                 segcache = fcache.sieve(segment=segment)
+                try:
+                    lastseg = segcache[-1].segment & segment
+                except IndexError:
+                    continue
+                else:
+                    if re.match('([A-Z]1_)?T\Z', ftype) and abs(lastseg) < 1:
+                        segcache = segcache[:-1]
+                    elif re.match('([A-Z]1_)?M\Z', ftype) and abs(lastseg) < 60:
+                        segcache = segcache[:-1]
+                    segcache = Cache(segcache)
                 data = TimeSeries.read(segcache, channel, float(segment[0]),
                                        float(segment[1]),
                                        multiprocess=multiprocess,

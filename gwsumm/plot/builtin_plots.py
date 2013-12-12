@@ -101,13 +101,13 @@ class TimeSeriesTabPlot(TabPlot):
                 setattr(plot, key, val)
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
-        if 'xlim' not in self.plotargs.keys():
-            ax.set_xlim(self.gpsstart, self.gpsend)
         if len(mmmchans) > 1:
             plot.add_legend(ax=ax)
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        self.add_state_segments(plot, ax)
+        segax = self.add_state_segments(plot, ax)
+        if 'xlim' not in self.plotargs.keys():
+            segax.set_xlim(self.gpsstart, self.gpsend)
         plot.save(self.outputfile)
         plot.close()
 
@@ -332,9 +332,9 @@ class SpectrogramPlot(TimeSeriesTabPlot):
                 setattr(plot, key, val)
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
-        self.add_state_segments(plot, ax)
+        segax = self.add_state_segments(plot, ax)
         if 'xlim' not in self.plotargs.keys():
-            ax.set_xlim(self.gpsstart, self.gpsend)
+            segax.set_xlim(self.gpsstart, self.gpsend)
         ax.grid(b=True, axis='y', which='major')
         plot.save(self.outputfile)
         plot.close()
@@ -365,6 +365,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
             data = get_timeseries(str(channel), self.state, query=False).join()
             if not data.size:
                 data.epoch = self.gpsstart
+                print channel
                 data.sample_rate = channel.sample_rate
             data = data.view(StateVector)
             data.bitmask = channel.bitmask
@@ -480,8 +481,6 @@ class TriggerTabPlot(TimeSeriesTabPlot):
                 getattr(plot, 'get_%s' % key)(val)
         if 'title' not in self.plotargs.keys() and len(self.channels) == 1:
             plot.title = '%s (%s)' % (self.channels[0].tex_name, self.etg)
-        if 'xlim' not in self.plotargs.keys():
-            ax.set_xlim(self.gpsstart, self.gpsend)
         if ccolumn:
             if not ntrigs:
                 ax.scatter([1], [1], c=[1], visible=False, **plotargs)
@@ -489,7 +488,9 @@ class TriggerTabPlot(TimeSeriesTabPlot):
         else:
             plot.add_colorbar(ax=ax, visible=False)
         if isinstance(plot, TimeSeriesPlot):
-            self.add_state_segments(plot, ax)
+            ax = self.add_state_segments(plot, ax)
+        if 'xlim' not in self.plotargs.keys():
+            ax.set_xlim(self.gpsstart, self.gpsend)
         plot.save(self.outputfile)
         plot.close()
 

@@ -207,7 +207,6 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
         resample = float(channel.resample)
     except AttributeError:
         resample = None
-    resample = None
 
     # work out whether to use NDS or not
     if nds == 'guess':
@@ -293,14 +292,17 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                                        multiprocess=multiprocess,
                                        verbose=globalv.VERBOSE)
             data.channel = channel
-            if not channel.sample_rate:
+            if channel.sample_rate is None:
                 channel.sample_rate = data.sample_rate
             if filter_:
                 data = data.filter(*filter_)
             if resample:
                 factor = data.sample_rate.value / resample
-                if numpy.isclose(factor, int(factor)):
-                    data = data.decimate(factor)
+                if (re.search('ODC_CHANNEL_OUT_DQ\Z', str(channel)) and
+                        factor.is_integer()):
+                    data = data[::int(factor)]
+                elif factor.is_integer():
+                    data = data.decimate(int(factor))
                 else:
                     data = data.resample(resample)
             globalv.DATA[name].append(data)

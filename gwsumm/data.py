@@ -29,6 +29,8 @@ except ImportError:
 import numpy
 import nds2
 
+from lal import gpstime
+
 from glue import datafind
 from glue.lal import Cache
 
@@ -44,6 +46,8 @@ from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+NOW = gpstime.gps_time_now().gpsSeconds
 
 
 def get_channel(channel):
@@ -118,18 +122,29 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
                                                     key_file=key)
     else:
         dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
+
+    # XXX HACK: LLO changed frame types on Dec 6 2013:
+    LLOCHANGE = 1070291904
+
+    if re.match('L1_{CRMT}', frametype) and gpsstart < LLOCHANGE:
+        frametype = frametype[-1]
+
     # query frames
     ifo = ifo[0].upper()
     gpsstart = int(floor(gpsstart))
     gpsend = int(ceil(gpsend))
     cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
                                    urltype=urltype, on_gaps=gaps)
-    # XXX: HACK for L1 frame type change:
-    if ifo[0].upper() == 'L' and frametype in ['R', 'M', 'T']:
+
+    # XXX: if querying for day of LLO frame type change, do both
+    if (ifo[0].upper() == 'L' and frametype in ['C', 'R', 'M', 'T'] and
+            gpsstart < LLOCHANGE < gpsend):
         start = len(cache) and cache[-1].segment[1] or gpsstart
-        cache.extend(dfconn.find_frame_urls(ifo[0].upper(), 'L1_%s' % frametype,
-                                            start, gpsend, urltype=urltype,
-                                            on_gaps=gaps)[1:])
+        if start < gpsend:
+            cache.extend(dfconn.find_frame_urls(ifo[0].upper(),
+                                                'L1_%s' % frametype, start,
+                                                gpsend, urltype=urltype,
+                                                on_gaps=gaps)[1:])
     cache, _ = cache.checkfilesexist()
     return cache
 
@@ -236,6 +251,8 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                     ftype = 'LDAS_C02_L2'
                 elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
                     ftype = 'lldetchar'
+                elif (NOW - new[0][0]) < 86400 * 20:
+                    ftype = 'C'
                 else:
                     ftype = 'R'
                 ftype = '%s_%s' % (channel.ifo, ftype)
@@ -244,7 +261,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
             if cache is None or len(fcache) == 0 and len(new):
                 span = new.extent()
                 fcache = find_frames(channel.ifo, ftype, span[0], span[1],
-                                     config=config)
+                                     config=config, gaps='ignore')
             # parse discontiguous cache blocks and rebuild segment list
             cachesegments = find_cache_segments(fcache)
             new &= cachesegments

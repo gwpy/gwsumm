@@ -19,4 +19,41 @@
 """HTML5 specific extensions
 """
 
+import os.path
+
+from . import markup
+from ..utils import re_cchar
+
 DOCTYPE = '<!DOCTYPE html>'
+
+
+def load_state(url):
+    """Construct the HTML script required to load the Tab HTML
+    for a given :class:`~gwsumm.state.core.SummaryState`
+
+    Parameters
+    ----------
+    url : `str`
+        path (relative to <base>) of HTML to load
+    id_ : `str`, optional, default: '#main'
+        <div> 'id' in which to load HTML
+
+    Returns
+    -------
+    HTML : `str`
+        HTML one-liner with script loading
+    """
+    id_ = os.path.splitext(os.path.basename(url))[0]
+    page = markup.page()
+    page.script()
+    page.add('if (location.hash.length <= 1) {')
+    page.add('    $("#state_%s").load_state("%s");' % (id_, url))
+    page.add('}')
+    page.script.close()
+    return page
+
+def load(url, id_='main'):
+    """Construct the HTML script required to load a url into the
+    HTML element with the given unique ``id_``.
+    """
+    return markup.oneliner.script('$("#%s").load("%s");' % (id_, url))

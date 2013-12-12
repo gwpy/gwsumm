@@ -30,6 +30,7 @@ __version__ = version.version
 
 from .. import markup
 from ..utils import highlight_syntax
+from ...utils import re_cchar
 
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}
@@ -282,7 +283,7 @@ def state_switcher(states, default=0):
     current, chref = states[default]
     page = markup.page()
     page.div(class_="btn-group pull-right")
-    page.a(class_='btn dropdown-toggle', href='#', id_='state',
+    page.a(class_='btn dropdown-toggle', href='#', id_='states',
            title="Show/hide state menu", **{'data-toggle': 'dropdown'})
     page.add(current.name)
     page.b('', class_='caret')
@@ -290,7 +291,9 @@ def state_switcher(states, default=0):
     page.ul(class_='dropdown-menu', id_='statemenu')
     for i, (state, href) in enumerate(states):
         page.li()
-        page.a(state.name, href=href)
+        page.a(state.name, class_='state', title=state.name,
+               id_='state_%s' % re_cchar.sub('_', state.name).lower(),
+               onclick='$(this).load_state(\'%s\');' % href)
         page.li.close()
     page.ul.close()
     page.div.close()

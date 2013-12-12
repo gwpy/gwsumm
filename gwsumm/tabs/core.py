@@ -155,12 +155,8 @@ class SummaryTab(object):
         # write page for each state
         statelinks = []
         for i, state in enumerate(self.states):
-            if i == 0:
-                statelinks.append(self.index)
-            else:
-                statelinks.append(os.path.join(
-                    self.href,
-                    '%s.html' % re_cchar.sub('_', state.name.lower())))
+            statelinks.append(os.path.join(
+                self.href, '%s.html' % re_cchar.sub('_', state.name.lower())))
         return statelinks
 
     # -------------------------------------------
@@ -478,7 +474,7 @@ class SummaryTab(object):
         return navlinks
 
     def build_html(self, title=None, subtitle=None, tabs=list(), css=list(),
-                   js=list(), about=None):
+                   js=list(), about=None, writedata=True, writehtml=True):
         """Construct the HTML page for this tab.
         """
         # find relative base path
@@ -502,27 +498,34 @@ class SummaryTab(object):
         # get calendar and write navigation bar
         brand = self.write_calendar_link()
         navlinks = self.build_navigation_links(tabs)
-        # write page for each state
-        for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
-            # initialise page
-            page = html.markup.page()
-            page.init(doctype=html.DOCTYPE, css=css, script=js, title=title,
-                      base=base, metainfo=html.META)
-            page.div(id_='wrap')
-            page.add(str(html.banner(title, subtitle=subtitle)))
-            if len(self.states) > 1:
-                statebtn = html.state_switcher(zip(self.states, self.hrefs), i)
-            else:
-                statebtn = False
-            page.add(str(html.navbar(navlinks, brand=brand, states=statebtn)))
+        # initialise page
+        page = html.markup.page()
+        page.init(doctype=html.DOCTYPE, css=css, script=js, title=title,
+                  base=base, metainfo=html.META)
+        page.div(id_='wrap')
+        page.add(str(html.banner(title, subtitle=subtitle)))
+        if len(self.states) > 1:
+            statebtn = html.state_switcher(zip(self.states, self.hrefs), 0)
+        else:
+            statebtn = False
+        page.add(str(html.navbar(navlinks, brand=brand, states=statebtn)))
             # write state pages and include first one
-            main = self.write_html(state)
-            page.add(str(html.wrap_content(main)))
-            # add footer
-            page.div.close()
-            page.add(str(html.footer(about=about)))
-            # write
-            with open(shtml, 'w') as fobj:
+        # write page for each state
+        if writedata:
+            for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
+                with open(shtml, 'w') as fobj:
+                    fobj.write(str(self.write_html(state)))
+        page.add(str(html.wrap_content('')))
+        if len(self.states) > 1:
+            page.add(str(html.load_state(self.hrefs[0])))
+        else:
+            page.add(str(html.load(self.hrefs[0])))
+        # add footer
+        page.div.close()
+        page.add(str(html.footer(about=about)))
+        # write
+        if writehtml:
+            with open(self.index, 'w') as fobj:
                 fobj.write(str(page))
         return
 
@@ -590,7 +593,8 @@ class SummaryTab(object):
                                                   target='_blank')
                 else:
                     link = str(channel)
-                if isclose(channel.sample_rate.value, 1/60.):
+                if (channel.sample_rate is not None and
+                        isclose(channel.sample_rate.value, 1/60.)):
                     rate = '1/60 %s' % channel.sample_rate.unit
                 else:
                     rate = str(channel.sample_rate)

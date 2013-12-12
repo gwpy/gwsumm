@@ -29,7 +29,7 @@ from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-from .html5 import DOCTYPE
+from .html5 import *
 from .bootstrap import *
 
 from . import markup

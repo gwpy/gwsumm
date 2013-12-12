@@ -84,6 +84,9 @@ copts.add_option('-f', '--config-file', action='append', type='string',
                  help="INI file for analysis, may be given multiple times")
 copts.add_option('--nds', action='store_true', default='guess',
                  help='use NDS as the data source, default: %default')
+copts.add_option('-t', '--process-tab', action='append', type='string',
+                 default=[], help="process only this tab, can be given "
+                                  "multiple times, default: process all.")
 copts.add_option('--single-process', action='store_false', default=True,
                  dest='multiprocess',
                  help="restrict %s to a single process, mainly for debugging "
@@ -94,6 +97,13 @@ outopts.add_option('-o', '--output-dir', action='store', type='string',
                    metavar='DIR', default=os.curdir,
                    help="Output directory for summary information, "
                         "default: '%default'")
+outopts.add_option('-m', '--html-only', action='store_true', default=False,
+                   help="Generate HTML and navigation only, default: %default")
+outopts.add_option('-n', '--no-html', action='store_true', default=False,
+                   help="Generate only plots and tab summaries, not "
+                        "supporting HTML, default: %default. This is useful "
+                        "to regenerate a single tab without messing up the "
+                        "navigation bar.")
 
 topts = parser.add_option_group("Time mode options",
                                 "Choose a stadard time mode, or a GPS "
@@ -259,37 +269,39 @@ End time: %s (%s)
 """ % (MODE_NAME[mode], starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps))
 
-# parse channel grouns into individual sections
-for section in config.sections():
-    if re.match('channels[-\s]', section):
-        items = dict(config.nditems(section))
-        try:
-            names = split_channels(items.pop('channels'))
-        except KeyError:
-            raise NoOptionError('channels', section)
-        for name in names:
-            name = name.strip(' \n')
-            if not config.has_section(name):
-                config.add_section(name)
-            for key, val in items.iteritems():
-                if not config.has_option(name, key):
-                    config.set(name, key, val)
+if not opts.html_only:
+    # parse channel grouns into individual sections
+    for section in config.sections():
+        if re.match('channels[-\s]', section):
+            items = dict(config.nditems(section))
+            try:
+                names = split_channels(items.pop('channels'))
+            except KeyError:
+                raise NoOptionError('channels', section)
+            for name in names:
+                name = name.strip(' \n')
+                if not config.has_section(name):
+                    config.add_section(name)
+                for key, val in items.iteritems():
+                    if not config.has_option(name, key):
+                        config.set(name, key, val)
 
-# read custom channel definitions
-for section in config.sections():
-    if re_channel.match(section):
-        channel = get_channel(section)
-        for key, val in nat_sorted(config.nditems(section), key=lambda x: x[0]):
-            key = re_cchar.sub('_', key.rstrip())
-            if key.isdigit():
-                if not hasattr(channel, 'bitmask'):
-                    channel.bitmask = []
-                channel.bitmask.append(val)
-            else:
-                try:
-                    setattr(channel, key, eval(val.rstrip()))
-                except NameError:
-                    setattr(channel, key, val.rstrip())
+    # read custom channel definitions
+    for section in config.sections():
+        if re_channel.match(section):
+            channel = get_channel(section)
+            for key, val in nat_sorted(config.nditems(section),
+                                       key=lambda x: x[0]):
+                key = re_cchar.sub('_', key.rstrip())
+                if key.isdigit():
+                    if not hasattr(channel, 'bitmask'):
+                        channel.bitmask = []
+                    channel.bitmask.append(val)
+                else:
+                    try:
+                        setattr(channel, key, eval(val.rstrip()))
+                    except NameError:
+                        setattr(channel, key, val.rstrip())
 
 # read states
 load_states(config)
@@ -315,8 +327,9 @@ javascript = [jval for (key, jval) in config.items('html') if
 alltabs = []
 for section in filter(lambda n: re.match('tab[-\s]', n),
                       config.sections()):
-    tab = SummaryTab.from_ini(config, section, plotdir=plotdir, base=base)
-    alltabs.append(tab)
+    if len(opts.process_tab) == 0 or section[4:] in opts.process_tab:
+        tab = SummaryTab.from_ini(config, section, plotdir=plotdir, base=base)
+        alltabs.append(tab)
 
 # sort tabs into hierarchical list
 tabs = {}
@@ -330,6 +343,15 @@ for tab in filter(lambda tab: tab.parent is not None, alltabs):
     tab.parent = tabs[tab.parent]
     tab.parent.add_child(tab)
 
+tabs = tabs.values()
+
+# write config page
+about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]],
+                 base=base)
+mkdir(about.path)
+about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
+
+
 # -----------------------------------------------------------------------------
 # Process all tabs
 
@@ -338,27 +360,22 @@ _sort_tabs = lambda tab: (tab.name == 'Summary' and 1 or
                           tab.name.islower() and tab.name.upper() or
                           tab.name.lower())
 
-tabs = tabs.values()
 tabs.sort(key=_sort_tabs)
 for tab in tabs:
     tab.children.sort(key=_sort_tabs)
 
 alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
-    tab.process(config=config, nds=opts.nds, multiprocess=opts.multiprocess)
+    mkdir(tab.href)
+    if not opts.html_only:
+        tab.process(config=config, nds=opts.nds,
+                    multiprocess=opts.multiprocess)
+    page = tab.build_html(css=css, js=javascript, tabs=tabs,
+                          about=about.index, writedata=not opts.html_only,
+                          writehtml=not opts.no_html)
 
 # -----------------------------------------------------------------------------
-# Write HTML
-
-# write config page
-about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]],
-                 base=base)
-mkdir(about.path)
-about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
-
-for tab in alltabs:
-    mkdir(tab.href)
-    page = tab.build_html(css=css, js=javascript, tabs=tabs, about=about.index)
+# Finalise
 
 vprint("""
 ------------------------------------------------------------------------------

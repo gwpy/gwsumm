@@ -32,5 +32,9 @@ __all__.append('GWSummConfigParser')
 
 class GWSummConfigParser(ConfigParser):
     def nditems(self, section):
-        items = ConfigParser.items(self, section)
+        try:
+            items = ConfigParser.items(self, section)
+        except ValueError as e:
+            msg = str(e)
+            raise ValueError('[%s]: %s' % (section, msg))
         return [i for i in items if i[0] not in self._defaults]

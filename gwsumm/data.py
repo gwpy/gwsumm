@@ -20,6 +20,7 @@
 """
 
 import os
+import urllib2
 from math import (floor, ceil)
 from multiprocessing import cpu_count
 try:
@@ -85,7 +86,7 @@ def get_channel(channel):
             if re.search('.[a-z]+\Z', name):
                 raise ValueError()
             new = Channel.query(name)
-        except ValueError:
+        except (ValueError, urllib2.URLError):
             new = Channel(channel)
         else:
             new.name = str(channel)

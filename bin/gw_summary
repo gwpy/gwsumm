@@ -1,11 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2013)
+#
+# This file is part of GWSumm.
+#
+# GWSumm is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GWSumm is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
+
 """Gravitational-wave interferometer summary information system.
 
 This module provides the command-line interface to the GWSumm package,
 allowing generation of detector summary information
 """
-
 
 import os
 import datetime
@@ -123,6 +139,8 @@ topts.add_option("-e", "--gps-end-time", action="store", type="int",
                  metavar="GPSEND", help="GPS end time")
 
 opts, args = parser.parse_args()
+
+opts.config_file = [fp for csv in opts.config_file for fp in csv.split(',')]
 
 # read configuration file
 config = GWSummConfigParser(dict_type=OrderedDict)
@@ -349,8 +367,9 @@ tabs = tabs.values()
 # write config page
 about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]],
                  base=base)
-mkdir(about.path)
-about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
+if not opts.no_html:
+    mkdir(about.path)
+    about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
 
 
 # -----------------------------------------------------------------------------

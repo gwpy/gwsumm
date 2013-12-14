@@ -59,12 +59,13 @@ def vprint(message, verbose=True, stream=sys.stdout, profile=True):
         stream.flush()
 
 
-def mkdir(path):
+def mkdir(*paths):
     """Conditional mkdir operation, for convenience
     """
-    path = os.path.normpath(path)
-    if not os.path.isdir(path):
-        os.makedirs(path)
+    for path in paths:
+        path = os.path.normpath(path)
+        if not os.path.isdir(path):
+            os.makedirs(path)
 
 
 def nat_sorted(l, key=None):
@@ -87,3 +88,19 @@ def nat_sorted(l, key=None):
     alphanum_key = lambda key: [convert(c) for c in
                                 re.split('([0-9]+)', k[l.index(key)])]
     return sorted(l, key=alphanum_key)
+
+
+def which(program):
+    """Find full path of executable program
+    """
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file

@@ -21,6 +21,7 @@
 
 import os
 from math import (floor, ceil)
+from multiprocessing import cpu_count
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -198,6 +199,12 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
     havesegs = globalv.DATA.get(str(channel), TimeSeriesList()).segments
     new = segments - havesegs
 
+    # get processes
+    if multiprocess:
+        nproc = cpu_count() // 2
+    else:
+        nproc = 1
+
     # read channel information
     try:
         filter_ = channel.filter
@@ -288,8 +295,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                         segcache = segcache[:-1]
                     segcache = Cache(segcache)
                 data = TimeSeries.read(segcache, channel, float(segment[0]),
-                                       float(segment[1]),
-                                       multiprocess=multiprocess,
+                                       float(segment[1]), maxprocesses=nproc,
                                        verbose=globalv.VERBOSE)
             data.channel = channel
             if channel.sample_rate is None:

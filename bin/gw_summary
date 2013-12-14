@@ -13,6 +13,7 @@ import optparse
 import re
 import calendar
 import getpass
+from multiprocessing import cpu_count
 
 from dateutil.relativedelta import relativedelta
 
@@ -87,8 +88,8 @@ copts.add_option('--nds', action='store_true', default='guess',
 copts.add_option('-t', '--process-tab', action='append', type='string',
                  default=[], help="process only this tab, can be given "
                                   "multiple times, default: process all.")
-copts.add_option('--single-process', action='store_false', default=True,
-                 dest='multiprocess',
+copts.add_option('--single-process', action='store_false',
+                 default=cpu_count()//2, dest='multiprocess',
                  help="restrict %s to a single process, mainly for debugging "
                       "purposes, default: False" % os.path.basename(__file__))
 

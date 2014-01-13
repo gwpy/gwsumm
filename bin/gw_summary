@@ -46,6 +46,8 @@ try:
 except ImportError:
     from astropy.utils import OrderedDict
 
+from astropy import units
+
 from gwpy.segments import Segment
 from gwpy.time import Time
 
@@ -288,6 +290,19 @@ End time: %s (%s)
 """ % (MODE_NAME[mode], starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps))
 
+# Load custom units
+try:
+    customunits = config.nditems('units')
+except configparser.NoSectionError:
+    pass
+else:
+    new_ = []
+    for unit, base in customunits:
+        if base.lower() == 'dimensionless':
+            base = ''
+        new_.append(units.def_unit([unit], units.Unit(base)))
+    units.add_enabled_units(new_)
+
 if not opts.html_only:
     # parse channel grouns into individual sections
     for section in config.sections():
@@ -315,6 +330,8 @@ if not opts.html_only:
                 if key.isdigit():
                     if not hasattr(channel, 'bitmask'):
                         channel.bitmask = []
+                    while len(channel.bitmask) < int(key):
+                        channel.bitmask.append(None)
                     channel.bitmask.append(val)
                 else:
                     try:
@@ -337,7 +354,6 @@ mkdir(plotdir)
 css = [cval for (key, cval) in config.items('html') if re.match('css\d+', key)]
 javascript = [jval for (key, jval) in config.items('html') if
               re.match('javascript\d+', key)]
-
 
 # -----------------------------------------------------------------------------
 # Read tabs

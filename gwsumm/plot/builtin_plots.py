@@ -369,7 +369,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
                 data.sample_rate = channel.sample_rate
             data = data.view(StateVector)
             data.bitmask = channel.bitmask
-            nflags += len(channel.bitmask)
+            nflags += len([m for m in channel.bitmask if m is not None])
             ax.plot(*data.to_dqflags()[::-1], **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)

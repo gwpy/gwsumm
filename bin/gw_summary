@@ -240,10 +240,10 @@ else:
 span = Segment(opts.gps_start_time, opts.gps_end_time)
 try:
     config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
-except config.NoSectionError:
+    config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
+except configparser.NoSectionError:
     config.add_section('general')
     config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
-finally:
     config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
 
 
@@ -297,10 +297,10 @@ except configparser.NoSectionError:
     pass
 else:
     new_ = []
-    for unit, base in customunits:
-        if base.lower() == 'dimensionless':
-            base = ''
-        new_.append(units.def_unit([unit], units.Unit(base)))
+    for unit, b in customunits:
+        if b.lower() == 'dimensionless':
+            b = ''
+        new_.append(units.def_unit([unit], units.Unit(b)))
     units.add_enabled_units(new_)
 
 if not opts.html_only:

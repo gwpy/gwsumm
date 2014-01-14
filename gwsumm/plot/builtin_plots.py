@@ -77,6 +77,7 @@ class TimeSeriesTabPlot(TabPlot):
         labels = self.plotargs.pop('labels', mmmchans.keys())
         if isinstance(labels, basestring):
             labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
             data = [get_timeseries(str(c), self.state, query=False).join() for
                     c in channels]
@@ -148,6 +149,7 @@ class SpectrumTabPlot(TabPlot):
         labels = self.plotargs.pop('labels', map(str, self.channels))
         if isinstance(labels, basestring):
             labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
         for label, channel in zip(labels, self.channels):
             data = get_spectrum(str(channel), self.state, query=False,
                                 format=sdform)
@@ -244,6 +246,7 @@ class SegmentTabPlot(TabPlot):
                 addlabel = True
         if isinstance(labels, basestring):
             labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
         plotargs = {}
         plotargs['color'] = axargs.pop('color', None)
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
@@ -360,13 +363,15 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
 
         # add data
         labels = self.plotargs.pop('labels', self.channels)
+        labels = map(lambda s: str(s).strip('\n '), labels)
         nflags = 0
         for label, channel in zip(labels, self.channels[::-1]):
             data = get_timeseries(str(channel), self.state, query=False).join()
             if not data.size:
                 data.epoch = self.gpsstart
-                print channel
-                data.sample_rate = channel.sample_rate
+                data.dx = 0
+                if channel.sample_rate is not None:
+                    data.sample_rate = channel.sample_rate
             data = data.view(StateVector)
             data.bitmask = channel.bitmask
             nflags += len([m for m in channel.bitmask if m is not None])

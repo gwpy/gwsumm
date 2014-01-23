@@ -22,6 +22,8 @@
 
 import time
 
+from lal import gpstime
+
 from gwpy.segments import DataQualityDict
 from gwpy.detector import ChannelList
 
@@ -41,3 +43,4 @@ START = time.time()
 # run time variables
 MODE = None
 WRITTEN_PLOTS = []
+NOW = gpstime.gps_time_now().gpsSeconds

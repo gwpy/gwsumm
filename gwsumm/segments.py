@@ -78,7 +78,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     # read segments from global memory and get the union of needed times
     try:
-        old = reduce(operator.or_, (globalv.SEGMENTS.get(
+        old = reduce(operator.and_, (globalv.SEGMENTS.get(
                                         f, DataQualityFlag(f)).valid
                                     for f in flags))
     except TypeError:

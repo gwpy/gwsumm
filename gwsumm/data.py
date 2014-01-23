@@ -36,7 +36,7 @@ from glue.lal import Cache
 
 from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList)
-from gwpy.timeseries import (TimeSeries, TimeSeriesList)
+from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
@@ -183,6 +183,211 @@ def find_cache_segments(*caches):
     return out
 
 
+def find_frame_type(channel):
+    try:
+        return channel.frametype
+    except AttributeError:
+        try:
+            ndstype = channel.type
+        except AttributeError:
+            ndstype = channel.type = nds2.channel.CHANNEL_TYPE_RAW
+        if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
+            ftype = 'M'
+        elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
+            ftype = 'T'
+        elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
+            ftype = 'LDAS_C02_L2'
+        elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
+            ftype = 'lldetchar'
+        else:
+            ftype = 'R'
+        channel.frametype = '%s_%s' % (channel.ifo, ftype)
+        return channel.frametype
+
+
+def get_timeseries_dict(channels, segments, config=ConfigParser(),
+                        cache=Cache(), query=True, nds='guess',
+                        multiprocess=True):
+    """Retrieve the data for a set of channels
+    """
+    # separate channels by type
+    frametypes = dict()
+    for channel in channels:
+        channel = get_channel(channel)
+        ifo = channel.ifo
+        ftype = find_frame_type(channel)
+        id_ = (ifo, ftype)
+        if id_ in frametypes:
+            frametypes[id_].append(channel)
+        else:
+            frametypes[id_] = [channel]
+    out = dict()
+    for channellist in frametypes.itervalues():
+        data = _get_timeseries_dict(channellist, segments, config=config,
+                                    cache=cache, query=query, nds=nds,
+                                    multiprocess=multiprocess)
+        for (name, tslist) in data.iteritems():
+            if name in out:
+                out[name].extend(tslist)
+            else:
+                out[name] = tslist
+    return out
+
+
+def _get_timeseries_dict(channels, segments, config=ConfigParser(),
+                         cache=Cache(), query=True, nds='guess',
+                         multiprocess=True):
+    """Internal method to retrieve the data for a set of like-typed
+    channels using the :meth:`TimeSeriesDict.read` accessor.
+    """
+    if isinstance(segments, DataQualityFlag):
+        segments = segments.active
+    channels = map(get_channel, channels)
+    names = map(str, channels)
+
+    # read segments from global memory
+    havesegs = reduce(operator.and_,
+                      (globalv.DATA.get(name, TimeSeriesList()).segments
+                       for name in names))
+    new = segments - havesegs
+
+    # get processes
+    if multiprocess is True:
+        nproc = cpu_count() - 1 # // 2
+    elif multiprocess is False:
+        nproc = 1
+    else:
+        nproc = multiprocess
+
+    if globalv.VERBOSE and not multiprocess:
+        verbose = '    '
+    else:
+        verbose = False
+
+    # read channel information
+    filter_ = dict()
+    resample = dict()
+    for channel in channels:
+        try:
+            filter_[str(channel)] = channel.filter
+        except AttributeError:
+            pass
+        try:
+            resample[str(channel)] = float(channel.resample)
+        except AttributeError:
+            pass
+
+    # work out whether to use NDS or not
+    if nds == 'guess':
+        nds = 'LIGO_DATAFIND_SERVER' not in os.environ
+
+    # read new data
+    for name in names:
+        globalv.DATA.setdefault(name, TimeSeriesList())
+    query &= (abs(new) > 0)
+    if query:
+        # open NDS connection
+        if nds and config.has_option('nds', 'host'):
+            host = config.get('nds', 'host')
+            port = config.getint('nds', 'port')
+            try:
+                ndsconnection = nds2.connection(host, port)
+            except RuntimeError as e:
+                if 'SASL authentication' in str(e):
+                    from gwpy.io.nds import kinit
+                    kinit()
+                    ndsconnection = nds2.connection(host, port)
+            source = 'nds'
+            ndstype = channels[0].type
+        elif nds:
+            ndsconnection = None
+            source = 'nds'
+            ndstype = channels[0].type
+        # or find frame type and check cache
+        else:
+            ifo = channels[0].ifo
+            ftype = channels[0].frametype
+            if ftype == '%s_M' % ifo:
+                new = type(new)([s for s in new if abs(s) >= 60.])
+            elif ftype == '%s_T' % ifo:
+                new = type(new)([s for s in new if abs(s) >= 1.])
+            elif ((globalv.NOW - new[0][0]) < 86400 * 20 and
+                  ftype == '%s_R' % ifo):
+                ftype = '%s_C' % ifo
+            if cache is not None:
+                fcache = cache.sieve(ifos=ifo[0], description=ftype,
+                                     exact_match=True)
+            if cache is None or len(fcache) == 0 and len(new):
+                span = new.extent()
+                fcache = find_frames(ifo, ftype, span[0], span[1],
+                                     config=config, gaps='ignore')
+            # parse discontiguous cache blocks and rebuild segment list
+            cachesegments = find_cache_segments(fcache)
+            new &= cachesegments
+            source = 'frames'
+
+        # loop through segments, recording data for each
+        if len(new) and nproc > 1:
+            vprint("    Fetching data (from %s) for %d channels"
+                   % (source, len(channels)))
+        for segment in new:
+            if nds:
+                tsd = TimeSeriesDict.fetch(channels, segment[0], segment[1],
+                                            connection=ndsconnection,
+                                            ndschanneltype=ndstype)
+            else:
+                segcache = fcache.sieve(segment=segment)
+                tsd = TimeSeriesDict.read(segcache, names, format='lcf',
+                                          start=float(segment[0]),
+                                          end=float(segment[1]),
+                                          maxprocesses=nproc,
+                                          verbose=verbose)
+            for (name, data) in tsd.iteritems():
+                if (name in globalv.DATA and
+                    data.span in globalv.DATA[name].segments):
+                    continue
+                for seg in globalv.DATA[name].segments:
+                    if seg.intersects(data.span):
+                        data = data.crop(*(data.span - seg))
+                        break
+                channel = channels[names.index(name)]
+                data.channel = channel
+                if not channel.sample_rate:
+                    channel.sample_rate = data.sample_rate
+                if name in filter_:
+                    data = data.filter(*filter_[name])
+                if name in resample:
+                    factor = data.sample_rate.value / resample[name]
+                    if (re.search('ODC_CHANNEL_OUT_DQ\Z', name) and
+                            factor.is_integer()):
+                       data = data[::int(factor)]
+                    elif factor.is_integer():
+                        data = data.decimate(int(factor))
+                    else:
+                        data = data.resample(resample[name])
+                globalv.DATA[name].append(data)
+                globalv.DATA[name].coalesce()
+            vprint('.')
+        if len(new):
+            vprint("\n")
+
+    # return correct data
+    out = dict()
+    for name in names:
+        data = TimeSeriesList()
+        for ts in globalv.DATA[name]:
+            for seg in segments:
+                if abs(seg) == 0:
+                    continue
+                if ts.span.intersects(seg):
+                    cropped = ts.crop(*seg)
+                    if cropped.size:
+                        data.append(cropped)
+        out[name] = data.coalesce()
+    return out
+
+
+
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                    query=True, nds='guess', multiprocess=True):
     """Retrieve the data (time-series) for a given channel
@@ -271,9 +476,6 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
             source = 'frames'
 
         # loop through segments, recording data for each
-        if len(new):
-            vprint("    Fetching data (from %s) for %s"
-                   % (source, name))
         for segment in new:
             if nds:
                 data = TimeSeries.fetch(channel, segment[0], segment[1],
@@ -295,6 +497,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                                        float(segment[1]), maxprocesses=nproc,
                                        verbose=globalv.VERBOSE)
             data.channel = channel
+            data.unit = channel.unit
             if channel.sample_rate is None:
                 channel.sample_rate = data.sample_rate
             if filter_:

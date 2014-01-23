@@ -19,6 +19,7 @@
 """Utilities for data handling and display
 """
 
+import operator
 import os
 import urllib2
 from math import (floor, ceil)

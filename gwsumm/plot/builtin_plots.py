@@ -79,7 +79,8 @@ class TimeSeriesTabPlot(TabPlot):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
-            data = [get_timeseries(str(c), self.state, query=False).join() for
+            data = [get_timeseries(str(c), self.state,
+                                   query=False).join(pad=numpy.nan) for
                     c in channels]
             if not 'epoch' in data[0].metadata:
                 data[0].epoch = self.gpsstart

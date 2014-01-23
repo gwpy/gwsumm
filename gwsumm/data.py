@@ -581,7 +581,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             stride = None
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,
-                                        cache=cache, query=query, nds=nds)
+                                        cache=cache, query=False, nds=nds)
         # calculate spectrograms
         vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
@@ -593,7 +593,17 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                 stride = fftparams['fftlength']
             if abs(ts.span) < stride:
                 continue
-            specgram = ts.spectrogram(stride, **fftparams)
+            try:
+                specgram = ts.spectrogram(stride, **fftparams)
+            except ZeroDivisionError:
+                if stride == 0:
+                    raise ZeroDivisionError("Spectrogram stride is 0")
+                elif fftparams['fftlength']:
+                    raise ZeroDivisionError("FFT length is 0")
+                elif fftparams['fftstride']:
+                    raise ZeroDivisionError("FFT stride is 0")
+                else:
+                    raise
             if filter_:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
             globalv.SPECTROGRAMS[str(channel)].append(specgram)

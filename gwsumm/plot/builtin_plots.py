@@ -227,7 +227,8 @@ class SegmentTabPlot(TabPlot):
         try:
             return self._tag
         except AttributeError:
-            self._tag = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
+            self._tag = hashlib.md5("".join(map(str,
+                                                self.flags))).hexdigest()[:6]
             return self.tag
 
     def add_data_source(self, source):

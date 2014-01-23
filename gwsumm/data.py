@@ -31,8 +31,6 @@ except ImportError:
 import numpy
 import nds2
 
-from lal import gpstime
-
 from glue import datafind
 from glue.lal import Cache
 
@@ -48,8 +46,6 @@ from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
-
-NOW = gpstime.gps_time_now().gpsSeconds
 
 
 def get_channel(channel):
@@ -134,7 +130,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     # query frames
     ifo = ifo[0].upper()
     gpsstart = int(floor(gpsstart))
-    gpsend = int(ceil(gpsend))
+    gpsend = int(ceil(min(globalv.NOW, gpsend)))
     cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
                                    urltype=urltype, on_gaps=gaps)
 
@@ -258,7 +254,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
                     ftype = 'LDAS_C02_L2'
                 elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
                     ftype = 'lldetchar'
-                elif (NOW - new[0][0]) < 86400 * 20:
+                elif (globalv.NOW - new[0][0]) < 86400 * 20:
                     ftype = 'C'
                 else:
                     ftype = 'R'

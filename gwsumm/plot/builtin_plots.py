@@ -98,6 +98,17 @@ class TimeSeriesTabPlot(TabPlot):
                                          data[0].channel.amplitude_range)
 
         ax.set_epoch(self.gpsstart)
+        # find hlines to add
+        hlines = self.plotargs.pop('hline', [])
+        for yval in hlines:
+            try:
+                yval = float(yval)
+            except ValueError:
+                continue
+            else:
+                ax.plot([self.gpsstart, self.gpsend], [yval, yval],
+                        linestyle='--', color='red')
+        # customise plot
         for key, val in self.plotargs.iteritems():
             try:
                 setattr(plot, key, val)

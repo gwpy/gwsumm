@@ -67,27 +67,39 @@ def get_channel(channel):
             type_ = int(type_)
         else:
             type_ = ndsio.NDS2_CHANNEL_TYPE[type_]
-        found = globalv.CHANNELS.sieve(name=name, type=type_)
+        found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
         name = str(channel)
-        found = globalv.CHANNELS.sieve(name=str(channel))
+        found = globalv.CHANNELS.sieve(name=str(channel), exact_match=True)
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
         raise ValueError("Ambiguous channel request '%s', multiple existing "
-                         "channels recovered" % str(channel))
+                         "channels recovered:\n    %s"
+                         % (str(channel), '\n    '.join(map(str, found))))
     else:
         try:
-            # trends are not stored in CIS
+            # trends are not stored in CIS, but try and get their raw source
             if re.search('.[a-z]+\Z', name):
-                raise ValueError()
+                raise TypeError()
             new = Channel.query(name)
+        except TypeError:
+            new = Channel(str(channel))
+            source = get_channel(name.rsplit('.', 1)[0])
+            new.url = source.url
         except (ValueError, urllib2.URLError):
-            new = Channel(channel)
+            new = Channel(str(channel))
         else:
             new.name = str(channel)
         globalv.CHANNELS.append(new)
-        return get_channel(str(channel))
+        try:
+            return get_channel(str(channel))
+        except RuntimeError as e:
+            if 'maximum recursion depth' in str(e):
+                raise RuntimeError("Recursion error while access channel "
+                                   "information for %s" % str(channel))
+            else:
+                raise
 
 
 def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),

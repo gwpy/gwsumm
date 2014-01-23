@@ -353,7 +353,8 @@ class SummaryTab(object):
             vprint("Processing %s\n" % self.name)
         self.finalize_states(config=config)
         vprint("States finalised\n")
-        for state in self.states:
+        for state in sorted(self.states, key=lambda s: abs(s.active),
+                            reverse=True):
             self.process_state(state, nds=nds, multiprocess=multiprocess,
                                config=config)
 

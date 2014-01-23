@@ -61,7 +61,6 @@ from gwsumm.state import *
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-
 # find channels
 re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\.[a-z]+)?(,[a-z\-]+)?\Z')
 
@@ -106,8 +105,11 @@ copts.add_option('--nds', action='store_true', default='guess',
 copts.add_option('-t', '--process-tab', action='append', type='string',
                  default=[], help="process only this tab, can be given "
                                   "multiple times, default: process all.")
-copts.add_option('--single-process', action='store_false',
-                 default=cpu_count()//2, dest='multiprocess',
+copts.add_option('--max-processes', action='store', type='int',
+                 default=cpu_count()//2, dest='multiprocess', metavar='N',
+                 help="use a maximum of N subprocesses at any time, "
+                      "default: %default")
+copts.add_option('--single-process', action='store_true', default=False,
                  help="restrict %s to a single process, mainly for debugging "
                       "purposes, default: False" % os.path.basename(__file__))
 
@@ -275,6 +277,9 @@ else:
 
 globalv.MODE = mode
 
+# set processing options
+if opts.single_process:
+    opts.multiprocess = False
 
 # -----------------------------------------------------------------------------
 # Setup

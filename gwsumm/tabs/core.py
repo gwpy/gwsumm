@@ -36,7 +36,8 @@ from gwpy.io import nds as ndsio
 
 from ..plot import (PlotList, registry as plotregistry)
 from .. import globalv
-from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum)
+from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
+                    get_spectrum)
 from ..segments import get_segments
 from ..triggers import get_triggers
 from ..utils import (re_cchar, vprint)
@@ -51,7 +52,6 @@ TriggerPlot = plotregistry.get_plot('triggers')
 re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
 
 
-
 class SummaryTab(object):
     """A `SummaryTab` is a summary of a single data set, producing output
     on a single HTML web-page
@@ -59,10 +59,11 @@ class SummaryTab(object):
     type = 'default'
 
     def __init__(self, name, parent=None, children=list(), states=None,
-                 base='', layout=None, span=None):
+                 base='', layout=None, span=None, longname=None):
         """Initialise a new `SummaryTab`
         """
         self.name = name
+        self.longname = longname or self.name
         self.parent = parent
         self.children = list(children)
         self.base = base
@@ -230,6 +231,10 @@ class SummaryTab(object):
         else:
             # otherwise strip 'tab-' from section name
             name = section[4:]
+        if cp.has_option(section, 'longname'):
+            longname = cp.get(section, 'longname')
+        else:
+            longname = name
         # get parent:
         #     if parent is not given, this assumes a top-level tab
         if cp.has_option(section, 'parent'):
@@ -270,7 +275,7 @@ class SummaryTab(object):
 
         # define new job
         job = cls(name, parent=parent, states=states, span=[start, end],
-                  layout=layout, **kwargs)
+                  longname=longname, layout=layout, **kwargs)
         job._config = cp._sections[section]
 
         # -------------------
@@ -365,9 +370,8 @@ class SummaryTab(object):
         if len(self.channels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
-        for channel in sorted(self.channels, key=lambda c: c.name):
-            get_timeseries(channel, state, config=config, nds=nds,
-                           multiprocess=multiprocess)
+        get_timeseries_dict(self.channels, state, config=config, nds=nds,
+                            multiprocess=multiprocess)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
 
@@ -483,17 +487,17 @@ class SummaryTab(object):
         # work title as Parent Name/Tab Name
         if not title and not subtitle:
             if self.parent:
-                title = self.name
+                title = self.longname
                 tab_ = self
                 while tab_.parent:
-                    title = '%s/%s' % (tab_.parent.name, title)
+                    title = '%s/%s' % (tab_.parent.longname, title)
                     tab_ = tab_.parent
                 title, subtitle = title.rsplit('/', 1)
             elif self.name == 'Summary':
                 title = 'IFO summary'
                 subtitle = '%d-%d' % (self.span[0], self.span[1])
             else:
-                title = self.name
+                title = self.longname
                 subtitle = None
         # get calendar and write navigation bar
         brand = self.write_calendar_link()
@@ -583,26 +587,37 @@ class SummaryTab(object):
             page.h1('Channel information')
             page.add("The following channels were used to generate the above "
                      "data")
-            headers = ['Channel', 'Sample rate', 'Units']
+            headers = ['Channel', 'Type', 'Sample rate', 'Units']
             data = []
             for channel in self.channels:
                 channel = get_channel(channel)
-                if channel.url:
+                # format CIS url and type
+                if re.search('.[a-z]+\Z', channel.name):
+                    name, ctype = channel.name.rsplit('.', 1)
+                    c2 = get_channel(name)
+                    cype = ctype in ['rms'] and ctype.upper() or ctype.title()
+                else:
+                    c2 = channel
+                    ctype = 'Raw'
+                if c2.url:
                     link = html.markup.oneliner.a(str(channel),
-                                                  href=channel.url,
+                                                  href=c2.url,
                                                   target='_blank')
                 else:
                     link = str(channel)
+
+                # format sameple rate
                 if (channel.sample_rate is not None and
                         isclose(channel.sample_rate.value, 1/60.)):
                     rate = '1/60 %s' % channel.sample_rate.unit
                 else:
                     rate = str(channel.sample_rate)
+                # format unit
                 if channel.unit:
                     unit = str(channel.unit)
                 else:
                     unit = 'Unknown'
-                data.append([link, rate, unit])
+                data.append([link, ctype, rate, unit])
             page.add(str(html.data_table(headers, data, table='data')))
         if len(self.dataqualityflags):
             page.h1('Data-quality flag information')
@@ -614,7 +629,7 @@ class SummaryTab(object):
                        'Active duration']
             data = []
             pc = abs(state.active) / 100.
-            for flag in self.dataqualityflags:
+            for flag in sorted(self.dataqualityflags):
                 flag = globalv.SEGMENTS[flag]
                 v = flag.version and str(flag.version) or ''
                 try:

@@ -591,7 +591,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, query=False, nds=nds)
         # calculate spectrograms
-        vprint("    Calculating spectrograms for %s" % str(channel))
+        if len(timeserieslist):
+            vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
             fftparams.setdefault('fftlength', int(4096 * ts.dx.value))
             fftparams.setdefault('fftstride', fftparams['fftlength'] / 2)
@@ -617,7 +618,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             globalv.SPECTROGRAMS[str(channel)].append(specgram)
             globalv.SPECTROGRAMS[str(channel)].coalesce()
             vprint('.')
-        vprint('\n')
+        if len(timeserieslist):
+            vprint('\n')
 
     # return correct data
     out = SpectrogramList()
@@ -650,8 +652,10 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     cmax = '%s.max' % name
 
     if name not in globalv.SPECTRUM:
+        vprint("    Calculating 5/50/95 percentile spectra for %s"
+               % name.rsplit(',', 1)[0])
         speclist = get_spectrogram(channel, segments, config=config,
-                                   cache=cache, query=query, nds=nds,
+                                   cache=cache, query=False, nds=nds,
                                    **fftparams)
         specgram = speclist.join(gap='ignore')
         try:
@@ -663,6 +667,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         else:
             globalv.SPECTRUM[cmin] = specgram.percentile(5)
             globalv.SPECTRUM[cmax] = specgram.percentile(95)
+        vprint(".\n")
 
     cmin = '%s.min' % name
     cmax = '%s.max' % name

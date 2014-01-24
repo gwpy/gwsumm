@@ -64,6 +64,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         new = segments
         globalv.TRIGGERS.setdefault(
             key, trigio.utils.new_ligolw_table(etg, columns=columns))
+        globalv.TRIGGERS[key].segments = type(segments)()
     else:
         new = segments - havesegs
 

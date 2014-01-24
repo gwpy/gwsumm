@@ -388,7 +388,7 @@ class SummaryTab(object):
         spectrochannels = set()
         for plot in self.plots.spectrograms + self.plots.spectra:
             spectrochannels.update(plot.channels)
-        for channel in spectrochannels:
+        for channel in sorted(spectrochannels, key=lambda s: str(s)):
             get_spectrogram(channel, state, config=config, **fftparams)
 
         # --------------------------------------------------------------------
@@ -397,7 +397,7 @@ class SummaryTab(object):
         spectrumchannels = set()
         for plot in self.plots.spectra:
             spectrumchannels.update(plot.channels)
-        for channel in spectrumchannels:
+        for channel in sorted(spectrumchannels, key=lambda s: str(s)):
             get_spectrum(channel, state, config=config, **fftparams)
 
         # --------------------------------------------------------------------

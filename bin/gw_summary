@@ -29,7 +29,12 @@ import optparse
 import re
 import calendar
 import getpass
+import warnings
 from multiprocessing import cpu_count
+
+warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
+warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
+warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 from dateutil.relativedelta import relativedelta
 

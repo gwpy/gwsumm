@@ -299,6 +299,14 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         globalv.DATA.setdefault(name, TimeSeriesList())
     query &= (abs(new) > 0)
     if query:
+        # check whether each channel exists for all new times already
+        qchannels = []
+        for channel in channels:
+            oldsegs = globalv.DATA.get(str(channel), TimeSeriesList()).segments
+            if len(new - oldsegs) != 0:
+                qchannels.append(channel)
+        qnames = map(str, qchannels)
+
         # open NDS connection
         if nds and config.has_option('nds', 'host'):
             host = config.get('nds', 'host')
@@ -311,15 +319,15 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     kinit()
                     ndsconnection = nds2.connection(host, port)
             source = 'nds'
-            ndstype = channels[0].type
+            ndstype = qchannels[0].type
         elif nds:
             ndsconnection = None
             source = 'nds'
-            ndstype = channels[0].type
+            ndstype = qchannels[0].type
         # or find frame type and check cache
         else:
-            ifo = channels[0].ifo
-            ftype = channels[0].frametype
+            ifo = qchannels[0].ifo
+            ftype = qchannels[0].frametype
             if ftype == '%s_M' % ifo:
                 new = type(new)([s for s in new if abs(s) >= 60.])
             elif ftype == '%s_T' % ifo:
@@ -342,15 +350,15 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         # loop through segments, recording data for each
         if len(new) and nproc > 1:
             vprint("    Fetching data (from %s) for %d channels"
-                   % (source, len(channels)))
+                   % (source, len(qchannels)))
         for segment in new:
             if nds:
-                tsd = TimeSeriesDict.fetch(channels, segment[0], segment[1],
+                tsd = TimeSeriesDict.fetch(qchannels, segment[0], segment[1],
                                             connection=ndsconnection,
                                             ndschanneltype=ndstype)
             else:
                 segcache = fcache.sieve(segment=segment)
-                tsd = TimeSeriesDict.read(segcache, names, format='lcf',
+                tsd = TimeSeriesDict.read(segcache, qnames, format='lcf',
                                           start=float(segment[0]),
                                           end=float(segment[1]),
                                           maxprocesses=nproc,
@@ -363,7 +371,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if seg.intersects(data.span):
                         data = data.crop(*(data.span - seg))
                         break
-                channel = channels[names.index(name)]
+                channel = qchannels[qnames.index(name)]
                 data.channel = channel
                 if not channel.sample_rate:
                     channel.sample_rate = data.sample_rate

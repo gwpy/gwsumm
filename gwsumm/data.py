@@ -347,6 +347,18 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 qchannels.append(channel)
         qnames = map(str, qchannels)
 
+        # find channel type
+        if not nds:
+            ctype = set()
+            for channel in qchannels:
+                try:
+                    ctype.add(channel.ctype)
+                except AttributeError:
+                    continue
+            if len(ctype) == 1:
+                ctype = list(ctype)[0]
+            else:
+                ctype = None
         # loop through segments, recording data for each
         if len(new) and nproc > 1:
             vprint("    Fetching data (from %s) for %d channels"
@@ -360,7 +372,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 segcache = fcache.sieve(segment=segment)
                 tsd = TimeSeriesDict.read(segcache, qnames, format='lcf',
                                           start=float(segment[0]),
-                                          end=float(segment[1]),
+                                          end=float(segment[1]), type=ctype,
                                           maxprocesses=nproc,
                                           verbose=verbose)
             for (name, data) in tsd.iteritems():

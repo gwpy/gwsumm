@@ -372,7 +372,7 @@ class SummaryTab(object):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(self.channels))
         get_timeseries_dict(self.channels, state, config=config, nds=nds,
-                            multiprocess=multiprocess)
+                            multiprocess=multiprocess, return_=False)
         if len(self.channels):
             vprint("    All time-series data loaded\n")
 
@@ -389,7 +389,8 @@ class SummaryTab(object):
         for plot in self.plots.spectrograms + self.plots.spectra:
             spectrochannels.update(plot.channels)
         for channel in sorted(spectrochannels, key=lambda s: str(s)):
-            get_spectrogram(channel, state, config=config, **fftparams)
+            get_spectrogram(channel, state, config=config, return_=False,
+                            **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
@@ -398,7 +399,8 @@ class SummaryTab(object):
         for plot in self.plots.spectra:
             spectrumchannels.update(plot.channels)
         for channel in sorted(spectrumchannels, key=lambda s: str(s)):
-            get_spectrum(channel, state, config=config, **fftparams)
+            get_spectrum(channel, state, config=config, return_=False,
+                         **fftparams)
 
         # --------------------------------------------------------------------
         # process segments

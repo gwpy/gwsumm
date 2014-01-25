@@ -220,7 +220,7 @@ def find_frame_type(channel):
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=Cache(), query=True, nds='guess',
-                        multiprocess=True):
+                        multiprocess=True, return_=True):
     """Retrieve the data for a set of channels
     """
     # separate channels by type
@@ -239,6 +239,8 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
         data = _get_timeseries_dict(channellist, segments, config=config,
                                     cache=cache, query=query, nds=nds,
                                     multiprocess=multiprocess)
+        if not return_:
+            continue
         for (name, tslist) in data.iteritems():
             if name in out:
                 out[name].extend(tslist)
@@ -249,7 +251,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=Cache(), query=True, nds='guess',
-                         multiprocess=True):
+                         multiprocess=True, return_=True):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -403,6 +405,9 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             vprint('.')
         if len(new):
             vprint("\n")
+
+    if not return_:
+        return
 
     # return correct data
     out = dict()
@@ -564,7 +569,8 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
 
 
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
-                    query=True, nds='guess', format='power', **fftparams):
+                    query=True, nds='guess', format='power', return_=True,
+                    **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -633,6 +639,9 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         if len(timeserieslist):
             vprint('\n')
 
+    if not return_:
+        return
+
     # return correct data
     out = SpectrogramList()
     for specgram in globalv.SPECTROGRAMS[str(channel)]:
@@ -650,7 +659,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
 
 def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
-                 query=True, nds='guess', format='power', **fftparams):
+                 query=True, nds='guess', format='power', return_=True,
+                 **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -680,6 +690,9 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
             globalv.SPECTRUM[cmin] = specgram.percentile(5)
             globalv.SPECTRUM[cmax] = specgram.percentile(95)
         vprint(".\n")
+
+    if not return_:
+        return
 
     cmin = '%s.min' % name
     cmax = '%s.max' % name

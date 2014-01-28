@@ -211,16 +211,17 @@ if opts.verbose:
 # ----------------------------------------------------------------------------
 # Configure X509 and kerberos for condor
 
-# copy X509 grid certificate into local location
-x509cert, x509key = datafind.find_credential()
-x509copy = os.path.join(etcdir, os.path.basename(x509cert))
-shutil.copyfile(x509cert, x509copy)
+if opts.universe != 'local':
+    # copy X509 grid certificate into local location
+    x509cert, x509key = datafind.find_credential()
+    x509copy = os.path.join(etcdir, os.path.basename(x509cert))
+    shutil.copyfile(x509cert, x509copy)
 
-# rerun kerberos with new path
-krb5cc = os.path.abspath(os.path.join(etcdir, 'krb5cc.krb5'))
-gwkerberos.kinit(krb5ccname=krb5cc)
-if opts.verbose:
-    print("Configured Condor and Kerberos for NFS-shared credentials.")
+    # rerun kerberos with new path
+    krb5cc = os.path.abspath(os.path.join(etcdir, 'krb5cc.krb5'))
+    gwkerberos.kinit(krb5ccname=krb5cc)
+    if opts.verbose:
+        print("Configured Condor and Kerberos for NFS-shared credentials.")
 
 # ----------------------------------------------------------------------------
 # Build DAG
@@ -241,14 +242,16 @@ for cmd_ in opts.condor_command:
     key, value = cmd_.split('=', 1)
     condorcmds[key.rstrip()] = value.strip()
 
-# add X509 to environment
-for env_, val_ in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
-                      [os.path.abspath(x509copy), krb5cc]):
-    condorenv = '%s=%s' % (env_, val_)
-    if ('environment' in condorcmds and env_ not in condorcmds['environment']):
-        condorcmds['environment'] += ';%s' % condorenv
-    elif not 'environment' in condorcmds:
-        condorcmds['environment'] = condorenv
+if opts.universe != 'local':
+    # add X509 to environment
+    for env_, val_ in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
+                          [os.path.abspath(x509copy), krb5cc]):
+        condorenv = '%s=%s' % (env_, val_)
+        if ('environment' in condorcmds and
+            env_ not in condorcmds['environment']):
+            condorcmds['environment'] += ';%s' % condorenv
+        elif not 'environment' in condorcmds:
+            condorcmds['environment'] = condorenv
 
 # ----------------------------------------------------------------------------
 # Build individual gw_summary jobs

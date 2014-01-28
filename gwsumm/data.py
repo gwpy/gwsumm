@@ -22,7 +22,7 @@
 import operator
 import os
 import urllib2
-from math import (floor, ceil)
+from math import (floor, ceil, pi)
 from multiprocessing import cpu_count
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
@@ -595,6 +595,9 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             filter_ = channel.frequency_response
         except AttributeError:
             filter_ = None
+        else:
+            if isinstance(filter_, str):
+                filter_ = eval(filter_)
 
         # read FFT params
         fftparams = fftparams.copy()

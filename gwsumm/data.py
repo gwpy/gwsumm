@@ -70,8 +70,13 @@ def get_channel(channel):
             type_ = ndsio.NDS2_CHANNEL_TYPE[type_]
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
+        if isinstance(channel, Channel):
+            type_ = channel.type
+        else:
+            type_ = None
         name = str(channel)
-        found = globalv.CHANNELS.sieve(name=str(channel), exact_match=True)
+        found = globalv.CHANNELS.sieve(name=str(channel), type=type_,
+                                       exact_match=True)
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:

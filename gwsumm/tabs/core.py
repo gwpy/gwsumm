@@ -53,19 +53,22 @@ re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
 
 
 class SummaryTab(object):
-    """A `SummaryTab` is a summary of a single data set, producing output
-    on a single HTML web-page
+    """A single, self-enclosed summary webpage.
+
+    This page will be linked to through the HTML navigation bar, hence
+    the name 'tab', and can be grouped with other tabs through
+    parent/child connections.
     """
     type = 'default'
 
     def __init__(self, name, parent=None, children=list(), states=None,
                  base='', layout=None, span=None, longname=None):
-        """Initialise a new `SummaryTab`
+        """Initialise a new :class:`SummaryTab`
         """
         self.name = name
         self.longname = longname or self.name
         self.parent = parent
-        self.children = list(children)
+        self.children = children
         self.base = base
         self.plots = PlotList()
         self.states = states
@@ -79,8 +82,99 @@ class SummaryTab(object):
     # SummaryTab properties
 
     @property
+    def name(self):
+        """Short name for this tab, to be displayed in the HTML header
+        and the navigation bar.
+
+        :type: `str`
+        """
+        return self._name
+
+    @name.setter
+    def name(self, n):
+        self._name = n
+
+    @property
+    def parent(self):
+        """Short name of the parent page for this tab.
+
+        A given tab can either be a parent for a set of child tabs, or can
+        have a parent, it cannot be both. In this system, the `parent`
+        attribute defines the heading under which this tab will be linked
+        in the HTML navigation bar.
+
+        :type: `str`
+        """
+        return self._parent
+
+    @parent.setter
+    def parent(self, p):
+        self._parent = p
+
+    @property
+    def children(self):
+        """List of child tabs for this tab.
+
+        If this tab is given children, it cannot also have a parent, as it
+        will define its own dropdown menu in the HTML navigation bar, linking
+        to itself and its children.
+
+        :type: `list` of `tabs <SummaryTab>`
+        """
+        return self._children
+
+    @children.setter
+    def children(self, clist):
+        if self.parent and clist:
+            raise ValueError("A SummaryTab cannot have both a parent, and a"
+                             "set of children.")
+        self._children = list(clist)
+
+    @property
+    def states(self):
+        """The set of :class:`states <gwsumm.state.SummaryState>` over
+        whos times this tab's data will be processed.
+
+        The set of states will be linked in the given order with a switch
+        on the far-right of the HTML navigation bar.
+        """
+        return self._states
+
+    @states.setter
+    def states(self, slist):
+        if self._states is None:
+            self._states = None
+        else:
+            self._states = list(slist)
+
+    @property
+    def layout(self):
+        """List of how many plots to display on each row in the output.
+
+        By default this is ``1`` if the tab contains only 1 or 3 plots,
+        or ``2`` if otherwise.
+        The final number given in the list will be repeated as necessary.
+
+        :type: `list` of `ints <int>`
+        """
+        return self._layout
+
+    @layout.setter
+    def layout(self, l):
+        if isinstance(l, (str, unicode)):
+            self._layout = eval(l)
+        else:
+            self._layout = map(int, l)
+
+    @property
     def href(self):
-        """HTML href attribute for this tab, relative to some base
+        """HTML href attribute for this tab, relative to some base.
+
+        By default all tabs are written into their own directory, so that the
+        HTML href is just a directory reference inside the overall directory
+        hierarchy.
+
+        :type: `str`
         """
         try:
             return self._href
@@ -94,7 +188,12 @@ class SummaryTab(object):
 
     @property
     def index(self):
-        """URL to the base index for this `SmumaryTab`
+        """URL to the base index for this tab.
+
+        By default the index is the ``index.html`` file inside the href
+        directory.
+
+        :type: `str`
         """
         return os.path.normpath(os.path.join(self.href, 'index.html'))
 

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Helper functions for twitter-bootstrap HTML constructs
+"""Helper functions for twitter-bootstrap HTML constructs.
 """
 
 import sys
@@ -41,6 +41,7 @@ def banner(title, subtitle=None):
 
     Parameters
     ----------
+    title
     """
     page = markup.page()
     page.div(class_='container', id='header')

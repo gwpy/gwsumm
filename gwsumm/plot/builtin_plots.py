@@ -58,7 +58,7 @@ class TimeSeriesTabPlot(TabPlot):
             return self.tag
 
     def add_data_source(self, source):
-        self.channels.append(source)
+        self._channels.append(source)
 
     def add_state_segments(self, plot, ax, color='green', **kwargs):
         sax = plot.add_state_segments(self.state, ax,
@@ -143,9 +143,7 @@ class SpectrumTabPlot(TabPlot):
             return self.tag
 
     def add_data_source(self, source):
-        if isinstance(source, basestring):
-            source = Channel(source)
-        self.channels.append(source)
+        self._channels.append(source)
 
     def process(self):
         """Load all data, and generate this `SpectrumTabPlot`

@@ -43,6 +43,7 @@ from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
 
 from . import (globalv, version)
+from .mode import *
 from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -90,7 +91,12 @@ def get_channel(channel):
                 raise TypeError()
             new = Channel.query(name)
         except TypeError:
-            new = Channel(str(channel))
+            if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
+                type_ = ndsio.NDS2_CHANNEL_TYPE['s-trend']
+            elif type_ is None:
+                type_ = ndsio.NDS2_CHANNEL_TYPE['m-trend']
+            name += ',%s' % ndsio.NDS2_CHANNEL_TYPESTR[type_]
+            new = Channel(name)
             source = get_channel(name.rsplit('.', 1)[0])
             new.url = source.url
         except (ValueError, urllib2.URLError):
@@ -99,7 +105,7 @@ def get_channel(channel):
             new.name = str(channel)
         globalv.CHANNELS.append(new)
         try:
-            return get_channel(str(channel))
+            return get_channel(name)
         except RuntimeError as e:
             if 'maximum recursion depth' in str(e):
                 raise RuntimeError("Recursion error while access channel "

@@ -5,3 +5,5 @@
 .DS_store
 *.pyc
 /gwsumm/version.py
+/docs/_build
+/docs/_generated

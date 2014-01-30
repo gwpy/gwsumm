@@ -55,6 +55,7 @@ from astropy import units
 
 from gwpy.segments import Segment
 from gwpy.time import Time
+from gwpy.spectrum import psd
 
 from gwsumm import (globalv, version)
 from gwsumm.mode import *
@@ -281,6 +282,11 @@ else:
     base = os.path.join('%d-%d' % (opts.gps_start_time, opts.gps_end_time))
 
 globalv.MODE = mode
+
+if (opts.gps_end_time - opts.gps_start_time) > 80000:
+     psd.LAL_FFTPLAN_LEVEL = 3
+else:
+     psd.LAL_FFTPLAN_LEVEL = 1
 
 # set processing options
 if opts.single_process:

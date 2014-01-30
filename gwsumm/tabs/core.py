@@ -525,19 +525,22 @@ class SummaryTab(object):
 
         # make plots
         vprint("    Plotting... \n")
+        new_plots = [p for p in self.plots if p.state.name == state.name and
+                     not p.outputfile in globalv.WRITTEN_PLOTS and
+                     not isinstance(p, TriggerPlot)]
+        new_mp_plots = [p for p in new_plots if not isinstance(p, TriggerPlot)]
         processes = []
-        for plot in sorted(self.plots, key=lambda p:
+        for plot in sorted(new_plots, key=lambda p:
                                         isinstance(p, TriggerPlot) and 2 or 1):
-            if (plot.state.name == state.name and not
-                    plot.outputfile in globalv.WRITTEN_PLOTS):
-                globalv.WRITTEN_PLOTS.append(plot.outputfile)
-                if multiprocess and not isinstance(plot, TriggerPlot):
-                    p = Process(target=plot.process)
-                    processes.append(p)
-                    p.start()
-                else:
-                    plot.process()
-                    vprint("        %s written\n" % plot.outputfile)
+            globalv.WRITTEN_PLOTS.append(plot.outputfile)
+            if (multiprocess and len(new_mp_plots) and not
+                    isinstance(plot, TriggerPlot)):
+                p = Process(target=plot.process)
+                processes.append(p)
+                p.start()
+            else:
+                plot.process()
+                vprint("        %s written\n" % plot.outputfile)
         if len(processes):
             vprint("        %d plot processes spawned, waiting"
                    % len(processes))

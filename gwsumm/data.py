@@ -455,18 +455,27 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
 
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     query=True, nds='guess', format='power', return_=True,
-                    **fftparams):
+                    multiprocess=True, **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
+    channel = get_channel(channel)
     # read segments from global memory
     havesegs = globalv.SPECTROGRAMS.get(channel.ndsname,
                                         SpectrogramList()).segments
     new = segments - havesegs
 
-    globalv.SPECTROGRAMS.setdefault(str(channel), SpectrogramList())
+    # get processes
+    if multiprocess is True:
+        nproc = cpu_count() - 1 # // 2
+    elif multiprocess is False:
+        nproc = 1
+    else:
+        nproc = multiprocess
+
+    globalv.SPECTROGRAMS.setdefault(channel.ndsname, SpectrogramList())
 
     query &= abs(new) != 0
     if query:
@@ -509,20 +518,21 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             if abs(ts.span) < stride:
                 continue
             try:
-                specgram = ts.spectrogram(stride, **fftparams)
+                specgram = ts.spectrogram(stride, maxprocesses=nproc,
+                                          **fftparams)
             except ZeroDivisionError:
                 if stride == 0:
                     raise ZeroDivisionError("Spectrogram stride is 0")
-                elif fftparams['fftlength']:
+                elif fftparams['fftlength'] == 0:
                     raise ZeroDivisionError("FFT length is 0")
-                elif fftparams['fftstride']:
+                elif fftparams['fftstride'] == 0:
                     raise ZeroDivisionError("FFT stride is 0")
                 else:
                     raise
             if filter_:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
-            globalv.SPECTROGRAMS[str(channel)].append(specgram)
-            globalv.SPECTROGRAMS[str(channel)].coalesce()
+            globalv.SPECTROGRAMS[channel.ndsname].append(specgram)
+            globalv.SPECTROGRAMS[channel.ndsname].coalesce()
             vprint('.')
         if len(timeserieslist):
             vprint('\n')

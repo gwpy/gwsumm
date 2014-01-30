@@ -248,8 +248,8 @@ class SegmentTabPlot(TabPlot):
     def process(self):
         # separate plot arguments
         axargs = self.plotargs.copy()
-        labels = self.plotargs.pop('labels',
-                                   self.plotargs.pop('label', self.flags))
+        flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        labels = self.plotargs.pop('labels', self.plotargs.pop('label', flags))
         addlabel = self.plotargs.pop('add_label', None)
         if addlabel is None:
             inset = self.plotargs.pop('inset_labels', True)
@@ -506,7 +506,7 @@ class TriggerTabPlot(TimeSeriesTabPlot):
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
         if 'title' not in self.plotargs.keys() and len(self.channels) == 1:
-            plot.title = '%s (%s)' % (self.channels[0].tex_name, self.etg)
+            plot.title = '%s (%s)' % (self.channels[0].texname, self.etg)
         if ccolumn:
             if not ntrigs:
                 ax.scatter([1], [1], c=[1], visible=False, **plotargs)

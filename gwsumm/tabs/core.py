@@ -491,7 +491,7 @@ class SummaryTab(object):
             spectrochannels.update(plot.channels)
         for channel in sorted(spectrochannels, key=lambda s: str(s)):
             get_spectrogram(channel, state, config=config, return_=False,
-                            **fftparams)
+                            multiprocess=multiprocess, **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra

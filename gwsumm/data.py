@@ -439,145 +439,16 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
-                   query=True, nds='guess', multiprocess=True):
+                   query=True, nds='guess', multiprocess=True, return_=True):
     """Retrieve the data (time-series) for a given channel
     """
-    if isinstance(segments, DataQualityFlag):
-        segments = segments.active
     channel = get_channel(channel)
-    name = str(channel)
-
-    # read segments from global memory
-    havesegs = globalv.DATA.get(str(channel), TimeSeriesList()).segments
-    new = segments - havesegs
-
-    # get processes
-    if multiprocess:
-        nproc = cpu_count() // 2
-    else:
-        nproc = 1
-
-    # read channel information
-    try:
-        filter_ = channel.filter
-    except AttributeError:
-        filter_ = None
-    try:
-        resample = float(channel.resample)
-    except AttributeError:
-        resample = None
-
-    # work out whether to use NDS or not
-    if nds == 'guess':
-        nds = 'LIGO_DATAFIND_SERVER' not in os.environ
-
-    # read new data
-    globalv.DATA.setdefault(name, TimeSeriesList())
-    query &= (abs(new) > 0)
-    if query:
-        # open NDS connection
-        if nds and config.has_option('nds', 'host'):
-            host = config.get('nds', 'host')
-            port = config.getint('nds', 'port')
-            try:
-                ndsconnection = nds2.connection(host, port)
-            except RuntimeError as e:
-                if 'SASL authentication' in str(e):
-                    from gwpy.io.nds import kinit
-                    kinit()
-                    ndsconnection = nds2.connection(host, port)
-            source = 'nds'
-        elif nds:
-            ndsconnection = None
-            source = 'nds'
-        # or find frame type and check cache
-        else:
-            try:
-                ftype = channel.frametype
-            except AttributeError:
-                try:
-                    ndstype = channel.type
-                except AttributeError:
-                    ndstype = nds2.channel.CHANNEL_TYPE_RAW
-                if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
-                    new = type(new)([s for s in new if abs(s) >= 60.])
-                    ftype = 'M'
-                elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
-                    new = type(new)([s for s in new if abs(s) >= 1.])
-                    ftype = 'T'
-                elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
-                    ftype = 'LDAS_C02_L2'
-                elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
-                    ftype = 'lldetchar'
-                elif (globalv.NOW - new[0][0]) < 86400 * 20:
-                    ftype = 'C'
-                else:
-                    ftype = 'R'
-                ftype = '%s_%s' % (channel.ifo, ftype)
-            if cache is not None:
-                fcache = cache.sieve(description=ftype, exact_match=True)
-            if cache is None or len(fcache) == 0 and len(new):
-                span = new.extent()
-                fcache = find_frames(channel.ifo, ftype, span[0], span[1],
-                                     config=config, gaps='ignore')
-            # parse discontiguous cache blocks and rebuild segment list
-            cachesegments = find_cache_segments(fcache)
-            new &= cachesegments
-            source = 'frames'
-
-        # loop through segments, recording data for each
-        for segment in new:
-            if nds:
-                data = TimeSeries.fetch(channel, segment[0], segment[1],
-                                        connection=ndsconnection,
-                                        ndschanneltype=channel.type)
-            else:
-                segcache = fcache.sieve(segment=segment)
-                try:
-                    lastseg = segcache[-1].segment & segment
-                except IndexError:
-                    continue
-                else:
-                    if re.match('([A-Z]1_)?T\Z', ftype) and abs(lastseg) < 1:
-                        segcache = segcache[:-1]
-                    elif re.match('([A-Z]1_)?M\Z', ftype) and abs(lastseg) < 60:
-                        segcache = segcache[:-1]
-                    segcache = Cache(segcache)
-                data = TimeSeries.read(segcache, channel, float(segment[0]),
-                                       float(segment[1]), maxprocesses=nproc,
-                                       verbose=globalv.VERBOSE)
-            data.channel = channel
-            data.unit = channel.unit
-            if channel.sample_rate is None:
-                channel.sample_rate = data.sample_rate
-            if filter_:
-                data = data.filter(*filter_)
-            if resample:
-                factor = data.sample_rate.value / resample
-                if (re.search('ODC_CHANNEL_OUT_DQ\Z', str(channel)) and
-                        factor.is_integer()):
-                    data = data[::int(factor)]
-                elif factor.is_integer():
-                    data = data.decimate(int(factor))
-                else:
-                    data = data.resample(resample)
-            globalv.DATA[name].append(data)
-            globalv.DATA[name].coalesce()
-            vprint(".")
-        if len(new):
-            vprint("\n")
-
-    # return correct data
-    out = TimeSeriesList()
-    for ts in globalv.DATA[name]:
-        for seg in segments:
-            if abs(seg) == 0:
-                continue
-            if ts.span.intersects(seg):
-                cropped = ts.crop(*seg)
-                if cropped.size:
-                    out.append(cropped)
-    return out.coalesce()
+    out = get_timeseries_dict([channel.ndsname], segments, config=config,
+                              cache=cache, query=query, nds=nds,
+                              multiprocess=multiprocess, return_=return_)
+    if return_:
+        return out[channel.ndsname]
+    return
 
 
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,

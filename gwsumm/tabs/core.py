@@ -142,7 +142,7 @@ class SummaryTab(object):
 
     @states.setter
     def states(self, slist):
-        if self._states is None:
+        if slist is None:
             self._states = None
         else:
             self._states = list(slist)
@@ -162,7 +162,9 @@ class SummaryTab(object):
     @layout.setter
     def layout(self, l):
         if isinstance(l, (str, unicode)):
-            self._layout = eval(l)
+            l = eval(l)
+        if l is None:
+            self._layout = None
         else:
             self._layout = map(int, l)
 

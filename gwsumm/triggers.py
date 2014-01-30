@@ -84,6 +84,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 else:
                     segcache = cache.sieve(segment=segment)
                 # read triggers and store
+                segcache = segcache.checkfilesexist()[0]
                 table = trigio.from_files(segcache, etg, columns=columns,
                                           channel=str(channel),
                                           start=segment[0],

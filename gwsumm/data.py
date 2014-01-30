@@ -272,12 +272,12 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     channels = map(get_channel, channels)
-    names = map(str, channels)
 
     # read segments from global memory
     havesegs = reduce(operator.and_,
-                      (globalv.DATA.get(name, TimeSeriesList()).segments
-                       for name in names))
+                      (globalv.DATA.get(channel.ndsname,
+                                        TimeSeriesList()).segments
+                       for channel in channels))
     new = segments - havesegs
 
     # get processes
@@ -298,11 +298,11 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     resample = dict()
     for channel in channels:
         try:
-            filter_[str(channel)] = channel.filter
+            filter_[channel.ndsname] = channel.filter
         except AttributeError:
             pass
         try:
-            resample[str(channel)] = float(channel.resample)
+            resample[channel.ndsname] = float(channel.resample)
         except AttributeError:
             pass
 
@@ -311,8 +311,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         nds = 'LIGO_DATAFIND_SERVER' not in os.environ
 
     # read new data
-    for name in names:
-        globalv.DATA.setdefault(name, TimeSeriesList())
+    for channel in channels:
+        globalv.DATA.setdefault(channel.ndsname, TimeSeriesList())
     query &= (abs(new) > 0)
     if query:
         # open NDS connection
@@ -358,10 +358,10 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         # check whether each channel exists for all new times already
         qchannels = []
         for channel in channels:
-            oldsegs = globalv.DATA.get(str(channel), TimeSeriesList()).segments
+            oldsegs = globalv.DATA.get(channel.ndsname,
+                                       TimeSeriesList()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(channel)
-        qnames = map(str, qchannels)
 
         # find channel type
         if not nds:
@@ -386,36 +386,35 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                             ndschanneltype=ndstype)
             else:
                 segcache = fcache.sieve(segment=segment)
-                tsd = TimeSeriesDict.read(segcache, qnames, format='lcf',
+                tsd = TimeSeriesDict.read(segcache, qchannels, format='lcf',
                                           start=float(segment[0]),
                                           end=float(segment[1]), type=ctype,
                                           maxprocesses=nproc,
                                           verbose=verbose)
-            for (name, data) in tsd.iteritems():
-                if (name in globalv.DATA and
-                    data.span in globalv.DATA[name].segments):
+            for (channel, data) in tsd.iteritems():
+                if (channel.ndsname in globalv.DATA and
+                    data.span in globalv.DATA[channel.ndsname].segments):
                     continue
-                for seg in globalv.DATA[name].segments:
+                for seg in globalv.DATA[channel.ndsname].segments:
                     if seg.intersects(data.span):
                         data = data.crop(*(data.span - seg))
                         break
-                channel = qchannels[qnames.index(name)]
                 data.channel = channel
                 if not channel.sample_rate:
                     channel.sample_rate = data.sample_rate
-                if name in filter_:
-                    data = data.filter(*filter_[name])
-                if name in resample:
-                    factor = data.sample_rate.value / resample[name]
-                    if (re.search('ODC_CHANNEL_OUT_DQ\Z', name) and
+                if channel in filter_:
+                    data = data.filter(*filter_[channel.ndsname])
+                if channel in resample:
+                    factor = data.sample_rate.value / resample[channel.ndsname]
+                    if (re.search('ODC_CHANNEL_OUT_DQ\Z', str(channel)) and
                             factor.is_integer()):
                        data = data[::int(factor)]
                     elif factor.is_integer():
                         data = data.decimate(int(factor))
                     else:
-                        data = data.resample(resample[name])
-                globalv.DATA[name].append(data)
-                globalv.DATA[name].coalesce()
+                        data = data.resample(resample[channel.ndsname])
+                globalv.DATA[channel.ndsname].append(data)
+                globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):
             vprint("\n")
@@ -425,9 +424,9 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
     # return correct data
     out = dict()
-    for name in names:
+    for channel in channels:
         data = TimeSeriesList()
-        for ts in globalv.DATA[name]:
+        for ts in globalv.DATA[channel.ndsname]:
             for seg in segments:
                 if abs(seg) == 0:
                     continue
@@ -435,9 +434,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     cropped = ts.crop(*seg)
                     if cropped.size:
                         data.append(cropped)
-        out[name] = data.coalesce()
+        out[channel.ndsname] = data.coalesce()
     return out
-
 
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
@@ -591,7 +589,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     # read segments from global memory
-    havesegs = globalv.SPECTROGRAMS.get(str(channel),
+    havesegs = globalv.SPECTROGRAMS.get(channel.ndsname,
                                         SpectrogramList()).segments
     new = segments - havesegs
 
@@ -661,7 +659,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
     # return correct data
     out = SpectrogramList()
-    for specgram in globalv.SPECTROGRAMS[str(channel)]:
+    for specgram in globalv.SPECTROGRAMS[channel.ndsname]:
         for seg in segments:
             if abs(seg) < specgram.dt.value:
                 continue
@@ -683,10 +681,10 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     """
     channel = get_channel(channel)
     if isinstance(segments, DataQualityFlag):
-        name = ','.join([str(channel), segments.name])
+        name = ','.join([channel.ndsname, segments.name])
         segments = segments.active
     else:
-        name = str(channel)
+        name = channel.ndsname
     cmin = '%s.min' % name
     cmax = '%s.max' % name
 

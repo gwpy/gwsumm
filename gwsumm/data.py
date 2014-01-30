@@ -370,6 +370,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 try:
                     ctype.add(channel.ctype)
                 except AttributeError:
+                    channel.ctype = 'adc'
+                    ctype.add(channel.ctype)
                     continue
             if len(ctype) == 1:
                 ctype = list(ctype)[0]

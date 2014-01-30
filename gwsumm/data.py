@@ -65,25 +65,20 @@ def get_channel(channel):
     """
     if ',' in str(channel):
         name, type_ = str(channel).rsplit(',', 1)
-        if type_.isdigit():
-            type_ = int(type_)
-        else:
-            type_ = ndsio.NDS2_CHANNEL_TYPE[type_]
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
-        if isinstance(channel, Channel):
-            type_ = channel.type
-        else:
-            type_ = None
+        type_ = isinstance(channel, Channel) and channel.type or None
+        sr = isinstance(channel, Channel) and channel.sample_rate or None
         name = str(channel)
         found = globalv.CHANNELS.sieve(name=str(channel), type=type_,
-                                       exact_match=True)
+                                       sample_rate=sr, exact_match=True)
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
         raise ValueError("Ambiguous channel request '%s', multiple existing "
                          "channels recovered:\n    %s"
-                         % (str(channel), '\n    '.join(map(str, found))))
+                         % (str(channel),
+                            '\n    '.join([c.ndsname for c in found])))
     else:
         try:
             # trends are not stored in CIS, but try and get their raw source
@@ -91,18 +86,26 @@ def get_channel(channel):
                 raise TypeError()
             new = Channel.query(name)
         except TypeError:
+            # set default trend type based on mode
             if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
-                type_ = ndsio.NDS2_CHANNEL_TYPE['s-trend']
+                type_ = 's-trend'
             elif type_ is None:
-                type_ = ndsio.NDS2_CHANNEL_TYPE['m-trend']
-            name += ',%s' % ndsio.NDS2_CHANNEL_TYPESTR[type_]
+                type_ = 'm-trend'
+            name += ',%s' % type_
             new = Channel(name)
             source = get_channel(name.rsplit('.', 1)[0])
             new.url = source.url
+            # determine sample rate for trends
+            if type_ == 'm-trend':
+                new.sample_rate = 1/60.
+            elif type_ == 's-trend':
+                new.sample_rate = 1
         except (ValueError, urllib2.URLError):
             new = Channel(str(channel))
+            new.type = 'raw'
         else:
             new.name = str(channel)
+            new.type = 'raw'
         globalv.CHANNELS.append(new)
         try:
             return get_channel(name)
@@ -212,8 +215,8 @@ def find_frame_type(channel):
         return channel.frametype
     except AttributeError:
         try:
-            ndstype = channel.type
-        except AttributeError:
+            ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
+        except (AttributeError, KeyError):
             ndstype = channel.type = nds2.channel.CHANNEL_TYPE_RAW
         if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
             ftype = 'M'

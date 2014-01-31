@@ -508,7 +508,7 @@ class SummaryTab(object):
         get_timeseries_dict(self.svchannels, state, config=config, nds=nds,
                             multiprocess=multiprocess, statevector=True,
                             return_=False)
-        if len(self.channels):
+        if len(self.svchannels):
             vprint("    All state-vector data loaded\n")
 
         # --------------------------------------------------------------------

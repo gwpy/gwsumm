@@ -159,8 +159,15 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     ifo = ifo[0].upper()
     gpsstart = int(floor(gpsstart))
     gpsend = int(ceil(min(globalv.NOW, gpsend)))
-    cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
-                                   urltype=urltype, on_gaps=gaps)
+    try:
+        cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
+                                       urltype=urltype, on_gaps=gaps)
+    except RuntimeError as e:
+        if 'Invalid GPS times' in str(e):
+            e2 = str(2) + ': %d ... %d' % (gpsstart, gpsend)
+            raise RuntimeError(e2)
+        else:
+            raise
 
     # XXX: if querying for day of LLO frame type change, do both
     if (ifo[0].upper() == 'L' and frametype in ['C', 'R', 'M', 'T'] and

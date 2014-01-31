@@ -55,7 +55,6 @@ if os.path.isdir('share'):
     configs = glob.glob(os.path.join('share', '*.ini'))
 else:
     configs = []
-print(configs)
 
 setup(name=PACKAGENAME,
       version=VERSION,

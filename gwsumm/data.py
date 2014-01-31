@@ -37,7 +37,8 @@ from glue.lal import Cache
 
 from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList)
-from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict)
+from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                             StateVector, StateVectorDict)
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
@@ -234,7 +235,7 @@ def find_frame_type(channel):
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=Cache(), query=True, nds='guess',
-                        multiprocess=True, return_=True):
+                        multiprocess=True, statevector=False, return_=True):
     """Retrieve the data for a set of channels
     """
     # separate channels by type
@@ -252,7 +253,8 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     for channellist in frametypes.itervalues():
         data = _get_timeseries_dict(channellist, segments, config=config,
                                     cache=cache, query=query, nds=nds,
-                                    multiprocess=multiprocess)
+                                    multiprocess=multiprocess,
+                                    statevector=statevector)
         if not return_:
             continue
         for (name, tslist) in data.iteritems():
@@ -265,7 +267,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=Cache(), query=True, nds='guess',
-                         multiprocess=True, return_=True):
+                         multiprocess=True, return_=True, statevector=False):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -273,10 +275,20 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         segments = segments.active
     channels = map(get_channel, channels)
 
+    # set classes
+    if statevector:
+        SeriesClass = StateVector
+        ListClass = TimeSeriesList
+        DictClass = StateVectorDict
+    else:
+        SeriesClass = TimeSeries
+        ListClass = TimeSeriesList
+        DictClass = TimeSeriesDict
+
     # read segments from global memory
     havesegs = reduce(operator.and_,
                       (globalv.DATA.get(channel.ndsname,
-                                        TimeSeriesList()).segments
+                                        ListClass()).segments
                        for channel in channels))
     new = segments - havesegs
 
@@ -302,7 +314,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         except AttributeError:
             pass
         try:
-            resample[channel.ndsname] = float(channel.resample)
+            resample[channel] = float(channel.resample)
         except AttributeError:
             pass
 
@@ -312,7 +324,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
     # read new data
     for channel in channels:
-        globalv.DATA.setdefault(channel.ndsname, TimeSeriesList())
+        globalv.DATA.setdefault(channel.ndsname, ListClass())
     query &= (abs(new) > 0)
     if query:
         # open NDS connection
@@ -359,7 +371,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         qchannels = []
         for channel in channels:
             oldsegs = globalv.DATA.get(channel.ndsname,
-                                       TimeSeriesList()).segments
+                                       ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(channel)
 
@@ -383,16 +395,16 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                    % (source, len(qchannels)))
         for segment in new:
             if nds:
-                tsd = TimeSeriesDict.fetch(qchannels, segment[0], segment[1],
+                tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                             connection=ndsconnection,
                                             ndschanneltype=ndstype)
             else:
                 segcache = fcache.sieve(segment=segment)
-                tsd = TimeSeriesDict.read(segcache, qchannels, format='lcf',
+                tsd = DictClass.read(segcache, qchannels, format='lcf',
                                           start=float(segment[0]),
                                           end=float(segment[1]), type=ctype,
                                           maxprocesses=nproc,
-                                          verbose=verbose)
+                                          resample=resample, verbose=verbose)
             for (channel, data) in tsd.iteritems():
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):
@@ -406,15 +418,6 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     channel.sample_rate = data.sample_rate
                 if channel in filter_:
                     data = data.filter(*filter_[channel.ndsname])
-                if channel in resample:
-                    factor = data.sample_rate.value / resample[channel.ndsname]
-                    if (re.search('ODC_CHANNEL_OUT_DQ\Z', str(channel)) and
-                            factor.is_integer()):
-                       data = data[::int(factor)]
-                    elif factor.is_integer():
-                        data = data.decimate(int(factor))
-                    else:
-                        data = data.resample(resample[channel.ndsname])
                 globalv.DATA[channel.ndsname].append(data)
                 globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
@@ -427,7 +430,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     # return correct data
     out = dict()
     for channel in channels:
-        data = TimeSeriesList()
+        data = ListClass()
         for ts in globalv.DATA[channel.ndsname]:
             for seg in segments:
                 if abs(seg) == 0:
@@ -441,13 +444,15 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
-                   query=True, nds='guess', multiprocess=True, return_=True):
+                   query=True, nds='guess', multiprocess=True,
+                   statevector=False, return_=True):
     """Retrieve the data (time-series) for a given channel
     """
     channel = get_channel(channel)
     out = get_timeseries_dict([channel.ndsname], segments, config=config,
                               cache=cache, query=query, nds=nds,
-                              multiprocess=multiprocess, return_=return_)
+                              multiprocess=multiprocess,
+                              statevector=statevector, return_=return_)
     if return_:
         return out[channel.ndsname]
     return

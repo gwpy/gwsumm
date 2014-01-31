@@ -220,6 +220,7 @@ class SummaryTab(object):
     def channels(self):
         """Set of all data channels used by this tab
         """
+        TriggerPlot = plotregistry.get_plot('triggers')
         out = set()
         for plot in self.plots:
             if (not isinstance(plot, TriggerPlot) and
@@ -228,9 +229,31 @@ class SummaryTab(object):
         return sorted(out, key=lambda ch: ch.name)
 
     @property
+    def tschannels(self):
+        StateVectorPlot = plotregistry.get_plot('statevector')
+        TriggerPlot = plotregistry.get_plot('triggers')
+        out = set()
+        for plot in self.plots:
+            if (not isinstance(plot, TriggerPlot) and
+                not isinstance(plot, StateVectorPlot) and
+                    hasattr(plot, 'channels')):
+                out.update(plot.channels)
+        return sorted(out, key=lambda ch: ch.name)
+
+    @property
+    def svchannels(self):
+        StateVectorPlot = plotregistry.get_plot('statevector')
+        out = set()
+        for plot in self.plots:
+            if isinstance(plot, StateVectorPlot):
+                out.update(plot.channels)
+        return sorted(out, key=lambda ch: ch.name)
+
+    @property
     def trigchannels(self):
         """Set of all trigger channels used by this tab
         """
+        TriggerPlot = plotregistry.get_plot('triggers')
         out = set()
         for plot in self.plots:
             if isinstance(plot, TriggerPlot):
@@ -464,18 +487,31 @@ class SummaryTab(object):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
+        TriggerPlot = plotregistry.get_plot('triggers')
 
         # --------------------------------------------------------------------
         # process time-series
 
         # find channels that need a TimeSeries
-        if len(self.channels):
+        if len(self.tschannels):
             vprint("    %d channels identified for TimeSeries\n"
-                   % len(self.channels))
-        get_timeseries_dict(self.channels, state, config=config, nds=nds,
+                   % len(self.tschannels))
+        get_timeseries_dict(self.tschannels, state, config=config, nds=nds,
                             multiprocess=multiprocess, return_=False)
-        if len(self.channels):
+        if len(self.tschannels):
             vprint("    All time-series data loaded\n")
+
+        # find channels that need a StateVector
+        if len(self.svchannels):
+            vprint("    %d channels identified as StateVectors\n"
+                   % len(self.svchannels))
+        get_timeseries_dict(self.svchannels, state, config=config, nds=nds,
+                            multiprocess=multiprocess, statevector=True,
+                            return_=False)
+        if len(self.channels):
+            vprint("    All state-vector data loaded\n")
+
+        # --------------------------------------------------------------------
 
         # --------------------------------------------------------------------
         # process spectrograms

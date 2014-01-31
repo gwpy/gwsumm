@@ -50,12 +50,20 @@ if os.path.isdir('bin'):
 else:
     scripts = []
 
+# glob for all configuration files
+if os.path.isdir('share'):
+    configs = glob.glob(os.path.join('share', '*.ini'))
+else:
+    configs = []
+print(configs)
+
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       packages=packagenames,
       ext_modules=[],
       scripts=scripts,
+      data_files=[('etc', configs)],
       requires=['gwpy'],
       provides=[PACKAGENAME],
       author=AUTHOR,

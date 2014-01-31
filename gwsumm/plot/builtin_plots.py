@@ -160,7 +160,13 @@ class SpectrumTabPlot(TabPlot):
         if isinstance(labels, basestring):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
-        for label, channel in zip(labels, self.channels):
+        colors = self.plotargs.pop('color', None)
+        if isinstance(colors, str):
+            colors = colors.split(',')
+        if colors is not None and len(colors) != 0:
+            while len(colors) < len(self.channels):
+                colors.append(None)
+        for label, color, channel in zip(labels, colors, self.channels):
             data = get_spectrum(str(channel), self.state, query=False,
                                 format=sdform)
 
@@ -169,7 +175,8 @@ class SpectrumTabPlot(TabPlot):
             if 'logy' in self.plotargs and self.plotargs['logy']:
                 for sp in data:
                     sp[sp.data == 0] = 1e-100
-            ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'))
+            ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
+                                 color=color)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'frequency_range'):

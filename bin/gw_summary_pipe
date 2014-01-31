@@ -135,6 +135,10 @@ copts.add_option('--nds', action='store_true', default='guess',
 copts.add_option('--single-process', action='store_true', default=False,
                  help="restrict gw_summary to a single process, mainly for "
                       "debugging purposes, default: %default")
+copts.add_option('--max-processes', action='store', type='int', default=None,
+                 help="maximum number of concurrent sub-processes for each "
+                      "gw_summary job, {number of CPUs} / {min(number of "
+                      "jobs, 4)}")
 
 outopts = parser.add_option_group("Output options")
 outopts.add_option('-o', '--output-dir', action='store', type='string',
@@ -279,6 +283,8 @@ if opts.nds is True:
     job.add_opt('nds')
 if opts.single_process:
     job.add_opt('single-process')
+elif opts.max_processes is not None:
+    job.add_opt('max-processes', opts.max_processes)
 elif len(opts.config_file) > 1:
     job.add_opt('max-processes',
                 (cpu_count() // min(len(opts.config_file), 4) - 1))

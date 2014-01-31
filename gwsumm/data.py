@@ -159,15 +159,12 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     ifo = ifo[0].upper()
     gpsstart = int(floor(gpsstart))
     gpsend = int(ceil(min(globalv.NOW, gpsend)))
-    if gpsend >= gpsstart:
-        return Cache()
-
     try:
-        cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart,
-                                       gpsend, urltype=urltype, on_gaps=gaps)
+        cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart, gpsend,
+                                       urltype=urltype, on_gaps=gaps)
     except RuntimeError as e:
         if 'Invalid GPS times' in str(e):
-            e2 = str(e2) + ': %d ... %d' % (gpsstart, gpsend)
+            e2 = str(2) + ': %d ... %d' % (gpsstart, gpsend)
             raise RuntimeError(e2)
         else:
             raise

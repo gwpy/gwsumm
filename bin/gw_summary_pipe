@@ -100,6 +100,9 @@ bopts.add_option('-w', '--skip-html-wrapper', action='store_true',
                  help="Do not configure first job for HTML wrapper, default: "
                       "%default. Useful for separating large summary pipeline "
                       "across multiple DAGs")
+bopts.add_option('-t', '--file-tag', action='store', type='string',
+                 default=os.path.basename(__file__),
+                 help="file tag for pipeline files, default: %default")
 
 htcopts = parser.add_option_group("Condor options")
 htcopts.add_option('-x','--executable', action='store', type='string',
@@ -230,9 +233,8 @@ if opts.universe != 'local':
 # ----------------------------------------------------------------------------
 # Build DAG
 
-tag = 'gw_summary_pipe'
-dag = pipeline.CondorDAG(os.path.join(htclogdir, '%s.log' % tag))
-dag.set_dag_file(os.path.join(outdir, tag))
+dag = pipeline.CondorDAG(os.path.join(htclogdir, '%s.log' % opts.file_tag))
+dag.set_dag_file(os.path.join(outdir, opts.file_tag))
 
 universe = opts.universe
 executable = opts.executable

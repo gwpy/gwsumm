@@ -82,7 +82,7 @@ class TimeSeriesTabPlot(TabPlot):
             data = [get_timeseries(c, self.state,
                                    query=False).join(pad=numpy.nan) for
                     c in channels]
-            if not 'epoch' in data[0].metadata:
+            if not 'x0' in data[0].metadata:
                 data[0].epoch = self.gpsstart
             if 'logy' in self.plotargs and self.plotargs['logy']:
                 for ts in data:

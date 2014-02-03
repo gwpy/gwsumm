@@ -562,8 +562,7 @@ class SummaryTab(object):
         # make plots
         vprint("    Plotting... \n")
         new_plots = [p for p in self.plots if p.state.name == state.name and
-                     not p.outputfile in globalv.WRITTEN_PLOTS and
-                     not isinstance(p, TriggerPlot)]
+                     not p.outputfile in globalv.WRITTEN_PLOTS]
         new_mp_plots = [p for p in new_plots if not isinstance(p, TriggerPlot)]
         processes = []
         for plot in sorted(new_plots, key=lambda p:

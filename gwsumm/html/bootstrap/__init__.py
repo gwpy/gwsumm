@@ -123,7 +123,7 @@ def navbar(links, brand=None, states=None):
     return page
 
 
-def dropdown(text, links, active=None):
+def dropdown(text, links, active=None, class_='dropdown-toggle'):
     """Construct a dropdown menu in bootstrap format
 
     Parameters
@@ -148,7 +148,7 @@ def dropdown(text, links, active=None):
     """
     page = markup.page()
     # dropdown header
-    page.a(href='#', class_='dropdown-toggle', **{'data-toggle': 'dropdown'})
+    page.a(href='#', class_=class_, **{'data-toggle': 'dropdown'})
     page.add(text)
     page.b('', class_='caret')
     page.a.close()
@@ -362,5 +362,20 @@ def about_this_page(cmdline=True, config=None):
         page.div.close()
 
     page.div.close()
+    page.div.close()
+    return page
+
+
+def base_map_dropdown(this, **bases):
+    """Construct a dropdown menu that links to a version of the current
+    page on another server, based on a new base.
+    """
+    baselinks = [markup.oneliner.a(key, class_='ifo-switch',
+                                   **{'data-new-base': val}) for
+                 (key, val) in bases.iteritems()]
+    page = markup.page()
+    page.div(class_='btn-group pull-left')
+    page.add(str(dropdown(this, baselinks,
+                          class_='navbar-brand dropdown-toggle')))
     page.div.close()
     return page

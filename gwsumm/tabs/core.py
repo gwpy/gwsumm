@@ -620,7 +620,8 @@ class SummaryTab(object):
         return navlinks
 
     def build_html(self, title=None, subtitle=None, tabs=list(), css=list(),
-                   js=list(), about=None, writedata=True, writehtml=True):
+                   ifos=list(), js=list(), about=None, writedata=True,
+                   writehtml=True):
         """Construct the HTML page for this tab.
         """
         # find relative base path
@@ -642,7 +643,11 @@ class SummaryTab(object):
                 title = self.longname
                 subtitle = None
         # get calendar and write navigation bar
-        brand = self.write_calendar_link()
+        if ifos and ifos[1]:
+            ifolinks = str(html.base_map_dropdown(ifos[0], **ifos[1]))
+        else:
+            ifolinks = ''
+        brand = ifolinks + self.write_calendar_link()
         navlinks = self.build_navigation_links(tabs)
         # initialise page
         page = html.markup.page()

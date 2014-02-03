@@ -409,6 +409,13 @@ if not opts.no_html:
 # -----------------------------------------------------------------------------
 # Process all tabs
 
+# find new ifo bases
+ifobases = {}
+for key, val in config.nditems('html'):
+    if re.search('-base\Z', key):
+        ifobases[key.rsplit('-', 1)[0].upper()] = val
+ifobases.pop(ifo, None)
+
 # sort tabs by 'Summary', then lower case only, then everything else
 _sort_tabs = lambda tab: ((tab.name == 'Summary' and tab.parent is None) and 1
                           or tab.name == 'Summary' and 2 or
@@ -426,7 +433,8 @@ for tab in alltabs:
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess)
     page = tab.build_html(css=css, js=javascript, tabs=tabs,
-                          about=about.index, writedata=not opts.html_only,
+                          ifos=(ifo, ifobases), about=about.index,
+                          writedata=not opts.html_only,
                           writehtml=not opts.no_html)
 
 # -----------------------------------------------------------------------------

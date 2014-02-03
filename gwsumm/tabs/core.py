@@ -568,7 +568,7 @@ class SummaryTab(object):
         for plot in sorted(new_plots, key=lambda p:
                                         isinstance(p, TriggerPlot) and 2 or 1):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
-            if (multiprocess and len(new_mp_plots) and not
+            if (multiprocess and len(new_mp_plots) > 1 and not
                     isinstance(plot, TriggerPlot)):
                 p = Process(target=plot.process)
                 processes.append(p)

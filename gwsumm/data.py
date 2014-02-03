@@ -426,7 +426,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 data.channel = channel
                 if not channel.sample_rate:
                     channel.sample_rate = data.sample_rate
-                if channel in filter_:
+                if channel.ndsname in filter_:
                     data = data.filter(*filter_[channel.ndsname])
                 globalv.DATA[channel.ndsname].append(data)
                 globalv.DATA[channel.ndsname].coalesce()

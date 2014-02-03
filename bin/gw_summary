@@ -23,6 +23,8 @@ This module provides the command-line interface to the GWSumm package,
 allowing generation of detector summary information
 """
 
+from __future__ import division
+
 import os
 import datetime
 import optparse

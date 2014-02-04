@@ -777,7 +777,8 @@ class SummaryTab(object):
             data = []
             pc = abs(state.active) / 100.
             for flag in sorted(self.dataqualityflags):
-                flag = globalv.SEGMENTS[flag]
+                flag = globalv.SEGMENTS[flag].copy()
+                flag.valid &= state.active
                 v = flag.version and str(flag.version) or ''
                 try:
                     valid = '%.2f (%.2f%%)' % (abs(flag.valid),
@@ -793,7 +794,8 @@ class SummaryTab(object):
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i,flag in enumerate(self.dataqualityflags):
-                flag = globalv.SEGMENTS[flag]
+                flag = globalv.SEGMENTS[flag].copy()
+                flag.valid &= state.active
                 n = ':'.join([flag.ifo, flag.name])
                 if flag.version:
                     n += ':%d' % flag.version

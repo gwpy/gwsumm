@@ -256,6 +256,7 @@ class SegmentTabPlot(TabPlot):
 
     def process(self):
         # separate plot arguments
+        mask = self.plotargs.pop('mask', None)
         axargs = self.plotargs.copy()
         flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
         labels = self.plotargs.pop('labels', self.plotargs.pop('label', flags))
@@ -293,10 +294,12 @@ class SegmentTabPlot(TabPlot):
                 getattr(plot, 'get_%s' % key)(val)
         if 'xlim' not in axargs:
             ax.set_xlim(self.gpsstart, self.gpsend)
-        if not plot.coloraxes:
+        if mask is None and not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         if 'ylim' not in axargs:
             ax.set_ylim(-0.5, len(self.flags) - 0.5)
+        if mask is not None:
+            plot.add_bitmask(mask, topdown=True)
         plot.save(self.outputfile)
         plot.close()
 
@@ -377,6 +380,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
 
     def process(self):
         # separate plot arguments
+        mask = self.plotargs.pop('mask', None)
         axargs = self.plotargs.copy()
         plotargs = {}
         color = axargs.pop('color', None)
@@ -410,15 +414,17 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():
             try:
-                setattr(plot, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(plot, 'get_%s' % key)(val)
+                getattr(ax, 'set_%s' % key)(val)
         if 'xlim' not in self.plotargs.keys():
             ax.set_xlim(self.gpsstart, self.gpsend)
         if 'ylim' not in self.plotargs.keys():
             ax.set_ylim(-0.5, nflags-0.5)
-        if not plot.coloraxes:
+        if mask is None and not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
+        if mask is not None:
+            plot.add_bitmask(mask, topdown=True)
         plot.save(self.outputfile)
         plot.close()
 

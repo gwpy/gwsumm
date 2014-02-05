@@ -216,8 +216,7 @@ class SegmentTabPlot(TabPlot):
     FigureClass = SegmentPlot
     AxesClass = SegmentAxes
     type = 'segments'
-    FACECOLOR = {'H1': 'blue',
-                 'L1': 'green'}
+    FACECOLOR = {}
 
     def __init__(self, flags, start, end, state='all', outdir='.', href=None,
                  **kwargs):
@@ -275,6 +274,8 @@ class SegmentTabPlot(TabPlot):
         if (color is None and len(self.ifos) == 1 and
             list(self.ifos)[0] in self.FACECOLOR):
             color = self.FACECOLOR[list(self.ifos)[0]]
+        elif color is None:
+            color = 'green'
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
         plotargs['facecolor'] = color
         plotargs['add_label'] = addlabel
@@ -375,8 +376,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
     type = 'statevector'
     FigureClass = SegmentPlot
     AxesClass = SegmentAxes
-    FACECOLOR = {'H1': 'blue',
-                 'L1': 'green'}
+    FACECOLOR = {}
 
     def process(self):
         # separate plot arguments
@@ -387,6 +387,8 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
         if (color is None and len(self.ifos) == 1 and
             list(self.ifos)[0] in self.FACECOLOR):
             color = self.FACECOLOR[list(self.ifos)[0]]
+        elif color is None:
+            color = 'green'
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
         plotargs['facecolor'] = color
         plotargs.setdefault('add_label', 'inset')

@@ -263,7 +263,7 @@ if opts.universe != 'local':
 # Build individual gw_summary jobs
 
 job = GWSummaryJob(universe, executable, subdir=outdir, logdir=logdir,
-                   **condorcmds)
+                   tag=opts.file_tag, **condorcmds)
 
 # add global configurations
 if len(opts.global_config):

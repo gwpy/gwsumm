@@ -420,7 +420,7 @@ ifobases.pop(ifo, None)
 _sort_tabs = lambda tab: ((tab.name == 'Summary' and tab.parent is None) and 1
                           or tab.name == 'Summary' and 2
                           or 'ODC' in tab.name and 'zzzz'
-                          or tab.name.islower() and tab.name.upper() or
+                          or tab.name.islower() and tab.name.upper()
                           or tab.name.lower())
 
 tabs.sort(key=_sort_tabs)

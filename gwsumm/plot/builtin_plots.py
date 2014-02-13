@@ -419,7 +419,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
                     for i,flag in enumerate(newflags):
                         flags[i] += flag
             nflags += len([m for m in channel.bitmask if m is not None])
-            ax.plot(*flags[::-1], **plotargs)
+            ax.plot(*flags[::-1], valid={'facecolor': 'red'}, **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():

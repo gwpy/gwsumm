@@ -285,7 +285,7 @@ class SegmentTabPlot(TabPlot):
         ax = plot._add_new_axes(self.AxesClass.name)
         for flag, label in zip(self.flags, labels)[::-1]:
             segs = get_segments(flag, validity=self.state.active, query=False)
-            ax.plot(segs, label=label, **plotargs)
+            ax.plot(segs, label=label, valid={'facecolor': 'red'}, **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in axargs.iteritems():

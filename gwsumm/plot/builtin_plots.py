@@ -402,16 +402,24 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
         nflags = 0
         for label, channel in zip(labels, self.channels[::-1]):
-            data = get_timeseries(str(channel), self.state, query=False).join()
-            if not data.size:
-                data.epoch = self.gpsstart
-                data.dx = 0
-                if channel.sample_rate is not None:
-                    data.sample_rate = channel.sample_rate
-            data = data.view(StateVector)
-            data.bitmask = channel.bitmask
+            data = get_timeseries(str(channel), self.state, query=False,
+                                  statevector=True)
+            flags = None
+            for stateseries in data:
+                if not stateseries.size:
+                    stateseries.epoch = self.gpsstart
+                    stateseries.dx = 0
+                    if channel.sample_rate is not None:
+                        stateseries.sample_rate = channel.sample_rate
+                stateseries.bitmask = channel.bitmask
+                newflags = stateseries.to_dqflags()
+                if flags is None:
+                    flags = newflags
+                else:
+                    for i,flag in enumerate(newflags):
+                        flags[i] += flag
             nflags += len([m for m in channel.bitmask if m is not None])
-            ax.plot(*data.to_dqflags()[::-1], **plotargs)
+            ax.plot(*flags[::-1], **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():

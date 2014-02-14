@@ -271,11 +271,22 @@ class SegmentTabPlot(TabPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
         plotargs = {}
         color = axargs.pop('color', None)
+        onisbad = axargs.pop('on_is_bad', False)
+        if onisbad is None:
+            onisbad = True
+        else:
+            onisbad = bool(onisbad)
         if (color is None and len(self.ifos) == 1 and
             list(self.ifos)[0] in self.FACECOLOR):
             color = self.FACECOLOR[list(self.ifos)[0]]
+        elif color is None and onisbad:
+            color = 'red'
         elif color is None:
             color = 'green'
+        if onisbad:
+            validcolor = 'green'
+        else:
+            validcolor = 'red'
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
         plotargs['facecolor'] = color
         plotargs['add_label'] = addlabel
@@ -285,7 +296,8 @@ class SegmentTabPlot(TabPlot):
         ax = plot._add_new_axes(self.AxesClass.name)
         for flag, label in zip(self.flags, labels)[::-1]:
             segs = get_segments(flag, validity=self.state.active, query=False)
-            ax.plot(segs, label=label, valid={'facecolor': 'red'}, **plotargs)
+            ax.plot(segs, label=label, valid={'facecolor': validcolor},
+                    **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in axargs.iteritems():
@@ -384,11 +396,22 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
         axargs = self.plotargs.copy()
         plotargs = {}
         color = axargs.pop('color', None)
+        onisbad = axargs.pop('on_is_bad', False)
+        if onisbad is None:
+            onisbad = True
+        else:
+            onisbad = bool(onisbad)
         if (color is None and len(self.ifos) == 1 and
             list(self.ifos)[0] in self.FACECOLOR):
             color = self.FACECOLOR[list(self.ifos)[0]]
+        elif color is None and onisbad:
+            color = 'red'
         elif color is None:
             color = 'green'
+        if onisbad:
+            validcolor = 'green'
+        else:
+            validcolor = 'red'
         plotargs['edgecolor'] = axargs.pop('edgecolor', None)
         plotargs['facecolor'] = color
         plotargs.setdefault('add_label', 'inset')
@@ -419,7 +442,7 @@ class StateVectorTabPlot(TimeSeriesTabPlot):
                     for i,flag in enumerate(newflags):
                         flags[i] += flag
             nflags += len([m for m in channel.bitmask if m is not None])
-            ax.plot(*flags[::-1], valid={'facecolor': 'red'}, **plotargs)
+            ax.plot(*flags[::-1], valid={'facecolor': validcolor}, **plotargs)
         ax.set_epoch(self.gpsstart)
         ax.auto_gps_scale(self.gpsend-self.gpsstart)
         for key, val in self.plotargs.iteritems():

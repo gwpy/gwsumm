@@ -413,7 +413,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                           start=float(segment[0]),
                                           end=float(segment[1]), type=ctype,
-                                          maxprocesses=nproc,
+                                          nproc=nproc,
                                           resample=resample, verbose=verbose)
             for (channel, data) in tsd.iteritems():
                 if (channel.ndsname in globalv.DATA and

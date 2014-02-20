@@ -406,8 +406,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         for segment in new:
             if nds:
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
-                                            connection=ndsconnection,
-                                            ndschanneltype=ndstype)
+                                      connection=ndsconnection, type=ndstype)
             else:
                 segcache = fcache.sieve(segment=segment)
                 tsd = DictClass.read(segcache, qchannels, format='lcf',

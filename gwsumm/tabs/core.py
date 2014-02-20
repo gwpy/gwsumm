@@ -19,13 +19,13 @@
 """Definition of a summary SummaryTab.
 """
 
-import os
 import re
+import os
 import warnings
 from StringIO import StringIO
 from multiprocessing import Process
 
-from numpy import (cumsum, isclose)
+from numpy import isclose
 
 from lal import gpstime
 
@@ -34,6 +34,7 @@ from glue.segmentsUtils import tosegwizard
 from gwpy.segments import Segment
 from gwpy.io import nds as ndsio
 
+from .registry import register_tab
 from ..plot import (PlotList, registry as plotregistry)
 from .. import globalv
 from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
@@ -829,8 +830,11 @@ class SummaryTab(object):
         page.div.close()
         return page
 
+register_tab(SummaryTab)
+
 
 class AboutTab(SummaryTab):
+    type = 'about'
 
     def build_html(self, tabs=list(), css=list(), js=list(), config=None):
         """Construct the HTML page for this `AboutTab`.
@@ -863,6 +867,8 @@ class AboutTab(SummaryTab):
 
     def write_html(self, config=None):
         return html.about_this_page(config=config)
+
+register_tab(AboutTab)
 
 
 def split_channels(channelstring):

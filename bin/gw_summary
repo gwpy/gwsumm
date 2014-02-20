@@ -62,7 +62,8 @@ from gwpy.spectrum import psd
 from gwsumm import (globalv, version)
 from gwsumm.mode import *
 from gwsumm.config import *
-from gwsumm.tabs import *
+from gwsumm.data import get_channel
+from gwsumm.tabs import (split_channels, get_tab)
 from gwsumm.utils import *
 from gwsumm.state import *
 
@@ -381,7 +382,12 @@ alltabs = []
 for section in filter(lambda n: re.match('tab[-\s]', n),
                       config.sections()):
     if len(opts.process_tab) == 0 or section[4:] in opts.process_tab:
-        tab = SummaryTab.from_ini(config, section, plotdir=plotdir, base=base)
+        try:
+            type_ = config.get(section, 'type')
+        except NoOptionError:
+            type_ = 'default'
+        Tab = get_tab(type_)
+        tab = Tab.from_ini(config, section, plotdir=plotdir, base=base)
         alltabs.append(tab)
 
 # sort tabs into hierarchical list
@@ -392,15 +398,15 @@ for tab in filter(lambda tab: tab.parent is None, alltabs):
 # 2. All remaining tabs without a defined parent define that parent
 # 3. Sort all tabs into their parent sets
 for tab in filter(lambda tab: tab.parent is not None, alltabs):
-    tabs.setdefault(tab.parent, SummaryTab(tab.parent))
+    tabs.setdefault(tab.parent, get_tab('default')(tab.parent))
     tab.parent = tabs[tab.parent]
     tab.parent.add_child(tab)
 
 tabs = tabs.values()
 
 # write config page
-about = AboutTab('About', parent=None, states=[globalv.STATES[ALLSTATE]],
-                 base=base)
+about = get_tab('about')('About', parent=None,
+                         states=[globalv.STATES[ALLSTATE]], base=base)
 if not opts.no_html:
     mkdir(about.path)
     about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)

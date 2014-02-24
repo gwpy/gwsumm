@@ -361,7 +361,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
     get_segment_color = SegmentSummaryPlot.__dict__['get_segment_color']
 
     def __init__(self, *args, **kwargs):
-        super(StateVectorSummaryPlot, self).__init__(self, *args, **kwargs)
+        super(StateVectorSummaryPlot, self).__init__(*args, **kwargs)
         self.flags = []
 
     def process(self):

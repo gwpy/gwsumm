@@ -113,6 +113,7 @@ class SimpleStateTab(StateTab):
             if isinstance(plot, (TimeSeriesPlot, SpectrogramPlot,
                                  SpectrumPlot)):
                 out.update(plot.channels)
+        out.difference_update(self.statevectors)
         return sorted(out, key=lambda ch: ch.name)
 
     @property

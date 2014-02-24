@@ -161,7 +161,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
             return self._tag
         except AttributeError:
             tag = super(SpectrogramSummaryPlot, self).tag
-            ratio = self.pargs.ratio
+            ratio = self.pargs['ratio']
             if ratio:
                 tag += '_%s_RATIO' % re_cchar.sub('_', ratio.upper())
             return tag
@@ -176,7 +176,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
-        ratio = self.pargs.pop('ratio')
+        ratio = self.pargs.get('ratio')
 
         # get data
         specgrams = get_spectrogram(self.channels[0], self.state, query=False,
@@ -208,6 +208,8 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
 
         # customise and finalise
         for key, val in self.pargs.iteritems():
+            if key == 'ratio':
+                continue
             try:
                 setattr(ax, key, val)
             except AttributeError:

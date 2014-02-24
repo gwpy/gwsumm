@@ -619,7 +619,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
 
         # add state segments
         if isinstance(plot, TimeSeriesPlot):
-            ax = self.add_state_segments(plot, ax)
+            self.add_state_segments(ax)
 
         # finalise
         self.finalize()

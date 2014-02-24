@@ -410,10 +410,10 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             else:
                 segcache = fcache.sieve(segment=segment)
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
-                                          start=float(segment[0]),
-                                          end=float(segment[1]), type=ctype,
-                                          nproc=nproc,
-                                          resample=resample, verbose=verbose)
+                                     start=float(segment[0]),
+                                     end=float(segment[1]), type=ctype,
+                                     nproc=nproc,
+                                     resample=resample, verbose=verbose)
             for (channel, data) in tsd.iteritems():
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):

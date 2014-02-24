@@ -431,15 +431,6 @@ class SpectrumSummaryPlot(DataSummaryPlot):
                 'color': [],
                 'format': None}
 
-    @property
-    def tag(self):
-        try:
-            return self._tag
-        except AttributeError:
-            self._tag = hashlib.md5("".join(map(str,
-                                            self.channels))).hexdigest()[:6]
-            return self.tag
-
     def process(self):
         """Load all data, and generate this `SpectrumSummaryPlot`
         """

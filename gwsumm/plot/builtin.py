@@ -155,15 +155,18 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
                 'logcolor': False,
                 'colorlabel': None}
 
+    def __init__(self, *args, **kwargs):
+        super(SpectrogramSummaryPlot, self).__init__(*args, **kwargs)
+        self.ratio = self.pargs.pop('ratio')
+
     @property
     def tag(self):
         try:
             return self._tag
         except AttributeError:
             tag = super(SpectrogramSummaryPlot, self).tag
-            ratio = self.pargs['ratio']
-            if ratio:
-                tag += '_%s_RATIO' % re_cchar.sub('_', ratio.upper())
+            if self.ratio:
+                tag += '_%s_RATIO' % re_cchar.sub('_', self.ratio.upper())
             return tag
 
     def process(self):
@@ -176,7 +179,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
-        ratio = self.pargs.get('ratio')
+        ratio = self.ratio
 
         # get data
         specgrams = get_spectrogram(self.channels[0], self.state, query=False,
@@ -522,6 +525,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                                                  state=state, outdir=outdir,
                                                  tag=tag, **kwargs)
         self.etg = etg
+        self.columns = [self.pargs.pop(c) for c in ('x', 'y', 'color')]
 
     @property
     def tag(self):
@@ -534,17 +538,15 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             return self._tag
         except AttributeError:
             tag = super(TriggerSummaryPlot, self).tag
-            tag += '_%s' % re_cchar.sub('_', self.etg).upper()
-            for column in ('x', 'y', 'color'):
-                if self.pargs[column]:
-                    tag += '_%s' % re_cchar.sub('_', self.pargs[column])
-            return tag
+            tag += '_%s' % re_cchar.sub('_', self.etg)
+            for column in self.columns:
+                if column:
+                    tag += '_%s' % re_cchar.sub('_', [column])
+            return tag.upper()
 
     def process(self):
         # get columns
-        xcolumn = self.pargs.pop('x', 'time')
-        ycolumn = self.pargs.pop('y', 'snr')
-        ccolumn = self.pargs.get('color', None)
+        xcolumn, ycolumn, ccolumn = self.columns
 
         # initialise figure
         base = xcolumn == 'time' and TimeSeriesPlot or None

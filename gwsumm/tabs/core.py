@@ -303,7 +303,7 @@ class Tab(object):
         """
         # build interferometer cross-links
         if ifo is not None and ifomap is not None:
-            ifolinks = str(html.base_map_dropdown(ifo[0], **ifomap))
+            ifolinks = str(html.base_map_dropdown(ifo, **ifomap))
         else:
             ifolinks = ''
         # build calendar

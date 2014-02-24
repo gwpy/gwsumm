@@ -410,7 +410,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
             except AttributeError:
                 getattr(plot, 'get_%s' % key)(val)
         if 'ylim' not in self.pargs:
-            ax.set_ylim(-0.5, len(self.flags) - 0.5)
+            ax.set_ylim(-0.5, nflags - 0.5)
 
         # add bit mask axes and finalise
         if mask is None and not plot.coloraxes:

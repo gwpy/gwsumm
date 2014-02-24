@@ -434,7 +434,7 @@ class SpectrumSummaryPlot(DataSummaryPlot):
     def process(self):
         """Load all data, and generate this `SpectrumSummaryPlot`
         """
-        plot = self.plot = SpectrumPlot()
+        plot = self.plot = SpectrumPlot(figsize=[12, 6])
         ax = plot.gca()
 
         # get spectrum format: 'amplitude' or 'power'

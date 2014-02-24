@@ -614,7 +614,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         # add colorbar
         if ccolumn:
             if not ntrigs:
-                ax.scatter([1], [1], c=[1], visible=False, **plotargs)
+                ax.scatter([1], [1], c=[1], visible=False)
             plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
         else:
             plot.add_colorbar(ax=ax, visible=False)

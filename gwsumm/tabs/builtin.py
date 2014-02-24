@@ -105,15 +105,10 @@ class SimpleStateTab(StateTab):
 
     @property
     def timeseries(self):
-        TimeSeriesPlot = plotregistry.get_plot('timeseries')
-        SpectrogramPlot = plotregistry.get_plot('spectrogram')
-        SpectrumPlot = plotregistry.get_plot('spectrum')
         out = set()
         for plot in self.plots:
-            if isinstance(plot, (TimeSeriesPlot, SpectrogramPlot,
-                                 SpectrumPlot)):
+            if plot.type in ['timeseries', 'spectrogram', 'spectrum']:
                 out.update(plot.channels)
-        out.difference_update(self.statevectors)
         return sorted(out, key=lambda ch: ch.name)
 
     @property

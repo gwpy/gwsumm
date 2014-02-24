@@ -63,7 +63,7 @@ from gwsumm import (globalv, version)
 from gwsumm.mode import *
 from gwsumm.config import *
 from gwsumm.data import get_channel
-from gwsumm.tabs import (split_channels, get_tab)
+from gwsumm.tabs import get_tab
 from gwsumm.utils import *
 from gwsumm.state import *
 
@@ -405,11 +405,10 @@ for tab in filter(lambda tab: tab.parent is not None, alltabs):
 tabs = tabs.values()
 
 # write config page
-about = get_tab('about')('About', parent=None,
-                         states=[globalv.STATES[ALLSTATE]], base=base)
+about = get_tab('about')('About', parent=None, base=base, span=span)
 if not opts.no_html:
     mkdir(about.path)
-    about.build_html(css=css, js=javascript, tabs=tabs, config=config.files)
+    about.write_html(css=css, js=javascript, tabs=tabs, config=config.files)
 
 
 # -----------------------------------------------------------------------------
@@ -439,8 +438,8 @@ for tab in alltabs:
     if not opts.html_only:
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess)
-    page = tab.build_html(css=css, js=javascript, tabs=tabs,
-                          ifos=(ifo, ifobases), about=about.index,
+    page = tab.write_html(css=css, js=javascript, tabs=tabs,
+                          ifo=ifo, ifomap=ifobases, about=about.index,
                           writedata=not opts.html_only,
                           writehtml=not opts.no_html)
 

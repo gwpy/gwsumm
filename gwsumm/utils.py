@@ -24,9 +24,12 @@ import sys
 import time
 import re
 
+from gwpy.io import nds as ndsio
+
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
+re_quote = re.compile(r'^[\"\']|[\"\']$')
 
 
 def elapsed_time():
@@ -104,3 +107,30 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
+
+
+def split_channels(channelstring):
+    """Split a comma-separated list of channels that may, or may not
+    contain NDS2 channel types as well
+    """
+    out = []
+    while True:
+        channelstring = channelstring.strip(' \n')
+        if ',' not in channelstring:
+            break
+        for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:
+            if nds2type and ',%s' % nds2type in channelstring:
+                try:
+                    channel, ctype, channelstring = channelstring.split(',', 2)
+                except ValueError:
+                    channel, ctype = channelstring.split(',')
+                    channelstring = ''
+                out.append('%s,%s' % (channel, ctype))
+                break
+            elif nds2type == '' and ',' in channelstring:
+                channel, channelstring = channelstring.split(',', 1)
+                out.append(channel)
+                break
+    if channelstring:
+        out.append(channelstring)
+    return out

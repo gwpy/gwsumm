@@ -25,6 +25,7 @@ configuration INI files
 import re
 
 from .. import version
+from ..utils import re_quote
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
@@ -42,8 +43,8 @@ def register_tab(tab, name=None, force=False):
         defining Class for this tab type.
     name : `str`, optional
         unique descriptive name for this type of tab, must not
-        contain any spaces, e.g. 'hveto'. If ``name=None``, the `type`
-        attribute of the given tab will be used.
+        contain any spaces, e.g. 'hveto'. If ``name=None``, the `Tab.type`
+        class attribute of the given tab will be used.
     force : `bool`
         overwrite existing registration for this type
 
@@ -65,8 +66,8 @@ def get_tab(name):
     """Query the registry for the tab class registered to the given
     name
     """
-    name = re.sub('[\'\"]', '', name)
+    name = re_quote.sub('', name)
     try:
         return _TABS[name]
     except KeyError:
-        raise ValueError("No SummaryTab registered with name '%s'" % name)
+        raise ValueError("No Tab registered with name '%s'" % name)

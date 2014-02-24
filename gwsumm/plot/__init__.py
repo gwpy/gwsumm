@@ -33,9 +33,7 @@ from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-# import SuperClasses
+from .registry import *
 from .core import *
-
-# this import registers the builtins with their given names
-from .builtin_plots import *
+from .builtin import *
 

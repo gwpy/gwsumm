@@ -21,7 +21,8 @@
 for GWSumm
 """
 
-import os
+import hashlib
+import os.path
 import re
 import warnings
 from math import (floor, ceil)
@@ -31,38 +32,96 @@ try:
 except ImportError:
     from astropy.utils import OrderedDict
 
-from gwpy.detector import (Channel, ChannelList)
+from gwpy.segments import Segment
+from gwpy.detector import ChannelList
 
 from .. import globalv
 from ..data import get_channel
-from ..state import ALLSTATE
+from ..utils import split_channels
 
-__all__ = ['TabPlot', 'PlotList']
+__all__ = ['SummaryPlot', 'DataSummaryPlot', 'PlotList']
 
 re_cchar = re.compile("[\W\s_]+")
 
 
-class TabPlot(object):
-    """Defines a plot to be displayed on a `Tab`
+class SummaryPlot(object):
+    """An image to displayed in GWSumm HTML output.
 
-    This object is designed to be sub-classed by specific plot types
-    to be registered to a given name, e.g. the TimeSeriesTabPlot class
-    is automatically registered to the 'timeseries' name.
+    Parameters
+    ----------
+    href : `str`, optional
+        The IMG URL for this `SummaryPlot`.
+
+    Notes
+    -----
+    This `class` is a stub, designed to make creating detailed `SummaryPlot`
+    classes easier.
+    """
+    type = None
+
+    def __init__(self, href=None):
+        self.href = href
+
+    @property
+    def href(self):
+        """HTML <img> href attribute for this `SummaryPlot`.
+        """
+        return self._href
+
+    @href.setter
+    def href(self, url):
+        self._href = url and os.path.normpath(url) or None
+
+    # ------------------------------------------------------------------------
+    # TabSummaryPlot methods
+
+    @classmethod
+    def from_ini(cls, *args, **kwargs):
+        """Define a new `SummaryPlot` from a an INI-format `ConfigParser`
+        section.
+        """
+        raise NotImplementedError("Sub-classes should provide this method.")
+
+    def __eq__(self, other):
+        """Compare this `SummaryPlot` to another.
+
+        Returns
+        -------
+        `True`
+            if the metadata for ``self`` match those of ``other``
+        `False`
+            otherwise
+        """
+        if not isinstance(other, self.__class__):
+            return False
+        if not self.href == other.href:
+            return False
+        return True
+
+    def __repr__(self):
+        return '<%s(%s)>' % (self.__class__.__name__, self.href)
+
+    def __str__(self):
+        return str(self.href)
+
+
+class DataSummaryPlot(SummaryPlot):
+    """A `SummaryPlot` from instrumental data.
 
     Parameters
     ----------
     channels : `list`
         a list of channel names that define the data sources for this
-        `TabPlot`
-    segment : :class:`~gwpy.segments.segments.Segment`
-        the defining GPS [start, stop) `Segment` for this `TabPlot`.
-         This is used to constructed the LIGO-T050017 compliant output
-         file name for this plot
+        `DataSummaryPlot`
+    start : `float`
+        GPS start time of this `DataSummaryPlot`.
+    end : `float`
+        GPS end time of this `DataSummaryPlot`.
     tag : `str`
-        a descriptive tag for this `TabPlot`, used as part of the output
+        a descriptive tag for this `TabSummaryPlot`, used as part of the output
         file name
     outdir : `str`
-        output directory path for this `TabPlot`, defaults to the current
+        output directory path for this `TabSummaryPlot`, defaults to the current
         directory
     href : `str`
         custom URL for this plot to link towards.
@@ -70,52 +129,71 @@ class TabPlot(object):
         all other keyword arguments to be passed to this plot's
         :meth:`process` method.
 
-    Attributes
-    ----------
-    channels
-    state
-    gpsstart
-    gpsend
-    outputfile
-    href
-
     Notes
     -----
     All sub-classes of this object must provide the following methods
 
-    =======================  =================================================
+    =======================  ==============================================
     :meth:`add_data_source`  routine for appending data sources to the plot
-    :meth:`process`          method by which the data are loaded/generated \
-                             and the plot actually written
-    =======================  ===================================================
+    =======================  ==============================================
     """
-    #: Figure subclass
-    FigureClass = None
-    #: Axes subclass
-    AxesClass = None
-    #: name for TabPlot subclass
-    type = None
+    #: name for TabSummaryPlot subclass
+    type = 'data'
     #: dict of default plotting kwargs
     defaults = {}
 
-    def __init__(self, channels, start, end, state=ALLSTATE, outdir='.',
-                 href=None, **kwargs):
+    def __init__(self, channels, start, end, state=None, outdir='.',
+                 tag=None, **pargs):
         self.channels = channels
+        self.span = (start, end)
         self.state = state
-        self.outdir = outdir
-        self.plotargs = kwargs
-        self.gpsstart = start
-        self.gpsend = end
-        self.href = href
+        self._outdir = outdir
+        if tag is not None:
+            self.tag = tag
+        self.pargs = self.defaults.copy()
+        self.pargs.update(pargs)
+        self.plot = None
 
     # ------------------------------------------------------------------------
-    # TabPlot properties
+    # TabSummaryPlot properties
+
+    @property
+    def span(self):
+        """The GPS [start, stop) interval for this `TabSummaryPlot`.
+        """
+        return self._span
+
+    @span.setter
+    def span(self, seg):
+        self._span = Segment(*seg)
+
+    @property
+    def start(self):
+        return self.span[0]
+
+    @property
+    def end(self):
+        return self.span[1]
+
+    @property
+    def state(self):
+        """`~gwsumm.state.SummaryState` defining validity of this
+        `DataSummaryPlot`.
+        """
+        return self._state
+
+    @state.setter
+    def state(self, state_):
+        if isinstance(state_, (unicode, str)):
+            self._state = globalv.STATES[state_]
+        else:
+            self._state = state_
 
     @property
     def channels(self):
         """List of data-source
         :class:`Channels <~gwpy.detector.channel.Channel>` for this
-        `TabPlot`.
+        `TabSummaryPlot`.
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
@@ -127,69 +205,50 @@ class TabPlot(object):
         self._channels = channellist
 
     @property
-    def state(self):
-        """Instrumental :class:`~gwsumm.state.SummaryState` defining
-        the useful data segments for this `TabPlot`
-        """
-        return self._state
-
-    @state.setter
-    def state(self, state_):
-        if isinstance(state_, basestring):
-            self._state = globalv.STATES[state_]
-        else:
-            self._state = state_
-
-    @property
-    def href(self):
-        """HTML <a> URL for this `TabPlot`.
-        """
-        if self._href:
-            return self._href
-        else:
-            return self.outputfile
-
-    @href.setter
-    def href(self, url):
-        self._href = url
-
-    @property
-    def tag(self):
-        """Descriptive filetag for this `TabPlot`.
-        """
-        raise NotImplementedError("Sub-classes must define a tag")
-
-    @property
     def ifos(self):
-        """Interferometer set for this `TabPlot`
+        """Interferometer set for this `TabSummaryPlot`
         """
         return self.channels.ifos
 
     @property
+    def tag(self):
+        """File tag for this `DataSummaryPlot`.
+        """
+        try:
+            return self._tag
+        except AttributeError:
+            state = re_cchar.sub('_', self.state is None and 'MULTI' or
+                                      self.state.name)
+            hash = hashlib.md5("".join(map(str,
+                                           self.channels))).hexdigest()[:6]
+            return '_'.join(map(str.upper, [state, hash, self.type]))
+
+    @tag.setter
+    def tag(self, filetag):
+        self._tag = filetag or self.type.upper()
+
+    @property
     def outputfile(self):
-        """Output file path for this `TabPlot`.
+        """Output file for this `TabSummaryPlot`.
         """
         ifos = ''.join(self.ifos)
-        desc = '_'.join([re_cchar.sub('_', self.state.name.upper()),
-                         self.tag.upper(),
-                         self.type.upper()])
-        return os.path.join(self.outdir, '%s-%s-%d-%d.png'
-                                         % (ifos, desc, floor(self.gpsstart),
-                                            ceil(self.gpsend-self.gpsstart)))
+        tag = self.tag
+        gps = floor(self.start)
+        dur = ceil(self.end - self.start)
+        return os.path.join(self._outdir,
+                            '%s-%s-%d-%d.png' % (ifos, tag, gps, dur))
+
+    @property
+    def href(self):
+        return self.outputfile
 
     # ------------------------------------------------------------------------
-    # TabPlot methods
+    # TabSummaryPlot methods
 
-    def process(self):
-        """Generate a plot using the data pre-loaded into the
-        globalv memory cache
+    def add_channel(self, channel):
+        self._channels.append(channel)
 
-        This method should be sub-classed by other plot types
-        """
-        raise NotImplementedError("Actually generating plots hasn't been "
-                                  "implemented yet")
-
-    def find_mmm_channels(self):
+    def get_channel_groups(self):
         """Find and group (mean, min, max) sets of channels
         for plotting.
 
@@ -216,19 +275,15 @@ class TabPlot(object):
         return out
 
     @classmethod
-    def from_ini(cls, cp, section, state=ALLSTATE, source='channels',
-                 **kwargs):
-        """Define a new `TabPlot` from a an INI-format `ConfigParser`
-        section.
+    def from_ini(cls, config, section, start, end, channels=None, **kwargs):
+        """Define a new `DataSummaryPlot`.
         """
-        # get [start, stop) job interval
-        start = cp.getint('general', 'gps-start-time')
-        end = cp.getint('general', 'gps-end-time')
         # read parameters
         try:
-            params = dict(cp.nditems(section))
+            params = dict(config.nditems(section))
         except AttributeError:
-            params = dict(cp.items(section))
+            params = dict(config.items(section))
+
         # get and check type
         ptype = re.sub('[\'\"]', '', params.pop('type'))
         if ptype != cls.type:
@@ -236,8 +291,10 @@ class TabPlot(object):
                           "parsed by different plotting class '%s'"
                           % (ptype, cls.__name__))
         # get channels
-        from ..tabs.core import split_channels
-        sources = split_channels(params.pop(source, ''))
+        if channels is None:
+            channels = params.pop('channels', [])
+        if isinstance(channels, (unicode, str)):
+            channels = split_channels(channels)
         # parse other parameters
         for key, val in params.iteritems():
             try:
@@ -246,34 +303,23 @@ class TabPlot(object):
                 pass
         params.update(kwargs)
         # format and return
-        return cls(sources, start, end, state, **params)
+        return cls(channels, start, end, **params)
 
-    # ------------------------------------------------------------------------
-    # TabPlot comparisons
+    def process(self):
+        """Process all data and generate the output file for this
+        `SummaryPlot`.
 
-    def __eq__(self, other):
-        """Compare this `TabPlot` to another.
-
-        Returns
-        -------
-        `True`
-            if the metadata for ``self`` match those of ``other``
-        `False`
-            otherwise
+        This function should be provided by all sub-classes, and should
+        take no arguments.
         """
-        if not isinstance(other, self.__class__):
-            return False
-        if not self.channels == other.channels:
-            return False
-        if not self.type == other.type:
-            return False
-        if not self.outdir == other.outdir:
-            return False
-        return True
+        raise NotImplementedError("This method should be provided by a "
+                                  "sub-class")
 
-    def __repr__(self):
-        return '<%sPlotRequest(%s, %s)>' % (self.type.title(), self.channels,
-                                            self.outdir)
+    def finalize(self):
+        """Save the plot to disk and close.
+        """
+        self.plot.save(self.outputfile)
+        self.plot.close()
 
 
 class PlotList(list):

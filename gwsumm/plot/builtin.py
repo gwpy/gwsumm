@@ -120,7 +120,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
                                       data[0].channel.amplitude_range)
 
         # add horizontal lines to add
-        for yval in self.pargs['hlines']:
+        for yval in self.pargs['hline']:
             try:
                 yval = float(yval)
             except ValueError:
@@ -406,7 +406,8 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
             nflags += len([m for m in channel.bitmask if m is not None])
-            ax.plot(*flags[::-1], **plotargs)
+            if flags is not None:
+                ax.plot(*flags[::-1], **plotargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():

@@ -132,9 +132,9 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         # customise plot
         for key, val in self.pargs.iteritems():
             try:
-                setattr(ax, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(ax, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         if len(mmmchans) > 1:
             plot.add_legend(ax=ax)
 
@@ -211,9 +211,9 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
             if key == 'ratio':
                 continue
             try:
-                setattr(ax, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(ax, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         self.add_state_segments(ax)
         self.finalize()
 
@@ -330,9 +330,9 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
         # customise plot
         for key, val in self.pargs.iteritems():
             try:
-                setattr(plot, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(plot, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         if 'ylim' not in self.pargs:
             ax.set_ylim(-0.5, len(self.flags) - 0.5)
 
@@ -408,9 +408,9 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
         # customise plot
         for key, val in self.pargs.iteritems():
             try:
-                setattr(plot, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(plot, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         if 'ylim' not in self.pargs:
             ax.set_ylim(-0.5, nflags - 0.5)
 
@@ -486,9 +486,9 @@ class SpectrumSummaryPlot(DataSummaryPlot):
             if re.match('legend-', key):
                 legendargs[key[7:]] = val
             try:
-                setattr(plot, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(plot, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.coloraxes:
@@ -603,9 +603,9 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         # customise plot
         for key, val in self.pargs.iteritems():
             try:
-                setattr(plot, key, val)
+                getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                getattr(plot, 'get_%s' % key)(val)
+                setattr(ax, key, val)
         if 'title' not in self.pargs.keys() and len(self.channels) == 1:
             plot.title = '%s (%s)' % (self.channels[0].texname, self.etg)
 

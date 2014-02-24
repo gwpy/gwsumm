@@ -541,7 +541,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             tag += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
-                    tag += '_%s' % re_cchar.sub('_', [column])
+                    tag += '_%s' % re_cchar.sub('_', column)
             return tag.upper()
 
     def process(self):

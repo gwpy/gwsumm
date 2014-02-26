@@ -633,8 +633,11 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         else:
             plot.add_colorbar(ax=ax, visible=False)
 
-        if len(self.channels) == 1 and ccolumn:
-            ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
+        if len(self.channels) == 1 and len(table):
+            if ccolumn is None:
+                ax.add_loudest(table, ycolumn, xcolumn, ycolumn)
+            else:
+                ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
 
         # add state segments
         if isinstance(plot, TimeSeriesPlot):

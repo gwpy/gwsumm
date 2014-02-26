@@ -29,7 +29,8 @@ from gwpy.io import nds as ndsio
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
-re_quote = re.compile(r'^[\"\']|[\"\']$')
+re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
+re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 
 def elapsed_time():
@@ -114,8 +115,9 @@ def split_channels(channelstring):
     contain NDS2 channel types as well
     """
     out = []
+    channelstring = re_quote.sub('', channelstring)
     while True:
-        channelstring = channelstring.strip(' \n')
+        channelstring = channelstring.strip('\' \n')
         if ',' not in channelstring:
             break
         for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:

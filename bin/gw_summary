@@ -249,13 +249,17 @@ else:
                                                datetime.timedelta(days=1)))
 
 span = Segment(opts.gps_start_time, opts.gps_end_time)
+utc = gpstime.gps_to_utc(opts.gps_start_time)
 try:
-    config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
-    config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
-except configparser.NoSectionError:
+    config.items('general')
+except NoSectionError:
     config.add_section('general')
+else:
     config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
     config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
+    config.set('general', 'yyyy', utc.strftime('%Y'))
+    config.set('general', 'yyyymm', utc.strftime('%Y%m'))
+    config.set('general', 'yyyymmdd', utc.strftime('%Y%m%d'))
 
 
 starttime = Time(float(opts.gps_start_time), format='gps')
@@ -267,7 +271,6 @@ globalv.PROFILE = opts.profile
 
 # set mode and output directory
 outdir = opts.output_dir
-utc = gpstime.gps_to_utc(opts.gps_start_time)
 if opts.day:
     mode = SUMMARY_MODE_DAY
     base = os.path.join('day', utc.strftime('%Y%m%d'))
@@ -312,7 +315,7 @@ End time: %s (%s)
 # Load custom units
 try:
     customunits = config.nditems('units')
-except configparser.NoSectionError:
+except NoSectionError:
     pass
 else:
     new_ = []

@@ -41,7 +41,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                  query=True, multiprocess=False):
     """Read a table of transient event triggers for a given channel.
     """
-    key = '%s,%s' % (str(channel), etg)
+    key = '%s,%s' % (str(channel), etg.lower())
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     # get default table type for this generator

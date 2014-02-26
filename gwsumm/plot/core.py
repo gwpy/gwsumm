@@ -283,6 +283,10 @@ class DataSummaryPlot(SummaryPlot):
             params = dict(config.nditems(section))
         except AttributeError:
             params = dict(config.items(section))
+        for key in params:
+            key2 = re_cchar.sub('_', key)
+            if key != key2:
+                params[key2] = params.pop(key)
 
         # get and check type
         ptype = re.sub('[\'\"]', '', params.pop('type'))

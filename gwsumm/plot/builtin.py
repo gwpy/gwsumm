@@ -40,10 +40,6 @@ from .registry import register_plot
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-__all__ = ['TimeSeriesSummaryPlot', 'SegmentSummaryPlot',
-           'SpectrumSummaryPlot', 'SpectrogramSummaryPlot',
-           'StateVectorSummaryPlot', 'TriggerSummaryPlot']
-
 
 class TimeSeriesSummaryPlot(DataSummaryPlot):
     """SummaryPlot of some `TimeSeries` data.
@@ -144,6 +140,8 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         self.add_state_segments(ax)
         self.finalize()
 
+register_plot(TimeSeriesSummaryPlot)
+
 
 class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
     """SummaryPlot a Spectrogram
@@ -219,6 +217,8 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
                 setattr(ax, key, val)
         self.add_state_segments(ax)
         self.finalize()
+
+register_plot(SpectrogramSummaryPlot)
 
 
 class SegmentSummaryPlot(TimeSeriesSummaryPlot):
@@ -346,6 +346,8 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_bitmask(mask, topdown=True)
         self.finalize()
 
+register_plot(SegmentSummaryPlot)
+
 
 class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
     """SummaryPlot of some `StateVector` data.
@@ -424,6 +426,8 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
         self.finalize()
+
+register_plot(StateVectorSummaryPlot)
 
 
 class SpectrumSummaryPlot(DataSummaryPlot):
@@ -504,6 +508,8 @@ class SpectrumSummaryPlot(DataSummaryPlot):
             ax.xaxis.labelpad = 10
 
         self.finalize()
+
+register_plot(SpectrumSummaryPlot)
 
 
 class TriggerSummaryPlot(TimeSeriesSummaryPlot):
@@ -627,7 +633,73 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         # finalise
         self.finalize()
 
+register_plot(TriggerSummaryPlot)
 
-for PlotClass in __all__:
-    PlotClass = locals()[PlotClass]
-    register_plot(PlotClass.type, PlotClass)
+
+class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
+    """Custom time-series plot to handle discontiguous `TimeSeries`.
+    """
+    type = 'trigger-timeseries'
+
+    def process(self):
+        """Read in all necessary data, and generate the figure.
+        """
+        (plot, ax) = self.init_plot()
+
+        # work out labels
+        labels = self.pargs.pop('labels', self.channels)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
+
+        # add data
+        for label, channel in zip(labels, self.channels):
+            label = label.replace('_', r'\_')
+            data = get_timeseries(channel, self.state, query=False)
+            # handle no timeseries
+            if not len(data):
+                ax.plot([0], [0], visible=False, label=label)
+                continue
+            # plot time-series
+            color = None
+            for ts in data:
+                # double-check log scales
+                if self.pargs['logy']:
+                    ts[ts.data == 0] = 1e-100
+                if color is None:
+                    line = ax.plot_timeseries(ts, label=label)[0]
+                    color = line.get_color()
+                else:
+                    ax.plot_timeseries(ts, color=color, label=None)
+
+            # allow channel data to set parameters
+            if hasattr(data[0].channel, 'amplitude_range'):
+                self.pargs.setdefault('ylim',
+                                      data[0].channel.amplitude_range)
+
+        # add horizontal lines to add
+        for yval in self.pargs['hline']:
+            try:
+                yval = float(yval)
+            except ValueError:
+                continue
+            else:
+                ax.plot([self.start, self.end], [yval, yval],
+                        linestyle='--', color='red')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if len(self.channels) > 1:
+            plot.add_legend(ax=ax)
+
+        # add extra axes and finalise
+        if not plot.coloraxes:
+            plot.add_colorbar(ax=ax, visible=False)
+        self.add_state_segments(ax)
+        self.finalize()
+
+register_plot(TriggerTimeSeriesSummaryPlot)

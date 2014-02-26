@@ -31,7 +31,7 @@ __version__ = version.version
 _PLOTS = {}
 
 
-def register_plot(name, plotclass, force=False):
+def register_plot(plot, name=None, force=False):
     """Register a new summary `Plot` to the given ``name``
 
     Parameters
@@ -49,11 +49,13 @@ def register_plot(name, plotclass, force=False):
     ValueError
         if name is already registered and ``force`` not given as `True`
     """
+    if name is None:
+        name = plot.type
     if not name in _PLOTS or force:
-        _PLOTS[name] = plotclass
+        _PLOTS[name] = plot
     else:
         raise ValueError("Plot '%s' has already been registered to the %s "
-                         "class" % (name, plotclass.__name__))
+                         "class" % (name, plot.__name__))
 
 
 def get_plot(name):

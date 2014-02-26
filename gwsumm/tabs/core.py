@@ -473,7 +473,6 @@ class StateTab(Tab):
         """
         for state in self.states:
             state.fetch(config=config)
-        self.states.sort(key=lambda s: abs(s.active), reverse=True)
 
     def process(self, config=ConfigParser(), **stateargs):
         """Process data for this `StateTab`.
@@ -624,8 +623,9 @@ class StateTab(Tab):
         # write page for each state
         if writedata:
             for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
+                inner = self.build_inner_html(state, **inargs)
                 with open(shtml, 'w') as fobj:
-                    fobj.write(str(self.build_inner_html(state, **inargs)))
+                    fobj.write(str(inner))
         page.add(str(html.wrap_content('')))
         if len(self.states) > 1:
             page.add(str(html.load_state(self.hrefs[0])))

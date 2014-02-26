@@ -82,6 +82,8 @@ def get_channel(channel):
                             '\n    '.join([c.ndsname for c in found])))
     else:
         try:
+            if not re_channel.match(name):
+                raise ValueError()
             # trends are not stored in CIS, but try and get their raw source
             if re.search('.[a-z]+\Z', name):
                 raise TypeError()
@@ -103,10 +105,8 @@ def get_channel(channel):
                 new.sample_rate = 1
         except (ValueError, urllib2.URLError):
             new = Channel(str(channel))
-            new.type = 'raw'
         else:
             new.name = str(channel)
-            new.type = 'raw'
         globalv.CHANNELS.append(new)
         try:
             return get_channel(name)
@@ -244,7 +244,7 @@ def find_frame_type(channel):
 
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
-                        cache=Cache(), query=True, nds='guess',
+                        cache=None, query=True, nds='guess',
                         multiprocess=True, statevector=False, return_=True):
     """Retrieve the data for a set of channels
     """
@@ -276,7 +276,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
-                         cache=Cache(), query=True, nds='guess',
+                         cache=None, query=True, nds='guess',
                          multiprocess=True, return_=True, statevector=False):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
@@ -336,6 +336,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     for channel in channels:
         globalv.DATA.setdefault(channel.ndsname, ListClass())
     query &= (abs(new) > 0)
+    if cache is not None:
+        query &= len(cache) > 0
     if query:
         # open NDS connection
         if nds and config.has_option('nds', 'host'):
@@ -452,7 +454,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     return out
 
 
-def get_timeseries(channel, segments, config=ConfigParser(), cache=Cache(),
+def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                    query=True, nds='guess', multiprocess=True,
                    statevector=False, return_=True):
     """Retrieve the data (time-series) for a given channel

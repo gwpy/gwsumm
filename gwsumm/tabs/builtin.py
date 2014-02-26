@@ -45,7 +45,6 @@ __version__ = version.version
 
 Tab = get_tab('basic')
 StateTab = get_tab('state')
-re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
 
 
 class SimpleStateTab(StateTab):
@@ -88,83 +87,6 @@ class SimpleStateTab(StateTab):
         else:
             self._layout = map(int, l)
 
-    @property
-    def channels(self):
-        """Set of all data channels used by this tab
-        """
-        TimeSeriesPlot = plotregistry.get_plot('timeseries')
-        SpectrogramPlot = plotregistry.get_plot('spectrogram')
-        SpectrumPlot = plotregistry.get_plot('spectrum')
-        StateVectorPlot = plotregistry.get_plot('statevector')
-        out = set()
-        for plot in self.plots:
-            if isinstance(plot, (TimeSeriesPlot, SpectrogramPlot,
-                                 SpectrumPlot, StateVectorPlot)):
-                out.update(plot.channels)
-        return sorted(out, key=lambda ch: ch.name)
-
-    @property
-    def timeseries(self):
-        out = set()
-        for plot in self.plots:
-            if plot.type in ['timeseries', 'spectrogram', 'spectrum']:
-                out.update(plot.channels)
-        return sorted(out, key=lambda ch: ch.name)
-
-    @property
-    def statevectors(self):
-        StateVectorPlot = plotregistry.get_plot('statevector')
-        out = set()
-        for plot in self.plots:
-            if isinstance(plot, StateVectorPlot):
-                out.update(plot.channels)
-        return sorted(out, key=lambda ch: ch.name)
-
-    @property
-    def spectra(self):
-        SpectrumPlot = plotregistry.get_plot('spectrum')
-        out = set()
-        for plot in self.plots:
-            if isinstance(plot, SpectrumPlot):
-                out.update(plot.channels)
-        return sorted(out, key=lambda ch: ch.name)
-
-    @property
-    def spectrograms(self):
-        SpectrogramPlot = plotregistry.get_plot('spectrogram')
-        SpectrumPlot = plotregistry.get_plot('spectrum')
-        out = set()
-        for plot in self.plots:
-            if isinstance(plot, (SpectrogramPlot, SpectrumPlot)):
-                out.update(plot.channels)
-        return sorted(out, key=lambda ch: ch.name)
-
-    @property
-    def triggers(self):
-        """Set of all trigger channels used by this tab
-        """
-        TriggerPlot = plotregistry.get_plot('triggers')
-        out = set()
-        for plot in self.plots:
-            if isinstance(plot, TriggerPlot):
-                out.update(plot.channels)
-        return out
-
-    @property
-    def dataqualityflags(self):
-        """Set of all data-quality flags used by this tab.
-
-        This does not include those used in state information only.
-        """
-        dqflags = set()
-        re_flag = re.compile('[&!-,]')
-        for plot in self.plots:
-            if hasattr(plot, 'flags'):
-                pflags = [f for pflag in plot.flags for
-                          f in re_flag.split(pflag)]
-                dqflags.update(pflags)
-        return dqflags
-
     # -------------------------------------------
     # SummaryTab configuration parser
 
@@ -193,18 +115,18 @@ class SimpleStateTab(StateTab):
         # get tab name
         if cp.has_option(section, 'name'):
             # name given explicitly
-            name = cp.get(section, 'name')
+            name = re_quote.sub('', cp.get(section, 'name'))
         else:
             # otherwise strip 'tab-' from section name
             name = section[4:]
         if cp.has_option(section, 'longname'):
-            longname = cp.get(section, 'longname')
+            longname = re_quote.sub('', cp.get(section, 'longname'))
         else:
             longname = name
         # get parent:
         #     if parent is not given, this assumes a top-level tab
         if cp.has_option(section, 'parent'):
-            parent = cp.get(section, 'parent')
+            parent = re_quote.sub('', cp.get(section, 'parent'))
             if parent == 'None':
                 parent = None
         else:
@@ -212,7 +134,7 @@ class SimpleStateTab(StateTab):
         # parse states and retrieve their definitions
         if cp.has_option(section, 'states'):
             # states listed individually
-            statenames = [re_quote.sub('', s) for s in
+            statenames = [re_quote.sub('', s).strip() for s in
                           cp.get(section, 'states').split(',')]
         else:
             # otherwise use 'all' state - full span with no gaps
@@ -314,7 +236,8 @@ class SimpleStateTab(StateTab):
     # SummaryTab processing
 
     def process_state(self, state, nds='guess', multiprocess=True,
-                      config=GWSummConfigParser()):
+                      config=GWSummConfigParser(), datacache=None,
+                      trigcache=None):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
@@ -324,22 +247,23 @@ class SimpleStateTab(StateTab):
         # process time-series
 
         # find channels that need a TimeSeries
-        if len(self.timeseries):
+        tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum')
+        if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
-                   % len(self.timeseries))
-        get_timeseries_dict(self.timeseries, state, config=config, nds=nds,
-                            multiprocess=multiprocess, return_=False)
-        if len(self.timeseries):
+                   % len(tschannels))
+            get_timeseries_dict(tschannels, state, config=config, nds=nds,
+                                multiprocess=multiprocess, cache=datacache,
+                                return_=False)
             vprint("    All time-series data loaded\n")
 
         # find channels that need a StateVector
-        if len(self.statevectors):
+        svchannels = self.get_channels('statevector')
+        if len(svchannels):
             vprint("    %d channels identified as StateVectors\n"
-                   % len(self.statevectors))
-        get_timeseries_dict(self.statevectors, state, config=config, nds=nds,
-                            multiprocess=multiprocess, statevector=True,
-                            return_=False)
-        if len(self.statevectors):
+                   % len(svchannels))
+            get_timeseries_dict(svchannels, state, config=config, nds=nds,
+                                multiprocess=multiprocess, statevector=True,
+                                cache=datacache, return_=False)
             vprint("    All state-vector data loaded\n")
 
         # --------------------------------------------------------------------
@@ -351,18 +275,14 @@ class SimpleStateTab(StateTab):
         except NoSectionError:
             fftparams = {}
 
-        for channel in sorted(set(self.spectra + self.spectrograms),
-                              key=lambda s: str(s)):
+        for channel in self.get_channels('spectrogram', 'spectrum'):
             get_spectrogram(channel, state, config=config, return_=False,
                             multiprocess=multiprocess, **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
 
-        spectrumchannels = set()
-        for plot in self.plots.spectra:
-            spectrumchannels.update(plot.channels)
-        for channel in sorted(spectrumchannels, key=lambda s: str(s)):
+        for channel in self.get_channels('spectrum'):
             get_spectrum(channel, state, config=config, return_=False,
                          **fftparams)
 
@@ -370,22 +290,20 @@ class SimpleStateTab(StateTab):
         # process segments
 
         # find flags that need a DataQualityFlag
-        if len(self.dataqualityflags):
+        dqflags = self.get_flags('segments')
+        if len(dqflags):
             vprint("    %d data-quality flags identified for SegDB query\n"
-                   % len(self.dataqualityflags))
-            get_segments(self.dataqualityflags, state, config=config)
+                   % len(dqflags))
+            get_segments(dqflags, state, config=config)
 
         # --------------------------------------------------------------------
         # process triggers
 
-        tchannels = set()
-        for plot in self.plots:
-            if isinstance(plot, TriggerPlot):
-                for channel in plot.channels:
-                    tchannels.add((plot.etg, channel))
-        for etg, channel in tchannels:
-            get_triggers(channel, etg, state.active, config=config)
+        for etg, channel in self.get_triggers('triggers'):
+            get_triggers(channel, etg, state.active, config=config,
+                         cache=trigcache)
 
+        # --------------------------------------------------------------------
         # make plots
         vprint("    Plotting... \n")
         new_plots = [p for p in self.plots if
@@ -396,6 +314,8 @@ class SimpleStateTab(StateTab):
         for plot in sorted(new_plots,
                            key=lambda p: isinstance(p,
                                                     TriggerPlot) and 2 or 1):
+            if plot.outputfile in globalv.WRITTEN_PLOTS:
+                continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             if (multiprocess and len(new_mp_plots) > 1 and not
                     isinstance(plot, TriggerPlot)):
@@ -418,12 +338,7 @@ class SimpleStateTab(StateTab):
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def build_inner_html(self, state):
-        """Write the '#main' HTML content for this tab.
-
-        For now, this function just links all the plots in a 2-column
-        format.
-        """
+    def scaffold_plots(self, state):
         plots = [p for p in self.plots if
                  p.state is None or p.state.name == state.name]
         page = html.markup.page()
@@ -465,17 +380,29 @@ class SimpleStateTab(StateTab):
             # or move to next column
             else:
                 i += 1
+        return page
+
+    def build_inner_html(self, state):
+        """Write the '#main' HTML content for this tab.
+
+        For now, this function just links all the plots in a 2-column
+        format.
+        """
+        page = self.scaffold_plots(state)
+
         # link data
         page.hr(class_='row-divider')
         page.div(class_='row')
         page.div(class_='col-md-12')
-        if len(self.channels):
+        channels = self.get_channels('timeseries', 'statevector', 'spectrum',
+                                     'spectrogram')
+        if len(channels):
             page.h1('Channel information')
             page.add("The following channels were used to generate the above "
                      "data")
             headers = ['Channel', 'Type', 'Sample rate', 'Units']
             data = []
-            for channel in self.channels:
+            for channel in channels:
                 channel = get_channel(channel)
                 # format CIS url and type
                 if re.search('.[a-z]+\Z', channel.name):
@@ -505,7 +432,9 @@ class SimpleStateTab(StateTab):
                     unit = 'Unknown'
                 data.append([link, ctype, rate, unit])
             page.add(str(html.data_table(headers, data, table='data')))
-        if len(self.dataqualityflags):
+
+        flags = self.get_flags('segments')
+        if len(flags):
             page.h1('Data-quality flag information')
             page.add("The following data-quality flags were used to generate "
                      "the above data. This list does not include state "
@@ -515,7 +444,7 @@ class SimpleStateTab(StateTab):
                        'Active duration']
             data = []
             pc = abs(state.active) / 100.
-            for flag in sorted(self.dataqualityflags):
+            for flag in flags:
                 flag = globalv.SEGMENTS[flag].copy()
                 flag.valid &= state.active
                 v = flag.version and str(flag.version) or ''
@@ -532,7 +461,7 @@ class SimpleStateTab(StateTab):
             page.add(str(html.data_table(headers, data, table='data')))
             # print segment lists
             page.div(class_='panel-group', id="accordion")
-            for i,flag in enumerate(self.dataqualityflags):
+            for i, flag in enumerate(flags):
                 flag = globalv.SEGMENTS[flag].copy()
                 flag.valid &= state.active
                 n = ':'.join([flag.ifo, flag.name])
@@ -551,7 +480,7 @@ class SimpleStateTab(StateTab):
                 page.p('This flag was defined and had a known state during '
                        'the following segments:')
                 segwizard = StringIO()
-                tosegwizard(segwizard, flag.valid)
+                flag.valid.write(segwizard, format='segwizard')
                 page.pre(segwizard.getvalue())
                 segwizard.close()
                 # write segment table
@@ -567,6 +496,71 @@ class SimpleStateTab(StateTab):
         page.div.close()
         page.div.close()
         return page
+
+    # -------------------------------------------------------------------------
+    # methods
+
+    def get_channels(self, *types):
+        """Return the `set` of data channels required for plots of the
+        given ``types``.
+
+        Parameters
+        ----------
+        *types : `list` of `str`
+            `list` of plot type strings whose channel sets to return
+
+        Returns
+        -------
+        channels : `list`
+            an alphabetically-sorted `list` of channels
+        """
+        out = set()
+        for plot in self.plots:
+            if plot.type in types:
+                out.update(plot.channels)
+        return sorted(out, key=lambda ch: ch.name)
+
+    def get_flags(self, *types):
+        """Return the `set` of data-quality flags required for plots of the
+        given ``types``.
+
+        Parameters
+        ----------
+        *types : `list` of `str`
+            `list` of plot type strings whose flag sets to return
+
+        Returns
+        -------
+        flags : `list`
+            an alphabetically-sorted `list` of flags
+        """
+        out = set()
+        for plot in self.plots:
+            if plot.type in types:
+                out.update([f for cflag in plot.flags for f in
+                            re.split('[&\|!]', cflag)])
+        return sorted(out, key=lambda dqf: str(dqf))
+
+    def get_triggers(self, *types):
+        """Return the `set` of data-quality flags required for plots of the
+        given ``types``.
+
+        Parameters
+        ----------
+        *types : `list` of `str`
+            `list` of plot type strings whose flag sets to return
+
+        Returns
+        -------
+        flags : `list`
+            an alphabetically-sorted `list` of flags
+        """
+        out = set()
+        for plot in self.plots:
+            if plot.type in types:
+                for channel in plot.channels:
+                    out.add((plot.etg, channel))
+        return sorted(out, key=lambda ch: ch[1].name)
 
 register_tab(SimpleStateTab)
 

@@ -63,6 +63,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         """
         kwargs.setdefault('edgecolor', 'black')
         kwargs.setdefault('facecolor', 'green')
+        kwargs.setdefault('valid', {'facecolor': 'red'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
         sax.set_epoch(self.start)
@@ -77,8 +78,12 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         ax = self.plot.gca()
         ax.set_epoch(self.start)
         ax.auto_gps_scale(self.end-self.start)
-        ax.set_xlim(self.start, self.end)
         return self.plot, ax
+
+    def finalize(self):
+        if 'xlim' not in self.pargs:
+            self.plot.axes[0].set_xlim(self.start, self.end)
+        return super(TimeSeriesSummaryPlot, self).finalize()
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -519,9 +524,13 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                 'color': None,
                 'edgecolor': None,
                 'facecolor': None,
+                's': 20,
+                'vmin': None,
+                'vmax': None,
                 'clim': None,
                 'logcolor': False,
                 'colorlabel': None,
+                'cmap': 'jet',
                 'size_by': None,
                 'size_by_log': None,
                 'size_range': None}
@@ -571,11 +580,9 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
 
         # get plot arguments
         plotargs = dict()
-        plotargs['edgecolor'] = self.pargs.pop('edgecolor')
-        plotargs['facecolor'] = self.pargs.pop('facecolor')
-        plotargs['size_by'] = self.pargs.pop('size_by')
-        plotargs['size_by_log'] = self.pargs.pop('size_by_log')
-        plotargs['size_range'] = self.pargs.pop('size_range')
+        for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'size_by',
+                    'size_by_log', 'size_range', 'cmap', 's']:
+            plotargs[key] = self.pargs.pop(key)
         if (plotargs['size_range'] is None and
                 (plotargs['size_by'] or plotargs['size_by_log']) and
                 clim is not None):
@@ -625,6 +632,9 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
         else:
             plot.add_colorbar(ax=ax, visible=False)
+
+        if len(self.channels) == 1 and ccolumn:
+            ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
 
         # add state segments
         if isinstance(plot, TimeSeriesPlot):

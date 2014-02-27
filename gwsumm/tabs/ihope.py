@@ -20,6 +20,7 @@
 """
 
 import os
+from warnings import warn
 
 from lal import gpstime
 
@@ -69,12 +70,21 @@ class DailyIhopeTab(base):
         # get cache options
         cachefile = config.get(section, 'inspiral-cache')
         inspiralcache = os.path.join(daydir,  cachefile)
-        with open(inspiralcache, 'r') as fobj:
-            new.inspiralcache = Cache.fromfile(fobj).sieve(segment=new.span)
+        if os.path.isfile(inspiralcache):
+            with open(inspiralcache, 'r') as fobj:
+                new.inspiralcache = Cache.fromfile(fobj).sieve(segment=new.span)
+        else:
+            warn("Cache file %s not found." % inspiralcache)
+            new.inspiralcache = None
         cachefile = config.get(section, 'tmpltbank-cache')
         tmpltbankcache = os.path.join(daydir, cachefile)
-        with open(tmpltbankcache, 'r') as fobj:
-            new.tmpltbankcache = Cache.fromfile(fobj).sieve(segment=new.span)
+        if os.path.isfile(tmpltbankcache):
+            with open(tmpltbankcache, 'r') as fobj:
+                new.tmpltbankcache = Cache.fromfile(fobj).sieve(
+                                         segment=new.span)
+        else:
+            warn("Cache file %s not found." % tmpltbankcache)
+            new.tmpltbankcache = Cache()
 
         # get loudest options
         if config.has_option(section, 'loudest'):
@@ -128,24 +138,46 @@ class DailyIhopeTab(base):
                 globalv.DATA[rangechannel].append(
                     TimeSeries(rangedata, sample_rate=1/dt, epoch=epoch,
                                name=rangechannel))
-                globalv.DATA[rangechannel].coalesce()
+                try:
+                    globalv.DATA[rangechannel].coalesce()
+                except ValueError:
+                    pass
                 globalv.DATA[sizechannel].append(
                     TimeSeries(sizedata, sample_rate=1/dt, epoch=epoch,
                                name=sizechannel))
-                globalv.DATA[sizechannel].coalesce()
+                try:
+                    globalv.DATA[sizechannel].coalesce()
+                except ValueError:
+                    pass
+
+    def process(self, *args, **kwargs):
+        # only process if the cachfile was found
+        if self.inspiralcache is not None:
+            super(DailyIhopeTab, self).process(*args, **kwargs)
 
     def process_state(self, state, nds='guess', multiprocess=False,
                       config=GWSummConfigParser()):
         self.get_tmpltbank_data()
-        super(DailyIhopeTab, self).process_state(state, nds=nds,
-                                                 multiprocess=multiprocess,
-                                                 config=config,
-                                                 datacache=Cache(),
-                                                 trigcache=self.inspiralcache)
+        super(DailyIhopeTab, self).process_state(
+            state, nds=nds, multiprocess=multiprocess, config=config,
+            datacache=Cache(), trigcache=self.inspiralcache)
 
     def build_inner_html(self, state):
         """Write the '#main' HTML content for this `DailyIhopeTab`.
         """
+        # if no files, presume not run yet
+        if self.inspiralcache is None:
+            page = html.markup.page()
+            page.div(class_='alert alert-warning')
+            page.p("No data were found for this day, please try again later.")
+            page.p("If you believe these data should have been found, please "
+                   "contact %s."
+                   % html.markup.oneliner.a('the CBC DQ group',
+                                            href='mailto:cbc+dq@ligo.org'))
+            page.div.close()
+            return page
+
+        # otherwise, carry on...
         page = self.scaffold_plots(state)
 
         # link full results

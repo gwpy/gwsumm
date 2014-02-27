@@ -77,12 +77,12 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         self.plot = plot()
         ax = self.plot.gca()
         ax.set_epoch(self.start)
-        ax.auto_gps_scale(self.end-self.start)
         return self.plot, ax
 
     def finalize(self):
         if 'xlim' not in self.pargs:
             self.plot.axes[0].set_xlim(self.start, self.end)
+        self.plot.axes[0].auto_gps_scale()
         return super(TimeSeriesSummaryPlot, self).finalize()
 
     def process(self):

@@ -141,18 +141,18 @@ class DailyIhopeTab(base):
         # read the cache files
         if os.path.isfile(self.inspiralcachefile):
             with open(self.inspiralcachefile, 'r') as fobj:
-                new.inspiralcache = Cache.fromfile(fobj).sieve(segment=new.span)
+                self.inspiralcache = Cache.fromfile(fobj).sieve(
+                                         segment=self.span)
         else:
             warn("Cache file %s not found." % inspiralcache)
-            new.inspiralcache = None
+            self.inspiralcache = None
         if os.path.isfile(self.tmpltbankcachefile):
             with open(self.tmpltbankcachefile, 'r') as fobj:
-                new.tmpltbankcache = Cache.fromfile(fobj).sieve(
-                                         segment=new.span)
+                self.tmpltbankcache = Cache.fromfile(fobj).sieve(
+                                         segment=self.span)
         else:
             warn("Cache file %s not found." % tmpltbankcache)
-            new.tmpltbankcache = Cache()
-
+            self.tmpltbankcache = Cache()
 
         # only process if the cachfile was found
         if self.inspiralcache is not None:

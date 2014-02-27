@@ -69,22 +69,9 @@ class DailyIhopeTab(base):
 
         # get cache options
         cachefile = config.get(section, 'inspiral-cache')
-        inspiralcache = os.path.join(daydir,  cachefile)
-        if os.path.isfile(inspiralcache):
-            with open(inspiralcache, 'r') as fobj:
-                new.inspiralcache = Cache.fromfile(fobj).sieve(segment=new.span)
-        else:
-            warn("Cache file %s not found." % inspiralcache)
-            new.inspiralcache = None
+        new.inspiralcachefile = os.path.join(daydir,  cachefile)
         cachefile = config.get(section, 'tmpltbank-cache')
-        tmpltbankcache = os.path.join(daydir, cachefile)
-        if os.path.isfile(tmpltbankcache):
-            with open(tmpltbankcache, 'r') as fobj:
-                new.tmpltbankcache = Cache.fromfile(fobj).sieve(
-                                         segment=new.span)
-        else:
-            warn("Cache file %s not found." % tmpltbankcache)
-            new.tmpltbankcache = Cache()
+        new.tmpltbankcachefile = os.path.join(daydir, cachefile)
 
         # get loudest options
         if config.has_option(section, 'loudest'):
@@ -151,6 +138,22 @@ class DailyIhopeTab(base):
                     pass
 
     def process(self, *args, **kwargs):
+        # read the cache files
+        if os.path.isfile(self.inspiralcachefile):
+            with open(self.inspiralcachefile, 'r') as fobj:
+                new.inspiralcache = Cache.fromfile(fobj).sieve(segment=new.span)
+        else:
+            warn("Cache file %s not found." % inspiralcache)
+            new.inspiralcache = None
+        if os.path.isfile(self.tmpltbankcachefile):
+            with open(self.tmpltbankcachefile, 'r') as fobj:
+                new.tmpltbankcache = Cache.fromfile(fobj).sieve(
+                                         segment=new.span)
+        else:
+            warn("Cache file %s not found." % tmpltbankcache)
+            new.tmpltbankcache = Cache()
+
+
         # only process if the cachfile was found
         if self.inspiralcache is not None:
             super(DailyIhopeTab, self).process(*args, **kwargs)

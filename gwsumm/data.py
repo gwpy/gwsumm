@@ -109,7 +109,7 @@ def get_channel(channel):
             new.name = str(channel)
         globalv.CHANNELS.append(new)
         try:
-            return get_channel(name)
+            return get_channel(new)
         except RuntimeError as e:
             if 'maximum recursion depth' in str(e):
                 raise RuntimeError("Recursion error while access channel "

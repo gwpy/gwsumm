@@ -217,12 +217,11 @@ class DataSummaryPlot(SummaryPlot):
         try:
             return self._tag
         except AttributeError:
-            state = str(re_cchar.sub('_', self.state is None and 'MULTI' or
-                                          self.state.name))
-            hash = str(hashlib.md5("".join(map(
-                                         str, self.channels))).hexdigest()[:6])
-            type_ = str(self.type)
-            return '_'.join(map(str.upper, [state, hash, type_]))
+            state = re_cchar.sub('_', self.state is None and 'MULTI' or
+                                      self.state.name)
+            hash = hashlib.md5("".join(map(str,
+                                           self.channels))).hexdigest()[:6]
+            return '_'.join(map(str.upper, [state, hash, self.type]))
 
     @tag.setter
     def tag(self, filetag):

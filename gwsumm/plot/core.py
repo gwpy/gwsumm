@@ -221,7 +221,7 @@ class DataSummaryPlot(SummaryPlot):
                                       self.state.name)
             hash = hashlib.md5("".join(map(str,
                                            self.channels))).hexdigest()[:6]
-            return '_'.join(map(str.upper, [state, hash, self.type]))
+            return '_'.join([state, hash, self.type]).upper()
 
     @tag.setter
     def tag(self, filetag):

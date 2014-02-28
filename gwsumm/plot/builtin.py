@@ -269,7 +269,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
                                  self.state is None and 'MULTI' or
                                  self.state.name)
             hash_ = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
-            return '_'.join(map(str.upper, [state, hash_, self.type]))
+            return '_'.join([state, hash_, self.type]).upper()
 
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,

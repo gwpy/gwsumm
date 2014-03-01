@@ -457,16 +457,14 @@ class SimpleStateTab(StateTab):
                 else:
                     active = '%.2f (%.2f%%)' % (abs(flag.active),
                                                 abs(flag.active) / pc)
-                data.append([flag.ifo, flag.name, v, valid, active])
+                data.append([flag.ifo, flag.tag, v, valid, active])
             page.add(str(html.data_table(headers, data, table='data')))
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):
                 flag = globalv.SEGMENTS[flag].copy()
                 flag.valid &= state.active
-                n = ':'.join([flag.ifo, flag.name])
-                if flag.version:
-                    n += ':%d' % flag.version
+                n = flag.name
                 page.div(class_='panel panel-default')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
                                               'data-parent': '#accordion'})

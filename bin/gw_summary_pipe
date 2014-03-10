@@ -206,14 +206,14 @@ mkdir(etcdir)
 
 for i, fp in enumerate(opts.global_config):
     inicopy = os.path.join(etcdir, os.path.basename(fp))
-    if not os.path.samefile(fp, inicopy):
+    if not os.path.isfile(inicopy) or not os.path.samefile(fp, inicopy):
         shutil.copyfile(fp, inicopy)
     opts.global_config[i] = os.path.abspath(inicopy)
 for i, csv in enumerate(opts.config_file):
     inicopy = []
     for fp in csv.split(','):
         fp2 = os.path.join(etcdir, os.path.basename(fp))
-        if not os.path.samefile(fp, fp2):
+        if not os.path.isfile(fp2) or not os.path.samefile(fp, fp2):
             shutil.copyfile(fp, fp2)
         inicopy.append(os.path.abspath(fp2))
     opts.config_file[i] = ','.join(inicopy)

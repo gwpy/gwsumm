@@ -251,7 +251,7 @@ executable = opts.executable
 condorcmds = {}
 for cmd_ in opts.condor_command:
     key, value = cmd_.split('=', 1)
-    condorcmds[key.rstrip()] = value.strip()
+    condorcmds[key.rstrip().lower()] = value.strip()
 
 if opts.universe != 'local':
     # add X509 to environment
@@ -269,6 +269,8 @@ if opts.universe != 'local':
 
 job = GWSummaryJob(universe, executable, subdir=outdir, logdir=logdir,
                    tag=opts.file_tag, **condorcmds)
+wrapjob = GWSummaryJob('local', executable, subdir=outdir, logdir=logdir,
+                       tag='%s_local' % opts.file_tag)
 
 # add global configurations
 if len(opts.global_config):
@@ -300,7 +302,7 @@ job.add_opt('output-dir', outdir)
 
 # make surrounding HTML first
 if not opts.skip_html_wrapper:
-    wrapper = pipeline.CondorDAGNode(job)
+    wrapper = pipeline.CondorDAGNode(wrapjob)
     wrapper.add_var_arg('--html-only')
     wrapper.add_var_arg('--config-file %s' % ','.join(opts.config_file))
     for configfile in opts.config_file:
@@ -309,6 +311,12 @@ if not opts.skip_html_wrapper:
     dag.add_node(wrapper)
     if opts.verbose:
         print("    Configured HTML wrapper job.")
+
+wrapjob.__dict__ = job.__dict__.copy()
+wrapjob.set_sub_file('%s_local.sub' % os.path.splitext(job.get_sub_file())[0])
+wrapjob.set_universe('local')
+wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
+wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
 
 # create node for each config file
 for configfile in opts.config_file:

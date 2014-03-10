@@ -292,9 +292,6 @@ if opts.single_process:
     job.add_opt('single-process')
 elif opts.max_processes is not None:
     job.add_opt('max-processes', opts.max_processes)
-elif len(opts.config_file) > 1:
-    job.add_opt('max-processes',
-                (cpu_count() // min(len(opts.config_file), 4) - 1))
 if opts.verbose:
     job.add_opt('verbose')
 if opts.ifo:

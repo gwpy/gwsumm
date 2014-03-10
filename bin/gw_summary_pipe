@@ -115,6 +115,9 @@ htcopts.add_option('-l', '--log-dir', action='store', type='string',
                    default=os.environ.get('LOCALDIR', None),
                    help="Directory path for condor log files, "
                          "default: %default")
+htcopts.add_option('-m', '--maxjobs', action='store', type='int', default=None,
+                   metavar='N', help="Restrict the DAG to submit only N jobs "
+                                     "at any one time, default: %default")
 htcopts.add_option('-c', '--condor-command', action='append', type='string',
                    default=[], help="Extra condor submit commands to add to "
                                     "gw_summary submit file. Can be given "
@@ -323,6 +326,9 @@ for configfile in opts.config_file:
     dag.add_node(node)
     if opts.verbose:
         print("    Configured job for config %s." % configfile)
+
+if opts.maxjobs:
+    dag.add_maxjobs_category('gw_summary', opts.maxjobs)
 
 # ----------------------------------------------------------------------------
 # finish up

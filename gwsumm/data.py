@@ -370,6 +370,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=ftype,
                                      exact_match=True)
+            else:
+                fcache = Cache()
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent()
                 fcache = find_frames(ifo, ftype, span[0], span[1],

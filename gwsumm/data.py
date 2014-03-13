@@ -536,7 +536,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             if abs(ts.span) < stride:
                 continue
             try:
-                specgram = ts.spectrogram(stride, maxprocesses=nproc,
+                specgram = ts.spectrogram(stride, nproc=nproc,
                                           **fftparams)
             except ZeroDivisionError:
                 if stride == 0:

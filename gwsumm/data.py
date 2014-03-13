@@ -383,11 +383,14 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
         # check whether each channel exists for all new times already
         qchannels = []
+        qresample = {}
         for channel in channels:
             oldsegs = globalv.DATA.get(channel.ndsname,
                                        ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(channel)
+                if channel in resample:
+                    qresample[channel] = resample[channel]
 
         # find channel type
         if not nds:
@@ -417,7 +420,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                      start=float(segment[0]),
                                      end=float(segment[1]), type=ctype,
                                      nproc=nproc,
-                                     resample=resample, verbose=verbose)
+                                     resample=qresample, verbose=verbose)
             for (channel, data) in tsd.iteritems():
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):

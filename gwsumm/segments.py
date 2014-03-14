@@ -36,7 +36,7 @@ from gwpy.segments import (DataQualityFlag, DataQualityDict, SegmentList)
 import globalv
 from .utils import *
 
-FLAGDIV = re.compile("[&!\|]")
+
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
@@ -59,7 +59,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         flags = flag.split(',')
     else:
         flags = flag
-    allflags = [f for cf in flags for f in FLAGDIV.split(cf)]
+    allflags = [f for cf in flags for f in re_flagdiv.split(cf) if f]
 
     # check validity
     if validity is None:
@@ -106,13 +106,17 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     # return what was asked for
     for compound in flags:
-        union, intersection, exclude = split_compound_flag(compound)
+        union, intersection, exclude, notequal = split_compound_flag(compound)
         for f in exclude:
             out[compound] -= globalv.SEGMENTS[f]
         for f in intersection:
             out[compound] &= globalv.SEGMENTS[f]
         for f in union:
             out[compound] |= globalv.SEGMENTS[f]
+        for f in notequal:
+            diff1 = out[compound] - globalv.SEGMENTS[f]
+            diff2 = globalv.SEGMENTS[f] - out[compound]
+            out[compound] &= (diff1 | diff2)
     if isinstance(flag, basestring):
         return out[flag]
     else:
@@ -129,13 +133,14 @@ def split_compound_flag(compound):
         and OFF segments respectively for this state
     """
     # find flags
-    divs = FLAGDIV.findall(compound)
-    keys = FLAGDIV.split(compound)
+    divs = re_flagdiv.findall(compound)
+    keys = re_flagdiv.split(compound)
     # load flags and vetoes
     union = []
     intersection = []
     exclude = []
-    for i,key in enumerate(keys):
+    notequal = []
+    for i, key in enumerate(keys[::2]):
         if not key:
             continue
         # get veto bit
@@ -143,6 +148,8 @@ def split_compound_flag(compound):
             exclude.append(key)
         elif i != 0 and divs[i-1] == '|':
             union.append(key)
+        elif i != 0 and divs[i-1] == '!=':
+            notequal.append(key)
         else:
             intersection.append(key)
-    return union, intersection, exclude
+    return union, intersection, exclude, notequal

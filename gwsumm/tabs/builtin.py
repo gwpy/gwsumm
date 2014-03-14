@@ -445,8 +445,7 @@ class SimpleStateTab(StateTab):
             data = []
             pc = abs(state.active) / 100.
             for flag in flags:
-                flag = globalv.SEGMENTS[flag].copy()
-                flag.valid &= state.active
+                flag = get_segments(flag, state.active, query=False).copy()
                 v = flag.version and str(flag.version) or ''
                 try:
                     valid = '%.2f (%.2f%%)' % (abs(flag.valid),
@@ -462,8 +461,7 @@ class SimpleStateTab(StateTab):
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):
-                flag = globalv.SEGMENTS[flag].copy()
-                flag.valid &= state.active
+                flag = get_segments(flag, state.active, query=False).copy()
                 n = flag.name
                 page.div(class_='panel panel-default')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
@@ -536,7 +534,7 @@ class SimpleStateTab(StateTab):
         for plot in self.plots:
             if plot.type in types:
                 out.update([f for cflag in plot.flags for f in
-                            re.split('[&\|!]', cflag)])
+                            re_flagdiv.split(cflag)[::2] if f])
         return sorted(out, key=lambda dqf: str(dqf))
 
     def get_triggers(self, *types):

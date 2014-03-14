@@ -29,7 +29,7 @@ from gwpy.io import nds as ndsio
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
-re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+\Z')
+re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\Z|\.[a-z]+\Z)')
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 
 

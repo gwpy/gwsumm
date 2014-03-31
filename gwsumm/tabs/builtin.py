@@ -247,7 +247,8 @@ class SimpleStateTab(StateTab):
         # process time-series
 
         # find channels that need a TimeSeries
-        tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum')
+        tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
+                                       'histogram')
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(tschannels))

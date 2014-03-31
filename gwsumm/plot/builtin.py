@@ -517,6 +517,81 @@ class SpectrumSummaryPlot(DataSummaryPlot):
 register_plot(SpectrumSummaryPlot)
 
 
+class TimeSeriesHistogramPlot(DataSummaryPlot):
+    """HistogramPlot from a Series
+    """
+    type = 'histogram'
+    defaults = {'ylabel': 'Rate [Hz]'}
+
+    def init_plot(self, plot=HistogramPlot):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesSummaryPlot`.
+        """
+        self.plot = plot(figsize=[12, 6])
+        ax = self.plot.gca()
+        return self.plot, ax
+
+    def process(self):
+        """Get data and generate the figure.
+        """
+        # get histogram parameters
+        (plot, ax) = self.init_plot()
+
+        # extract histogram arguments
+        histargs = {}
+        for param in ['bins', 'range', 'normed', 'weights', 'cumulative',
+                      'bottom', 'histtype', 'align', 'orientation', 'rwidth',
+                      'log', 'color', 'label', 'stacked', 'logbins']:
+            try:
+                histargs[param] = self.pargs.pop(param)
+            except KeyError:
+                if param == 'range':
+                    try:
+                        histargs[param] = self.pargs['xlim']
+                    except KeyError:
+                        pass
+                if param == 'weights' and not histargs.get('normed', False):
+                    histargs['weights'] = 1/float(self.end - self.start)
+                if param == 'log':
+                    histargs['log'] = self.pargs.pop('logy', False)
+                pass
+        # remove logy if already requesting log histogram
+        if histargs.get('log', True) and self.pargs.get('logy', True):
+            self.pargs.pop('logy', None)
+
+        # work out labels
+        labels = self.pargs.pop('labels', self.channels)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
+
+        # add data
+        for label, channel in zip(labels, self.channels):
+            data = get_timeseries(channel, self.state,
+                                  query=False).join(pad=numpy.nan)
+
+            # allow channel data to set parameters
+            if hasattr(data.channel, 'amplitude_range'):
+                self.pargs.setdefault('xlim', data.channel.amplitude_range)
+            ax.plot(data, label=label, **histargs)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if len(self.channels) > 1:
+            plot.add_legend(ax=ax)
+
+        # add extra axes and finalise
+        if not plot.coloraxes:
+            plot.add_colorbar(ax=ax, visible=False)
+        self.finalize()
+
+register_plot(TimeSeriesHistogramPlot)
+
+
 class TriggerSummaryPlot(TimeSeriesSummaryPlot):
     type = 'triggers'
     defaults = {'x': 'time',

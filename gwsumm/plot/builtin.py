@@ -19,6 +19,8 @@
 """Definitions for the standard plots
 """
 
+from __future__ import division
+
 import hashlib
 
 try:
@@ -521,7 +523,8 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
     """HistogramPlot from a Series
     """
     type = 'histogram'
-    defaults = {'ylabel': 'Rate [Hz]'}
+    defaults = {'ylabel': 'Rate [Hz]',
+                'rwidth': 1}
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -531,17 +534,14 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
         ax = self.plot.gca()
         return self.plot, ax
 
-    def process(self):
-        """Get data and generate the figure.
+    def parse_histogram_kwargs(self):
+        """Extract the histogram arguments from everything else.
         """
-        # get histogram parameters
-        (plot, ax) = self.init_plot()
-
-        # extract histogram arguments
         histargs = {}
         for param in ['bins', 'range', 'normed', 'weights', 'cumulative',
                       'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'color', 'label', 'stacked', 'logbins']:
+                      'log', 'color', 'label', 'stacked', 'logbins',
+                      'alpha', 'linecolor', 'edgecolor', 'facecolor']:
             try:
                 histargs[param] = self.pargs.pop(param)
             except KeyError:
@@ -550,14 +550,30 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
                         histargs[param] = self.pargs['xlim']
                     except KeyError:
                         pass
-                if param == 'weights' and not histargs.get('normed', False):
-                    histargs['weights'] = 1/float(self.end - self.start)
                 if param == 'log':
                     histargs['log'] = self.pargs.pop('logy', False)
-                pass
+            else:
+                if isinstance(histargs[param], (unicode, str)):
+                    try:
+                        histargs[param] = eval(histargs[param])
+                    except:
+                        pass
         # remove logy if already requesting log histogram
         if histargs.get('log', True) and self.pargs.get('logy', True):
             self.pargs.pop('logy', None)
+        # set alpha
+        if len(self.channels) > 1:
+             histargs.setdefault('alpha', 0.7)
+        return histargs
+
+    def process(self):
+        """Get data and generate the figure.
+        """
+        # get histogram parameters
+        (plot, ax) = self.init_plot()
+
+        # extract histogram arguments
+        histargs = self.parse_histogram_kwargs()
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
@@ -565,15 +581,22 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
 
-        # add data
-        for label, channel in zip(labels, self.channels):
-            data = get_timeseries(channel, self.state,
-                                  query=False).join(pad=numpy.nan)
-
+        # get data
+        data = []
+        for channel in self.channels:
+            data.append(get_timeseries(channel, self.state,
+                                       query=False).join(pad=numpy.nan))
             # allow channel data to set parameters
-            if hasattr(data.channel, 'amplitude_range'):
-                self.pargs.setdefault('xlim', data.channel.amplitude_range)
-            ax.plot(data, label=label, **histargs)
+            if hasattr(data[-1].channel, 'amplitude_range'):
+                self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)
+
+        # get range
+        if not 'range' in histargs:
+            histargs['range'] = ax.common_limits(data)
+
+        # plot
+        for label, arr in zip(labels, data):
+            ax.plot(arr, label=label, **histargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():

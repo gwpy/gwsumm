@@ -29,6 +29,7 @@ except ImportError:
     from ordereddict import OrderedDict
 
 from gwpy.plotter import *
+from gwpy.table.utils import get_table_column
 
 from .. import version
 from ..utils import (re_cchar, split_channels)
@@ -814,3 +815,70 @@ class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
         self.finalize()
 
 register_plot(TriggerTimeSeriesSummaryPlot)
+
+
+class TriggerHistogramPlot(TimeSeriesHistogramPlot):
+    """HistogramPlot from a LIGO_LW Table
+    """
+    type = 'trigger-histogram'
+
+    def init_plot(self, plot=HistogramPlot):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesSummaryPlot`.
+        """
+        self.plot = plot(figsize=[12, 6])
+        ax = self.plot.gca()
+        return self.plot, ax
+
+    def process(self):
+        """Get data and generate the figure.
+        """
+        # get histogram parameters
+        (plot, ax) = self.init_plot()
+
+        etg = self.pargs.pop('etg')
+        column = self.pargs.pop('column')
+
+        # extract histogram arguments
+        histargs = self.parse_histogram_kwargs()
+
+        # work out labels
+        labels = self.pargs.pop('labels', self.channels)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
+
+        # add data
+        data = []
+        for label, channel in zip(labels, self.channels):
+            channel = get_channel(channel)
+            table_ = get_triggers(str(channel), etg, self.state,
+                                  query=False)
+            data.append(get_table_column(table_, column))
+            # allow channel data to set parameters
+            if hasattr(channel, 'amplitude_range'):
+                self.pargs.setdefault('xlim', channel.amplitude_range)
+
+        # get range
+        if not 'range' in histargs:
+            histargs['range'] = ax.common_limits(data)
+
+        # plot
+        for label, arr in zip(labels, data):
+            ax.plot(arr, label=label, **histargs)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if len(self.channels) > 1:
+            plot.add_legend(ax=ax)
+
+        # add extra axes and finalise
+        if not plot.coloraxes:
+            plot.add_colorbar(ax=ax, visible=False)
+        self.finalize()
+
+register_plot(TriggerHistogramPlot)

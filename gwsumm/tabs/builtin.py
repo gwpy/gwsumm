@@ -205,6 +205,12 @@ class SimpleStateTab(StateTab):
             if cp.has_section(pdef):
                 type_ = cp.get(pdef, 'type')
                 PlotClass = plotregistry.get_plot(type_)
+            elif re.search('-histogram\Z', pdef):
+                type_ = None
+                etg, column = pdef.split('-')[:2]
+                mods.setdefault('etg', etg)
+                mods.setdefault('column', column)
+                PlotClass = plotregistry.get_plot('trigger-histogram')
             else:
                 type_ = None
                 PlotClass = plotregistry.get_plot(pdef)

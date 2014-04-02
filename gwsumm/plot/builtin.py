@@ -926,7 +926,7 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
         if 'column' in kwargs and 'bins' not in kwargs:
             raise ValueError("'bins' must be configured for rate plots if "
                              "'column' is given.")
-        super(TriggerRatePlot, self).__init__(*args, **kwargs)
+        super(TriggerRateSummaryPlot, self).__init__(*args, **kwargs)
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -978,7 +978,7 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
         channels = self.channels
         outputfile = self.outputfile
         self.channels = keys
-        out = super(TriggerRatePlot, self).process(outputfile=outputfile)
+        out = super(TriggerRateSummaryPlot, self).process(outputfile=outputfile)
         self.channels = channels
         return out
 

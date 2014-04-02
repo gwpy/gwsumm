@@ -910,3 +910,76 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         return self.finalize()
 
 register_plot(TriggerHistogramPlot)
+
+
+class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
+    """TimeSeriesSummaryPlot of trigger rate.
+    """
+    type = 'trigger-rate'
+    defaults = TimeSeriesSummaryPlot.defaults.copy()
+    defaults.update({'column': None,
+                     'ylabel': 'Rate [Hz]'})
+
+    def __init__(self, *args, **kwargs):
+        if not 'stride' in kwargs:
+            raise ValueError("'stride' must be configured for all rate plots.")
+        if 'column' in kwargs and 'bins' not in kwargs:
+            raise ValueError("'bins' must be configured for rate plots if "
+                             "'column' is given.")
+        super(TriggerRatePlot, self).__init__(*args, **kwargs)
+
+    def process(self):
+        """Read in all necessary data, and generate the figure.
+        """
+        etg = self.pargs.pop('etg')
+
+        # get rate arguments
+        stride = self.pargs.pop('stride')
+        column = self.pargs.pop('column', None)
+        if column:
+            cname = get_column_string(column)
+            bins = self.pargs.pop('bins')
+            operator = self.pargs.pop('operator', '>=')
+        else:
+            bins = ['_']
+
+        # work out labels
+        labels = self.pargs.pop('labels', None)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        elif labels is None and column and len(self.channels) > 1:
+            labels = []
+            for channel, bin in [(c, b) for c in self.channels for b in bins]:
+                labels.append(r' '.join([channel, cname, '$%s$' % str(operator),
+                                         str(b)]))
+        elif labels is None and column:
+            labels = [r' '.join([cname,'$%s$' % str(operator), str(b)])
+                      for b in bins]
+        elif labels is None:
+            labels = self.channels
+        self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)
+
+        # generate data
+        keys = []
+        for channel in self.channels:
+            table_ = get_triggers(str(channel), etg, self.state, query=False)
+            if column:
+                rates = binned_event_rates(
+                    table_, stride, column, bins, operator, self.start,
+                    self.end).values()
+            else:
+                rates = [event_rate(table_, stride, self.start, self.end)]
+            for bin, rate in zip(bins, rates):
+                keys.append('%s:RATE %s %s' % (channel.ifo, str(channel), bin))
+                if keys[-1] not in globalv.DATA:
+                    add_timeseries(rate, keys[-1])
+
+        # reset channel lists and generate time-series plot
+        channels = self.channels
+        outputfile = self.outputfile
+        self.channels = keys
+        out = super(TriggerRatePlot, self).process(outputfile=outputfile)
+        self.channels = channels
+        return out
+
+register_plot(TriggerRateSummaryPlot)

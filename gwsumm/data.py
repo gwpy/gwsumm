@@ -449,7 +449,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         data = ListClass()
         for ts in globalv.DATA[channel.ndsname]:
             for seg in segments:
-                if abs(seg) == 0:
+                if abs(seg) == 0 or abs(seg) < ts.dt.value:
                     continue
                 if ts.span.intersects(seg):
                     cropped = ts.crop(*seg, copy=True)

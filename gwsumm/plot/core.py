@@ -320,11 +320,19 @@ class DataSummaryPlot(SummaryPlot):
         raise NotImplementedError("This method should be provided by a "
                                   "sub-class")
 
-    def finalize(self):
+    def finalize(self, outputfile=None):
         """Save the plot to disk and close.
         """
-        self.plot.save(self.outputfile)
+        # quick fix for x-axis labels hitting the axis
+        for ax in self.plot.axes:
+            ax.tick_params(axis='x', pad=10)
+            ax.xaxis.labelpad = 10
+        # save figure and close
+        if outputfile is None:
+            outputfile = self.outputfile
+        self.plot.save(outputfile)
         self.plot.close()
+        return outputfile
 
 
 class PlotList(list):

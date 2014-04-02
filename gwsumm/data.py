@@ -620,3 +620,14 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     if format in ['amplitude', 'asd']:
         out = [s ** (1/2.) for s in out]
     return out
+
+
+def add_timeseries(timeseries, key=None, coalesce=True):
+    """Add a `TimeSeries` to the global memory cache
+    """
+    if key is None:
+        key = timeseries.name or str(timeseries.channel)
+    globalv.DATA.setdefault(key, TimeSeriesList())
+    globalv.DATA[key].append(timeseries)
+    if coalesce:
+        globalv.DATA[key].coalesce()

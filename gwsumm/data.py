@@ -23,7 +23,6 @@ import operator
 import os
 import urllib2
 from math import (floor, ceil, pi)
-from multiprocessing import cpu_count
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -304,11 +303,11 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
     # get processes
     if multiprocess is True:
-        nproc = cpu_count() - 1 # // 2
+        nproc = count_free_cores()
     elif multiprocess is False:
         nproc = 1
     else:
-        nproc = multiprocess
+        nproc = count_free_cores(multiprocess)
 
     if globalv.VERBOSE and not multiprocess:
         verbose = '    '
@@ -490,11 +489,11 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
     # get processes
     if multiprocess is True:
-        nproc = cpu_count() - 1 # // 2
+        nproc = count_free_cores()
     elif multiprocess is False:
         nproc = 1
     else:
-        nproc = multiprocess
+        nproc = count_free_cores(multiprocess)
 
     globalv.SPECTROGRAMS.setdefault(channel.ndsname, SpectrogramList())
 

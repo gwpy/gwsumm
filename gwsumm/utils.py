@@ -23,6 +23,7 @@ import os
 import sys
 import time
 import re
+from multiprocessing import (cpu_count, active_children)
 
 from gwpy.io import nds as ndsio
 
@@ -137,3 +138,9 @@ def split_channels(channelstring):
     if channelstring:
         out.append(channelstring)
     return out
+
+
+def count_free_cores(max=cpu_count()):
+    """Count the number of CPU cores not currently used by this job.
+    """
+    return max - (len(active_children()) + 1)

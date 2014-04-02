@@ -695,13 +695,13 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             base = Plot
         plot = self.plot = EventTablePlot(figsize=[12, 6], base=base)
         ax = plot.gca()
-        if isinstance(ax, TimeSeriesPlot):
+        if isinstance(plot, TimeSeriesPlot):
             ax.set_epoch(self.start)
             ax.auto_gps_scale(self.end-self.start)
             ax.set_xlim(self.start, self.end)
 
         # get colouring params
-        clim = self.pargs.pop('clim', None)
+        clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
 

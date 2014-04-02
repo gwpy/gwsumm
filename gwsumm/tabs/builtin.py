@@ -207,10 +207,15 @@ class SimpleStateTab(StateTab):
                 PlotClass = plotregistry.get_plot(type_)
             elif re.search('-histogram\Z', pdef):
                 type_ = None
-                etg, column = pdef.split('-')[:2]
+                etg, column = pdef.rsplit('-', 2)[:2]
                 mods.setdefault('etg', etg)
                 mods.setdefault('column', column)
                 PlotClass = plotregistry.get_plot('trigger-histogram')
+            elif re.search('-rate', pdef):
+                type_ = None
+                etg = pdef.rsplit('-', 1)[0]
+                mods.setdefault('etg', etg)
+                PlotClass = plotregistry.get_plot('trigger-rate')
             else:
                 type_ = None
                 PlotClass = plotregistry.get_plot(pdef)
@@ -316,7 +321,8 @@ class SimpleStateTab(StateTab):
         new_plots = [p for p in self.plots if
                      p.state is None or p.state.name == state.name and
                      not p.outputfile in globalv.WRITTEN_PLOTS]
-        new_mp_plots = [p for p in new_plots if not isinstance(p, TriggerPlot)]
+        new_mp_plots = [p for p in new_plots if not
+                        p.type.startswith('trigger')]
         processes = []
         for plot in sorted(new_plots,
                            key=lambda p: isinstance(p,

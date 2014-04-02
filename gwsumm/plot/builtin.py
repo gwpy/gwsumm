@@ -29,11 +29,14 @@ except ImportError:
     from ordereddict import OrderedDict
 
 from gwpy.plotter import *
+from gwpy.plotter.table import get_column_string
+from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
-from .. import version
+from .. import (globalv, version)
 from ..utils import (re_cchar, split_channels)
-from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum)
+from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
+                    add_timeseries)
 from ..segments import get_segments
 from ..triggers import get_triggers
 from ..state import ALLSTATE
@@ -82,16 +85,31 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         ax.set_epoch(self.start)
         return self.plot, ax
 
-    def finalize(self):
+    def parse_kwargs(self):
+        plotargs = {}
+        for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
+                       'linewidth', 'marker', 'markeredgecolor',
+                       'markeredgewidth', 'markerfacecolor',
+                       'markerfacecoloralt', 'markersize']:
+            try:
+                plotargs[kwarg] = self.pargs[kwarg]
+            except KeyError:
+                pass
+        return plotargs
+
+    def finalize(self, outputfile=None):
         if 'xlim' not in self.pargs:
             self.plot.axes[0].set_xlim(self.start, self.end)
         self.plot.axes[0].auto_gps_scale()
-        return super(TimeSeriesSummaryPlot, self).finalize()
+        return super(TimeSeriesSummaryPlot, self).finalize(
+                   outputfile=outputfile)
 
-    def process(self):
+    def process(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
         """
         (plot, ax) = self.init_plot()
+
+        plotargs = self.parse_kwargs()
 
         # work out labels
         mmmchans = self.get_channel_groups()
@@ -114,9 +132,11 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
                     ts[ts.data == 0] = 1e-100
             # plot groups or single TimeSeries
             if len(channels) > 1:
-                ax.plot_timeseries_mmm(*data, label=label.replace('_', r'\_'))
+                ax.plot_timeseries_mmm(*data, label=label.replace('_', r'\_'),
+                                       **plotargs)
             else:
-                ax.plot_timeseries(data[0], label=label.replace('_', r'\_'))
+                ax.plot_timeseries(data[0], label=label.replace('_', r'\_'),
+                                   **plotargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):
@@ -140,13 +160,13 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
             except AttributeError:
                 setattr(ax, key, val)
         if len(mmmchans) > 1:
-            plot.add_legend(ax=ax)
+            plot.add_legend(ax=ax, markerscale=4)
 
         # add extra axes and finalise
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
-        self.finalize()
+        return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesSummaryPlot)
 
@@ -224,7 +244,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
             except AttributeError:
                 setattr(ax, key, val)
         self.add_state_segments(ax)
-        self.finalize()
+        return self.finalize()
 
 register_plot(SpectrogramSummaryPlot)
 
@@ -352,7 +372,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
-        self.finalize()
+        return self.finalize()
 
 register_plot(SegmentSummaryPlot)
 
@@ -433,7 +453,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
-        self.finalize()
+        return self.finalize()
 
 register_plot(StateVectorSummaryPlot)
 
@@ -510,12 +530,7 @@ class SpectrumSummaryPlot(DataSummaryPlot):
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
 
-        # quick fix for x-axis labels hitting the axis
-        for ax in plot.axes:
-            ax.tick_params(axis='x', pad=10)
-            ax.xaxis.labelpad = 10
-
-        self.finalize()
+        return self.finalize()
 
 register_plot(SpectrumSummaryPlot)
 
@@ -611,7 +626,7 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
         # add extra axes and finalise
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        self.finalize()
+        return self.finalize()
 
 register_plot(TimeSeriesHistogramPlot)
 
@@ -659,15 +674,28 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                     tag += '_%s' % re_cchar.sub('_', column)
             return tag.upper()
 
+    def finalize(self, outputfile=None):
+        if isinstance(self.plot, TimeSeriesPlot):
+            return super(TriggerSummaryPlot, self).finalize(
+                       outputfile=outputfile)
+        else:
+            return super(TimeSeriesSummaryPlot, self).finalize(
+                       outputfile=outputfile)
+
     def process(self):
         # get columns
         xcolumn, ycolumn, ccolumn = self.columns
 
         # initialise figure
-        base = xcolumn == 'time' and TimeSeriesPlot or None
-        plot = self.plot = EventTablePlot(base=base)
+        if 'time' in xcolumn:
+            base = TimeSeriesPlot
+        elif 'freq' in xcolumn:
+            base = SpectrumPlot
+        else:
+            base = Plot
+        plot = self.plot = EventTablePlot(figsize=[12, 6], base=base)
         ax = plot.gca()
-        if isinstance(plot, TimeSeriesPlot):
+        if isinstance(ax, TimeSeriesPlot):
             ax.set_epoch(self.start)
             ax.auto_gps_scale(self.end-self.start)
             ax.set_xlim(self.start, self.end)
@@ -743,7 +771,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             self.add_state_segments(ax)
 
         # finalise
-        self.finalize()
+        return self.finalize()
 
 register_plot(TriggerSummaryPlot)
 
@@ -812,7 +840,7 @@ class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
-        self.finalize()
+        return self.finalize()
 
 register_plot(TriggerTimeSeriesSummaryPlot)
 
@@ -879,6 +907,6 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         # add extra axes and finalise
         if not plot.coloraxes:
             plot.add_colorbar(ax=ax, visible=False)
-        self.finalize()
+        return self.finalize()
 
 register_plot(TriggerHistogramPlot)

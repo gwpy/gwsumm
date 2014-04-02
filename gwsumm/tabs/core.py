@@ -20,6 +20,7 @@
 """
 
 import os
+import multiprocessing
 
 from lal import gpstime
 
@@ -495,6 +496,16 @@ class StateTab(Tab):
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
             self.process_state(state, config=config, **stateargs)
+
+        # consolidate child processes
+        mp = multiprocessing.active_children()
+        if mp:
+            vprint("Waiting for %d plotting processes to complete" % len(mp))
+            for process in mp:
+                process.join()
+                vprint('.')
+            vprint('\n')
+        vprint("%s/%s complete!\n" % (self.parent.name, self.name))
 
     def process_state(self, state, **kwargs):
         """Process data for this tab in a given state.

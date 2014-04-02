@@ -317,6 +317,7 @@ class SimpleStateTab(StateTab):
 
         # --------------------------------------------------------------------
         # make plots
+
         vprint("    Plotting... \n")
         new_plots = [p for p in self.plots if
                      p.state is None or p.state.name == state.name and
@@ -330,8 +331,7 @@ class SimpleStateTab(StateTab):
             if plot.outputfile in globalv.WRITTEN_PLOTS:
                 continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
-            if (multiprocess and len(new_mp_plots) > 1 and not
-                    isinstance(plot, TriggerPlot)):
+            if (multiprocess and not isinstance(plot, TriggerPlot)):
                 p = Process(target=plot.process)
                 processes.append(p)
                 p.start()
@@ -339,13 +339,8 @@ class SimpleStateTab(StateTab):
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
         if len(processes):
-            vprint("        %d plot processes spawned, waiting"
+            vprint("        %d plot processes spawned, not waiting.\n"
                    % len(processes))
-        for process in processes:
-            process.join()
-            vprint(".")
-        if len(processes):
-            vprint("\n")
         vprint("    Done.\n")
 
     # -------------------------------------------------------------------------

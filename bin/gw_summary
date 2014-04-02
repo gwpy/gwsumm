@@ -55,7 +55,7 @@ except ImportError:
 
 from astropy import units
 
-from gwpy.segments import Segment
+from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import Time
 from gwpy.spectrum import psd
 
@@ -66,6 +66,7 @@ from gwsumm.data import get_channel
 from gwsumm.tabs import get_tab
 from gwsumm.utils import *
 from gwsumm.state import *
+from gwsumm.data import get_timeseries_dict
 
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -121,6 +122,9 @@ copts.add_option('--max-processes', action='store', type='int',
 copts.add_option('--single-process', action='store_true', default=False,
                  help="restrict %s to a single process, mainly for debugging "
                       "purposes, default: False" % os.path.basename(__file__))
+copts.add_option('-b', '--bulk-read', action='store_true', default=False,
+                 help="read all data up-front at the start of the job, rather "
+                      "than when it is needed for a tab, default: %default")
 
 outopts = parser.add_option_group("Output options")
 outopts.add_option('-o', '--output-dir', action='store', type='string',
@@ -248,6 +252,8 @@ else:
     opts.gps_end_time = int(gpstime.utc_to_gps(opts.day +
                                                datetime.timedelta(days=1)))
 
+opts.gps_start_time = float(opts.gps_start_time)
+opts.gps_end_time = float(opts.gps_end_time)
 span = Segment(opts.gps_start_time, opts.gps_end_time)
 utc = gpstime.gps_to_utc(opts.gps_start_time)
 try:
@@ -416,6 +422,32 @@ if not opts.no_html:
 
 # -----------------------------------------------------------------------------
 # Process all tabs
+
+# XXX: bulk data reading could optimise things
+if opts.bulk_read and not opts.html_only:
+    vprint("\n-------------------------------------------------\n")
+    vprint("Reading all data in BULK...\n")
+    allts = set()
+    allsv = set()
+    for tab in alltabs:
+        snames = [state.name for state in tab.states]
+        if ALLSTATE in snames:
+            allts.update(tab.get_channels('timeseries', 'spectrogram',
+                                          'spectrum', 'histogram'))
+            allsv.update(tab.get_channels('statevector'))
+    allseg = SegmentList([span])
+    if len(allts):
+        vprint("%d channels identified for TimeSeries from all tabs...\n"
+               % len(allts))
+        get_timeseries_dict(allts, allseg,
+                            config=config, nds=opts.nds,
+                            multiprocess=opts.multiprocess, return_=False)
+    if len(allsv):
+        vprint("%d channels identified for StateVector from all tabs...\n"
+               % len(allsv))
+        get_timeseries_dict(allsv, allseg,
+                            config=config, nds=opts.nds, statevector=True,
+                            multiprocess=opts.multiprocess, return_=False)
 
 # find new ifo bases
 ifobases = {}

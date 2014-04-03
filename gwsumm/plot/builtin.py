@@ -612,7 +612,10 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
 
         # plot
         for label, arr in zip(labels, data):
-            ax.plot(arr, label=label, **histargs)
+            if arr.size:
+                ax.hist(arr, label=label, **histargs)
+            else:
+                ax.plot([], label=label)
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -893,7 +896,10 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
 
         # plot
         for label, arr in zip(labels, data):
-            ax.plot(arr, label=label, **histargs)
+            if arr.size:
+                ax.hist(arr, label=label, **histargs)
+            else:
+                ax.plot([], label=label)
 
         # customise plot
         for key, val in self.pargs.iteritems():

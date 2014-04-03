@@ -310,6 +310,18 @@ class DataSummaryPlot(SummaryPlot):
         # format and return
         return cls(channels, start, end, **params)
 
+    def queue(self, queue):
+        """Submit this plot to the queue for processing.
+        """
+        # tell the queue we are processing
+        queue.put(1)
+        # process data
+        try:
+            self.process()
+        # announce done regardless of status
+        finally:
+            queue.task_done()
+
     def process(self):
         """Process all data and generate the output file for this
         `SummaryPlot`.

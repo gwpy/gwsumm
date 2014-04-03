@@ -488,9 +488,10 @@ class StateTab(Tab):
         """
         vprint("\n-------------------------------------------------\n")
         if self.parent:
-            vprint("Processing %s/%s\n" % (self.parent.name, self.name))
+            name = '%s/%s' % (self.parent.name, self.name)
         else:
-            vprint("Processing %s\n" % self.name)
+            name = self.name
+        vprint("Processing %s\n" % name)
         # load state segments
         self.finalize_states(config=config)
         vprint("States finalised\n")
@@ -514,7 +515,7 @@ class StateTab(Tab):
             queue.close()
             queue.join()
             vprint('done.\n')
-        vprint("%s/%s complete!\n" % (self.parent.name, self.name))
+        vprint("%s complete!\n" % (name))
 
     def process_state(self, state, **kwargs):
         """Process data for this tab in a given state.

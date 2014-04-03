@@ -253,6 +253,11 @@ class SimpleStateTab(StateTab):
         """
         vprint("Processing '%s' state\n" % state.name)
 
+        # flag those plots that were already written by this process
+        for p in self.plots:
+            if p.outputfile in globalv.WRITTEN_PLOTS:
+                p.new = False
+
         # --------------------------------------------------------------------
         # process time-series
 
@@ -318,17 +323,20 @@ class SimpleStateTab(StateTab):
         # make plots
 
         vprint("    Plotting... \n")
+
+        # filter out plots that aren't for this state
         new_plots = [p for p in self.plots if
-                     p.state is None or p.state.name == state.name and
-                     not p.outputfile in globalv.WRITTEN_PLOTS]
+                     p.new and (p.state is None or p.state.name == state.name)]
+
+        # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
-            if plot.outputfile in globalv.WRITTEN_PLOTS:
-                continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
+            # queue plot for multiprocessing
             if (plotqueue and plot._threadsafe):
                 Process(target=plot.queue, args=(plotqueue,)).start()
                 nproc += 1
+            # process plot now
             else:
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
@@ -513,7 +521,7 @@ class SimpleStateTab(StateTab):
         """
         out = set()
         for plot in self.plots:
-            if plot.type in types:
+            if plot.type in types and plot.new:
                 out.update(plot.channels)
         return sorted(out, key=lambda ch: ch.name)
 
@@ -533,7 +541,7 @@ class SimpleStateTab(StateTab):
         """
         out = set()
         for plot in self.plots:
-            if plot.type in types:
+            if plot.type in types and plot.new:
                 out.update([f for cflag in plot.flags for f in
                             re_flagdiv.split(cflag)[::2] if f])
         return sorted(out, key=lambda dqf: str(dqf))
@@ -554,7 +562,7 @@ class SimpleStateTab(StateTab):
         """
         out = set()
         for plot in self.plots:
-            if plot.type in types:
+            if plot.type in types and plot.new:
                 for channel in plot.channels:
                     out.add((plot.etg, channel))
         return sorted(out, key=lambda ch: ch[1].name)

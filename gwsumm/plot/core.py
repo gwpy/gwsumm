@@ -51,6 +51,9 @@ class SummaryPlot(object):
     ----------
     href : `str`, optional
         The IMG URL for this `SummaryPlot`.
+    new : `bool`, optional
+        `bool` flag whether this is a new plot to be processed (`True`),
+        of that the output already exists on disk (`False`).
 
     Notes
     -----
@@ -60,8 +63,9 @@ class SummaryPlot(object):
     type = None
     _threadsafe = True
 
-    def __init__(self, href=None):
+    def __init__(self, href=None, new=True):
         self.href = href
+        self.new = new
 
     @property
     def href(self):
@@ -72,6 +76,19 @@ class SummaryPlot(object):
     @href.setter
     def href(self, url):
         self._href = url and os.path.normpath(url) or None
+
+    @property
+    def new(self):
+        """Flag whether this is a new plot or, already exists.
+
+        Set new=False to skip actually processing this `SummaryPlot`, and
+        just link to the outputfile.
+        """
+        return self._new
+
+    @new.setter
+    def new(self, isnew):
+        self._new = bool(isnew)
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods
@@ -144,7 +161,8 @@ class DataSummaryPlot(SummaryPlot):
     defaults = {}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, **pargs):
+                 tag=None, href=None, new=True, **pargs):
+        super(DataSummaryPlot, self).__init__(href=href, new=new)
         self.channels = channels
         self.span = (start, end)
         self.state = state
@@ -242,7 +260,14 @@ class DataSummaryPlot(SummaryPlot):
 
     @property
     def href(self):
-        return self.outputfile
+        if self._href is None:
+            return self.outputfile
+        else:
+            return self._href
+
+    @href.setter
+    def href(self, url):
+        self._href = url and os.path.normpath(url) or None
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods

@@ -27,7 +27,7 @@ from lal import gpstime
 from gwpy.segments import Segment
 
 from .. import (globalv, html, version)
-from ..utils import (re_cchar, vprint)
+from ..utils import (re_cchar, vprint, count_free_cores)
 from ..config import *
 from .registry import register_tab
 
@@ -475,7 +475,7 @@ class StateTab(Tab):
         for state in self.states:
             state.fetch(config=config)
 
-    def process(self, config=ConfigParser(), **stateargs):
+    def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
         """Process data for this `StateTab`.
 
         Parameters
@@ -491,20 +491,29 @@ class StateTab(Tab):
             vprint("Processing %s/%s\n" % (self.parent.name, self.name))
         else:
             vprint("Processing %s\n" % self.name)
+        # load state segments
         self.finalize_states(config=config)
         vprint("States finalised\n")
+        # setup plotting queue
+        if isinstance(multiprocess, int):
+            queue = multiprocessing.JoinableQueue(
+                count_free_cores(multiprocess))
+        elif multiprocess:
+            queue = multiprocessing.JoinableQueue(count_free_cores())
+        else:
+            queue = None
+        # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
-            self.process_state(state, config=config, **stateargs)
+            self.process_state(state, config=config, multiprocess=multiprocess,
+                               plotqueue=queue, **stateargs)
 
         # consolidate child processes
-        mp = multiprocessing.active_children()
-        if mp:
-            vprint("Waiting for %d plotting processes to complete" % len(mp))
-            for process in mp:
-                process.join()
-                vprint('.')
-            vprint('\n')
+        if queue is not None:
+            vprint("Waiting for plotting processes to complete.. ")
+            queue.close()
+            queue.join()
+            vprint('done.\n')
         vprint("%s/%s complete!\n" % (self.parent.name, self.name))
 
     def process_state(self, state, **kwargs):

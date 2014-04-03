@@ -248,11 +248,10 @@ class SimpleStateTab(StateTab):
 
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None):
+                      trigcache=None, plotqueue=None):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
-        TriggerPlot = plotregistry.get_plot('triggers')
 
         # --------------------------------------------------------------------
         # process time-series
@@ -319,28 +318,25 @@ class SimpleStateTab(StateTab):
         # make plots
 
         vprint("    Plotting... \n")
+        TriggerRatePlot = plotregistry.get_plot('trigger-rate')
         new_plots = [p for p in self.plots if
                      p.state is None or p.state.name == state.name and
                      not p.outputfile in globalv.WRITTEN_PLOTS]
-        new_mp_plots = [p for p in new_plots if not
-                        p.type.startswith('trigger')]
-        processes = []
+        nproc = 0
         for plot in sorted(new_plots,
                            key=lambda p: isinstance(p,
-                                                    TriggerPlot) and 2 or 1):
+                                                    TriggerRatePlot) and 2 or 1):
             if plot.outputfile in globalv.WRITTEN_PLOTS:
                 continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
-            if (multiprocess and not isinstance(plot, TriggerPlot)):
-                p = Process(target=plot.process)
-                processes.append(p)
-                p.start()
+            if (plotqueue and not isinstance(plot, TriggerRatePlot)):
+                Process(target=plot.queue, args=(plotqueue,)).start()
+                nproc += 1
             else:
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
-        if len(processes):
-            vprint("        %d plot processes spawned, not waiting.\n"
-                   % len(processes))
+        if nproc:
+            vprint("        %d plot processes queued.\n" % nproc)
         vprint("    Done.\n")
 
     # -------------------------------------------------------------------------

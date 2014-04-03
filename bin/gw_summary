@@ -295,8 +295,11 @@ else:
 
 globalv.MODE = mode
 
-if (min(globalv.NOW, opts.gps_end_time) - opts.gps_start_time) > 40000:
+duration = min(globalv.NOW, opts.gps_end_time) - opts.gps_start_time
+if duration > 200000:
      psd.LAL_FFTPLAN_LEVEL = 3
+elif duration > 40000:
+     psd.LAL_FFTPLAN_LEVEL = 2
 else:
      psd.LAL_FFTPLAN_LEVEL = 1
 

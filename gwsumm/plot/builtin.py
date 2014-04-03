@@ -34,7 +34,7 @@ from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
 from .. import (globalv, version)
-from ..utils import (re_cchar, split_channels)
+from ..utils import (re_quote, re_cchar, split_channels)
 from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
                     add_timeseries)
 from ..segments import get_segments
@@ -338,7 +338,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
         addlabel = self.pargs.pop('add_label')
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
+        labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 
         # extract plotting arguments
         mask = self.pargs.pop('mask')

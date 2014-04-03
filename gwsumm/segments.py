@@ -98,7 +98,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             except (NoSectionError, NoOptionError):
                 pass
             new = DataQualityDict.query(allflags, newsegs, **kwargs)
-            for f in allflags:
+            for f in new:
                 vprint("    Downloaded %d new segments from database for %s.\n"
                        % (len(new[f].active), f))
         # record new segments

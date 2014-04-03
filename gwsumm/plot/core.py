@@ -58,6 +58,7 @@ class SummaryPlot(object):
     classes easier.
     """
     type = None
+    _threadsafe = True
 
     def __init__(self, href=None):
         self.href = href

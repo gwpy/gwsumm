@@ -318,18 +318,15 @@ class SimpleStateTab(StateTab):
         # make plots
 
         vprint("    Plotting... \n")
-        TriggerRatePlot = plotregistry.get_plot('trigger-rate')
         new_plots = [p for p in self.plots if
                      p.state is None or p.state.name == state.name and
                      not p.outputfile in globalv.WRITTEN_PLOTS]
         nproc = 0
-        for plot in sorted(new_plots,
-                           key=lambda p: isinstance(p,
-                                                    TriggerRatePlot) and 2 or 1):
+        for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
             if plot.outputfile in globalv.WRITTEN_PLOTS:
                 continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
-            if (plotqueue and not isinstance(plot, TriggerRatePlot)):
+            if (plotqueue and plot._threadsafe):
                 Process(target=plot.queue, args=(plotqueue,)).start()
                 nproc += 1
             else:

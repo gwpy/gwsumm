@@ -922,6 +922,7 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
     """TimeSeriesSummaryPlot of trigger rate.
     """
     type = 'trigger-rate'
+    _threadsafe = False
     defaults = TimeSeriesSummaryPlot.defaults.copy()
     defaults.update({'column': None,
                      'ylabel': 'Rate [Hz]'})

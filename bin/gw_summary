@@ -432,13 +432,37 @@ if opts.bulk_read and not opts.html_only:
     vprint("Reading all data in BULK...\n")
     allts = set()
     allsv = set()
+    allflags = set()
     for tab in alltabs:
-        snames = [state.name for state in tab.states]
+        snames = []
+        for state in tab.states:
+            snames.append(state.name)
+            if state.definition:
+                allflags.update(re_flagdiv.split(state.definition))
+        # get all data defined for the 'all' state
         if ALLSTATE in snames:
             allts.update(tab.get_channels('timeseries', 'spectrogram',
                                           'spectrum', 'histogram'))
             allsv.update(tab.get_channels('statevector'))
+            allflags.update(tab.get_flags('segments'))
+        # or get data for plots defined over all states
+        else:
+            for plot in tab.plots:
+                if plot.state is not None:
+                    continue
+                if plot.type in ['timeseries', 'spectrogram', 'spectrum',
+                                 'histogram']:
+                    allts.update(plot.channels)
+                elif plot.type in ['statevector']:
+                    allsv.update(plot.channels)
+                elif plot.type in ['segments']:
+                    allflags.update([f for cflag in plot.flags for f in
+                                     re_flagdiv.split(cflag)[::2] if f])
     allseg = SegmentList([span])
+    if len(allflags):
+        vprint("%d data-quality flags identified for segment query from all "
+               "tabs...\n" % len(allflags))
+        get_segments(allflags, allseg, config=config, return_=False)
     if len(allts):
         vprint("%d channels identified for TimeSeries from all tabs...\n"
                % len(allts))

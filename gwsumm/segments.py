@@ -40,7 +40,7 @@ from .utils import *
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
-                 query=True):
+                 query=True, return_=True):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -105,22 +105,24 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         globalv.SEGMENTS += new
 
     # return what was asked for
-    for compound in flags:
-        union, intersection, exclude, notequal = split_compound_flag(compound)
-        for f in exclude:
-            out[compound] -= globalv.SEGMENTS[f]
-        for f in intersection:
-            out[compound] &= globalv.SEGMENTS[f]
-        for f in union:
-            out[compound] |= globalv.SEGMENTS[f]
-        for f in notequal:
-            diff1 = out[compound] - globalv.SEGMENTS[f]
-            diff2 = globalv.SEGMENTS[f] - out[compound]
-            out[compound] &= (diff1 | diff2)
-    if isinstance(flag, basestring):
-        return out[flag]
-    else:
-        return out
+    if return_:
+        for compound in flags:
+            union, intersection, exclude, notequal = split_compound_flag(
+                compound)
+            for f in exclude:
+                out[compound] -= globalv.SEGMENTS[f]
+            for f in intersection:
+                out[compound] &= globalv.SEGMENTS[f]
+            for f in union:
+                out[compound] |= globalv.SEGMENTS[f]
+            for f in notequal:
+                diff1 = out[compound] - globalv.SEGMENTS[f]
+                diff2 = globalv.SEGMENTS[f] - out[compound]
+                out[compound] &= (diff1 | diff2)
+        if isinstance(flag, basestring):
+            return out[flag]
+        else:
+            return out
 
 
 def split_compound_flag(compound):

@@ -451,7 +451,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 if abs(seg) == 0 or abs(seg) < ts.dt.value:
                     continue
                 if ts.span.intersects(seg):
-                    cropped = ts.crop(*seg, copy=True)
+                    cropped = ts.crop(*seg, copy=False)
                     if cropped.size:
                         data.append(cropped)
         out[channel.ndsname] = data.coalesce()

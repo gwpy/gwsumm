@@ -486,7 +486,7 @@ ifobases.pop(ifo, None)
 # sort tabs by 'Summary', then lower case only, then everything else
 _sort_tabs = lambda tab: ((tab.name == 'Summary' and tab.parent is None) and 1
                           or tab.name == 'Summary' and 2
-                          or 'ODC' in tab.name and 'zzzz'
+                          or 'ODC' in tab.name and 3
                           or tab.name.islower() and tab.name.upper()
                           or tab.name.lower())
 

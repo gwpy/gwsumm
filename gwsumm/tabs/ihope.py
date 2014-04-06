@@ -159,11 +159,12 @@ class DailyIhopeTab(base):
             super(DailyIhopeTab, self).process(*args, **kwargs)
 
     def process_state(self, state, nds='guess', multiprocess=False,
-                      config=GWSummConfigParser()):
+                      config=GWSummConfigParser(), plotqueue=None):
         self.get_tmpltbank_data()
         super(DailyIhopeTab, self).process_state(
             state, nds=nds, multiprocess=multiprocess, config=config,
-            datacache=Cache(), trigcache=self.inspiralcache)
+            datacache=Cache(), trigcache=self.inspiralcache,
+            plotqueue=plotqueue)
 
     def build_inner_html(self, state):
         """Write the '#main' HTML content for this `DailyIhopeTab`.

@@ -23,6 +23,7 @@ import re
 import warnings
 from StringIO import StringIO
 from multiprocessing import Process
+from time import sleep
 
 from numpy import isclose
 
@@ -336,6 +337,7 @@ class SimpleStateTab(StateTab):
             if (plotqueue and plot._threadsafe):
                 Process(target=plot.queue, args=(plotqueue,)).start()
                 nproc += 1
+                sleep(0.5)
             # process plot now
             else:
                 plot.process()

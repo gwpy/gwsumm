@@ -32,7 +32,7 @@ import re
 import calendar
 import getpass
 import warnings
-from multiprocessing import cpu_count
+from multiprocessing import (active_children, cpu_count)
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
@@ -514,6 +514,10 @@ for tab in alltabs:
 
 # -----------------------------------------------------------------------------
 # Finalise
+
+# FIXME: should this be necessary
+for process in active_children():
+    process.terminate()
 
 vprint("""
 ------------------------------------------------------------------------------

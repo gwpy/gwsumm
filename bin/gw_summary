@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWSumm.
@@ -32,7 +31,7 @@ import re
 import calendar
 import getpass
 import warnings
-from multiprocessing import (active_children, cpu_count)
+from multiprocessing import cpu_count
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
@@ -514,10 +513,6 @@ for tab in alltabs:
 
 # -----------------------------------------------------------------------------
 # Finalise
-
-# FIXME: should this be necessary
-for process in active_children():
-    process.terminate()
 
 vprint("""
 ------------------------------------------------------------------------------

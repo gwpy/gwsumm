@@ -335,7 +335,9 @@ class SimpleStateTab(StateTab):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
             if (plotqueue and plot._threadsafe):
-                Process(target=plot.queue, args=(plotqueue,)).start()
+                process = Process(target=plot.queue, args=(plotqueue,))
+                process.daemon = True
+                process.start()
                 nproc += 1
                 sleep(0.5)
             # process plot now

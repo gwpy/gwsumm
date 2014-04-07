@@ -40,6 +40,13 @@ warnings.filterwarnings('ignore', category=RuntimeWarning)
 
 from dateutil.relativedelta import relativedelta
 
+try:
+    import ROOT
+except ImportError:
+    pass
+else:
+    ROOT.PyConfig.IgnoreCommandLineOptions = True
+
 import numpy
 
 from matplotlib import use

@@ -496,7 +496,7 @@ class StateTab(Tab):
         self.finalize_states(config=config)
         vprint("States finalised\n")
         # setup plotting queue
-        if isinstance(multiprocess, int):
+        if multiprocess and isinstance(multiprocess, int):
             queue = multiprocessing.JoinableQueue(
                 count_free_cores(multiprocess))
         elif multiprocess:

@@ -83,6 +83,9 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         self.plot = plot()
         ax = self.plot.gca()
         ax.set_epoch(self.start)
+        if isinstance(self.plot, TimeSeriesPlot):
+            ax.auto_gps_scale(float(self.end-self.start))
+            ax._auto_gps = False
         return self.plot, ax
 
     def parse_kwargs(self):
@@ -98,9 +101,10 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         return plotargs
 
     def finalize(self, outputfile=None):
+        plot = self.plot
+        ax = plot.axes[0]
         if 'xlim' not in self.pargs:
-            self.plot.axes[0].set_xlim(self.start, self.end)
-        self.plot.axes[0].auto_gps_scale()
+            ax.set_xlim(self.start, self.end)
         return super(TimeSeriesSummaryPlot, self).finalize(
                    outputfile=outputfile)
 

@@ -59,7 +59,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         flags = flag.split(',')
     else:
         flags = flag
-    allflags = [f for cf in flags for f in re_flagdiv.split(cf) if f]
+    allflags = [f for cf in flags for f in re_flagdiv.split(cf)[::2] if f]
 
     # check validity
     if validity is None:

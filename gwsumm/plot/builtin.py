@@ -525,7 +525,7 @@ class SpectrumSummaryPlot(DataSummaryPlot):
         # customise
         legendargs = {}
         for key, val in self.pargs.iteritems():
-            if re.match('legend-', key):
+            if re.match('legend[-_]', key):
                 legendargs[key[7:]] = val
             try:
                 getattr(ax, 'set_%s' % key)(val)

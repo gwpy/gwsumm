@@ -182,6 +182,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
     defaults = {'ratio': None,
                 'format': None,
                 'clim': None,
+                'cmap': 'jet',
                 'logcolor': False,
                 'colorlabel': None}
 
@@ -209,6 +210,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
+        cmap = self.pargs.pop('cmap')
         ratio = self.ratio
 
         # get data
@@ -222,7 +224,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         for specgram in specgrams:
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
-            ax.plot_spectrogram(specgram)
+            ax.plot_spectrogram(specgram, cmap=cmap)
 
             # allow channel data to set parameters
             if hasattr(specgram.channel, 'frequency_range'):
@@ -236,8 +238,8 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
 
         # add colorbar
         if len(specgrams) == 0:
-            ax.scatter([1], [1], c=[1], visible=False)
-        plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
+            ax.scatter([1], [1], c=[1], visible=False, cmap=cmap)
+        plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel, cmap=cmap)
 
         # customise and finalise
         for key, val in self.pargs.iteritems():

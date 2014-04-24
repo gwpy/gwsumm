@@ -351,50 +351,6 @@ class SimpleStateTab(StateTab):
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def scaffold_plots(self, state):
-        plots = [p for p in self.plots if
-                 p.state is None or p.state.name == state.name]
-        page = html.markup.page()
-
-        # get layout
-        if self.layout:
-            layout = list(self.layout)
-        else:
-            layout = len(plots) == 1 and [1] or [2]
-        while sum(layout) < len(plots):
-            layout.append(layout[-1])
-        l = i = 0
-        for j, plot in enumerate(plots):
-            # start new row
-            if i == 0:
-                page.div(class_='row')
-            # make plot in its own column
-            try:
-                page.div(class_='col-md-%d' % (12 // layout[l]))
-            except IndexError:
-                warnings.warn("Something went wrong with the layout. "
-                              "Tried to access element %d of ths following "
-                              "layout (%d plots): %s" % (l, len(plots), layout))
-                page.div(class_='col-md-%d' % 12 // layout[-1])
-            page.a(href=plot.outputfile, class_='fancybox plot',
-                   **{'data-fancybox-group': '1'})
-            page.img(src=plot.outputfile)
-            page.a.close()
-            page.div.close()
-            # detect end of row
-            if (i + 1) == layout[l]:
-                i = 0
-                l += 1
-                page.div.close()
-            # detect last plot
-            elif j == (len(plots) - 1):
-                page.div.close()
-                break
-            # or move to next column
-            else:
-                i += 1
-        return page
-
     def build_inner_html(self, state):
         """Write the '#main' HTML content for this tab.
 

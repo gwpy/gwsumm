@@ -193,6 +193,9 @@ class HvetoTab(base):
             get_segments('%s:hveto veto segs round %d' % (ifo, r), [self.span],
                          config=config, cache=cache, return_=False)
 
+        for plot in self.plots:
+            if isinstance(self, HvetoSegmentSummaryPlot):
+                plot.find_flags()
         super(HvetoTab, self).process(config=config, **kwargs)
 
         # find some plots
@@ -322,7 +325,7 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
     defaults['valid'] = None
     #defaults['valid'] = {'edgecolor': 'face', 'facecolor': 'green'}
 
-    def process(self):
+    def find_flags(self):
         # work out flags on-the-fly
         if not self.flags:
             tag = 'hveto veto segs round 1'
@@ -341,7 +344,5 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
                 flag = flag[:-1] + str(i)
             self.pargs.setdefault('labels', ['Round %d' % (i+1) for
                                              i in range(len(self.flags))])
-
-        super(HvetoSegmentSummaryPlot, self).process()
 
 register_plot(HvetoSegmentSummaryPlot)

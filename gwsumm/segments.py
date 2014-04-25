@@ -55,7 +55,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     -------
     FIXME
     """
-    if isinstance(flag, basestring):
+    if isinstance(flag, (unicode, str)):
         flags = flag.split(',')
     else:
         flags = flag
@@ -68,6 +68,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         validity = [(start, end)]
     elif isinstance(validity, DataQualityFlag):
         validity = validity.active
+    validity = SegmentList(validity)
 
     # generate output object
     out = DataQualityDict()
@@ -88,8 +89,18 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     query &= abs(newsegs) != 0
     if query:
         if cache:
-            raise NotImplementedError("Reading segments from cache has not "
-                                      "been implemented yet.")
+            try:
+                new = DataQualityDict.read(cache, allflags)
+            except Exception as e:
+                if type(e) is not Exception:
+                    raise
+                if len(allflags) == 1:
+                    new = DataQualityDict()
+                    new[allflags[0]] = DataQualityFlag.read(cache, allflags[0],
+                                                            coalesce=True)
+            for flag in new:
+                new[flag].valid &= newsegs
+                new[flag].active &= newsegs
         else:
             # parse configuration for query
             kwargs = {}
@@ -118,7 +129,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             for f in notequal:
                 diff1 = out[compound] - globalv.SEGMENTS[f]
                 diff2 = globalv.SEGMENTS[f] - out[compound]
-                out[compound] &= (diff1 | diff2)
+                out[compound] = (diff1 | diff2)
         if isinstance(flag, basestring):
             return out[flag]
         else:

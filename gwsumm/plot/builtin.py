@@ -22,6 +22,7 @@
 from __future__ import division
 
 import hashlib
+from itertools import (izip, cycle)
 
 try:
     from collections import OrderedDict
@@ -30,6 +31,7 @@ except ImportError:
 
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
+from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
@@ -354,6 +356,9 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
                     'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'valid': {'facecolor': validcolor}}
+        for key in plotargs:
+            if key in self.pargs:
+                plotargs[key] = self.pargs.pop(key)
 
         # plot segments
         for flag, label in zip(self.flags, labels)[::-1]:
@@ -645,8 +650,9 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
     defaults = {'x': 'time',
                 'y': 'snr',
                 'color': None,
-                'edgecolor': None,
+                'edgecolor': 'face',
                 'facecolor': None,
+                'marker': 'o',
                 's': 20,
                 'vmin': None,
                 'vmax': None,
@@ -709,24 +715,45 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
             ax.auto_gps_scale(self.end-self.start)
             ax.set_xlim(self.start, self.end)
 
+        # work out labels
+        labels = self.pargs.pop('labels', self.channels)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n '), labels)
+
         # get colouring params
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
 
         # get plot arguments
-        plotargs = dict()
+        plotargs = []
+        for i in range(len(self.channels)):
+            plotargs.append(dict())
+        # get plot arguments
         for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'size_by',
-                    'size_by_log', 'size_range', 'cmap', 's']:
-            plotargs[key] = self.pargs.pop(key)
-        if (plotargs['size_range'] is None and
-                (plotargs['size_by'] or plotargs['size_by_log']) and
+                    'size_by_log', 'size_range', 'cmap', 's', 'marker']:
+            val = self.pargs.pop(key)
+            if key == 'facecolor' and len(self.channels) > 1 and val is None:
+                val = color_cycle()
+            if key == 'marker' and len(self.channels) > 1 and val is None:
+                val = marker_cycle()
+            elif (isinstance(val, (list, tuple, cycle)) and
+                  key not in ['size_range']):
+                val = cycle(val)
+            else:
+                val = cycle([val] * len(self.channels))
+            for i in range(len(self.channels)):
+                plotargs[i][key] = val.next()
+        # fix size_range
+        if (len(self.channels) == 1 and plotargs[0]['size_range'] is None and
+                (plotargs[0]['size_by'] or plotargs[0]['size_by_log']) and
                 clim is not None):
             size_range = clim
 
         # add data
         ntrigs = 0
-        for channel in self.channels:
+        for channel, label, pargs in izip(self.channels, labels, plotargs):
             channel = get_channel(channel)
             table = get_triggers(str(channel), self.etg, self.state,
                                  query=False)
@@ -750,7 +777,8 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                     if not plotargs['size_range']:
                         plotargs['size_range'] = getattr(channel, param)
 
-            ax.plot_table(table, xcolumn, ycolumn, color=ccolumn, **plotargs)
+            ax.plot_table(table, xcolumn, ycolumn, color=ccolumn,
+                          label=label, **pargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -774,6 +802,9 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                 ax.add_loudest(table, ycolumn, xcolumn, ycolumn)
             else:
                 ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
+
+        if len(self.channels) > 1:
+            plot.add_legend(ax=ax, markerscale=4)
 
         # add state segments
         if isinstance(plot, TimeSeriesPlot):

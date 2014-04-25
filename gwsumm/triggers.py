@@ -97,7 +97,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 # read triggers and store
                 segcache = segcache.checkfilesexist()[0]
                 table = TableClass.read(segcache, columns=columns,
-                                        format=etg, filt=filter_)
+                                        format=etg.lower(), filt=filter_)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:

@@ -27,7 +27,7 @@ from lal import gpstime
 from gwpy.segments import Segment
 
 from .. import (globalv, html, version)
-from ..utils import (re_cchar, vprint, count_free_cores)
+from ..utils import (re_quote, re_cchar, vprint, count_free_cores)
 from ..config import *
 from .registry import register_tab
 
@@ -53,7 +53,7 @@ class Tab(object):
     type = 'basic'
 
     def __init__(self, name, longname=None, parent=None, children=list(),
-                 base='', span=None):
+                 base='', span=None, layout=None):
         """Initialise a new `Tab`.
         """
         self.name = name
@@ -65,6 +65,7 @@ class Tab(object):
             self.span = None
         else:
             self.span = Segment(*span)
+        self.layout = None
 
     # -------------------------------------------
     # Tab properties
@@ -210,13 +211,55 @@ class Tab(object):
     # SummaryTab configuration parser
 
     @classmethod
-    def from_ini(cls, *args, **kwargs):
-        """Define a new `Tab` from the given section of a `ConfigParser`.
+    def from_ini(cls, cp, section, base=''):
+        """Define a new `SummaryTab` from the given section of the
+        `ConfigParser`.
 
-        This method must be defined by all sub-classes.
+        Parameters
+        ----------
+        cp : :class:`~gwsumm.config.GWConfigParser`
+            customised configuration parser containing given section
+        section : `str`
+            name of section to parse
+
+        Returns
+        -------
+        tab : :class:`SummaryTab`
+            a new tab defined from the configuration
+
+        Notes
+        -----
+        This method is a stub that only parses the following
+        config parameters:
+
+        - 'name'
+        - 'longname'
+        - 'parent'
         """
-        raise NotImplementedError("This method should be defined by all "
-                                  "sub-classes.")
+        # get [start, stop) job interval
+        start = cp.getint('general', 'gps-start-time')
+        end = cp.getint('general', 'gps-end-time')
+        # get tab name
+        if cp.has_option(section, 'name'):
+            # name given explicitly
+            name = re_quote.sub('', cp.get(section, 'name'))
+        else:
+            # otherwise strip 'tab-' from section name
+            name = section[4:]
+        if cp.has_option(section, 'longname'):
+            longname = re_quote.sub('', cp.get(section, 'longname'))
+        else:
+            longname = name
+        # get parent:
+        #     if parent is not given, this assumes a top-level tab
+        if cp.has_option(section, 'parent'):
+            parent = re_quote.sub('', cp.get(section, 'parent'))
+            if parent == 'None':
+                parent = None
+        else:
+            parent = None
+        return cls(name, longname=longname, parent=parent, span=(start, end),
+                   base=base)
 
     # -------------------------------------------
     # SummaryTab processing
@@ -427,8 +470,15 @@ class Tab(object):
         # add navigation
         page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
                                             tabs=tabs)))
-        # write state pages and include first one
-        page.add(str(html.wrap_content(self.build_inner_html(**inargs))))
+
+        # write inner html
+        href = os.path.join(self.href, 'inner.html')
+        if writedata:
+            inner = self.build_inner_html(**inargs)
+            with open(href, 'w') as fobj:
+                fobj.write(str(inner))
+        page.add(str(html.wrap_content('')))
+        page.add(str(html.load(href)))
 
         # add footer
         page.div.close()
@@ -513,6 +563,20 @@ class StateTab(Tab):
     # -------------------------------------------
     # StateTab methods
 
+    @classmethod
+    def from_ini(cls, cp, section, base=''):
+        new = super(StateTab, cls).from_ini(cp, section, base=base)
+        # parse states and retrieve their definitions
+        if cp.has_option(section, 'states'):
+            # states listed individually
+            statenames = [re_quote.sub('', s).strip() for s in
+                          cp.get(section, 'states').split(',')]
+        else:
+            # otherwise use 'all' state - full span with no gaps
+            statenames = ['All']
+        new.states = [globalv.STATES[s] for s in statenames]
+        return new
+
     def finalize_states(self, config=ConfigParser()):
         """Fetch the segments for each state for this `SummaryTab`
         """
@@ -530,12 +594,6 @@ class StateTab(Tab):
             all other keyword arguments are passed directly onto the
             :meth:`~StateTab.process_state` method.
         """
-        vprint("\n-------------------------------------------------\n")
-        if self.parent:
-            name = '%s/%s' % (self.parent.name, self.name)
-        else:
-            name = self.name
-        vprint("Processing %s\n" % name)
         # load state segments
         self.finalize_states(config=config)
         vprint("States finalised\n")
@@ -559,7 +617,6 @@ class StateTab(Tab):
             queue.close()
             queue.join()
             vprint('done.\n')
-        vprint("%s complete!\n" % (name))
 
     def process_state(self, state, **kwargs):
         """Process data for this tab in a given state.

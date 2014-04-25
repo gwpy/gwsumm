@@ -110,37 +110,8 @@ class SimpleStateTab(StateTab):
         tab : :class:`SummaryTab`
             a new tab defined from the configuration
         """
-        # get [start, stop) job interval
-        start = cp.getint('general', 'gps-start-time')
-        end = cp.getint('general', 'gps-end-time')
-        # get tab name
-        if cp.has_option(section, 'name'):
-            # name given explicitly
-            name = re_quote.sub('', cp.get(section, 'name'))
-        else:
-            # otherwise strip 'tab-' from section name
-            name = section[4:]
-        if cp.has_option(section, 'longname'):
-            longname = re_quote.sub('', cp.get(section, 'longname'))
-        else:
-            longname = name
-        # get parent:
-        #     if parent is not given, this assumes a top-level tab
-        if cp.has_option(section, 'parent'):
-            parent = re_quote.sub('', cp.get(section, 'parent'))
-            if parent == 'None':
-                parent = None
-        else:
-            parent = None
-        # parse states and retrieve their definitions
-        if cp.has_option(section, 'states'):
-            # states listed individually
-            statenames = [re_quote.sub('', s).strip() for s in
-                          cp.get(section, 'states').split(',')]
-        else:
-            # otherwise use 'all' state - full span with no gaps
-            statenames = ['All']
-        states = [globalv.STATES[s] for s in statenames]
+        job = super(SimpleStateTab, cls).from_ini(cp, section, **kwargs)
+        start, end = job.span
 
         # get layout
         if cp.has_option(section, 'layout'):
@@ -162,10 +133,7 @@ class SimpleStateTab(StateTab):
                                      "scaffolding.html")
         else:
             layout = None
-
-        # define new job
-        job = cls(name, parent=parent, states=states, span=[start, end],
-                  longname=longname, layout=layout, **kwargs)
+        job.layout = layout
         job._config = cp._sections[section]
 
         # -------------------

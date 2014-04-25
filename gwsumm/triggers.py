@@ -24,13 +24,14 @@ try:
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
-from laldetchar import triggers as trigio
-from laldetchar.triggers import trigfind
+from laldetchar.triggers import (trigfind, utils as trigutils)
 
-from glue.ligolw.lsctables import TableByName
+from glue.ligolw.table import StripTableName as strip_table_name
 
-from gwpy.plotter.table import get_table_column
-from gwpy.segments import DataQualityFlag
+from gwpy.table import lsctables
+
+from gwpy.table.utils import (get_table_column, get_row_value)
+from gwpy.segments import (DataQualityFlag, SegmentList)
 
 from . import globalv
 from .utils import (re_cchar, vprint)
@@ -38,14 +39,23 @@ from .data import find_cache_segments
 
 
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
-                 query=True, multiprocess=False):
+                 query=True, multiprocess=False, tablename=None,
+                 return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
+    segments = SegmentList(segments)
+
+    if not tablename:
+        try:
+            tablename = trigutils.which_table(etg)
+        except ValueError:
+            if key in globalv.TRIGGERS:
+                  tablename = strip_table_name(globalv.TRIGGERS[key].tableName)
     # get default table type for this generator
-    TableClass = TableByName[trigio.utils.which_table(etg)]
+    TableClass = lsctables.TableByName[tablename]
 
     # work out columns
     try:
@@ -63,7 +73,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     except KeyError:
         new = segments
         globalv.TRIGGERS.setdefault(
-            key, trigio.utils.new_ligolw_table(etg, columns=columns))
+            key, trigutils.new_ligolw_table(tablename, columns=columns))
         globalv.TRIGGERS[key].segments = type(segments)()
     else:
         new = segments - havesegs
@@ -72,6 +82,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     query &= (abs(new) != 0)
     if query:
         for segment in new:
+            filter_ = lambda t: float(get_row_value(t, 'time')) in segment
             # find trigger files
             if cache is None and etg.lower() == 'hacr':
                 raise NotImplementedError("HACR parsing has not been "
@@ -85,11 +96,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     segcache = cache.sieve(segment=segment)
                 # read triggers and store
                 segcache = segcache.checkfilesexist()[0]
-                table = trigio.from_files(segcache, etg, columns=columns,
-                                          channel=str(channel),
-                                          start=segment[0],
-                                          end=segment[1],
-                                          verbose=globalv.VERBOSE)
+                table = TableClass.read(segcache, columns=columns,
+                                        format=etg, filt=filter_)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:
@@ -101,10 +109,13 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
             vprint('\r')
 
     # work out time function
-    times = get_table_column(globalv.TRIGGERS[key], 'time').astype(float)
+    if return_:
+        times = get_table_column(globalv.TRIGGERS[key], 'time').astype(float)
 
-    # return correct triggers
-    out = trigio.utils.new_ligolw_table(etg, columns=columns)
-    out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
-               times[i] in segments)
-    return out
+        # return correct triggers
+        out = trigutils.new_ligolw_table(tablename, columns=columns)
+        out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
+                   times[i] in segments)
+        return out
+    else:
+        return

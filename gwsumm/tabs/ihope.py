@@ -24,6 +24,8 @@ from warnings import warn
 
 from lal import gpstime
 
+from astropy.io.registry import (register_reader, get_reader)
+
 from glue.lal import Cache
 from glue.ligolw import (utils as llwutils)
 from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
@@ -219,3 +221,6 @@ class DailyIhopeTab(base):
         return page
 
 register_tab(DailyIhopeTab)
+
+register_reader('Daily Ihope', SnglInspiralTable,
+                get_reader('ligolw', SnglInspiralTable))

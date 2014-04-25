@@ -273,7 +273,7 @@ class HvetoTab(base):
 register_tab(HvetoTab)
 
 
-def read_hveto_triggers(f, columns=HVETO_COLUMNS, filter=None, nproc=1):
+def read_hveto_triggers(f, columns=HVETO_COLUMNS, filt=None, nproc=1):
     """Read a `SnglBurstTable` of triggers from an Hveto txt file.
     """
     # allow multiprocessing
@@ -306,7 +306,7 @@ def read_hveto_triggers(f, columns=HVETO_COLUMNS, filter=None, nproc=1):
             b.set_peak(LIGOTimeGPS(float(t)))
             b.peak_frequency = f
             b.snr = snr
-            if filter is None or filter(b):
+            if filt is None or filt(b):
                 append(b)
     return out
 

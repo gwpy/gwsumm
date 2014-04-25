@@ -266,7 +266,7 @@ try:
     config.items('general')
 except NoSectionError:
     config.add_section('general')
-else:
+finally:
     config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
     config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
     config.set('general', 'yyyy', utc.strftime('%Y'))
@@ -504,8 +504,15 @@ alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
     mkdir(tab.href)
     if not opts.html_only:
+        vprint("\n-------------------------------------------------\n")
+        if tab.parent:
+            name = '%s/%s' % (tab.parent.name, tab.name)
+        else:
+            name = tab.name
+        vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess)
+        vprint("%s complete!\n" % (name))
     page = tab.write_html(css=css, js=javascript, tabs=tabs,
                           ifo=ifo, ifomap=ifobases, about=about.index,
                           writedata=not opts.html_only,

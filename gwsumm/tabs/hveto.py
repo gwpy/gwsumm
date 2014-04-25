@@ -194,7 +194,7 @@ class HvetoTab(base):
                          config=config, cache=cache, return_=False)
 
         for plot in self.plots:
-            if isinstance(self, HvetoSegmentSummaryPlot):
+            if isinstance(plot, HvetoSegmentSummaryPlot):
                 plot.find_flags()
         super(HvetoTab, self).process(config=config, **kwargs)
 

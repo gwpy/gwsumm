@@ -92,6 +92,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
                                                           segment[1])
+                    etg = 'ligolw'
                 else:
                     segcache = cache.sieve(segment=segment)
                 # read triggers and store

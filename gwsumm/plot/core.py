@@ -35,6 +35,7 @@ except ImportError:
 from gwpy.segments import Segment
 from gwpy.detector import ChannelList
 
+from .registry import register_plot
 from .. import globalv
 from ..data import get_channel
 from ..utils import split_channels
@@ -371,6 +372,8 @@ class DataSummaryPlot(SummaryPlot):
         self.plot.save(outputfile)
         self.plot.close()
         return outputfile
+
+register_plot(DataSummaryPlot)
 
 
 class PlotList(list):

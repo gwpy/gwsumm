@@ -749,7 +749,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         if (len(self.channels) == 1 and plotargs[0]['size_range'] is None and
                 (plotargs[0]['size_by'] or plotargs[0]['size_by_log']) and
                 clim is not None):
-            size_range = clim
+            plotargs[0]['size_range'] = clim
 
         # add data
         ntrigs = 0
@@ -774,8 +774,8 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
                 elif hasattr(channel, param):
                     if not clim:
                         clim = getattr(channel, param)
-                    if not plotargs['size_range']:
-                        plotargs['size_range'] = getattr(channel, param)
+                    if not pargs['size_range']:
+                        pargs['size_range'] = getattr(channel, param)
 
             ax.plot_table(table, xcolumn, ycolumn, color=ccolumn,
                           label=label, **pargs)

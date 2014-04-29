@@ -668,6 +668,69 @@ class StateTab(Tab):
         raise NotImplementedError("This method should be provided by all "
                                   "sub-classes.")
 
+    def write_html(self, outfile=None, title=None, subtitle=None, tabs=list(),
+                   ifo=None, ifomap=None, css=list(), js=list(), about=None,
+                   writedata=True, writehtml=True, **inargs):
+        """Construct the HTML page for this `StateTab`.
+
+        Parameters
+        ----------
+        outfile : `str`, optional
+            path of file to write HTML into
+        title : `str`, optional, default: {parent.longname}
+            level 1 heading for this `Tab`.
+        subtitle : `str`, optional, default: {self.longname}
+            level 2 heading for this `Tab`.
+        tabs: `list`, optional
+            list of top-level tabs (with children) to populate navbar
+        ifo : `str`, optional
+            prefix for this IFO.
+        ifomap : `dict`, optional
+            `dict` of (ifo, {base url}) pairs to map to summary pages for
+            other IFOs.
+
+            .. note::
+               The ``ifo`` and ``ifomap`` parameters should be given
+               together.
+
+        css : `list`, optional
+            list of resolvable URLs for CSS files
+        js : `list`, optional
+            list of resolvable URLs for javascript files
+        about : `str`, optional
+            href for the 'About' page
+        writedata : `bool`, optional, default: `True`
+            if `True`, actually write the state frames
+        writehtml : `bool`, optional, default: `True`
+            if `True`, actually write the outer-frame HTML
+        """
+        # initialise HTML page
+        page = self.initialise_html_page(title=title, subtitle=subtitle,
+                                         css=css, js=js)
+        # add navigation
+        page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
+                                            tabs=tabs)))
+        # write page for each state
+        if writedata:
+            for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
+                inner = self.build_inner_html(state, **inargs)
+                with open(shtml, 'w') as fobj:
+                    fobj.write(str(inner))
+        page.add(str(html.wrap_content('')))
+        if len(self.states) > 1:
+            page.add(str(html.load_state(self.hrefs[0])))
+        else:
+            page.add(str(html.load(self.hrefs[0])))
+        # add footer
+        page.div.close()
+        page.add(str(html.footer(about=about)))
+        # write
+        if writehtml:
+            if outfile is None:
+                outfile = self.index
+            with open(outfile, 'w') as fobj:
+                fobj.write(str(page))
+        return
 
     def build_inner_html(self, state, **kwargs):
         """Build the '#main' HTML content for this `Tab`.

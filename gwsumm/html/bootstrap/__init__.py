@@ -62,7 +62,8 @@ def banner(title, subtitle=None):
     return page
 
 
-def navbar(links, brand=None, states=None):
+def navbar(links, brand=None, states=None, dropdown_class=[''],
+           yamm=True):
     """Construct a navigation bar in bootstrap format.
 
     Parameters
@@ -80,7 +81,10 @@ def navbar(links, brand=None, states=None):
     """
     page = markup.page()
     page.div(id_='nav-wrapper')
-    page.nav(id_='nav', class_='navbar', role='navigation')
+    if yamm:
+        page.nav(id_='nav', class_='navbar yamm', role='navigation')
+    else:
+        page.nav(id_='nav', class_='navbar', role='navigation')
     page.div(class_='container')
     page.div(class_='row')
     page.div(class_='col-md-12')
@@ -97,21 +101,36 @@ def navbar(links, brand=None, states=None):
     page.span('', class_='icon-bar')
     page.button.close()
     page.div.close()
+
+    # build dropdown menus
+    #    - this model allows for multiple copies of the menus to be written
+    #      for multiple screen sizes
+    if isinstance(dropdown_class, (str, unicode)):
+        dropdown_class = [dropdown_class]
     page.div(class_='navbar-collapse collapse pull-left')
     page.ul(class_='nav navbar-nav')
-    for i, link in enumerate(links):
-        if isinstance(link, (list, tuple)) and isinstance(link[1], basestring):
-            page.li()
-            text, link = link
-            page.a(text, href=link)
-        elif (isinstance(link, (list, tuple)) and
-              isinstance(link[1], (list, tuple))):
-            page.li(class_="dropdown")
-            page.add(str(dropdown(*link)))
-        else:
-            page.li()
-            page.add(str(link))
-        page.li.close()
+    for ddclass in dropdown_class:
+        for i, link in enumerate(links):
+            if (isinstance(link, (list, tuple)) and
+                    isinstance(link[1], basestring)):
+                if ddclass:
+                    page.li(class_=ddclass)
+                else:
+                    page.li()
+                text, link = link
+                page.a(text, href=link)
+            elif (isinstance(link, (list, tuple)) and
+                  isinstance(link[1], (list, tuple))):
+                ddclass = 'dropdown %s' % ddclass
+                page.li(class_=ddclass)
+                page.add(str(dropdown(*link)))
+            else:
+                if ddclass:
+                    page.li(class_=ddclass)
+                else:
+                    page.li()
+                page.add(str(link))
+            page.li.close()
     page.ul.close()
     page.div.close()
     page.div.close()
@@ -131,7 +150,8 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
     text : `str`
         dropdown menu header
     links : `list`
-        list of (Link text, linkurl) tuples
+        list of (Link text, linkurl) tuples or dict of such tuples for
+        grouped dropdowns
 
     Returns
     -------
@@ -152,22 +172,58 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
     page.add(text)
     page.b('', class_='caret')
     page.a.close()
+
+    # work out columns
+    ngroup = sum([isinstance(x, (tuple, list)) and len(x) and
+                 isinstance(x[1], (tuple, list)) for x in links])
+    if ngroup < 2:
+        column = None
+    else:
+        ncol = min(ngroup, 4)
+        column = 'col-xs-12 col-sm-%d' % (12 // ncol)
+
     # dropdown elements
-    page.ul(class_='dropdown-menu')
+    if column:
+        page.ul(class_='dropdown-menu dropdown-%d-col' % ncol)
+    else:
+        page.ul(class_='dropdown-menu')
+    if column:
+        page.li()
     for i, link in enumerate(links):
-        if link is None:
-            page.li(class_='divider')
-        elif i == active:
-            page.li(class_='active')
+        if isinstance(active, int) and i == active:
+            active_ = True
+        elif isinstance(active, (list, tuple)) and i == active[0]:
+            active_ = active[1]
         else:
-            page.li()
-        if isinstance(link, (tuple, list)):
-            page.a(link[0], href=link[1])
-        elif link is not None:
-            page.add(str(link))
-        page.li.close()
+            active_ = False
+        dropdown_link(page, link, active=active_, class_=column)
+    if column:
+        page.li()
     page.ul.close()
     return page
+
+
+def dropdown_link(page, link, active=False, class_=''):
+    if link is None:
+        page.li(class_='divider')
+    elif active is True:
+        page.li(class_='active')
+    else:
+        page.li()
+    if isinstance(link, (tuple, list)):
+        if isinstance(link[1], (tuple, list)):
+            page.ul(class_=class_ + ' list-unstyled')
+            page.li(link[0], class_='dropdown-header')
+            for j, link2 in enumerate(link[1]):
+                dropdown_link(page, link2,
+                              active=(type(active) is int and active == j))
+            page.ul.close()
+        else:
+            page.a(link[0], href=link[1])
+
+    elif link is not None:
+        page.add(str(link))
+    page.li.close()
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
@@ -284,7 +340,7 @@ def state_switcher(states, default=0):
     current, chref = states[default]
     page = markup.page()
     page.div(class_="btn-group pull-right")
-    page.a(class_='btn dropdown-toggle', href='#', id_='states',
+    page.a(class_='navbar-brand btn dropdown-toggle', href='#', id_='states',
            title="Show/hide state menu", **{'data-toggle': 'dropdown'})
     page.add(current.name)
     page.b('', class_='caret')

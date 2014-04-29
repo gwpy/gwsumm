@@ -21,6 +21,7 @@
 
 import os
 import multiprocessing
+import re
 
 from lal import gpstime
 
@@ -53,7 +54,7 @@ class Tab(object):
     type = 'basic'
 
     def __init__(self, name, longname=None, parent=None, children=list(),
-                 base='', span=None, layout=None):
+                 base='', span=None, layout=None, group=None):
         """Initialise a new `Tab`.
         """
         self.name = name
@@ -61,6 +62,7 @@ class Tab(object):
         self.parent = parent
         self.children = children
         self.base = base
+        self.group = group
         if span is None:
             self.span = None
         else:
@@ -240,26 +242,32 @@ class Tab(object):
         start = cp.getint('general', 'gps-start-time')
         end = cp.getint('general', 'gps-end-time')
         # get tab name
-        if cp.has_option(section, 'name'):
+        try:
             # name given explicitly
             name = re_quote.sub('', cp.get(section, 'name'))
-        else:
+        except NoOptionError:
             # otherwise strip 'tab-' from section name
             name = section[4:]
-        if cp.has_option(section, 'longname'):
+        try:
             longname = re_quote.sub('', cp.get(section, 'longname'))
-        else:
+        except NoOptionError:
             longname = name
         # get parent:
         #     if parent is not given, this assumes a top-level tab
-        if cp.has_option(section, 'parent'):
+        try:
             parent = re_quote.sub('', cp.get(section, 'parent'))
+        except NoOptionError:
+            parent = None
+        else:
             if parent == 'None':
                 parent = None
-        else:
-            parent = None
+        # get group
+        try:
+            group = cp.get(section, 'group')
+        except NoOptionError:
+            group = None
         return cls(name, longname=longname, parent=parent, span=(start, end),
-                   base=base)
+                   base=base, group=group)
 
     # -------------------------------------------
     # SummaryTab processing
@@ -409,21 +417,48 @@ class Tab(object):
         for tab in tabs:
             if len(tab.children):
                 navlinks.append([tab.name, []])
-                links = [(child.name, child.href) for child in tab.children]
-                if self in tab.children:
-                    active = tab.children.index(self)
-                else:
-                    active = None
+                links = []
+                active = None
+                # build groups
+                groups = set([t.group for t in tab.children])
+                groups = dict((g, [t for t in tab.children if t.group == g])
+                              for g in groups)
+                nogroup = groups.pop(None, [])
+                for child in nogroup:
+                    links.append((child.name, child.href))
+                    if child == self:
+                        active = len(links) - 1
+                for group in sorted(groups.keys()):
+                    groups[group].sort(key=lambda t: re.sub('\A%s ' % group, '',
+                                                            t.name))
+                    links.append((group, []))
+                    for i, child in enumerate(groups[group]):
+                        name = re.sub('\A%s ' % group, '', child.name)
+                        links[-1][1].append((name, child.href))
+                        if child == self:
+                            active = [len(links) - 1, i]
                 if tab.children[0].name == 'Summary':
                     links.insert(1, None)
-                    if active > 0:
+                    if active and isinstance(active, int) and active > 0:
                         active += 1
+                    elif active and isinstance(active, list) and active[0] > 0:
+                        active[0] += 1
                 navlinks[-1][1].extend(links)
                 navlinks[-1].append(active)
             else:
                 navlinks.append((tab.name, tab.href))
+        if hasattr(self, 'states'):
+            # build state switch
+            if len(self.states) > 1:
+                statebtn = html.state_switcher(zip(self.states, self.hrefs), 0)
+            else:
+                statebtn = False
+        else:
+            statebtn = None
         # combine and return
-        return html.navbar(navlinks, brand=brand)
+        return html.navbar(navlinks, brand=brand, states=statebtn,
+                           dropdown_class=['hidden-xs visible-lg',
+                                           'hidden-lg'])
 
     def write_html(self, outfile=None, title=None, subtitle=None, tabs=list(),
                    ifo=None, ifomap=None, css=list(), js=list(), about=None,
@@ -523,12 +558,10 @@ class StateTab(Tab):
     """
     type = 'state'
 
-    def __init__(self, name, longname=None, parent=None, children=list(),
-                 base='', span=None, states=None):
+    def __init__(self, name, states=None, **kwargs):
         """Initialise a new `Tab`.
         """
-        super(StateTab, self).__init__(name, longname=longname, parent=parent,
-                                       children=children, base=base, span=span)
+        super(StateTab, self).__init__(name, **kwargs)
         self.states = states
 
     # -------------------------------------------
@@ -635,134 +668,6 @@ class StateTab(Tab):
         raise NotImplementedError("This method should be provided by all "
                                   "sub-classes.")
 
-    def build_html_navbar(self, ifo=None, ifomap=None, tabs=list()):
-        """Build the navigation bar for this `Tab`.
-
-        Parameters
-        ----------
-        ifo : `str`, optional
-            prefix for this IFO.
-        ifomap : `dict`, optional
-            `dict` of (ifo, {base url}) pairs to map to summary pages for
-            other IFOs.
-
-            .. note::
-               The ``ifo`` and ``ifomap`` parameters should be given
-               together.
-
-        tabs : `list`, optional
-            list of parent tabs (each with a list of children) to include
-            in the navigation bar.
-
-        Returns
-        -------
-        page : `markup.page`
-            a markup page containing the navigation bar.
-        """
-        # build interferometer cross-links
-        if ifo is not None and ifomap is not None:
-            ifolinks = str(html.base_map_dropdown(ifo, **ifomap))
-        else:
-            ifolinks = ''
-        # build calendar
-        if globalv.MODE < 4:
-            date = gpstime.gps_to_utc(self.span[0])
-            cal = str(html.calendar(date, mode=globalv.MODE % 3))
-        else:
-            start, end = self.span
-            cal = html.markup.oneliner.p('%d-%d' % (start, end),
-                                         class_='navbar-text')
-        # combine as 'brand'
-        brand = ifolinks + cal
-        # build navbar links
-        navlinks = []
-        for tab in tabs:
-            if len(tab.children):
-                navlinks.append([tab.name, []])
-                links = [(child.name, child.href) for child in tab.children]
-                if self in tab.children:
-                    active = tab.children.index(self)
-                else:
-                    active = None
-                if tab.children[0].name == 'Summary':
-                    links.insert(1, None)
-                    if active > 0:
-                        active += 1
-                navlinks[-1][1].extend(links)
-                navlinks[-1].append(active)
-            else:
-                navlinks.append((tab.name, tab.href))
-        # build state switch
-        if len(self.states) > 1:
-            statebtn = html.state_switcher(zip(self.states, self.hrefs), 0)
-        else:
-            statebtn = False
-        # combine and return
-        return html.navbar(navlinks, brand=brand, states=statebtn)
-
-    def write_html(self, outfile=None, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=None, css=list(), js=list(), about=None,
-                   writedata=True, writehtml=True, **inargs):
-        """Construct the HTML page for this `StateTab`.
-
-        Parameters
-        ----------
-        outfile : `str`, optional
-            path of file to write HTML into
-        title : `str`, optional, default: {parent.longname}
-            level 1 heading for this `Tab`.
-        subtitle : `str`, optional, default: {self.longname}
-            level 2 heading for this `Tab`.
-        tabs: `list`, optional
-            list of top-level tabs (with children) to populate navbar
-        ifo : `str`, optional
-            prefix for this IFO.
-        ifomap : `dict`, optional
-            `dict` of (ifo, {base url}) pairs to map to summary pages for
-            other IFOs.
-
-            .. note::
-               The ``ifo`` and ``ifomap`` parameters should be given
-               together.
-
-        css : `list`, optional
-            list of resolvable URLs for CSS files
-        js : `list`, optional
-            list of resolvable URLs for javascript files
-        about : `str`, optional
-            href for the 'About' page
-        writedata : `bool`, optional, default: `True`
-            if `True`, actually write the state frames
-        writehtml : `bool`, optional, default: `True`
-            if `True`, actually write the outer-frame HTML
-        """
-        # initialise HTML page
-        page = self.initialise_html_page(title=title, subtitle=subtitle,
-                                         css=css, js=js)
-        # add navigation
-        page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
-                                            tabs=tabs)))
-        # write page for each state
-        if writedata:
-            for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
-                inner = self.build_inner_html(state, **inargs)
-                with open(shtml, 'w') as fobj:
-                    fobj.write(str(inner))
-        page.add(str(html.wrap_content('')))
-        if len(self.states) > 1:
-            page.add(str(html.load_state(self.hrefs[0])))
-        else:
-            page.add(str(html.load(self.hrefs[0])))
-        # add footer
-        page.div.close()
-        page.add(str(html.footer(about=about)))
-        # write
-        if writehtml:
-            if outfile is None:
-                outfile = self.index
-            with open(outfile, 'w') as fobj:
-                fobj.write(str(page))
-        return
 
     def build_inner_html(self, state, **kwargs):
         """Build the '#main' HTML content for this `Tab`.

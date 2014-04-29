@@ -38,3 +38,10 @@ class GWSummConfigParser(ConfigParser):
             msg = str(e)
             raise ValueError('[%s]: %s' % (section, msg))
         return [i for i in items if i[0] not in self._defaults]
+
+    def read(self, filenames):
+        readok = ConfigParser.read(self, filenames)
+        for fp in filenames:
+            if fp not in readok:
+                raise IOError("Cannot read file: %s" % fp)
+        return readok

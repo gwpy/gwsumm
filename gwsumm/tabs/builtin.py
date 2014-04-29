@@ -56,14 +56,10 @@ class SimpleStateTab(StateTab):
     """
     type = 'default'
 
-    def __init__(self, name, longname=None, parent=None, children=list(),
-                 base='', span=None, states=None, layout=None):
+    def __init__(self, name, layout=None, **kwargs):
         """Initialise a new :class:`SimpleStateTab`
         """
-        super(SimpleStateTab, self).__init__(name, longname=longname,
-                                             parent=parent, children=children,
-                                             base=base, span=span,
-                                             states=states)
+        super(SimpleStateTab, self).__init__(name, **kwargs)
         self.plots = PlotList()
         self.layout = layout
 

@@ -177,7 +177,7 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
     ngroup = sum([isinstance(x, (tuple, list)) and len(x) and
                  isinstance(x[1], (tuple, list)) for x in links])
     if ngroup < 2:
-        column = None
+        column = ''
     else:
         ncol = min(ngroup, 4)
         column = 'col-xs-12 col-sm-%d' % (12 // ncol)

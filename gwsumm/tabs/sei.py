@@ -184,16 +184,16 @@ class SEIWatchDogTab(base):
                 # associate cause
                 if not bits:
                     if re.match('ST\d', latch.signal):
-                        stage = 'ISI %s' % latch.signal
+                        stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
-                    cause = 'No cause found (%s)' % stage
+                    cause = '%s (no cause found)' % stage
                 else:
                     firstbit = map(int, bin(int(bits))[2:][::-1]).index(1)
                     cause = latch.bitmask[firstbit]
-                    t2 = Time(t, format='gps', scale='utc')
-                    vprint("        Trip GPS %d (%s), cause: %s.\n"
-                           % (t, t2.iso, cause))
+                t2 = Time(t, format='gps', scale='utc')
+                vprint("        Trip GPS %d (%s), cause: %s.\n"
+                       % (t, t2.iso, cause))
                 # configure plot
                 mapsec = 'sei-wd-map-%s' % cause
                 if (not config.has_section(mapsec) and
@@ -234,6 +234,7 @@ class SEIWatchDogTab(base):
                             get_channel(BSC_ST2_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
         isimask = [bit for c in isichannels for bit in c.bitmask]
+        mask = hepimask + isimask
 
         # count trips
         count = {}
@@ -258,10 +259,10 @@ class SEIWatchDogTab(base):
         page.tr.close()
 
         # add rows
-        totals = numpy.zeros((len(hepimask+isimask), len(self.chambers) + 1),
+        totals = numpy.zeros((len(mask), len(self.chambers) + 1),
                              dtype=int)
         rows = []
-        for i, bit in enumerate(hepimask + isimask):
+        for i, bit in enumerate(mask):
             class_ = []
             if (i == len(hepimask) or
                     i == len(hepimask + isichannels[0].bitmask)):
@@ -299,7 +300,8 @@ class SEIWatchDogTab(base):
 
         # build trip groups
         self.trips.sort(key=lambda (x, y, z, p):
-                                (x, (hepimask + isimask).index(z), p is None))
+                                (x, z in mask and (mask).index(z) or 1000,
+                                 p is None))
         groups = OrderedDict()
         j = 0
         for i in xrange(len(self.trips)):

@@ -163,7 +163,8 @@ topts.add_option("-e", "--gps-end-time", action="store", type="int",
 
 opts, args = parser.parse_args()
 
-opts.config_file = [fp for csv in opts.config_file for fp in csv.split(',')]
+opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
+                    fp in csv.split(',')]
 
 # read configuration file
 config = GWSummConfigParser(dict_type=OrderedDict)

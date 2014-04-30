@@ -19,6 +19,7 @@
 """DOCSTRING
 """
 
+import operator
 import os
 import multiprocessing
 import re
@@ -28,6 +29,8 @@ from lal import gpstime
 from gwpy.segments import Segment
 
 from .. import (globalv, html, version)
+from ..segments import get_segments
+from ..state import ALLSTATE
 from ..utils import (re_quote, re_cchar, vprint, count_free_cores)
 from ..config import *
 from .registry import register_tab
@@ -613,6 +616,12 @@ class StateTab(Tab):
     def finalize_states(self, config=ConfigParser()):
         """Fetch the segments for each state for this `SummaryTab`
         """
+        # shortcut segment query for each state
+        alldefs = [state.definition for state in self.states if
+                   state.name != ALLSTATE]
+        allvalid = reduce(operator.or_, [state.valid for state in self.states])
+        get_segments(alldefs, allvalid, config=config)
+        # individually double-check, set ready condition
         for state in self.states:
             state.fetch(config=config)
 

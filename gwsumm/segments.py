@@ -19,10 +19,8 @@
 """Utilities for segment handling and display
 """
 
-import re
-
-from .version import version as __version__
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+from __future__ import print_function
+import sys
 
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
@@ -33,14 +31,15 @@ import operator
 
 from gwpy.segments import (DataQualityFlag, DataQualityDict, SegmentList)
 
-import globalv
+from . import (globalv, version)
 from .utils import *
 
-
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
-                 query=True, return_=True):
+                 query=True, return_=True, segdb_error='raise'):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -108,7 +107,22 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 kwargs['url'] = config.get('segment-database', 'url')
             except (NoSectionError, NoOptionError):
                 pass
-            new = DataQualityDict.query(allflags, newsegs, **kwargs)
+            try:
+                new = DataQualityDict.query(allflags, newsegs, **kwargs)
+            except Exception as e:
+                # ignore error from SegDB
+                if segdb_error in ['ignore', None]:
+                    pass
+                # convert to warning
+                elif segdb_error in ['warn']:
+                    print('%sWARNING: %sCaught %s: %s [gwsumm.segments]'
+                          % (WARNC, ENDC, type(e).__name__, str(e)),
+                          file=sys.stderr)
+                    warnings.warn('%s: %s' % (type(e).__name__, str(e)))
+                # otherwise raise as normal
+                else:
+                    raise
+                new = DataQualityDict()
             for f in new:
                 vprint("    Downloaded %d new segments from database for %s.\n"
                        % (len(new[f].active), f))

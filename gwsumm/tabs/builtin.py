@@ -213,7 +213,7 @@ class SimpleStateTab(StateTab):
 
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None, plotqueue=None):
+                      trigcache=None, plotqueue=None, segdb_error='raise'):
         """Process data for this tab in a given state
         """
         vprint("Processing '%s' state\n" % state.name)
@@ -275,7 +275,7 @@ class SimpleStateTab(StateTab):
         if len(dqflags):
             vprint("    %d data-quality flags identified for SegDB query\n"
                    % len(dqflags))
-            get_segments(dqflags, state, config=config)
+            get_segments(dqflags, state, config=config, segdb_error=segdb_error)
 
         # --------------------------------------------------------------------
         # process triggers

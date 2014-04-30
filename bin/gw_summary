@@ -131,6 +131,10 @@ copts.add_option('--single-process', action='store_true', default=False,
 copts.add_option('-b', '--bulk-read', action='store_true', default=False,
                  help="read all data up-front at the start of the job, rather "
                       "than when it is needed for a tab, default: %default")
+copts.add_option('-S', '--on-segdb-error', action='store', type='string',
+                 default='raise',
+                 help="action upon error fetching segments from SegDB, one of "
+                      "'raise', 'ignore', or 'warn', default: %default")
 
 outopts = parser.add_option_group("Output options")
 outopts.add_option('-o', '--output-dir', action='store', type='string',
@@ -165,6 +169,10 @@ opts, args = parser.parse_args()
 
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
                     fp in csv.split(',')]
+
+# check segdb option
+if not opts.on_segdb_error in ['raise', 'warn', 'ignore']:
+    parser.error("Invalid option --on-segdb-error='%s'" % opts.on_segdb_error)
 
 # read configuration file
 config = GWSummConfigParser(dict_type=OrderedDict)
@@ -512,7 +520,8 @@ for tab in alltabs:
             name = tab.name
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
-                    multiprocess=opts.multiprocess)
+                    multiprocess=opts.multiprocess,
+                    segdb_error=opts.on_segdb_error)
         vprint("%s complete!\n" % (name))
     page = tab.write_html(css=css, js=javascript, tabs=tabs,
                           ifo=ifo, ifomap=ifobases, about=about.index,

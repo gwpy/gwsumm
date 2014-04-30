@@ -34,6 +34,11 @@ re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\Z|\.[a-z]+\Z)')
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
 
+# define some colours
+WARNC = '\033[93m'
+ERRC = '\033[91m'
+ENDC = '\033[0m'
+
 
 def elapsed_time():
     """Return the time (seconds) since this job started

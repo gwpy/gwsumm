@@ -140,6 +140,9 @@ def get_channel(channel):
 def get_channels(channels):
     """Multi-threaded channel query
     """
+    if len(channels) == 0:
+        return []
+
     # set up Queues
     inqueue = Queue()
     outqueue = Queue()

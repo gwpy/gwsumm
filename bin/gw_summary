@@ -68,7 +68,7 @@ from gwpy.spectrum import psd
 from gwsumm import (globalv, version)
 from gwsumm.mode import *
 from gwsumm.config import *
-from gwsumm.data import get_channel
+from gwsumm.data import get_channels
 from gwsumm.tabs import get_tab
 from gwsumm.utils import *
 from gwsumm.state import *
@@ -366,24 +366,29 @@ if not opts.html_only:
                     if not config.has_option(name, key):
                         config.set(name, key, val)
 
-    # read custom channel definitions
+    # read all channels
+    newchannels = []
     for section in config.sections():
         if re_channel.match(section):
-            channel = get_channel(section)
-            for key, val in nat_sorted(config.nditems(section),
-                                       key=lambda x: x[0]):
-                key = re_cchar.sub('_', key.rstrip())
-                if key.isdigit():
-                    if not hasattr(channel, 'bitmask'):
-                        channel.bitmask = []
-                    while len(channel.bitmask) < int(key):
-                        channel.bitmask.append(None)
-                    channel.bitmask.append(val)
-                else:
-                    try:
-                        setattr(channel, key, eval(val.rstrip()))
-                    except NameError:
-                        setattr(channel, key, val.rstrip())
+            newchannels.append(section)
+    newchannels = get_channels(newchannels)
+
+    # read custom channel definitions
+    for channel in newchannels:
+        for key, val in nat_sorted(config.nditems(channel.name),
+                                   key=lambda x: x[0]):
+            key = re_cchar.sub('_', key.rstrip())
+            if key.isdigit():
+                if not hasattr(channel, 'bitmask'):
+                    channel.bitmask = []
+                while len(channel.bitmask) < int(key):
+                    channel.bitmask.append(None)
+                channel.bitmask.append(val)
+            else:
+                try:
+                    setattr(channel, key, eval(val.rstrip()))
+                except NameError:
+                    setattr(channel, key, val.rstrip())
 
 # read states
 load_states(config)

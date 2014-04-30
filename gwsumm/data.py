@@ -23,6 +23,8 @@ import operator
 import os
 import urllib2
 from math import (floor, ceil, pi)
+from Queue import Queue
+import threading
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -48,6 +50,24 @@ from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+
+class ThreadChannelQuery(threading.Thread):
+    """Threaded CIS `Channel` query.
+    """
+    def __init__(self, inqueue, outqueue):
+        threading.Thread.__init__(self)
+        self.in_ = inqueue
+        self.out = outqueue
+
+    def run(self):
+        i, channel = self.in_.get()
+        self.in_.task_done()
+        try:
+            self.out.put((i, get_channel(channel)))
+        except Exception as e:
+            self.out.put(e)
+        self.out.task_done()
 
 
 def get_channel(channel):
@@ -115,6 +135,36 @@ def get_channel(channel):
                                    "information for %s" % str(channel))
             else:
                 raise
+
+
+def get_channels(channels):
+    """Multi-threaded channel query
+    """
+    # set up Queues
+    inqueue = Queue()
+    outqueue = Queue()
+
+    # open threads
+    for i in range(len(channels)):
+        t = ThreadChannelQuery(inqueue, outqueue)
+        t.setDaemon(True)
+        t.start()
+
+    # populate input queue
+    for i, c in enumerate(channels):
+        inqueue.put((i, c))
+
+    # block
+    inqueue.join()
+    outqueue.join()
+    result = []
+    for i in range(len(channels)):
+        c = outqueue.get()
+        if isinstance(c, Exception):
+            raise c
+        else:
+            result.append(c)
+    return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
 
 
 def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),

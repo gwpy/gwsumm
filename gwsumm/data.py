@@ -115,8 +115,12 @@ def get_channel(channel):
                 type_ = 'm-trend'
             name += ',%s' % type_
             new = Channel(name)
-            source = get_channel(name.rsplit('.', 1)[0])
-            new.url = source.url
+            try:
+                source = get_channel(name.rsplit('.', 1)[0])
+            except ValueError:
+                pass
+            else:
+                new.url = source.url
             # determine sample rate for trends
             if type_ == 'm-trend':
                 new.sample_rate = 1/60.

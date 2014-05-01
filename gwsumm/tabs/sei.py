@@ -96,7 +96,7 @@ class SEIWatchDogTab(base):
 
     def process(self, nds='guess', multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
-                trigcache=None):
+                trigcache=None, **kwargs):
         """Process data for the given state.
         """
 
@@ -216,7 +216,7 @@ class SEIWatchDogTab(base):
 
         super(SEIWatchDogTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
-            datacache=datacache, trigcache=trigcache)
+            datacache=datacache, trigcache=trigcache, **kwargs)
 
     def build_inner_html(self, state):
         """Build HTML summary of watchdog trips

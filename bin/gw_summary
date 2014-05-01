@@ -367,15 +367,15 @@ if not opts.html_only:
                         config.set(name, key, val)
 
     # read all channels
-    newchannels = []
+    channelsections = []
     for section in config.sections():
         if re_channel.match(section):
-            newchannels.append(section)
-    newchannels = get_channels(newchannels)
+            channelsections.append(section)
+    newchannels = get_channels(channelsections)
 
     # read custom channel definitions
-    for channel in newchannels:
-        for key, val in nat_sorted(config.nditems(channel.name),
+    for channel, section in zip(newchannels, channelsections):
+        for key, val in nat_sorted(config.nditems(section),
                                    key=lambda x: x[0]):
             key = re_cchar.sub('_', key.rstrip())
             if key.isdigit():

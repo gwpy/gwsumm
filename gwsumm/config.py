@@ -41,6 +41,8 @@ class GWSummConfigParser(ConfigParser):
 
     def read(self, filenames):
         readok = ConfigParser.read(self, filenames)
+        if isinstance(filenames, (unicode, str)):
+            filenames = filenames.split(',')
         for fp in filenames:
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)

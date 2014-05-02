@@ -508,7 +508,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 if abs(seg) == 0 or abs(seg) < ts.dt.value:
                     continue
                 if ts.span.intersects(seg):
-                    cropped = ts.crop(*seg, copy=False)
+                    cropped = ts.crop(float(seg[0]), float(seg[1]), copy=False)
                     if cropped.size:
                         data.append(cropped)
         out[channel.ndsname] = data.coalesce()
@@ -682,7 +682,7 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     """Add a `TimeSeries` to the global memory cache
     """
     if key is None:
-        key = timeseries.name or str(timeseries.channel)
+        key = timeseries.name or timeseries.channel.ndsname
     globalv.DATA.setdefault(key, TimeSeriesList())
     globalv.DATA[key].append(timeseries)
     if coalesce:

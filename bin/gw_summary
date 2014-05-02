@@ -26,7 +26,7 @@ from __future__ import division
 
 import os
 import datetime
-import optparse
+import argparse
 import re
 import calendar
 import getpass
@@ -90,82 +90,96 @@ PROFILE = False
 # ----------------------------------------------------------------------------
 # Command-line options
 
-usage = 'python -m gwsumm --config-file CONFIG --day YYYYMMDD'
 
-parser = optparse.OptionParser(usage=usage, description=__doc__,
-                               formatter=optparse.IndentedHelpFormatter(4))
+class GWHelpFormatter(argparse.HelpFormatter):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('indent_increment', 4)
+        super(GWHelpFormatter, self).__init__(*args, **kwargs)
 
-parser.add_option("-p", "--profile", action="store_true", default=False,
-                  help="show second timer with verbose statements, "
-                       "default: %default")
-parser.add_option("-v", "--verbose", action="store_true", default=False,
-                  help="show verbose output, default: %default")
-parser.add_option("-V", "--version", action="version",
-                  help="show program's version number and exit")
+
+prog = os.path.split(__file__)[1]
+usage = '%s --config-file CONFIG --day YYYYMMDD' % prog
+
+parser = argparse.ArgumentParser(usage=usage, description=__doc__,
+                                 formatter_class=GWHelpFormatter)
+
+parser.add_argument("-p", "--profile", action="store_true", default=False,
+                    help="show second timer with verbose statements, "
+                         "default: %(default)s")
+parser.add_argument("-v", "--verbose", action="store_true", default=False,
+                    help="show verbose output, default: %(default)s")
+parser.add_argument("-V", "--version", action="version",
+                    help="show program's version number and exit")
 parser.version = __version__
 
-bopts = parser.add_option_group("Basic options")
-bopts.add_option('-i', '--ifo', action='store', type='string',
-                 metavar='IFO', help="Instrument to process. If this option "
-                                     "is set in the [DEFAULT] of any of the "
-                                     "INI files, giving it here is redundant.")
+bopts = parser.add_argument_group("Basic options")
+bopts.add_argument('-i', '--ifo', action='store', type=str, metavar='IFO',
+                   help="Instrument to process. If this option is set in the "
+                        "[DEFAULT] of any of the INI files, giving it here is "
+                        "redundant.")
 
-copts = parser.add_option_group("Configuration options",
-                                "Provide a number of INI-format "
-                                "configuration files")
-copts.add_option('-f', '--config-file', action='append', type='string',
-                 metavar='FILE', default=[],
-                 help="INI file for analysis, may be given multiple times")
-copts.add_option('--nds', action='store_true', default='guess',
-                 help='use NDS as the data source, default: %default')
-copts.add_option('-t', '--process-tab', action='append', type='string',
-                 default=[], help="process only this tab, can be given "
-                                  "multiple times, default: process all.")
-copts.add_option('--max-processes', action='store', type='int',
-                 default=(cpu_count() - 1), dest='multiprocess', metavar='N',
-                 help="use a maximum of N subprocesses at any time, "
-                      "default: %default")
-copts.add_option('--single-process', action='store_true', default=False,
-                 help="restrict %s to a single process, mainly for debugging "
-                      "purposes, default: False" % os.path.basename(__file__))
-copts.add_option('-b', '--bulk-read', action='store_true', default=False,
-                 help="read all data up-front at the start of the job, rather "
-                      "than when it is needed for a tab, default: %default")
-copts.add_option('-S', '--on-segdb-error', action='store', type='string',
-                 default='raise',
-                 help="action upon error fetching segments from SegDB, one of "
-                      "'raise', 'ignore', or 'warn', default: %default")
+copts = parser.add_argument_group("Configuration options",
+                                  "Provide a number of INI-format "
+                                  "configuration files")
+copts.add_argument('-f', '--config-file', action='append', type=str,
+                   metavar='FILE', default=[],
+                   help="INI file for analysis, may be given multiple times")
+copts.add_argument('--nds', action='store_true', default='guess',
+                   help='use NDS as the data source, default: %(default)s')
+copts.add_argument('-t', '--process-tab', action='append', type=str,
+                   default=[], help="process only this tab, can be given "
+                                    "multiple times, default: process all.")
 
-outopts = parser.add_option_group("Output options")
-outopts.add_option('-o', '--output-dir', action='store', type='string',
-                   metavar='DIR', default=os.curdir,
-                   help="Output directory for summary information, "
-                        "default: '%default'")
-outopts.add_option('-m', '--html-only', action='store_true', default=False,
-                   help="Generate HTML and navigation only, default: %default")
-outopts.add_option('-n', '--no-html', action='store_true', default=False,
-                   help="Generate only plots and tab summaries, not "
-                        "supporting HTML, default: %default. This is useful "
-                        "to regenerate a single tab without messing up the "
-                        "navigation bar.")
+popts = parser.add_argument_group("Process options",
+                                  "Configure how this summary will be "
+                                  "processed.")
+popts.add_argument('--max-processes', action='store', type=int,
+                   default=(cpu_count() - 1), dest='multiprocess', metavar='N',
+                   help="use a maximum of N subprocesses at any time, "
+                        "default: %(default)s")
+popts.add_argument('--single-process', action='store_true', default=False,
+                   help="restrict %s to a single process, mainly for debugging "
+                        "purposes, default: False" % os.path.basename(__file__))
+popts.add_argument('-b', '--bulk-read', action='store_true', default=False,
+                   help="read all data up-front at the start of the job, "
+                        "rather than when it is needed for a tab, "
+                        "default: %(default)s")
+popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
+                   default='raise',
+                   help="action upon error fetching segments from SegDB, one "
+                        "of 'raise', 'ignore', or 'warn', default: %(default)s")
 
-topts = parser.add_option_group("Time mode options",
-                                "Choose a stadard time mode, or a GPS "
-                                "[start, stop) interval")
-topts.add_option("--day", action="store", type="string", metavar='YYYYMMDD',
-                 help="day to process.")
-topts.add_option("--week", action="store", type="string", metavar="YYYYMMDD",
-                 help="week to process (by starting day).")
-topts.add_option("--month", action="store", type="string", metavar="YYYYMM",
-                 help="month to process.")
-topts.add_option("--year", action="store", type="string", metavar="YYYY",
-                 help="year to process.")
-topts.add_option("-s", "--gps-start-time", action="store", type="int",
-                 metavar="GPSSTART", help="GPS start time")
-topts.add_option("-e", "--gps-end-time", action="store", type="int",
-                 metavar="GPSEND", help="GPS end time")
+outopts = parser.add_argument_group("Output options")
+outopts.add_argument('-o', '--output-dir', action='store', type=str,
+                     metavar='DIR', default=os.curdir,
+                     help="Output directory for summary information, "
+                          "default: '%(default)s'")
+outopts.add_argument('-m', '--html-only', action='store_true', default=False,
+                     help="Generate HTML and navigation only, "
+                          "default: %(default)s")
+outopts.add_argument('-n', '--no-html', action='store_true', default=False,
+                     help="Generate only plots and tab summaries, not "
+                          "supporting HTML, default: %(default)s. This is "
+                          "useful to regenerate a single tab without messing "
+                          "up the navigation bar.")
 
-opts, args = parser.parse_args()
+topts = parser.add_argument_group("Time mode options",
+                                  "Choose a stadard time mode, or a GPS "
+                                  "[start, stop) interval")
+topts.add_argument("--day", action="store", type=str, metavar='YYYYMMDD',
+                   help="day to process.")
+topts.add_argument("--week", action="store", type=str, metavar="YYYYMMDD",
+                   help="week to process (by starting day).")
+topts.add_argument("--month", action="store", type=str, metavar="YYYYMM",
+                   help="month to process.")
+topts.add_argument("--year", action="store", type=str, metavar="YYYY",
+                   help="year to process.")
+topts.add_argument("-s", "--gps-start-time", action="store", type=int,
+                   metavar="GPSSTART", help="GPS start time")
+topts.add_argument("-e", "--gps-end-time", action="store", type=int,
+                   metavar="GPSEND", help="GPS end time")
+
+opts = parser.parse_args()
 
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
                     fp in csv.split(',')]
@@ -201,7 +215,7 @@ for section in config.sections():
 N = sum([opts.day is not None, opts.month is not None,
          opts.gps_start_time is not None, opts.gps_end_time is not None])
 if N > 1 and not (opts.gps_start_time and opts.gps_end_time):
-    raise optparse.OptionValueError("Please give only one of --day, "
+    raise parser.error("Please give only one of --day, "
                                     "--month, or --gps-start-time and "
                                     "--gps-end-time.")
 
@@ -209,7 +223,7 @@ if opts.day:
     try:
         opts.day = datetime.datetime.strptime(opts.day, "%Y%m%d")
     except ValueError:
-        raise optparse.OptionValueError("--day malformed. Please format "
+        raise parser.error("--day malformed. Please format "
                                         "as YYYYMMDD")
     else:
         opts.gps_start_time = gpstime.utc_to_gps(opts.day)
@@ -220,7 +234,7 @@ elif opts.week:
     try:
         opts.week = datetime.datetime.strptime(opts.week, "%Y%m%d")
     except ValueError:
-        raise optparse.OptionValueError("--week malformed. Please format"
+        raise parser.error("--week malformed. Please format"
                                         " as YYYYMMDD")
     else:
         if config.has_option("calendar", "start-of-week"):
@@ -231,7 +245,7 @@ elif opts.week:
                        "'start-of-week' option in the [calendar] section "
                        "of the INI file specifies weeks start on %ss."
                        % (week, config.get("calendar", "start-of-week")))
-                raise optparse.OptionValueError(msg)
+                raise parser.error(msg)
         opts.gps_start_time = gpstime.utc_to_gps(opts.week)
         opts.gps_end_time = gpstime.utc_to_gps(opts.week +
                                                datetime.timedelta(days=7))
@@ -240,7 +254,7 @@ elif opts.month:
     try:
         opts.month = datetime.datetime.strptime(opts.month, "%Y%m")
     except ValueError:
-        raise optparse.OptionValueError("--month malformed. Please format"
+        raise parser.error("--month malformed. Please format"
                                         " as YYYYMM")
     else:
         opts.gps_start_time = gpstime.utc_to_gps(opts.month)
@@ -250,7 +264,7 @@ elif opts.year:
     try:
         opts.year = datetime.datetime.strptime(opts.year, "%Y")
     except ValueError:
-        raise optparse.OptionValueError("--year malformed. Please format"
+        raise parser.error("--year malformed. Please format"
                                         " as YYYY")
     else:
         opts.gps_start_time = gpstime.utc_to_gps(opts.year)
@@ -259,7 +273,7 @@ elif opts.year:
 # parse GPS start and stop times
 elif opts.gps_start_time or opts.gps_end_time:
     if not (opts.gps_start_time and opts.gps_end_time):
-        raise optparse.OptionValueError("Please give both --gps-start-time "
+        raise parser.error("Please give both --gps-start-time "
                                         "and --gps-end-time.")
 else:
     opts.day = datetime.date(*datetime.datetime.utcnow().timetuple()[:3])

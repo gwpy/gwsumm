@@ -186,8 +186,6 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
         page.ul(class_='dropdown-menu dropdown-%d-col' % ncol)
     else:
         page.ul(class_='dropdown-menu')
-    if column:
-        page.li()
     for i, link in enumerate(links):
         if isinstance(active, int) and i == active:
             active_ = True
@@ -196,8 +194,6 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
         else:
             active_ = False
         dropdown_link(page, link, active=active_, class_=column)
-    if column:
-        page.li.close()
     page.ul.close()
     return page
 

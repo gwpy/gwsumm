@@ -687,3 +687,15 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()
+
+
+def add_spectrogram(specgram, key=None, coalesce=True):
+    """Add a `Spectrogram` to the global memory cache
+    """
+    if key is None:
+        key = specgram.name or str(specgram.channel)
+    globalv.DATA.setdefault(key, SpectrogramList())
+    globalv.DATA[key].append(specgram)
+    if coalesce:
+        globalv.DATA[key].coalesce()
+

@@ -121,8 +121,7 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
                 page.a(text, href=link)
             elif (isinstance(link, (list, tuple)) and
                   isinstance(link[1], (list, tuple))):
-                ddclass = 'dropdown %s' % ddclass
-                page.li(class_=ddclass)
+                page.li(class_='dropdown %s' % ddclass
                 page.add(str(dropdown(*link)))
             else:
                 if ddclass:

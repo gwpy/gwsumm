@@ -108,29 +108,23 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
     if isinstance(dropdown_class, (str, unicode)):
         dropdown_class = [dropdown_class]
     page.div(class_='navbar-collapse collapse pull-left')
-    page.ul(class_='nav navbar-nav')
     for ddclass in dropdown_class:
+        page.ul(class_='nav navbar-nav %s' % ddclass)
         for i, link in enumerate(links):
             if (isinstance(link, (list, tuple)) and
                     isinstance(link[1], basestring)):
-                if ddclass:
-                    page.li(class_=ddclass)
-                else:
-                    page.li()
+                page.li()
                 text, link = link
                 page.a(text, href=link)
             elif (isinstance(link, (list, tuple)) and
                   isinstance(link[1], (list, tuple))):
-                page.li(class_='dropdown %s' % ddclass)
+                page.li(class_='dropdown')
                 page.add(str(dropdown(*link)))
             else:
-                if ddclass:
-                    page.li(class_=ddclass)
-                else:
-                    page.li()
+                page.li()
                 page.add(str(link))
             page.li.close()
-    page.ul.close()
+        page.ul.close()
     page.div.close()
     page.div.close()
     page.div.close()

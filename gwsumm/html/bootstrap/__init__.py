@@ -198,7 +198,7 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
             active_ = False
         dropdown_link(page, link, active=active_, class_=column)
     if column:
-        page.li()
+        page.li.close()
     page.ul.close()
     return page
 

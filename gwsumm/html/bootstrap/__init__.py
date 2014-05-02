@@ -177,7 +177,7 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
 
     # dropdown elements
     if column:
-        page.ul(class_='dropdown-menu dropdown-%d-col' % ncol)
+        page.ul(class_='dropdown-menu dropdown-%d-col row' % ncol)
     else:
         page.ul(class_='dropdown-menu')
     for i, link in enumerate(links):

@@ -90,7 +90,7 @@ class SummaryState(DataQualityFlag):
             name = section[6:]
         return cls(name, start, end, **params)
 
-    def fetch(self, config=configparser.ConfigParser()):
+    def fetch(self, config=configparser.ConfigParser(), **kwargs):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
         """
@@ -104,7 +104,8 @@ class SummaryState(DataQualityFlag):
             self.ready = True
             return self
         # otherwise find out which flags we need
-        self &= get_segments(self.definition, self.valid, config=config)
+        self &= get_segments(self.definition, self.valid, config=config,
+                             **kwargs)
         self.ready = True
         return self
 

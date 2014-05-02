@@ -621,10 +621,10 @@ class StateTab(Tab):
         alldefs = [state.definition for state in self.states if
                    state.name != ALLSTATE]
         allvalid = reduce(operator.or_, [state.valid for state in self.states])
-        get_segments(alldefs, allvalid, config=config)
+        get_segments(alldefs, allvalid, config=config, return_=False)
         # individually double-check, set ready condition
         for state in self.states:
-            state.fetch(config=config)
+            state.fetch(config=config, query=False)
 
     def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
         """Process data for this `StateTab`.

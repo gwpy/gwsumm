@@ -148,6 +148,14 @@ popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
                    default='raise',
                    help="action upon error fetching segments from SegDB, one "
                         "of 'raise', 'ignore', or 'warn', default: %(default)s")
+popts.add_argument('-a', '--archive', default=None, const=True, nargs='?',
+                   metavar='FILE', help="Read archived data from the FILE, and "
+                                        "write back to it at the end")
+popts.add_argument('-A', '--archive-tag', metavar='FILE_TAG',
+                   default=None,
+                   help="underscore-delimited file-tag for archive. Only used "
+                        "if --archive given without a filename, "
+                        "default: 'GW_SUMMARY_ARCHIVE'")
 
 outopts = parser.add_argument_group("Output options")
 outopts.add_argument('-o', '--output-dir', action='store', type=str,
@@ -414,6 +422,34 @@ plotdir = os.path.join(base, 'plots')
 mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
+# Read Archive
+
+if opts.archive_tag and not opts.archive:
+    opts.archive = True
+else:
+    opts.archive_tag = 'GW_SUMMARY_ARCHIVE'
+
+if opts.archive is True:
+    archivedir = os.path.join(base, 'archive')
+    mkdir(archivedir)
+    opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+                                             % (ifo, opts.archive_tag,
+                                                opts.gps_start_time,
+                                                opts.gps_end_time -
+                                                    opts.gps_start_time))
+
+if opts.archive:
+    from gwsumm import archive
+    if os.path.isfile(opts.archive):
+        vprint("Reading archived data from %s..." % opts.archive)
+        archive.read_data_archive(opts.archive)
+        vprint(" Done.\n")
+    else:
+        vprint("No archive found in %s, one will be created at the end.\n"
+               % opts.archive)
+
+
+# -----------------------------------------------------------------------------
 # Read HTML configuration
 
 css = [cval for (key, cval) in config.items('html') if re.match('css\d+', key)]
@@ -549,6 +585,11 @@ for tab in alltabs:
 
 # -----------------------------------------------------------------------------
 # Finalise
+
+if opts.archive:
+    vprint("Writing data to archive in %s..." % opts.archive)
+    archive.write_data_archive(opts.archive)
+    vprint(" Done.\n")
 
 vprint("""
 ------------------------------------------------------------------------------

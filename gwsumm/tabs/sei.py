@@ -203,9 +203,14 @@ class SEIWatchDogTab(base):
                               % (' '.join(cause.split(' ', 2)[::2])))
                 if config.has_section(mapsec):
                     pstart = gpstime - self.plot_duration / 2.
+                    if self.chambers == HAMs or system == 'HPI':
+                        platform = chamber
+                    else:
+                        platform = '%s_%s' % (chamber,
+                                              gpschannel.signal.split('_')[0])
                     p = os.path.join(self.plotdir,
                                      '%s-%s_%s_WATCHDOG_TRIP-%d-%d.png'
-                                     % (ifo, system, chamber, pstart,
+                                     % (ifo, system, platform, pstart,
                                         self.plot_duration))
                     self.plots.append(SeiWatchDogPlot(t, chamber, cause, config,
                                                       p, ifo=ifo,

@@ -64,13 +64,13 @@ class ThreadChannelQuery(threading.Thread):
         i, channel = self.in_.get()
         self.in_.task_done()
         try:
-            self.out.put((i, get_channel(channel)))
+            self.out.put((i, get_channel(channel, False)))
         except Exception as e:
             self.out.put(e)
         self.out.task_done()
 
 
-def get_channel(channel):
+def get_channel(channel, find_trend_source=True):
     """Define a new :class:`~gwpy.detector.channel.Channel`
 
     Parameters
@@ -115,12 +115,13 @@ def get_channel(channel):
                 type_ = 'm-trend'
             name += ',%s' % type_
             new = Channel(name)
-            try:
-                source = get_channel(name.rsplit('.', 1)[0])
-            except ValueError:
-                pass
-            else:
-                new.url = source.url
+            if find_trend_source:
+                try:
+                    source = get_channel(name.rsplit('.', 1)[0])
+                except ValueError:
+                    pass
+                else:
+                    new.url = source.url
             # determine sample rate for trends
             if type_ == 'm-trend':
                 new.sample_rate = 1/60.

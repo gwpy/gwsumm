@@ -22,7 +22,7 @@
 import tempfile
 import shutil
 
-from gwpy.timeseries import TimeSeries
+from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
 from gwpy.segments import DataQualityFlag
 
@@ -54,14 +54,18 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
         with File(outfile, 'w') as h5file:
             # record all time-series data
             if timeseries:
-                group = h5file.create_group('timeseries')
+                tgroup = h5file.create_group('timeseries')
+                sgroup = h5file.create_group('statevector')
                 # loop over channels
                 for tslist in globalv.DATA.itervalues():
                     # loop over time-series
                     for ts in tslist:
                         name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
                                              ts.epoch.gps)
-                        ts.write(group, name=name)
+                        if isinstance(ts, StateVector):
+                            ts.write(sgroup, name=name, format='hdf')
+                        else:
+                            ts.write(tgroup, name=name, format='hdf')
 
             # record all spectrogram data
             if spectrogram:
@@ -71,7 +75,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                     # loop over time-series
                     for spec in speclist:
                         name = '%s,%s' % (spec.name, spec.epoch.gps)
-                        spec.write(group, name=name)
+                        spec.write(group, name=name, format='hdf')
 
             # record all segment data
             if segments:
@@ -79,7 +83,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 # loop over channels
                 for dqflag in globalv.SEGMENTS.itervalues():
                     # loop over time-series
-                    dqflag.write(group)
+                    dqflag.write(group, format='hdf')
     except:
         if backup:
             restore_backup(backup, outfile)
@@ -103,9 +107,19 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for dataset in group.itervalues():
-            ts = TimeSeries.read(dataset)
+            ts = TimeSeries.read(dataset, format='hdf')
             ts.channel = get_channel(ts.channel)
             add_timeseries(ts, key=ts.channel.ndsname)
+
+        # read all state-vector data
+        try:
+            group = h5file['statevector']
+        except KeyError:
+            group = dict()
+        for dataset in group.itervalues():
+            sv = StateVector.read(dataset, format='hdf')
+            sv.channel = get_channel(sv.channel)
+            add_timeseries(sv, key=sv.channel.ndsname)
 
         # read all spectrogram data
         try:
@@ -113,7 +127,7 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for dataset in group.itervalues():
-            spec = Spectrogram.read(dataset)
+            spec = Spectrogram.read(dataset, format='hdf')
             spec.channel = get_channel(spec.channel)
             add_spectrogram(spec)
 
@@ -122,7 +136,7 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for dataset in group.itervalues():
-            dqflag = DataQualityFlag.read(dataset)
+            dqflag = DataQualityFlag.read(dataset, format='hdf')
             globalv.SEGMENTS += {dqflag.name: dqflag}
 
 

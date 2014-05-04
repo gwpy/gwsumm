@@ -141,15 +141,21 @@ copts.add_argument('-g', '--global-config', action='append', type=str,
                    help="INI file for use in all workflow jobs, may be given "
                         "multiple times")
 
-copts.add_argument('--nds', action='store_true', default='guess',
+popts = parser.add_argument_group("Process options",
+                                  "Configure how this summary will be "
+                                  "processed.")
+popts.add_argument('--nds', action='store_true', default='guess',
                    help='use NDS as the data source, default: %(default)s')
-copts.add_argument('--single-process', action='store_true', default=False,
+popts.add_argument('--single-process', action='store_true', default=False,
                    help="restrict gw_summary to a single process, mainly for "
                         "debugging purposes, default: %(default)s")
-copts.add_argument('--max-processes', action='store', type=int, default=None,
+popts.add_argument('--max-processes', action='store', type=int, default=None,
                    help="maximum number of concurrent sub-processes for each "
                         "gw_summary job, {number of CPUs} / {min(number of "
                         "jobs, 4)}")
+popts.add_argument('-a', '--archive', action='store_true', default=False,
+                   help="Read archived data from the FILE, and "
+                        "write back to it at the end")
 
 outopts = parser.add_argument_group("Output options")
 outopts.add_argument('-o', '--output-dir', action='store', type=str,
@@ -326,6 +332,12 @@ for configfile in opts.config_file:
     node = pipeline.CondorDAGNode(job)
     node.add_var_arg('--no-html')
     node.add_var_arg('--config-file %s' % configfile)
+    if opts.archive:
+        jobtag = os.path.splitext(os.path.basename(configfile))[0]
+        archivetag = jobtag.upper().replace('-', '_')
+        if opts.ifo and archivetag.startswith('%s_' % opts.ifo.upper()):
+            archivetag = archivetag[3:]
+        node.add_var_arg('--archive-tag %s' % archivetag)
     for cf in configfile.split(','):
         node.add_input_file(cf)
     node.set_category('gw_summary')

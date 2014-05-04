@@ -376,7 +376,7 @@ class SimpleStateTab(StateTab):
             headers = ['IFO', 'Name', 'Version', 'Defined duration',
                        'Active duration']
             data = []
-            pc = abs(state.active) / 100.
+            pc = float(abs(state.active) / 100.)
             for flag in flags:
                 flag = get_segments(flag, state.active, query=False).copy()
                 v = flag.version and str(flag.version) or ''

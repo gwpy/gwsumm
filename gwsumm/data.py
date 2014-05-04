@@ -701,8 +701,8 @@ def add_spectrogram(specgram, key=None, coalesce=True):
     """
     if key is None:
         key = specgram.name or str(specgram.channel)
-    globalv.DATA.setdefault(key, SpectrogramList())
-    globalv.DATA[key].append(specgram)
+    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
+    globalv.SPECTROGRAMS[key].append(specgram)
     if coalesce:
-        globalv.DATA[key].coalesce()
+        globalv.SPECTROGRAMS[key].coalesce()
 

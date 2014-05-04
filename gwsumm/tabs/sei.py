@@ -160,10 +160,9 @@ class SEIWatchDogTab(base):
             # find times of a trip
             trips = []
             for i, ts in enumerate(tripdata[gpschannel.name]):
-                alltrips = ts.times[numpy.nonzero(numpy.diff(ts))[0] + 1]
+                alltrips = ts.times[numpy.nonzero(numpy.diff(ts) > 0)[0] + 1]
                 for j, gpstime in enumerate(alltrips.data):
-                    if gpstime:
-                        trips.append((i, gpstime))
+                    trips.append((i, gpstime))
 
             vprint("        Found %d WD trips.\n" % len(trips))
 

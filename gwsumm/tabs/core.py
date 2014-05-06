@@ -297,28 +297,41 @@ class Tab(object):
             layout = list(self.layout)
         else:
             layout = len(plots) == 1 and [1] or [2]
-        while sum(layout) < len(plots):
+        for i, l in enumerate(layout):
+            if isinstance(l, (list, tuple)):
+                layout[i] = l
+            elif isinstance(l, int):
+                layout[i] = (l, None)
+            else:
+                raise ValueError("Cannot parse layout element '%s'." % l)
+        while sum(zip(*layout)[0]) < len(plots):
             layout.append(layout[-1])
         l = i = 0
         for j, plot in enumerate(plots):
             # start new row
             if i == 0:
                 page.div(class_='row')
-            # make plot in its own column
-            try:
-                page.div(class_='col-md-%d' % (12 // layout[l]))
-            except IndexError:
-                warnings.warn("Something went wrong with the layout. "
-                              "Tried to access element %d of ths following "
-                              "layout (%d plots): %s" % (l, len(plots), layout))
-                page.div(class_='col-md-%d' % 12 // layout[-1])
+            # determine relative size
+            if layout[l][1]:
+                colwidth = 12 // int(layout[l][1])
+                remainder = 12 - colwidth * layout[l][0]
+                if remainder % 2:
+                    raise ValueError("Cannot center column of width %d in a "
+                                     "12-column format" % colwidth)
+                else:
+                    offset = remainder / 2
+                page.div(class_='col-md-%d col-md-offset-%d'
+                                % (colwidth, offset))
+            else:
+                colwidth = 12 // int(layout[l][0])
+                page.div(class_='col-md-%d' % colwidth)
             page.a(href=plot.href, class_='fancybox plot',
                    **{'data-fancybox-group': '1'})
             page.img(src=plot.href)
             page.a.close()
             page.div.close()
             # detect end of row
-            if (i + 1) == layout[l]:
+            if (i + 1) == layout[l][0]:
                 i = 0
                 l += 1
                 page.div.close()

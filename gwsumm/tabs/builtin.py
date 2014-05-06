@@ -79,10 +79,7 @@ class SimpleStateTab(StateTab):
     def layout(self, l):
         if isinstance(l, (str, unicode)):
             l = eval(l)
-        if l is None:
-            self._layout = None
-        else:
-            self._layout = map(int, l)
+        self._layout = l
 
     # -------------------------------------------
     # SummaryTab configuration parser
@@ -120,6 +117,8 @@ class SimpleStateTab(StateTab):
             if isinstance(layout, int):
                 layout = [layout]
             for l in layout:
+                if isinstance(l, (tuple, list)):
+                    l = l[0]
                 if not l in [1, 2, 3, 4, 6, 12]:
                     raise ValueError("Cannot print more than %d plots in a "
                                      "single row. The chosen layout value for "

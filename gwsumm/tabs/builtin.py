@@ -331,7 +331,7 @@ class SimpleStateTab(StateTab):
         page.div(class_='row')
         page.div(class_='col-md-12')
         channels = self.get_channels('timeseries', 'statevector', 'spectrum',
-                                     'spectrogram')
+                                     'spectrogram', new=False)
         if len(channels):
             page.h1('Channel information')
             page.add("The following channels were used to generate the above "
@@ -432,7 +432,7 @@ class SimpleStateTab(StateTab):
     # -------------------------------------------------------------------------
     # methods
 
-    def get_channels(self, *types):
+    def get_channels(self, *types, **kwargs):
         """Return the `set` of data channels required for plots of the
         given ``types``.
 
@@ -440,15 +440,21 @@ class SimpleStateTab(StateTab):
         ----------
         *types : `list` of `str`
             `list` of plot type strings whose channel sets to return
+        new : `bool`, default: `True`
+            only include plots whose 'new' attribute is True
 
         Returns
         -------
         channels : `list`
             an alphabetically-sorted `list` of channels
         """
+        isnew = kwargs.pop('new', True)
+        for key in kwargs:
+            raise TypeError("'%s' is an invalid keyword argument for "
+                            "this function")
         out = set()
         for plot in self.plots:
-            if plot.type in types and plot.new:
+            if plot.type in types and (isnew and plot.new or not isnew):
                 out.update(plot.channels)
         return sorted(out, key=lambda ch: ch.name)
 

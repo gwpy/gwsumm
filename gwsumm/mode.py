@@ -36,3 +36,7 @@ MODE_NAME = {SUMMARY_MODE_GPS: 'GPS',
              SUMMARY_MODE_WEEK: 'WEEK',
              SUMMARY_MODE_MONTH: 'MONTH',
              SUMMARY_MODE_YEAR: 'YEAR'}
+
+MODE_ENUM = dict((val, key) for (key, val) in MODE_NAME.iteritems())
+
+MODE = None

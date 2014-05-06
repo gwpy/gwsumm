@@ -413,7 +413,7 @@ class Tab(object):
         else:
             start, end = self.span
             cal = html.markup.oneliner.p('%d-%d' % (start, end),
-                                         class_='navbar-text')
+                                         class_='navbar-brand')
         # combine as 'brand'
         brand = ifolinks + cal
         # build navbar links

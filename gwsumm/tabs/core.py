@@ -433,11 +433,18 @@ class Tab(object):
                     if child == self:
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
-                    groups[group].sort(key=lambda t: re.sub('\A%s ' % group, '',
-                                                            t.name))
-                    links.append((group, []))
+                    # sort group by name
+                    re_group = re.compile('(\A{0}\s|\s{0}\Z)'.format(
+                                              group.strip('_')), re.I)
+                    names = [re_group.sub('', t.name) for t in groups[group]]
+                    groups[group] = zip(*sorted(
+                        zip(groups[group], names),
+                        key=lambda (t, n): n.lower() in ['summary', 'overview']
+                                           and n.upper() or n.lower()))[0]
+                    # build link sets
+                    links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):
-                        name = re.sub('\A%s ' % group, '', child.name)
+                        name = re_group.sub('', child.name)
                         links[-1][1].append((name, child.href))
                         if child == self:
                             active = [len(links) - 1, i]

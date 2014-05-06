@@ -429,7 +429,7 @@ if opts.archive_tag and not opts.archive:
 else:
     opts.archive_tag = 'GW_SUMMARY_ARCHIVE'
 
-if opts.archive is True:
+if opts.archive is True and not opts.html_only:
     archivedir = os.path.join(base, 'archive')
     mkdir(archivedir)
     opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
@@ -586,7 +586,7 @@ for tab in alltabs:
 # -----------------------------------------------------------------------------
 # Finalise
 
-if opts.archive:
+if opts.archive and not opts.html_only:
     vprint("Writing data to archive in %s..." % opts.archive)
     archive.write_data_archive(opts.archive)
     vprint(" Done.\n")

@@ -344,7 +344,7 @@ class SimpleStateTab(StateTab):
                 if re.search('.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
-                    cype = ctype in ['rms'] and ctype.upper() or ctype.title()
+                    ctype = ctype in ['rms'] and ctype.upper() or ctype.title()
                 else:
                     c2 = channel
                     ctype = 'Raw'

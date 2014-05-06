@@ -27,7 +27,8 @@ from gwpy.spectrogram import Spectrogram
 from gwpy.segments import DataQualityFlag
 
 from . import (globalv, version)
-from .data import (get_channel, add_timeseries, add_spectrogram)
+from .data import (get_channel, override_sample_rate, add_timeseries,
+                   add_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -109,6 +110,7 @@ def read_data_archive(sourcefile):
         for dataset in group.itervalues():
             ts = TimeSeries.read(dataset, format='hdf')
             ts.channel = get_channel(ts.channel)
+            override_sample_rate(ts.channel, ts.sample_rate)
             add_timeseries(ts, key=ts.channel.ndsname)
 
         # read all state-vector data
@@ -119,6 +121,7 @@ def read_data_archive(sourcefile):
         for dataset in group.itervalues():
             sv = StateVector.read(dataset, format='hdf')
             sv.channel = get_channel(sv.channel)
+            override_sample_rate(sv.channel, sv.sample_rate)
             add_timeseries(sv, key=sv.channel.ndsname)
 
         # read all spectrogram data

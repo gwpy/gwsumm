@@ -177,6 +177,16 @@ def get_channels(channels):
     return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
 
 
+def override_sample_rate(channel, rate):
+    try:
+        cid = globalv.CHANNELS.find(channel.name)
+    except ValueError:
+        print('Failed to reset sample_rate for %s' % channel.name)
+        pass
+    else:
+        globalv.CHANNELS[cid].sample_rate = rate
+
+
 def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
                 urltype='file', gaps='warn'):
     """Query the datafind server for GWF files for the given type
@@ -489,8 +499,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         data = data.crop(*(data.span - seg))
                         break
                 data.channel = channel
-                if not channel.sample_rate:
-                    channel.sample_rate = data.sample_rate
+                if channel.sample_rate != data.sample_rate:
+                    override_sample_rate(channel, data.sample_rate)
                 if channel.ndsname in filter_:
                     data = data.filter(*filter_[channel.ndsname])
                 if isinstance(data, StateVector):

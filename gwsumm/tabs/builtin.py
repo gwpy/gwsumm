@@ -163,7 +163,10 @@ class SimpleStateTab(StateTab):
                 sources = []
             else:
                 if not re_channel.match(sources) and cp.has_section(sources):
-                    sources = cp.get(sources, 'channels')
+                    try:
+                        sources = cp.get(sources, 'channels')
+                    except NoOptionError:
+                        pass
                 sources = split_channels(sources)
 
             # if pdef refers to another config section, it must have a type

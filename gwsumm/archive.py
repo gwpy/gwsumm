@@ -61,8 +61,11 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 for tslist in globalv.DATA.itervalues():
                     # loop over time-series
                     for ts in tslist:
-                        name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
-                                             ts.epoch.gps)
+                        try:
+                            name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
+                                                 ts.epoch.gps)
+                        except AttributeError:
+                            name = '%s,%s' % (ts.name, ts.epoch.gps)
                         if isinstance(ts, StateVector):
                             ts.write(sgroup, name=name, format='hdf')
                         else:

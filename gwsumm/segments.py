@@ -94,9 +94,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 if type(e) is not Exception:
                     raise
                 if len(allflags) == 1:
+                    f = list(allflags)[0]
                     new = DataQualityDict()
-                    new[allflags[0]] = DataQualityFlag.read(cache, allflags[0],
-                                                            coalesce=True)
+                    new[f] = DataQualityFlag.read(cache, f, coalesce=True)
             for flag in new:
                 new[flag].valid &= newsegs
                 new[flag].active &= newsegs

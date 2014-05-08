@@ -57,7 +57,10 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 tgroup = h5file.create_group('timeseries')
                 sgroup = h5file.create_group('statevector')
                 # loop over channels
-                for tslist in globalv.DATA.itervalues():
+                for c, tslist in globalv.DATA.iteritems():
+                    # ignore trigger rate TimeSeries
+                    if ':RATE ' in str(c):
+                        continue
                     # loop over time-series
                     for ts in tslist:
                         try:

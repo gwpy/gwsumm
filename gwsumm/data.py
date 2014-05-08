@@ -499,8 +499,6 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         data = data.crop(*(data.span - seg))
                         break
                 data.channel = channel
-                if channel.sample_rate != data.sample_rate:
-                    override_sample_rate(channel, data.sample_rate)
                 if channel.ndsname in filter_:
                     data = data.filter(*filter_[channel.ndsname])
                 if isinstance(data, StateVector):

@@ -582,8 +582,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
         # read FFT params
         fftparams = fftparams.copy()
-        fftparams.setdefault('method', 'medianmean')
-        for param in ['fftlength', 'fftstride']:
+        fftparams.setdefault('method', 'median-mean')
+        for param in ['fftlength', 'overlap']:
             if hasattr(channel, param):
                 fftparams[param] = float(getattr(channel, param))
             elif param in fftparams:
@@ -602,8 +602,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
             fftparams.setdefault('fftlength', int(4096 * ts.dx.value))
-            fftparams.setdefault('fftstride', fftparams['fftlength'] / 2)
-            if not stride and fftparams['fftstride'] != fftparams['fftlength']:
+            fftparams.setdefault('overlap', fftparams['fftlength'] / 2)
+            if not stride and fftparams['overlap'] != fftparams['fftlength']:
                 stride = fftparams['fftlength'] * 1.5
             elif not stride:
                 stride = fftparams['fftlength']
@@ -617,8 +617,6 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     raise ZeroDivisionError("Spectrogram stride is 0")
                 elif fftparams['fftlength'] == 0:
                     raise ZeroDivisionError("FFT length is 0")
-                elif fftparams['fftstride'] == 0:
-                    raise ZeroDivisionError("FFT stride is 0")
                 else:
                     raise
             if filter_:

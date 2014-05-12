@@ -75,7 +75,6 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
         sax.set_epoch(self.start)
-        sax.auto_gps_scale(self.end - self.start)
         return sax
 
     def init_plot(self, plot=TimeSeriesPlot):
@@ -85,9 +84,6 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         self.plot = plot()
         ax = self.plot.gca()
         ax.set_epoch(self.start)
-        if isinstance(self.plot, TimeSeriesPlot):
-            ax.auto_gps_scale(float(self.end-self.start))
-            ax._auto_gps = False
         return self.plot, ax
 
     def parse_kwargs(self):
@@ -712,7 +708,6 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         ax = plot.gca()
         if isinstance(plot, TimeSeriesPlot):
             ax.set_epoch(self.start)
-            ax.auto_gps_scale(self.end-self.start)
             ax.set_xlim(self.start, self.end)
 
         # work out labels

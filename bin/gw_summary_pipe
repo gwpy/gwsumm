@@ -342,7 +342,8 @@ for configfile in opts.config_file:
         node.add_input_file(cf)
     node.set_category('gw_summary')
     node.set_retry(1)
-    node.add_parent(wrapper)
+    if not opts.skip_html_wrapper:
+        node.add_parent(wrapper)
     dag.add_node(node)
     if opts.verbose:
         print("    Configured job for config %s." % configfile)

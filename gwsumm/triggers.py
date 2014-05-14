@@ -52,8 +52,13 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         try:
             tablename = trigutils.which_table(etg)
         except ValueError:
-            if key in globalv.TRIGGERS:
-                  tablename = strip_table_name(globalv.TRIGGERS[key].tableName)
+            if etg.lower() in ['daily ihope', 'daily ahope']:
+                tablename = strip_table_name(
+                    lsctables.SnglInspiralTable.tableName)
+            elif key in globalv.TRIGGERS:
+                tablename = strip_table_name(globalv.TRIGGERS[key].tableName)
+            else:
+                raise
     # get default table type for this generator
     TableClass = lsctables.TableByName[tablename]
 

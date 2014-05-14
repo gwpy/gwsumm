@@ -46,17 +46,17 @@ __version__ = version.version
 base = get_tab('default')
 
 
-class DailyIhopeTab(base):
+class DailyAhopeTab(base):
     """Custom tab displaying a summary of Daily iHope results.
     """
-    type = 'daily-ihope'
+    type = 'daily-ahope'
 
     @classmethod
     def from_ini(cls, config, section, plotdir=os.curdir, base=''):
-        """Define a new `DailyIhopeTab` from a `ConfigParser`.
+        """Define a new `DailyAhopeTab` from a `ConfigParser`.
         """
         # parse generic configuration
-        new = super(DailyIhopeTab, cls).from_ini(config, section,
+        new = super(DailyAhopeTab, cls).from_ini(config, section,
                                                  plotdir=plotdir, base=base)
         new.channel = re_quote.sub('', config.get(section, 'channel'))
 
@@ -158,18 +158,19 @@ class DailyIhopeTab(base):
 
         # only process if the cachfile was found
         if self.inspiralcache is not None:
-            super(DailyIhopeTab, self).process(*args, **kwargs)
+            super(DailyAhopeTab, self).process(*args, **kwargs)
 
     def process_state(self, state, nds='guess', multiprocess=False,
-                      config=GWSummConfigParser(), plotqueue=None):
+                      config=GWSummConfigParser(), plotqueue=None,
+                      segdb_error='raise'):
         self.get_tmpltbank_data()
-        super(DailyIhopeTab, self).process_state(
+        super(DailyAhopeTab, self).process_state(
             state, nds=nds, multiprocess=multiprocess, config=config,
             datacache=Cache(), trigcache=self.inspiralcache,
             plotqueue=plotqueue)
 
     def build_inner_html(self, state):
-        """Write the '#main' HTML content for this `DailyIhopeTab`.
+        """Write the '#main' HTML content for this `DailyAhopeTab`.
         """
         # if no files, presume not run yet
         if self.inspiralcache is None:
@@ -188,19 +189,19 @@ class DailyIhopeTab(base):
 
         # link full results
         page.div(class_='btn-group')
-        page.a('Click here for the full Daily Ihope results',
+        page.a('Click here for the full Daily Ahope results',
                href=self.ihopepage, rel='external', target='_blank',
                class_='btn btn-default btn-info btn-xl')
         page.div.close()
 
         if self.loudest:
-            table = get_triggers(self.channel, 'Daily Ihope', state,
+            table = get_triggers(self.channel, self.name, state,
                                  query=False)
             rank = get_table_column(table, self.loudest['rank']).argsort()
             indexes = rank[-self.loudest['N']:][::-1]
             page.h1('Loudest events')
             page.p('The following table displays the %d loudest events as '
-                   'recorded by Daily Ihope.' % self.loudest['N'])
+                   'recorded by Daily Ahope.' % self.loudest['N'])
             headers = self.loudest['labels']
             if 'time' in headers[0]:
                 headers.insert(1, 'UTC time')
@@ -220,7 +221,10 @@ class DailyIhopeTab(base):
 
         return page
 
-register_tab(DailyIhopeTab)
+register_tab(DailyAhopeTab)
+register_tab(DailyAhopeTab, name='daily-ihope')
 
-register_reader('Daily Ihope', SnglInspiralTable,
+register_reader('daily ihope', SnglInspiralTable,
+                get_reader('ligolw', SnglInspiralTable))
+register_reader('daily ahope', SnglInspiralTable,
                 get_reader('ligolw', SnglInspiralTable))

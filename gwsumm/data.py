@@ -442,7 +442,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             else:
                 fcache = Cache()
             if (cache is None or len(fcache) == 0) and len(new):
-                span = new.extent()
+                span = new.extent().protract(8)
                 fcache = find_frames(ifo, ftype, span[0], span[1],
                                      config=config, gaps='ignore')
             # parse discontiguous cache blocks and rebuild segment list
@@ -484,7 +484,10 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype)
             else:
-                segcache = fcache.sieve(segment=segment)
+                # pad resampling
+                if segment[1] == cachesegments[-1][1]:
+                    segment = type(segment)(segment[0], segment[1] - 8)
+                segcache = fcache.sieve(segment=segment.protract(8))
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                      start=float(segment[0]),
                                      end=float(segment[1]), type=ctype,

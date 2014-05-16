@@ -165,7 +165,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
             plot.add_legend(ax=ax, markerscale=4)
 
         # add extra axes and finalise
-        if not plot.coloraxes:
+        if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
         return self.finalize(outputfile=outputfile)
@@ -375,7 +375,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
             ax.set_ylim(-0.5, len(self.flags) - 0.5)
 
         # add bit mask axes and finalise
-        if mask is None and not plot.coloraxes:
+        if mask is None and not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
@@ -456,7 +456,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
             ax.set_ylim(-0.5, nflags - 0.5)
 
         # add bit mask axes and finalise
-        if mask is None and not plot.coloraxes:
+        if mask is None and not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
@@ -534,7 +534,7 @@ class SpectrumSummaryPlot(DataSummaryPlot):
                 setattr(ax, key, val)
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
-        if not plot.coloraxes:
+        if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
 
         return self.finalize()
@@ -634,7 +634,7 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
             plot.add_legend(ax=ax)
 
         # add extra axes and finalise
-        if not plot.coloraxes:
+        if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         return self.finalize()
 
@@ -872,7 +872,7 @@ class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_legend(ax=ax)
 
         # add extra axes and finalise
-        if not plot.coloraxes:
+        if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
         return self.finalize()
@@ -943,7 +943,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
             plot.add_legend(ax=ax)
 
         # add extra axes and finalise
-        if not plot.coloraxes:
+        if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         return self.finalize()
 

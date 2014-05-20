@@ -485,9 +485,16 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                       connection=ndsconnection, type=ndstype)
             else:
                 # pad resampling
-                if segment[1] == cachesegments[-1][1]:
-                    segment = type(segment)(segment[0], segment[1] - 8)
-                segcache = fcache.sieve(segment=segment.protract(8))
+                if segment[1] == cachesegments[-1][1] and qresample:
+                    resamplepad = 8
+                    if abs(segment) <= resamplepad:
+                        continue
+                    segment = type(segment)(segment[0],
+                                            segment[1] - resamplepad)
+                    segcache = fcache.sieve(
+                                   segment=segment.protract(resamplepad))
+                else:
+                    segcache = fcache
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                      start=float(segment[0]),
                                      end=float(segment[1]), type=ctype,

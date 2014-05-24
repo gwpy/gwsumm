@@ -24,8 +24,6 @@ try:
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
-from laldetchar.triggers import (trigfind, utils as trigutils)
-
 from glue.ligolw.table import StripTableName as strip_table_name
 
 from gwpy.table import lsctables
@@ -50,6 +48,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
 
     if not tablename:
         try:
+            from laldetchar.triggers import utils as trigutils
             tablename = trigutils.which_table(etg)
         except ValueError:
             if etg.lower() in ['daily ihope', 'daily ahope']:
@@ -78,7 +77,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     except KeyError:
         new = segments
         globalv.TRIGGERS.setdefault(
-            key, trigutils.new_ligolw_table(tablename, columns=columns))
+            key, lsctables.New(TableClass, columns=columns))
         globalv.TRIGGERS[key].segments = type(segments)()
     else:
         new = segments - havesegs
@@ -94,6 +93,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                                           "implemented.")
             else:
                 if cache is None:
+                    from laldetchar.triggers import trigfind
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
                                                           segment[1])
@@ -119,7 +119,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         times = get_table_column(globalv.TRIGGERS[key], 'time').astype(float)
 
         # return correct triggers
-        out = trigutils.new_ligolw_table(tablename, columns=columns)
+        out = lsctables.New(TableClass, columns=columns)
         out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
                    times[i] in segments)
         return out

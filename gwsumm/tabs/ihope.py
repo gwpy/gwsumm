@@ -22,14 +22,13 @@
 import os
 from warnings import warn
 
-from lal import gpstime
-
 from astropy.io.registry import (register_reader, get_reader)
 
 from glue.lal import Cache
 from glue.ligolw import (utils as llwutils)
 from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
 
+from gwpy.time import tconvert
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
@@ -61,7 +60,7 @@ class DailyAhopeTab(base):
         new.channel = re_quote.sub('', config.get(section, 'channel'))
 
         # work out day directory and url
-        utc = gpstime.gps_to_utc(new.span[0])
+        utc = tconvert(new.span[0])
         basedir = os.path.normpath(config.get(section, 'base-directory'))
         daydir = os.path.join(basedir, utc.strftime('%Y%m'),
                               utc.strftime('%Y%m%d'))
@@ -215,8 +214,8 @@ class DailyAhopeTab(base):
                 for column in self.loudest['columns']:
                     data[-1].append('%.3f' % float(get_row_value(row, column)))
                 if date:
-                    data[-1].insert(1, gpstime.tconvert(
-                        row.get_end(), '%B %d %Y, %H:%M:%S.%f')[:-3])
+                    data[-1].insert(1, tconvert(row.get_end()).strftime(
+                                           '%B %d %Y, %H:%M:%S.%f')[:-3])
             page.add(str(html.data_table(headers, data, table='data')))
 
         return page

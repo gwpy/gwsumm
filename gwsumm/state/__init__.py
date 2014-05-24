@@ -25,8 +25,6 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from lal import gpstime
-
 from gwpy.segments import DataQualityFlag
 
 from .. import globalv
@@ -99,7 +97,7 @@ class SummaryState(DataQualityFlag):
             return self
         # if state == 'ALL': return full span as 'active'
         if self.name == ALLSTATE:
-            now = min(self.valid[0][1], gpstime.gps_time_now().gpsSeconds)
+            now = min(self.valid[0][1], globalv.NOW)
             self.active = [(self.valid[0][0], now)]
             self.ready = True
             return self

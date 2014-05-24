@@ -25,8 +25,7 @@ import multiprocessing
 import re
 import warnings
 
-from lal import gpstime
-
+from gwpy.time import from_gps
 from gwpy.segments import Segment
 
 from .. import (globalv, html, version)
@@ -421,7 +420,7 @@ class Tab(object):
             ifolinks = ''
         # build calendar
         if globalv.MODE < 4:
-            date = gpstime.gps_to_utc(self.span[0])
+            date = from_gps(self.span[0])
             cal = str(html.calendar(date, mode=globalv.MODE % 3))
         else:
             start, end = self.span

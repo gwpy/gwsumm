@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
 #
 # This file is part of GWSumm.
@@ -16,28 +17,29 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Gravitational-wave interferometer summary information system.
+"""The gravitational-wave interferometer summary information system.
 
 This module provides the command-line interface to the GWSumm package,
-allowing generation of detector summary information
+allowing generation of detector summary information.
+
+Select a <mode> to run over a calendar amount of time ('day', 'week',
+or 'month'), or an arbitrary GPS (semi-open) interval.
+
+Run 'gw_summary <mode> --help' for details of the specific arguments and
+options acceptable for each mode.
 """
 
 from __future__ import division
 
-import os
 import datetime
 import argparse
-import re
 import calendar
 import getpass
 import warnings
-from multiprocessing import cpu_count
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
 warnings.filterwarnings('ignore', category=RuntimeWarning)
-
-from dateutil.relativedelta import relativedelta
 
 try:
     import ROOT
@@ -46,12 +48,8 @@ except ImportError:
 else:
     ROOT.PyConfig.IgnoreCommandLineOptions = True
 
-import numpy
-
 from matplotlib import use
 use('Agg')
-
-from lal import gpstime
 
 # set matplotlib backend
 try:
@@ -62,7 +60,7 @@ except ImportError:
 from astropy import units
 
 from gwpy.segments import (Segment, SegmentList)
-from gwpy.time import Time
+from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import psd
 
 from gwsumm import (globalv, version)
@@ -88,107 +86,242 @@ VERBOSE = False
 PROFILE = False
 
 # ----------------------------------------------------------------------------
-# Command-line options
+# Argparse customisations
+
+# find today's date
+TODAY = datetime.datetime.utcnow().strftime('%Y%m%d')
 
 
-class GWHelpFormatter(argparse.HelpFormatter):
+# define custom parser
+class GWArgumentParser(argparse.ArgumentParser):
+    def __init__(self, *args, **kwargs):
+        super(GWArgumentParser, self).__init__(*args, **kwargs)
+        self._positionals.title = 'Positional arguments'
+        self._optionals.title = 'Optional arguments'
+
+
+# define custom help formatting (4-space)
+class GWHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('indent_increment', 4)
         super(GWHelpFormatter, self).__init__(*args, **kwargs)
 
 
-prog = os.path.split(__file__)[1]
-usage = '%s --config-file CONFIG --day YYYYMMDD' % prog
+# define actions for formatting dates
+class DateAction(argparse.Action):
+    @staticmethod
+    def set_gps_times(namespace, startdate, enddate):
+        setattr(namespace, 'gpsstart', to_gps(startdate))
+        setattr(namespace, 'gpsend', to_gps(enddate))
 
-parser = argparse.ArgumentParser(usage=usage, description=__doc__,
-                                 formatter_class=GWHelpFormatter)
+    def __call__(self, parser, namespace, values, option_string=None):
+        try:
+            date = datetime.datetime.strptime(values, self.DATEFORMAT)
+        except ValueError:
+            raise parser.error("%s malformed. Please format as %s"
+                               % (self.dest.title(), self.METAVAR))
+        else:
+            self.set_gps_times(namespace, date,
+                               date + datetime.timedelta(days=1))
+            setattr(namespace, self.dest, date)
+        return date
 
-parser.add_argument("-p", "--profile", action="store_true", default=False,
-                    help="show second timer with verbose statements, "
-                         "default: %(default)s")
-parser.add_argument("-v", "--verbose", action="store_true", default=False,
-                    help="show verbose output, default: %(default)s")
-parser.add_argument("-V", "--version", action="version",
+
+class DayAction(DateAction):
+    DATEFORMAT = '%Y%m%d'
+    METAVAR = 'YYYYMMDD'
+
+
+class MonthAction(DateAction):
+    DATEFORMAT = '%Y%m'
+    METAVAR = 'YYYYMM'
+
+
+class YearAction(DateAction):
+    DATEFORMAT = '%Y'
+    METAVAR = 'YYYY'
+
+
+class GPSAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=False):
+        setattr(namespace, self.dest, to_gps(values))
+
+# ----------------------------------------------------------------------------
+# Setup command-line parsing
+
+
+# define top-level parser
+parser = GWArgumentParser(
+    formatter_class=GWHelpFormatter,
+    description=__doc__,
+    fromfile_prefix_chars='@',
+    epilog="Arguments and options may be written into files and passed to "
+           "%(prog)s as positional arguments prepended with '@', e.g. "
+           "'%(prog)s @args.txt'. In this format, options must be give as "
+           "'--argument=value', and not '--argument value'.")
+parser.add_argument('-V', '--version', action='version',
+                    version=__version__,
                     help="show program's version number and exit")
-parser.version = __version__
 
-bopts = parser.add_argument_group("Basic options")
-bopts.add_argument('-i', '--ifo', action='store', type=str, metavar='IFO',
-                   help="Instrument to process. If this option is set in the "
-                        "[DEFAULT] of any of the INI files, giving it here is "
-                        "redundant.")
+# define shared commands
+sharedopts = GWArgumentParser(add_help=False)
+verbosegroup = sharedopts.add_mutually_exclusive_group()
+verbosegroup.add_argument('-v', '--verbose', action='store_true',
+                          default=False, help="show verbose output")
 
-copts = parser.add_argument_group("Configuration options",
-                                  "Provide a number of INI-format "
-                                  "configuration files")
+# give configuration files
+copts = sharedopts.add_argument_group("Configuration options",
+                                      "Provide a number of INI-format "
+                                      "configuration files")
+copts.add_argument('-i', '--ifo', action='store', type=str, metavar='IFO',
+                   help="Instrument to process. If this option is set in "
+                        "the [DEFAULT] of any of the INI files, giving "
+                        "it here is redundant.")
 copts.add_argument('-f', '--config-file', action='append', type=str,
                    metavar='FILE', default=[],
                    help="INI file for analysis, may be given multiple times")
-copts.add_argument('--nds', action='store_true', default='guess',
-                   help='use NDS as the data source, default: %(default)s')
 copts.add_argument('-t', '--process-tab', action='append', type=str,
-                   default=[], help="process only this tab, can be given "
-                                    "multiple times, default: process all.")
+                   help="process only this tab, can be given multiple times")
 
-popts = parser.add_argument_group("Process options",
-                                  "Configure how this summary will be "
-                                  "processed.")
-popts.add_argument('--max-processes', action='store', type=int,
-                   default=(cpu_count() - 1), dest='multiprocess', metavar='N',
-                   help="use a maximum of N subprocesses at any time, "
-                        "default: %(default)s")
-popts.add_argument('--single-process', action='store_true', default=False,
-                   help="restrict %s to a single process, mainly for debugging "
-                        "purposes, default: False" % os.path.basename(__file__))
+popts = sharedopts.add_argument_group("Process options",
+                                      "Configure how this summary will be "
+                                      "processed.")
+popts.add_argument('--nds', action='store_true', default='guess',
+                   help='use NDS as the data source')
+popts.add_argument('--multi-processes', action='store', type=int,
+                   default=1, dest='multiprocess', metavar='N',
+                   help="use a maximum of N parallel processes at any time")
 popts.add_argument('-b', '--bulk-read', action='store_true', default=False,
                    help="read all data up-front at the start of the job, "
-                        "rather than when it is needed for a tab, "
-                        "default: %(default)s")
+                        "rather than when it is needed for a tab")
 popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
-                   default='raise',
-                   help="action upon error fetching segments from SegDB, one "
-                        "of 'raise', 'ignore', or 'warn', default: %(default)s")
-popts.add_argument('-a', '--archive', default=None, const=True, nargs='?',
-                   metavar='FILE', help="Read archived data from the FILE, and "
-                                        "write back to it at the end")
-popts.add_argument('-A', '--archive-tag', metavar='FILE_TAG',
-                   default=None,
-                   help="underscore-delimited file-tag for archive. Only used "
-                        "if --archive given without a filename, "
-                        "default: 'GW_SUMMARY_ARCHIVE'")
+                   default='raise', choices=['raise', 'ignore', 'warn'],
+                   help="action upon error fetching segments from SegDB")
 
-outopts = parser.add_argument_group("Output options")
-outopts.add_argument('-o', '--output-dir', action='store', type=str,
-                     metavar='DIR', default=os.curdir,
-                     help="Output directory for summary information, "
-                          "default: '%(default)s'")
-outopts.add_argument('-m', '--html-only', action='store_true', default=False,
-                     help="Generate HTML and navigation only, "
-                          "default: %(default)s")
-outopts.add_argument('-n', '--no-html', action='store_true', default=False,
-                     help="Generate only plots and tab summaries, not "
-                          "supporting HTML, default: %(default)s. This is "
-                          "useful to regenerate a single tab without messing "
-                          "up the navigation bar.")
+# ----------------------------------------------------------------------------
+# Define sub-parsers
 
-topts = parser.add_argument_group("Time mode options",
-                                  "Choose a stadard time mode, or a GPS "
-                                  "[start, stop) interval")
-topts.add_argument("--day", action="store", type=str, metavar='YYYYMMDD',
-                   help="day to process.")
-topts.add_argument("--week", action="store", type=str, metavar="YYYYMMDD",
-                   help="week to process (by starting day).")
-topts.add_argument("--month", action="store", type=str, metavar="YYYYMM",
-                   help="month to process.")
-topts.add_argument("--year", action="store", type=str, metavar="YYYY",
-                   help="year to process.")
-topts.add_argument("-s", "--gps-start-time", action="store", type=int,
-                   metavar="GPSSTART", help="GPS start time")
-topts.add_argument("-e", "--gps-end-time", action="store", type=int,
-                   metavar="GPSEND", help="GPS end time")
+# add HTML options
+def add_output_options(parser_):
+    """Add outuput options to the subparser.
+
+    This is only needed because argparse can't handle mutually exclusive
+    groups in a parent parser handed to a subparser for some reason.
+    """
+    outopts = parser_.add_argument_group("Output options")
+    outopts.add_argument('-o', '--output-dir', action='store', type=str,
+                         metavar='DIR', default=os.curdir,
+                         help="Output directory for summary information")
+    htmlopts = outopts.add_mutually_exclusive_group()
+    htmlopts.add_argument('-m', '--html-only', action='store_true',
+                          default=False,
+                          help="Generate container HTML and navigation only")
+    htmlopts.add_argument('-n', '--no-html', action='store_true',
+                          default=False,
+                          help="Generate inner HTML and contents only, not "
+                               "supporting HTML")
+
+
+# define hierarchichal archiving choise
+def add_archive_options(parser_):
+    """Add archiving options to the subparser.
+
+    This is only needed because argparse can't handle mutually exclusive
+    groups in a parent parser handed to a subparser for some reason.
+    """
+    hierarchopts = parser_.add_argument_group('Archive options')
+    hierarchchoice = hierarchopts.add_mutually_exclusive_group()
+    hierarchchoice.add_argument(
+        '-a', '--archive', metavar='FILE_TAG', default=False,
+        const='GW_SUMMARY_ARCHIVE', nargs='?',
+        help="Read archived data from, and write processed data to "
+             "an HDF archive file written with the FILE_TAG. If not "
+             "given, no archive will be used, if given with no file "
+             "tag, a default of '%(const)s' will be used.")
+    hierarchchoice.add_argument(
+        '-d', '--daily-archive', metavar='FILE_TAG', default=False,
+        const='GW_SUMMARY_ARCHIVE',
+        nargs='?', help="Read data from the daily archives, with the "
+                        "given FILE_TAG. If not given, daily archives will be "
+                        "used, if given with no file tag, a default of "
+                        "'%(const)s' will be used.")
+
+# define sub-parser handler
+subparsers = parser.add_subparsers(
+    dest='mode', title='Modes',
+    description='Note: all dates are defined with UTC boundaries.\n'
+                'The valid modes are:')
+subparser = dict()
+
+# DAY mode
+daydoc = """
+Run %s over a full UTC day, and link this day to others with a calendar
+built into the HTML navigation bar. In this mode you can also archive data
+in HDF-format files to allow progressive processing of live data without
+restarting from scratch every time.""" % parser.prog
+subparser['day'] = subparsers.add_parser('day', description=daydoc,
+                                         epilog=parser.epilog,
+                                         parents=[sharedopts],
+                                         formatter_class=GWHelpFormatter,
+                                         help="Process one day of data")
+subparser['day'].add_argument('day', action=DayAction, type=str, nargs='?',
+                              metavar=DayAction.METAVAR, default=TODAY,
+                              help="Day to process")
+add_output_options(subparser['day'])
+
+darchopts = subparser['day'].add_argument_group('Archive options',
+                                                'Choose if, and how, to '
+                                                'archive data from this run')
+darchopts.add_argument('-a', '--archive', metavar='FILE_TAG',
+                       default=False, const='GW_SUMMARY_ARCHIVE', nargs='?',
+                       help="Read archived data from, and write processed data "
+                            "to, an HDF archive file written with the "
+                            "FILE_TAG. If not given, no archive will be used, "
+                            "if given with no file tag, a default of "
+                            "'%(const)s' will be used.")
+
+# WEEK mode
+subparser['week'] = subparsers.add_parser('week', parents=[sharedopts],
+                                          epilog=parser.epilog,
+                                          formatter_class=GWHelpFormatter,
+                                          help="Process one week of data")
+subparser['week'].add_argument('week', action=DayAction, type=str,
+                               metavar=DayAction.METAVAR,
+                               help="Week to process (given as starting day)")
+add_output_options(subparser['week'])
+add_archive_options(subparser['week'])
+
+# MONTH mode
+subparser['month'] = subparsers.add_parser('month', parents=[sharedopts],
+                                           epilog=parser.epilog,
+                                           formatter_class=GWHelpFormatter,
+                                           help="Process one month of data")
+subparser['month'].add_argument('month', action=MonthAction, type=str,
+                                metavar=MonthAction.METAVAR,
+                                help="Month to process")
+add_output_options(subparser['month'])
+add_archive_options(subparser['month'])
+
+# and GPS mode
+subparser['gps'] = subparsers.add_parser('gps', parents=[sharedopts],
+                                         epilog=parser.epilog,
+                                         formatter_class=GWHelpFormatter,
+                                         help="Process GPS interval")
+subparser['gps'].add_argument('gpsstart', action=GPSAction, type=str,
+                              metavar='GPSSTART', help='GPS start time.')
+subparser['gps'].add_argument('gpsend', action=GPSAction, type=str,
+                              metavar='GPSEND', help='GPS end time.')
+add_output_options(subparser['gps'])
+
+# ----------------------------------------------------------------------------
+# Parse command-line and sanity check
 
 opts = parser.parse_args()
 
+# set verbose output options
+globalv.VERBOSE = opts.verbose
+
+# find all config files
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
                     fp in csv.split(',')]
 
@@ -219,120 +352,47 @@ for section in config.sections():
         s2 = section.replace('%(ifo)s', ifo)
         config._sections[s2] = config._sections.pop(section)
 
-# check time options
-N = sum([opts.day is not None, opts.month is not None,
-         opts.gps_start_time is not None, opts.gps_end_time is not None])
-if N > 1 and not (opts.gps_start_time and opts.gps_end_time):
-    raise parser.error("Please give only one of --day, "
-                                    "--month, or --gps-start-time and "
-                                    "--gps-end-time.")
+# double-check week mode matches calendar setting
+if opts.mode == 'week':
+    if config.has_option("calendar", "start-of-week"):
+        weekday = getattr(calendar,
+                          config.get("calendar", "start-of-week").upper())
+        if weekday != opts.week.timetuple().tm_wday:
+            msg = ("Cannot process week starting on %s. The "
+                   "'start-of-week' option in the [calendar] section "
+                   "of the INI file specifies weeks start on %ss."
+                   % (opts.week.strftime('%Y%m%d'),
+                      config.get("calendar", "start-of-week")))
+            raise parser.error(msg)
 
-if opts.day:
-    try:
-        opts.day = datetime.datetime.strptime(opts.day, "%Y%m%d")
-    except ValueError:
-        raise parser.error("--day malformed. Please format "
-                                        "as YYYYMMDD")
-    else:
-        opts.gps_start_time = gpstime.utc_to_gps(opts.day)
-        opts.gps_end_time = gpstime.utc_to_gps(opts.day +
-                                               datetime.timedelta(days=1))
-elif opts.week:
-    week = opts.week
-    try:
-        opts.week = datetime.datetime.strptime(opts.week, "%Y%m%d")
-    except ValueError:
-        raise parser.error("--week malformed. Please format"
-                                        " as YYYYMMDD")
-    else:
-        if config.has_option("calendar", "start-of-week"):
-            weekday = getattr(calendar,
-                              config.get("calendar", "start-of-week").upper())
-            if weekday != opts.week.timetuple().tm_wday:
-                msg = ("Cannot process week starting on %s. The "
-                       "'start-of-week' option in the [calendar] section "
-                       "of the INI file specifies weeks start on %ss."
-                       % (week, config.get("calendar", "start-of-week")))
-                raise parser.error(msg)
-        opts.gps_start_time = gpstime.utc_to_gps(opts.week)
-        opts.gps_end_time = gpstime.utc_to_gps(opts.week +
-                                               datetime.timedelta(days=7))
-# parse month definition
-elif opts.month:
-    try:
-        opts.month = datetime.datetime.strptime(opts.month, "%Y%m")
-    except ValueError:
-        raise parser.error("--month malformed. Please format"
-                                        " as YYYYMM")
-    else:
-        opts.gps_start_time = gpstime.utc_to_gps(opts.month)
-        opts.gps_end_time = gpstime.utc_to_gps(opts.month +
-                                               relativedelta(months=1))
-elif opts.year:
-    try:
-        opts.year = datetime.datetime.strptime(opts.year, "%Y")
-    except ValueError:
-        raise parser.error("--year malformed. Please format"
-                                        " as YYYY")
-    else:
-        opts.gps_start_time = gpstime.utc_to_gps(opts.year)
-        opts.gps_end_time = gpstime.utc_to_gps(opts.year +
-                                               relativedelta(years=1))
-# parse GPS start and stop times
-elif opts.gps_start_time or opts.gps_end_time:
-    if not (opts.gps_start_time and opts.gps_end_time):
-        raise parser.error("Please give both --gps-start-time "
-                                        "and --gps-end-time.")
-else:
-    opts.day = datetime.date(*datetime.datetime.utcnow().timetuple()[:3])
-    opts.gps_start_time = int(gpstime.utc_to_gps(opts.day))
-    opts.gps_end_time = int(gpstime.utc_to_gps(opts.day +
-                                               datetime.timedelta(days=1)))
+# record times in ConfigParser
+span = Segment(opts.gpsstart, opts.gpsend)
+utc = tconvert(opts.gpsstart)
+config.set('DEFAULT', 'gps-start-time', str(int(opts.gpsstart)))
+config.set('DEFAULT', 'gps-end-time', str(int(opts.gpsend)))
+config.set('DEFAULT', 'yyyy', utc.strftime('%Y'))
+config.set('DEFAULT', 'yyyymm', utc.strftime('%Y%m'))
+config.set('DEFAULT', 'yyyymmdd', utc.strftime('%Y%m%d'))
 
-opts.gps_start_time = float(opts.gps_start_time)
-opts.gps_end_time = float(opts.gps_end_time)
-span = Segment(opts.gps_start_time, opts.gps_end_time)
-utc = gpstime.gps_to_utc(opts.gps_start_time)
-try:
-    config.items('general')
-except NoSectionError:
-    config.add_section('general')
-finally:
-    config.set('general', 'gps-start-time', str(int(opts.gps_start_time)))
-    config.set('general', 'gps-end-time', str(int(opts.gps_end_time)))
-    config.set('general', 'yyyy', utc.strftime('%Y'))
-    config.set('general', 'yyyymm', utc.strftime('%Y%m'))
-    config.set('general', 'yyyymmdd', utc.strftime('%Y%m%d'))
-
-
-starttime = Time(float(opts.gps_start_time), format='gps')
-endtime = Time(float(opts.gps_end_time), format='gps')
-
-# set verbose output options
-globalv.VERBOSE = opts.verbose
-globalv.PROFILE = opts.profile
+starttime = Time(float(opts.gpsstart), format='gps')
+endtime = Time(float(opts.gpsend), format='gps')
 
 # set mode and output directory
-outdir = opts.output_dir
-if opts.day:
-    mode = SUMMARY_MODE_DAY
+mode = MODE_ENUM[opts.mode.upper()]
+if mode == SUMMARY_MODE_DAY:
     base = os.path.join('day', utc.strftime('%Y%m%d'))
-elif opts.week:
-    mode = SUMMARY_MODE_WEEK
+elif mode == SUMMARY_MODE_WEEK:
     base = os.path.join('week', str(utc.isocalendar()[1]))
-elif opts.month:
-    mode = SUMMARY_MODE_MONTH
+elif mode == SUMMARY_MODE_MONTH:
     base = os.path.join('month', utc.strftime('%Y%m'))
-elif opts.year:
-    mode = SUMMARY_MODE_YEAR
+elif mode == SUMMARY_MODE_YEAR:
     base = os.path.join('year', utc.strftime('%Y'))
 else:
-    mode = SUMMARY_MODE_GPS
-    base = os.path.join('%d-%d' % (opts.gps_start_time, opts.gps_end_time))
-
+    base = os.path.join('%d-%d' % (opts.gpsstart, opts.gpsend))
 globalv.MODE = mode
 
-duration = min(globalv.NOW, opts.gps_end_time) - opts.gps_start_time
+# set LAL FFT plan wisdom level
+duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
 if duration > 200000:
      psd.LAL_FFTPLAN_LEVEL = 3
 elif duration > 40000:
@@ -341,7 +401,7 @@ else:
      psd.LAL_FFTPLAN_LEVEL = 1
 
 # set processing options
-if opts.single_process:
+if opts.multiprocess == 1:
     opts.multiprocess = False
 
 # -----------------------------------------------------------------------------
@@ -355,8 +415,10 @@ Welcome to the GW summary information system command-line interface
 You have selected %s mode.
 Start time %s (%s)
 End time: %s (%s)
+Output directory: %s
 """ % (MODE_NAME[mode], starttime.utc.iso, starttime.gps,
-       endtime.utc.iso, endtime.gps))
+       endtime.utc.iso, endtime.gps,
+       os.path.abspath(os.path.join(opts.output_dir, base))))
 
 # Load custom units
 try:
@@ -416,38 +478,34 @@ if not opts.html_only:
 load_states(config)
 
 # build directories
-mkdir(outdir)
-os.chdir(outdir)
+mkdir(opts.output_dir)
+os.chdir(opts.output_dir)
 plotdir = os.path.join(base, 'plots')
 mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
 # Read Archive
 
-if opts.archive_tag and not opts.archive:
-    opts.archive = True
-else:
-    opts.archive_tag = 'GW_SUMMARY_ARCHIVE'
+if not hasattr(opts, 'archive'):
+    opts.archive = False
 
-if opts.archive is True and not opts.html_only:
+if opts.archive is True:
+    opts.archive = 'GW_SUMMARY_ARCHIVE'
+
+if opts.archive and not opts.html_only:
+    from gwsumm import archive
     archivedir = os.path.join(base, 'archive')
     mkdir(archivedir)
-    opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
-                                             % (ifo, opts.archive_tag,
-                                                opts.gps_start_time,
-                                                opts.gps_end_time -
-                                                    opts.gps_start_time))
-
-if opts.archive:
-    from gwsumm import archive
-    if os.path.isfile(opts.archive):
-        vprint("Reading archived data from %s..." % opts.archive)
-        archive.read_data_archive(opts.archive)
+    archivename = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+                                           % (ifo, opts.archive, opts.gpsstart,
+                                              opts.gpsend - opts.gpsstart))
+    if os.path.isfile(archivename):
+        vprint("Reading archived data from %s..." % archivename)
+        archive.read_data_archive(archivename)
         vprint(" Done.\n")
     else:
         vprint("No archive found in %s, one will be created at the end.\n"
-               % opts.archive)
-
+               % archivename)
 
 # -----------------------------------------------------------------------------
 # Read HTML configuration
@@ -463,7 +521,7 @@ javascript = [jval for (key, jval) in config.items('html') if
 alltabs = []
 for section in filter(lambda n: re.match('tab[-\s]', n),
                       config.sections()):
-    if len(opts.process_tab) == 0 or section[4:] in opts.process_tab:
+    if not opts.process_tab or section[4:] in opts.process_tab:
         try:
             type_ = config.get(section, 'type')
         except NoOptionError:
@@ -557,7 +615,6 @@ ifobases.pop(ifo, None)
 _sort_tabs = lambda tab: ((tab.name == 'Summary' and tab.parent is None) and 1
                           or tab.name == 'Summary' and 2
                           or 'ODC' in tab.name and 3
-                          or 'Overview' in tab.name and 4
                           or tab.name.islower() and tab.name.upper()
                           or tab.name.lower())
 
@@ -587,8 +644,8 @@ for tab in alltabs:
 # -----------------------------------------------------------------------------
 # Finalise
 
-if opts.archive and not opts.html_only:
-    vprint("Writing data to archive in %s..." % opts.archive)
+if opts.archive:
+    vprint("Writing data to archive in %s..." % archivename)
     archive.write_data_archive(opts.archive)
     vprint(" Done.\n")
 

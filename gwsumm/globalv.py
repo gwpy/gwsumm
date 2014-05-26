@@ -40,6 +40,6 @@ PROFILE = False
 START = time.time()
 
 # run time variables
-MODE = None
+MODE = 4
 WRITTEN_PLOTS = []
 NOW = tconvert('now').seconds

@@ -305,14 +305,14 @@ class page:
                 self.meta( http_equiv='Content-Type', content="text/html; charset=%s" % charset )
             if metainfo is not None:
                 self.metainfo( metainfo )
+            if base is not None:
+                self.base( href='%s' % base )
             if css is not None:
                 self.css( css )
             if title is not None:
                 self.title( title )
             if script is not None:
                 self.scripts( script )
-            if base is not None:
-                self.base( href='%s' % base )
             self.head.close()
             if bodyattrs is not None:
                 self.body( **bodyattrs )

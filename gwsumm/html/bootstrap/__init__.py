@@ -32,6 +32,11 @@ from .. import markup
 from ..utils import highlight_syntax
 from ...utils import re_cchar
 
+# set resources
+CSS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
+JS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
+
+
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}
 
@@ -90,9 +95,13 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
     page.div(class_='col-md-12')
     if states:
         page.add(str(states))
+
+    # add header
     page.div(class_='navbar-header')
-    if brand is not None:
-        page.add(brand)
+    if isinstance(brand, markup.page):
+        page.add(str(brand))
+    elif brand:
+        page.div(str(brand), class_='navbar-brand')
     page.button(type='button', class_='navbar-toggle',
                 **{'data-toggle': 'collapse',
                    'data-target': '.navbar-collapse'})
@@ -107,25 +116,28 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
     #      for multiple screen sizes
     if isinstance(dropdown_class, (str, unicode)):
         dropdown_class = [dropdown_class]
-    page.div(class_='navbar-collapse collapse pull-left')
-    for ddclass in dropdown_class:
-        page.ul(class_='nav navbar-nav %s' % ddclass)
-        for i, link in enumerate(links):
-            if (isinstance(link, (list, tuple)) and
-                    isinstance(link[1], basestring)):
-                page.li()
-                text, link = link
-                page.a(text, href=link)
-            elif (isinstance(link, (list, tuple)) and
-                  isinstance(link[1], (list, tuple))):
-                page.li(class_='dropdown')
-                page.add(str(dropdown(*link)))
-            else:
-                page.li()
-                page.add(str(link))
-            page.li.close()
-        page.ul.close()
-    page.div.close()
+    if links:
+        page.div(class_='navbar-collapse collapse pull-left')
+        for ddclass in dropdown_class:
+            page.ul(class_='nav navbar-nav %s' % ddclass)
+            for i, link in enumerate(links):
+                if (isinstance(link, (list, tuple)) and
+                        isinstance(link[1], basestring)):
+                    page.li()
+                    text, link = link
+                    page.a(text, href=link)
+                elif (isinstance(link, (list, tuple)) and
+                      isinstance(link[1], (list, tuple))):
+                    page.li(class_='dropdown')
+                    page.add(str(dropdown(*link)))
+                else:
+                    page.li()
+                    page.add(str(link))
+                page.li.close()
+            page.ul.close()
+        page.div.close()
+
+    # close
     page.div.close()
     page.div.close()
     page.div.close()
@@ -276,7 +288,7 @@ def wrap_content(page):
     return out
 
 
-def footer(user=True, about=None, issues=True, span=12):
+def footer(user=True, about=None, issues=True, content=None, span=12):
     """Construct a footer with the given HTML content
 
     Parameters
@@ -315,6 +327,10 @@ def footer(user=True, about=None, issues=True, span=12):
                target='_blank')
     if about is not None:
         page.a('How was this page generated?', href=about)
+    if isinstance(content, markup.page):
+        page.add(str(content))
+    elif content is not None:
+        page.p(str(content))
     page.div.close()
     page.div.close()
     page.div.close()
@@ -331,14 +347,14 @@ def state_switcher(states, default=0):
     page.div(class_="btn-group pull-right")
     page.a(class_='navbar-brand btn dropdown-toggle', href='#', id_='states',
            title="Show/hide state menu", **{'data-toggle': 'dropdown'})
-    page.add(current.name)
+    page.add(str(current))
     page.b('', class_='caret')
     page.a.close()
     page.ul(class_='dropdown-menu', id_='statemenu')
     for i, (state, href) in enumerate(states):
         page.li()
-        page.a(state.name, class_='state', title=state.name,
-               id_='state_%s' % re_cchar.sub('_', state.name).lower(),
+        page.a(str(state), class_='state', title=str(state),
+               id_='state_%s' % re_cchar.sub('_', str(state)).lower(),
                onclick='$(this).load_state(\'%s\');' % href)
         page.li.close()
     page.ul.close()
@@ -411,16 +427,26 @@ def about_this_page(cmdline=True, config=None):
     return page
 
 
-def base_map_dropdown(this, **bases):
+def base_map_dropdown(this, id_=None, **bases):
     """Construct a dropdown menu that links to a version of the current
     page on another server, based on a new base.
     """
+    # format id
+    if id_:
+        id_ = dict(id_=id_)
+    else:
+        id_ = dict()
+    # format links
     baselinks = [markup.oneliner.a(key, class_='ifo-switch',
                                    **{'data-new-base': val}) for
                  (key, val) in bases.iteritems()]
+    # slam it all together
     page = markup.page()
-    page.div(class_='btn-group pull-left')
-    page.add(str(dropdown(this, baselinks,
-                          class_='navbar-brand dropdown-toggle')))
-    page.div.close()
+    if baselinks:
+        page.div(class_='btn-group pull-left', **id_)
+        page.add(str(dropdown(this, baselinks,
+                              class_='navbar-brand dropdown-toggle')))
+        page.div.close()
+    else:
+        page.div(this, class_='navbar-brand', **id_)
     return page

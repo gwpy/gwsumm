@@ -20,6 +20,7 @@
 """
 
 import os.path
+from urlparse import urlparse
 
 from . import markup
 from ..utils import re_cchar
@@ -52,8 +53,22 @@ def load_state(url):
     page.script.close()
     return page
 
+
 def load(url, id_='main'):
     """Construct the HTML script required to load a url into the
     HTML element with the given unique ``id_``.
     """
-    return markup.oneliner.script('$("#%s").load("%s");' % (id_, url))
+    ps = urlparse(url)
+    if ps.netloc:
+        return markup.given_oneliner.script("""
+    $.ajax({
+        url : %r,
+        type : 'GET',
+        success: function(data){$("#%s").html(data);},
+        error: function(xhr, status, error){
+                   alert("Cannot load content from %r, use browser console" +
+                         " to inspect failure.");
+                   }
+        });\n""" % (url, id_, url))
+    else:
+        return markup.given_oneliner.script('$("#%s").load("%s");' % (id_, url))

@@ -16,22 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""DOCSTRING
+"""This module defines the core :class:`Tab` object.
 """
 
-import operator
 import os
-import multiprocessing
-import re
-import warnings
+from urlparse import urlparse
+from shutil import copyfile
 
-from gwpy.time import from_gps
+from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from .. import (globalv, html, version)
-from ..segments import get_segments
-from ..state import ALLSTATE
-from ..utils import (re_quote, re_cchar, vprint, count_free_cores)
+from .. import (html, version, mode)
+from ..utils import (re_quote, re_cchar)
 from ..config import *
 from .registry import register_tab
 
@@ -40,37 +36,69 @@ __version__ = version.version
 
 
 class Tab(object):
-    """A configurable output HTML page.
+    """A Simple HTML tab.
 
-    This class defines a stub from which actual output format tabs
-    should be sub-classed.
+    This `class` provides a mechanism to generate a full-formatted
+    HTML page including banner, navigation-bar, content, and a footer,
+    without the user worrying too much about the details.
 
-    All sub-classes must define the following methods
+    For example::
 
-    .. autosummary::
-       :nosignatures:
+    >>> # import Tab and make a new one with a given title and HTML file
+    >>> from gwsumm.tabs import Tab
+    >>> tab = Tab('My new tab', 'mytab.html')
+    >>> # write the Tab to disk with some simple content
+    >>> tab.write_html('This is my content', brand='Brand name')
 
-       Tab.from_ini
-       Tab.process
-       Tab.build_inner_html
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    index : `str`
+        HTML file in which to write. By default each tab is written to
+        an index.html file in its own directory. Use :attr:`~Tab.index`
+        to find out the default index, if not given.
+    shortname : `str`
+        shorter name for this tab to use in the navigation bar. By
+        default the regular name is used
+    parent : :class:`~gwsumm.tabs.Tab`
+        parent of this tab. This is used to position this tab in the
+        navigation bar.
+    children : `list`
+        list of child :class:`Tabs <~gwsumm.tabs.Tab>` of this one. This
+        is used to position this tab in the navigation bar.
+    group : `str`
+        name of containing group for this tab in the navigation bar
+        dropdown menu. This is only relevant if this tab has a parent.
+    base : `str`
+        path for HTML base attribute for this tab.
+
+    Notes
+    -----
+    A `Tab` cannot have both a :attr:`~Tab.parent` and :attr:`~tab.Children`.
+    This is a limitation imposed by the twitter bootstrap navigation bar
+    implementation, which does not allow nested dropdown menus. In order
+    to collect child tabs in a given place, assign them all the same
+    :attr:`~Tab.group`.
     """
     type = 'basic'
 
-    def __init__(self, name, longname=None, parent=None, children=list(),
-                 base='', span=None, layout=None, group=None):
+    def __init__(self, name, index=None, shortname=None, parent=None,
+                 children=list(), group=None, base=''):
         """Initialise a new `Tab`.
         """
+        # names
         self.name = name
-        self.longname = longname or self.name
+        self.shortname = shortname
+        # structure
+        self._children = []
         self.parent = parent
         self.children = children
-        self.base = base
         self.group = group
-        if span is None:
-            self.span = None
-        else:
-            self.span = Segment(*span)
-        self.layout = None
+        # HTML format
+        self.base = base
+        self.index = index
+        self.page = None
 
     # -------------------------------------------
     # Tab properties
@@ -79,8 +107,6 @@ class Tab(object):
     def name(self):
         """Short name for this `Tab`.
 
-        This will be displayed in the navigation bar.
-
         :type: `str`
         """
         return self._name
@@ -88,6 +114,21 @@ class Tab(object):
     @name.setter
     def name(self, n):
         self._name = n
+
+    @property
+    def shortname(self):
+        """Short name for this tab.
+
+        This will be displayed in the navigation bar.
+
+        :type: `str`
+        """
+        return self._shortname or self.name
+
+    @shortname.setter
+    def shortname(self, name):
+        self._shortname = name
+
 
     @property
     def parent(self):
@@ -104,6 +145,9 @@ class Tab(object):
 
     @parent.setter
     def parent(self, p):
+        if p and self._children:
+            raise ValueError("A tab cannot have both a parent, and a "
+                             "set of children.")
         self._parent = p
 
     @property
@@ -120,58 +164,59 @@ class Tab(object):
 
     @children.setter
     def children(self, clist):
-        if self.parent and clist:
-            raise ValueError("A Tab cannot have both a parent, and a"
+        if self._parent and clist:
+            raise ValueError("A Tab cannot have both a parent, and a "
                              "set of children.")
         self._children = list(clist)
 
     @property
-    def href(self):
-        """HTML href attribute for this tab, relative to some base.
+    def index(self):
+        """The HTML path (relative to the :attr:`~Tab.base`) for this tab.
+        """
+        if not self._index:
+            self._index = os.path.join(self.path, 'index.html')
+        return self._index
 
-        By default all tabs are written into their own directory, so that the
-        HTML href is just a directory reference inside the overall directory
+    @index.setter
+    def index(self, p):
+        self._index = p
+
+    @property
+    def href(self):
+        """HTML href (relative to the :attr:`~Tab.base`) for this tab.
+
+        This attribute is just a convenience to clean-up the
+        :attr:`~Tab.index` for a given tab, by removing index.htmls.
         hierarchy.
 
         :type: `str`
         """
-        try:
-            return self._href
-        except AttributeError:
-            self._href = self.path + os.sep
-            return self.href
-
-    @href.setter
-    def href(self, url):
-        self._href = os.path.normpath(url) + os.sep
-
-    @property
-    def index(self):
-        """URL to the base index for this tab.
-
-        By default the index is the ``index.html`` file inside the href
-        directory.
-
-        :type: `str`
-        """
-        return os.path.normpath(os.path.join(self.href, 'index.html'))
+        if os.path.basename(self.index) in ('index.html', 'index.php'):
+            return os.path.split(self.index)[0] + os.path.sep
+        elif self.index:
+            return self.index
+        else:
+            return ''
 
     @property
     def path(self):
         """Path of this tab's directory relative to the --output-dir
         """
-        if self.name.lower() == 'summary':
-            p = ''
+        if self._index:
+            return os.path.split(self._index)[0]
         else:
-            p = re_cchar.sub('_', self.name).lower()
-        tab_ = self
-        while tab_.parent:
-            p = os.path.join(re_cchar.sub('_', tab_.parent.name).lower(), p)
-            tab_ = tab_.parent
-        if self.base:
-            return os.path.normpath(os.path.join(self.base, p))
-        else:
-            return os.path.normpath(p)
+            if self.name.lower() == 'summary':
+                p = ''
+            else:
+                p = re_cchar.sub('_', self.name).lower()
+            tab_ = self
+            while tab_.parent:
+                p = os.path.join(re_cchar.sub('_', tab_.parent.name).lower(), p)
+                tab_ = tab_.parent
+            if self.base:
+                return os.path.normpath(os.path.join(self.base, p))
+            else:
+                return os.path.normpath(p)
 
     # -------------------------------------------
     # Tab instance methods
@@ -217,8 +262,7 @@ class Tab(object):
 
     @classmethod
     def from_ini(cls, cp, section, base=''):
-        """Define a new `SummaryTab` from the given section of the
-        `ConfigParser`.
+        """Define a new tab from a :class:`~gwsumm.config..GWConfigParser`
 
         Parameters
         ----------
@@ -229,21 +273,9 @@ class Tab(object):
 
         Returns
         -------
-        tab : :class:`SummaryTab`
+        tab : `Tab`
             a new tab defined from the configuration
-
-        Notes
-        -----
-        This method is a stub that only parses the following
-        config parameters:
-
-        - 'name'
-        - 'longname'
-        - 'parent'
         """
-        # get [start, stop) job interval
-        start = cp.getint('general', 'gps-start-time')
-        end = cp.getint('general', 'gps-end-time')
         # get tab name
         try:
             # name given explicitly
@@ -252,9 +284,9 @@ class Tab(object):
             # otherwise strip 'tab-' from section name
             name = section[4:]
         try:
-            longname = re_quote.sub('', cp.get(section, 'longname'))
+            shortname = re_quote.sub('', cp.get(section, 'shortname'))
         except NoOptionError:
-            longname = name
+            shortname = name
         # get parent:
         #     if parent is not given, this assumes a top-level tab
         try:
@@ -269,170 +301,197 @@ class Tab(object):
             group = cp.get(section, 'group')
         except NoOptionError:
             group = None
-        return cls(name, longname=longname, parent=parent, span=(start, end),
-                   base=base, group=group)
-
-    # -------------------------------------------
-    # SummaryTab processing
-
-    def process(self, *args, **kwargs):
-        """Process data for this `Tab`.
-
-        This method must be defined by all sub-classes.
-        """
-        raise NotImplementedError("This method should be defined by all "
-                                  "sub-classes.")
+        # get HTML file
+        try:
+            index = cp.get(section, 'index')
+        except NoOptionError:
+            index = None
+        return cls(name, index=index, shortname=shortname, parent=parent,
+                   group=group, base=base)
 
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def scaffold_plots(self, plots=None):
-        if plots is None:
-            plots = self.plots
-        page = html.markup.page()
-
-        # get layout
-        if self.layout:
-            layout = list(self.layout)
-        else:
-            layout = len(plots) == 1 and [1] or [2]
-        for i, l in enumerate(layout):
-            if isinstance(l, (list, tuple)):
-                layout[i] = l
-            elif isinstance(l, int):
-                layout[i] = (l, None)
-            else:
-                raise ValueError("Cannot parse layout element '%s'." % l)
-        while sum(zip(*layout)[0]) < len(plots):
-            layout.append(layout[-1])
-        l = i = 0
-        for j, plot in enumerate(plots):
-            # start new row
-            if i == 0:
-                page.div(class_='row')
-            # determine relative size
-            if layout[l][1]:
-                colwidth = 12 // int(layout[l][1])
-                remainder = 12 - colwidth * layout[l][0]
-                if remainder % 2:
-                    raise ValueError("Cannot center column of width %d in a "
-                                     "12-column format" % colwidth)
-                else:
-                    offset = remainder / 2
-                page.div(class_='col-md-%d col-md-offset-%d'
-                                % (colwidth, offset))
-            else:
-                colwidth = 12 // int(layout[l][0])
-                page.div(class_='col-md-%d' % colwidth)
-            page.a(href=plot.href, class_='fancybox plot',
-                   **{'data-fancybox-group': '1'})
-            page.img(src=plot.href)
-            page.a.close()
-            page.div.close()
-            # detect end of row
-            if (i + 1) == layout[l][0]:
-                i = 0
-                l += 1
-                page.div.close()
-            # detect last plot
-            elif j == (len(plots) - 1):
-                page.div.close()
-                break
-            # or move to next column
-            else:
-                i += 1
-        return page
-
     def initialise_html_page(self, title=None, subtitle=None, css=list(),
-                             js=list()):
+                             js=list(), copy=True, **initargs):
         """Initialise a new HTML `~markup.page` with a headline.
+
+        This method opens the HTML page with <html> and <body> tags,
+        writes a complete <head>, opens the #wrap <div> and writes the
+        headline banner.
 
         Parameters
         ----------
-        title : `str`, optional, default: {parent.longname}
+        title : `str`, optional, default: {parent.name}
             level 1 heading for this `Tab`.
-        subtitle : `str`, optional, default: {self.longname}
+        subtitle : `str`, optional, default: {self.name}
             level 2 heading for this `Tab`.
         css : `list`, optional
             list of resolvable URLs for CSS files
         js : `list`, optional
             list of resolvable URLs for javascript files
+        copy : `bool`, optional, default: `True`
+            copy CSS or javascript files that exist on disk into this
+            tab's output directory
 
         Returns
         -------
-        page : :class:`markup.page`
+        page : :class:`~gwsumm.html.markup.page`
             initialised HTML markup page
+
+        Notes
+        -----
+        The :meth:`~Tab.finalize_html_page` method is provided to clean
+        up the open tags from this method, so if you want to subclass either,
+        you should preserve the same tag structure, or subclass both.
         """
         # find relative base path
         n = len(self.index.split(os.path.sep)) - 1
         base = os.sep.join([os.pardir] * n)
+
+        # move css and js files if needed
+        if copy:
+            for i, script in enumerate(css + js):
+                pr = urlparse(script)
+                if not pr.netloc and os.path.isfile(script):
+                    localscript = os.path.join(self.path,
+                                               os.path.basename(script))
+                    if (not os.path.isfile(localscript) or not
+                            os.path.samefile(script, localscript)):
+                        copyfile(script, localscript)
+                        if i > len(css):
+                            js[i-len(css)] = localscript
+                        else:
+                            css[i] = localscript
+        # initialise page
+        initargs.setdefault('doctype', html.DOCTYPE)
+        initargs.setdefault('metainfo', html.META)
+        self.page = html.markup.page()
+        self.page.init(css=css, script=js, title=title, base=base, **initargs)
+        self.page.div(id_='wrap')
+        return self.page
+
+    def finalize_html_page(self, user=True, issues=True, about=None,
+                           content=None):
+        """Finalize the HTML content for this tab.
+
+        This method closes the #wrap div (opened by
+        :meth:`~Tab.initialise_html_page`), prints a footer, and closes
+        the <body> and <html> tags to close the HTML content.
+
+        Parameters
+        ----------
+        user : `bool`, default: `True`
+            print details of user running this job
+        issues : `bool`, default: `True`
+            print link to github.com issue tracker for this package
+        about : `str`
+            URL for the 'About this page' HTML page
+        content : `str`, `~gwsumm.html.markup.page`
+            user-defined content for the footer (placed below everything
+            else).
+
+        Returns
+        -------
+        page : :class:`~gwsumm.html.markup.page`
+            a copy of the :attr:`~Tab.page` for this tab.
+
+        Notes
+        -----
+        This method is twinned with the :meth:`~Tab.initialize_html_page`
+        method, and is designed to clean up any open tags known to have been
+        created from that method. So, if you want to subclass either method,
+        you should preserve the same tag structure, or subclass both.
+        """
+        if not self.page:
+            raise RuntimeError("Cannot finalize HTML page before intialising "
+                               "one")
+        # close #wrap div
+        self.page.div.close()
+        # add footer
+        self.page.add(str(html.footer(user=user, issues=issues, about=about,
+                                      content=content)))
+        self.page.body.close()
+        self.page.html.close()
+
+    def build_html_banner(self, title=None, subtitle=None):
+        """Build the HTML headline banner for this tab.
+
+        Parameters
+        ----------
+        title : `str`
+            title for this page
+        subtitle : `str`
+            sub-title for this page
+
+        Returns
+        -------
+        banner : :class:`~gwsumm.html.markup.page`
+            formatter markup page for the banner
+        """
         # work title as Parent Name/Tab Name
-        if not title and not subtitle:
+        if title is None and subtitle is None:
             if self.parent:
-                title = self.longname
+                title = self.name
                 tab_ = self
                 while tab_.parent:
-                    title = '%s/%s' % (tab_.parent.longname, title)
+                    title = '%s/%s' % (tab_.parent.name, title)
                     tab_ = tab_.parent
                 title, subtitle = title.rsplit('/', 1)
-            elif self.name == 'Summary':
-                title = 'IFO summary'
-                subtitle = '%d-%d' % (self.span[0], self.span[1])
             else:
-                title = self.longname
+                title = self.name
                 subtitle = None
-        # initialise page
-        page = html.markup.page()
-        page.init(doctype=html.DOCTYPE, css=css, script=js, title=title,
-                  base=base, metainfo=html.META)
-        page.div(id_='wrap')
-        page.add(str(html.banner(title, subtitle=subtitle)))
-        return page
+        return html.banner(title, subtitle=subtitle)
 
-    def build_html_navbar(self, ifo=None, ifomap=None, tabs=list()):
+    def build_html_navbar(self, brand=None, tabs=list()):
         """Build the navigation bar for this `Tab`.
 
         Parameters
         ----------
-        ifo : `str`, optional
-            prefix for this IFO.
-        ifomap : `dict`, optional
-            `dict` of (ifo, {base url}) pairs to map to summary pages for
-            other IFOs.
-
-            .. note::
-               The ``ifo`` and ``ifomap`` parameters should be given
-               together.
-
+        brand : `str`, :class:`~gwsumm.html.markup.page`
+            content for navbar-brand
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
             in the navigation bar.
 
         Returns
         -------
-        page : `markup.page`
+        page : `~gwsumm.html.markup.page`
             a markup page containing the navigation bar.
         """
-        # build interferometer cross-links
-        if ifo is not None and ifomap is not None:
-            ifolinks = str(html.base_map_dropdown(ifo, **ifomap))
-        else:
-            ifolinks = ''
-        # build calendar
-        if globalv.MODE < 4:
-            date = from_gps(self.span[0])
-            cal = str(html.calendar(date, mode=globalv.MODE % 3))
-        else:
-            start, end = self.span
-            cal = html.markup.oneliner.p('%d-%d' % (start, end),
-                                         class_='navbar-brand')
-        # combine as 'brand'
-        brand = ifolinks + cal
+        # build HTML brand
+        if not isinstance(brand, html.markup.page):
+            brand = html.markup.page()
+            brand.div(str(brand), class_='navbar-brand')
+        # combine and return
+        return html.navbar(self._build_nav_links(tabs), brand=brand,
+                           dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
+
+    def _build_nav_links(self, tabs):
+        """Construct the ordered list of tabs to write into the navbar
+
+        Parameters
+        ----------
+        tabs : `list`
+            a list of `Tabs <gwsumm.tabs.Tab`, some of which may contain
+            :attr:`~Tab.children`.
+
+        Returns
+        -------
+        links : `str`
+            a structured list of navigation menu entries. Each element will
+            be a (`name`, `entries`) tuple defining the heading and dropdown
+            entries for a single dropdown menu. The `entries` list will again
+            be a list of (`name`, (`link`|`entries`)) tuples, each defining
+            a name and link for a given entry in a single dropdown menu,
+            or a set of (`name`, `link`) tuples for a group in a dropdown
+            menu.
+        """
         # build navbar links
         navlinks = []
         for tab in tabs:
             if len(tab.children):
-                navlinks.append([tab.name, []])
+                navlinks.append([tab.shortname, []])
                 links = []
                 active = None
                 # build groups
@@ -441,14 +500,14 @@ class Tab(object):
                               for g in groups)
                 nogroup = groups.pop(None, [])
                 for child in nogroup:
-                    links.append((child.name, child.href))
+                    links.append((child.shortname, child.href))
                     if child == self:
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
                     # sort group by name
                     re_group = re.compile('(\A{0}\s|\s{0}\Z)'.format(
                                               group.strip('_')), re.I)
-                    names = [re_group.sub('', t.name) for t in groups[group]]
+                    names = [re_group.sub('', t.shortname) for t in groups[group]]
                     groups[group] = zip(*sorted(
                         zip(groups[group], names),
                         key=lambda (t, n): n.lower() in ['summary', 'overview']
@@ -456,11 +515,11 @@ class Tab(object):
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):
-                        name = re_group.sub('', child.name)
+                        name = re_group.sub('', child.shortname)
                         links[-1][1].append((name, child.href))
                         if child == self:
                             active = [len(links) - 1, i]
-                if tab.children[0].name == 'Summary':
+                if tab.children[0].shortname == 'Summary':
                     links.insert(1, None)
                     if active and isinstance(active, int) and active > 0:
                         active += 1
@@ -469,32 +528,40 @@ class Tab(object):
                 navlinks[-1][1].extend(links)
                 navlinks[-1].append(active)
             else:
-                navlinks.append((tab.name, tab.href))
-        if hasattr(self, 'states'):
-            # build state switch
-            if len(self.states) > 1:
-                statebtn = html.state_switcher(zip(self.states, self.hrefs), 0)
-            else:
-                statebtn = False
-        else:
-            statebtn = None
-        # combine and return
-        return html.navbar(navlinks, brand=brand, states=statebtn,
-                           dropdown_class=['hidden-xs visible-lg',
-                                           'hidden-lg'])
+                navlinks.append((tab.shortname, tab.href))
+        return navlinks
 
-    def write_html(self, outfile=None, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=None, css=list(), js=list(), about=None,
-                   writedata=True, writehtml=True, **inargs):
+    @staticmethod
+    def build_html_content(content, class_='container', id_='main'):
+        """Build the #main div for this tab.
+
+        Parameters
+        ----------
+        content : `str`, :class:`~gwsumm.html.markup.page`
+            HTML content to be wrapped
+
+        Returns
+        -------
+        #main : :class:`~gwsumm.html.markup.page`
+            A new `page` with the input content wrapped as
+        """
+        page = html.markup.page()
+        page.div(str(content), class_=class_, id_=id_)
+        return page
+
+    def write_html(self, maincontent, title=None, subtitle=None,
+                   tabs=list(), ifo=None, ifomap=dict(), brand=None,
+                   css=html.CSS, js=html.JS, about=None, footer=None, **inargs):
         """Write the HTML page for this `Tab`.
 
         Parameters
         ----------
-        outfile : `str`, optional
-            path of file to write HTML into
-        title : `str`, optional, default: {parent.longname}
+        maincontent : `str`, :class:`~gwsumm.html.markup.page`
+            simple string content, or a structured `page` of markup to
+            embed as the content of the #main div.
+        title : `str`, optional, default: {parent.name}
             level 1 heading for this `Tab`.
-        subtitle : `str`, optional, default: {self.longname}
+        subtitle : `str`, optional, default: {self.name}
             level 2 heading for this `Tab`.
         tabs: `list`, optional
             list of top-level tabs (with children) to populate navbar
@@ -503,283 +570,174 @@ class Tab(object):
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
-
-            .. note::
-               The ``ifo`` and ``ifomap`` parameters should be given
-               together.
-
+        brand : `str`, :class:`~gwsumm.html.markup.page`, optional
+            non-menu content for navigation bar
         css : `list`, optional
-            list of resolvable URLs for CSS files
+            list of resolvable URLs for CSS files. See `gwsumm.html.CSS` for
+            the default list.
         js : `list`, optional
-            list of resolvable URLs for javascript files
+            list of resolvable URLs for javascript files. See
+            `gwumm.html.JS` for the default list.
         about : `str`, optional
             href for the 'About' page
-        writedata : `bool`, optional, default: `True`
-            if `True`, actually write the state frames
-        writehtml : `bool`, optional, default: `True`
-            if `True`, actually write the outer-frame HTML
+        footer : `str`, `~gwsumm.html.markup.page`
+            user-defined content for the footer (placed below everything else)
         **inargs
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
+        # setup directories
+        outdir = os.path.split(self.index)[0]
+        if outdir and not os.path.isdir(outdir):
+            os.makedirs(outdir)
         # initialise HTML page
-        page = self.initialise_html_page(title=title, subtitle=subtitle,
-                                         css=css, js=js)
+        self.initialise_html_page(title=title, subtitle=subtitle, css=css,
+                                  js=js)
+        # add banner
+        self.page.add(str(self.build_html_banner(title=title,
+                                                 subtitle=subtitle)))
         # add navigation
-        page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
-                                            tabs=tabs)))
-
-        # write inner html
-        href = os.path.join(self.href, 'inner.html')
-        if writedata:
-            inner = self.build_inner_html(**inargs)
-            with open(href, 'w') as fobj:
-                fobj.write(str(inner))
-        page.add(str(html.wrap_content('')))
-        page.add(str(html.load(href)))
-
-        # add footer
-        page.div.close()
-        page.add(str(html.footer(about=about)))
-        page.body.close()
-        page.html.close()
-        # write
-        if outfile is None:
-            outfile = self.index
-        with open(outfile, 'w') as fobj:
-            fobj.write(str(page))
+        self.page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
+                                                 tabs=tabs, brand=brand)))
+        # add #main content
+        self.page.add(str(self.build_html_content(maincontent)))
+        # close page and write
+        self.finalize_html_page(about=about, content=footer)
+        with open(self.index, 'w') as fobj:
+            fobj.write(str(self.page))
         return
-
-    def build_inner_html(self, *args, **kwargs):
-        """Build the '#main' HTML content for this `Tab`.
-
-        This method should be defined by all sub-classes.
-        """
-        raise NotImplementedError("This method should be defined by all "
-                                  "sub-classes.")
 
 register_tab(Tab)
 
 
-class StateTab(Tab):
-    """`Tab` with distinct `States <~gwsumm.states.core.SummaryState>`.
-
-    This is another stub to make generate other `Tab` classes with
-    multiple states easier.
-
-    This class defines the :meth:`~StateTab.process` method, leaving
-    all sub-classes to define the following methods
-
-    .. autosummary::
-       :nosignatures:
-
-       Tab.from_ini
-       Tab.process_state
-       Tab.build_inner_html
-
-    The latter two should operate on a single `SummaryState.
+class SummaryArchiveMixin(object):
+    """A `Tab` designed to exist in a calendar-linked archive.
     """
-    type = 'state'
-
-    def __init__(self, name, states=None, **kwargs):
-        """Initialise a new `Tab`.
+    @property
+    def span(self):
+        """The GPS [start, end) span of this tab.
         """
-        super(StateTab, self).__init__(name, **kwargs)
-        self.states = states
+        return self._span
 
-    # -------------------------------------------
-    # StateTab properties
+    @span.setter
+    def span(self, seg):
+        if seg:
+            self._span = Segment(*map(to_gps, seg))
+        else:
+            self._span = None
 
     @property
-    def states(self):
-        """The set of :class:`states <gwsumm.state.SummaryState>` over
-        whos times this tab's data will be processed.
-
-        The set of states will be linked in the given order with a switch
-        on the far-right of the HTML navigation bar.
+    def start(self):
+        """The GPS start time of this tab.
         """
-        return self._states
-
-    @states.setter
-    def states(self, slist):
-        if slist is None:
-            self._states = None
-        else:
-            self._states = list(slist)
+        try:
+            return self.span[0]
+        except TypeError:
+            return None
 
     @property
-    def hrefs(self):
-        # write page for each state
-        statelinks = []
-        for i, state in enumerate(self.states):
-            statelinks.append(os.path.join(
-                self.href, '%s.html' % re_cchar.sub('_', state.name.lower())))
-        return statelinks
+    def end(self):
+        """The GPS end time of this tab.
+        """
+        try:
+            return self.span[1]
+        except TypeError:
+            return None
 
-    # -------------------------------------------
-    # StateTab methods
+    @property
+    def mode(self):
+        """The date-time mode of this tab.
 
-    @classmethod
-    def from_ini(cls, cp, section, base=''):
-        new = super(StateTab, cls).from_ini(cp, section, base=base)
-        # parse states and retrieve their definitions
-        if cp.has_option(section, 'states'):
-            # states listed individually
-            statenames = [re_quote.sub('', s).strip() for s in
-                          cp.get(section, 'states').split(',')]
+        See Also
+        --------
+        gwsumm.mode : for details on the modes
+        """
+        if self._mode is None:
+            return mode.get_mode()
         else:
-            # otherwise use 'all' state - full span with no gaps
-            statenames = ['All']
-        new.states = [globalv.STATES[s] for s in statenames]
-        return new
+            return self._mode
 
-    def finalize_states(self, config=ConfigParser()):
-        """Fetch the segments for each state for this `SummaryTab`
-        """
-        # shortcut segment query for each state
-        alldefs = [state.definition for state in self.states if
-                   state.name != ALLSTATE]
-        allvalid = reduce(operator.or_, [state.valid for state in self.states])
-        get_segments(alldefs, allvalid, config=config, return_=False)
-        # individually double-check, set ready condition
-        for state in self.states:
-            state.fetch(config=config, query=False)
-
-    def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
-        """Process data for this `StateTab`.
-
-        Parameters
-        ----------
-        config : `ConfigParser.ConfigParser`, optional
-            job configuration to pass to :math:`~StateTab.finalize_states`
-        **stateargs
-            all other keyword arguments are passed directly onto the
-            :meth:`~StateTab.process_state` method.
-        """
-        # load state segments
-        self.finalize_states(config=config)
-        vprint("States finalised\n")
-        # setup plotting queue
-        if multiprocess and isinstance(multiprocess, int):
-            queue = multiprocessing.JoinableQueue(
-                count_free_cores(multiprocess))
-        elif multiprocess:
-            queue = multiprocessing.JoinableQueue(count_free_cores())
+    @mode.setter
+    def mode(self, m):
+        if isinstance(m, str):
+            m = mode.MODE_ENUM[m]
+        if m is None:
+            self._mode = m
         else:
-            queue = None
-        # process each state
-        for state in sorted(self.states, key=lambda s: abs(s.active),
-                            reverse=True):
-            self.process_state(state, config=config, multiprocess=multiprocess,
-                               plotqueue=queue, **stateargs)
+            self._mode = int(m)
+        return self._mode
 
-        # consolidate child processes
-        if queue is not None:
-            vprint("Waiting for plotting processes to complete.. ")
-            queue.close()
-            queue.join()
-            vprint('done.\n')
+    # -------------------------------------------------------------------------
+    # SummaryArchive methods
 
-    def process_state(self, state, **kwargs):
-        """Process data for this tab in a given state.
-
-        This method should be provided by all sub-classes, in order to
-        process all relevant data and figures required for this Tab's
-        HTML output.
+    def build_html_calendar(self):
+        """Build the datepicker calendar for this tab.
 
         Parameters
         ----------
-        state : `~gwsumm.state.SummaryState`
-            `SummaryState` over which to generate inner HTML
-        **kwargs
-            any and all other keyword arguments
+        mode : `int`
+            the mode in which to print the calendar, defaults to the selected
+            mode in `gwsumm.globalv`.
+
+        Notes
+        -----
+        The datetime for the calendar is taken from this tab's
+        :attr:`~StateTab.span`.
         """
-        raise NotImplementedError("This method should be provided by all "
-                                  "sub-classes.")
+        date = from_gps(self.start)
+        # double-check base matches what is required from custom datepicker
+        try:
+            requiredbase = mode.get_base(date, mode=self.mode)
+        except ValueError:
+            return '%d-%d' % (self.start, self.end)
+        if not requiredbase in self.base:
+            raise RuntimeError("Tab base %r inconsistent with required "
+                               "format including %r for archive calendar"
+                               % (self.base, requiredbase))
+        # format calendar
+        return html.calendar(date, mode=self.mode % 3)
 
-    def write_html(self, outfile=None, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=None, css=list(), js=list(), about=None,
-                   writedata=True, writehtml=True, **inargs):
-        """Construct the HTML page for this `StateTab`.
+    def build_html_navbar(self, brand=None, calendar=True, ifo=None,
+                          ifomap=dict(), tabs=list()):
+        """Build the navigation bar for this `Tab`.
+
+        The navigation bar will consist of a switch for this page linked
+        to other interferometer servers, followed by the navbar brand,
+        then the full dropdown-based navigation menus configured for the
+        given ``tabs`` and their descendents.
 
         Parameters
         ----------
-        outfile : `str`, optional
-            path of file to write HTML into
-        title : `str`, optional, default: {parent.longname}
-            level 1 heading for this `Tab`.
-        subtitle : `str`, optional, default: {self.longname}
-            level 2 heading for this `Tab`.
-        tabs: `list`, optional
-            list of top-level tabs (with children) to populate navbar
+        brand : `str`, :class:`~gwsumm.html.markup.page`
+            content for navbar-brand
         ifo : `str`, optional
             prefix for this IFO.
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
 
-            .. note::
-               The ``ifo`` and ``ifomap`` parameters should be given
-               together.
+        tabs : `list`, optional
+            list of parent tabs (each with a list of children) to include
+            in the navigation bar.
 
-        css : `list`, optional
-            list of resolvable URLs for CSS files
-        js : `list`, optional
-            list of resolvable URLs for javascript files
-        about : `str`, optional
-            href for the 'About' page
-        writedata : `bool`, optional, default: `True`
-            if `True`, actually write the state frames
-        writehtml : `bool`, optional, default: `True`
-            if `True`, actually write the outer-frame HTML
+        Returns
+        -------
+        page : `~gwsumm.html.markup.page`
+            a markup page containing the navigation bar.
         """
-        # initialise HTML page
-        page = self.initialise_html_page(title=title, subtitle=subtitle,
-                                         css=css, js=js)
-        # add navigation
-        page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
-                                            tabs=tabs)))
-        # write page for each state
-        if writedata:
-            for i, (state, shtml) in enumerate(zip(self.states, self.hrefs)):
-                inner = self.build_inner_html(state, **inargs)
-                with open(shtml, 'w') as fobj:
-                    fobj.write(str(inner))
-        page.add(str(html.wrap_content('')))
-        if len(self.states) > 1:
-            page.add(str(html.load_state(self.hrefs[0])))
+        # build interferometer cross-links
+        if ifo is not None:
+            brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
         else:
-            page.add(str(html.load(self.hrefs[0])))
-        # add footer
-        page.div.close()
-        page.add(str(html.footer(about=about)))
-        # write
-        if writehtml:
-            if outfile is None:
-                outfile = self.index
-            with open(outfile, 'w') as fobj:
-                fobj.write(str(page))
-        return
-
-    def build_inner_html(self, state, **kwargs):
-        """Build the '#main' HTML content for this `Tab`.
-
-        This method should be defined by all sub-classes to execute on a
-        single state, with the following argument format
-
-        Parameters
-        ----------
-        state : `~gwsumm.state.SummaryState`
-            `SummaryState` over which to generate inner HTML
-        **kwargs
-            any and all other keyword arguments
-        """
-        raise NotImplementedError("This method should be defined by all "
-                                  "sub-classes.")
-
-    def scaffold_plots(self, state):
-        plots = [p for p in self.plots if
-                 p.state is None or p.state.name == state.name]
-        return super(StateTab, self).scaffold_plots(plots=plots)
-
-register_tab(StateTab)
+            brand_ = html.markup.page()
+        # add calendar
+        if calendar:
+            brand_.add(str(self.build_html_calendar()))
+        # build HTML brand
+        if isinstance(brand, html.markup.page):
+            brand_.add(brand)
+        elif brand:
+            brand_.div(str(brand), class_='navbar-brand')
+        # combine and return
+        return html.navbar(self._build_nav_links(tabs), brand=brand_,
+                           dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])

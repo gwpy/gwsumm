@@ -534,14 +534,14 @@ for tab in filter(lambda tab: tab.parent is None, alltabs):
 # 2. All remaining tabs without a defined parent define that parent
 # 3. Sort all tabs into their parent sets
 for tab in filter(lambda tab: tab.parent is not None, alltabs):
-    tabs.setdefault(tab.parent, get_tab('default')(tab.parent))
+    tabs.setdefault(tab.parent, get_tab('default')(tab.parent, *tab.span))
     tab.parent = tabs[tab.parent]
     tab.parent.add_child(tab)
 
 tabs = tabs.values()
 
 # write config page
-about = get_tab('about')('About', parent=None, base=base, span=span)
+about = get_tab('about')(span[0], span[1], parent=None, base=base)
 if not opts.no_html:
     mkdir(about.path)
     about.write_html(css=css, js=javascript, tabs=tabs, config=config.files)

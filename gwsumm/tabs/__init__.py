@@ -24,6 +24,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 from .registry import *
 from .core import *
 from .builtin import *
+from .data import *
 from .ihope import *
 from .hveto import *
 from .sei import *

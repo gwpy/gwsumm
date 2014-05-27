@@ -63,8 +63,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import psd
 
-from gwsumm import (globalv, version)
-from gwsumm.mode import *
+from gwsumm import (globalv, version, mode, html)
 from gwsumm.config import *
 from gwsumm.data import get_channels
 from gwsumm.tabs import get_tab
@@ -378,18 +377,11 @@ starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')
 
 # set mode and output directory
-mode = MODE_ENUM[opts.mode.upper()]
-if mode == SUMMARY_MODE_DAY:
-    base = os.path.join('day', utc.strftime('%Y%m%d'))
-elif mode == SUMMARY_MODE_WEEK:
-    base = os.path.join('week', str(utc.isocalendar()[1]))
-elif mode == SUMMARY_MODE_MONTH:
-    base = os.path.join('month', utc.strftime('%Y%m'))
-elif mode == SUMMARY_MODE_YEAR:
-    base = os.path.join('year', utc.strftime('%Y'))
-else:
+mode.set_mode(mode.MODE_ENUM[opts.mode.upper()])
+try:
+    base = get_base(utc)
+except ValueError:
     base = os.path.join('%d-%d' % (opts.gpsstart, opts.gpsend))
-globalv.MODE = mode
 
 # set LAL FFT plan wisdom level
 duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
@@ -416,7 +408,7 @@ You have selected %s mode.
 Start time %s (%s)
 End time: %s (%s)
 Output directory: %s
-""" % (MODE_NAME[mode], starttime.utc.iso, starttime.gps,
+""" % (mode.MODE_NAME[mode], starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, base))))
 

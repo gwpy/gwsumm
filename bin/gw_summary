@@ -503,8 +503,12 @@ if opts.archive and not opts.html_only:
 # Read HTML configuration
 
 css = [cval for (key, cval) in config.items('html') if re.match('css\d+', key)]
+if not css:
+    css = html.CSS
 javascript = [jval for (key, jval) in config.items('html') if
               re.match('javascript\d+', key)]
+if not javascript:
+    css = html.JS
 
 # -----------------------------------------------------------------------------
 # Read tabs

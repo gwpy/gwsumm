@@ -59,7 +59,7 @@ def register_tab(tab, name=None, force=False):
         _TABS[name] = tab
     else:
         raise ValueError("Tab '%s' has already been registered to the %s "
-                         "class" % (name, tab.__name__))
+                         "class" % (name, _TABS[name].__name__))
 
 
 def get_tab(name):

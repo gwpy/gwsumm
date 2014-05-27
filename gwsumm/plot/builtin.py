@@ -74,7 +74,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         kwargs.setdefault('valid', {'facecolor': 'red'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
-        sax.set_epoch(self.start)
+        sax.set_epoch(float(self.start))
         return sax
 
     def init_plot(self, plot=TimeSeriesPlot):
@@ -83,7 +83,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         """
         self.plot = plot()
         ax = self.plot.gca()
-        ax.set_epoch(self.start)
+        ax.set_epoch(float(self.start))
         return self.plot, ax
 
     def parse_kwargs(self):
@@ -102,7 +102,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
-            ax.set_xlim(self.start, self.end)
+            ax.set_xlim(float(self.start), float(self.end))
         return super(TimeSeriesSummaryPlot, self).finalize(
                    outputfile=outputfile)
 
@@ -707,8 +707,8 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         plot = self.plot = EventTablePlot(figsize=[12, 6], base=base)
         ax = plot.gca()
         if isinstance(plot, TimeSeriesPlot):
-            ax.set_epoch(self.start)
-            ax.set_xlim(self.start, self.end)
+            ax.set_epoch(float(self.start))
+            ax.set_xlim(float(self.start), float(self.end))
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)

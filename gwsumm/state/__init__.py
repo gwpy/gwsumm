@@ -25,11 +25,12 @@ try:
 except ImportError:
     import ConfigParser as configparser
 
-from gwpy.segments import DataQualityFlag
+from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 
 from .. import globalv
 from ..utils import re_cchar
 from ..segments import get_segments
+from .registry import (get_state, register_state)
 
 ALLSTATE = 'All'
 
@@ -38,13 +39,17 @@ class SummaryState(DataQualityFlag):
     """Tab run state - defining an interferometer operating mode and
     associated segments over which to generate summary information
     """
-    def __init__(self, name, start, stop, description=None, definition=None):
+    def __init__(self, name, valid=SegmentList(), active=SegmentList(),
+                 description=None, definition=None):
         """Initialise a new `SummaryState`
         """
-        super(SummaryState, self).__init__()
-        self.name = name
-        self.valid = [(start, stop)]
-        self.active = [(start, stop)]
+        # allow users to specify valid as (start, end)
+        if (isinstance(valid, Segment) or
+                (isinstance(valid, tuple) and len(valid) == 2 and
+                 not isinstance(valid[0], (tuple)))):
+            valid = [valid]
+        super(SummaryState, self).__init__(name=name, valid=valid,
+                                           active=active)
         self.description = description
         self.definition = definition
         self.ready = False
@@ -86,7 +91,7 @@ class SummaryState(DataQualityFlag):
         name = params.pop('name', section)
         if re.match('state[-\s]', name):
             name = section[6:]
-        return cls(name, start, end, **params)
+        return cls(name, valid=[(start, end)], **params)
 
     def fetch(self, config=configparser.ConfigParser(), **kwargs):
         """Finalise this state by fetching its defining segments,
@@ -117,6 +122,9 @@ class SummaryState(DataQualityFlag):
         return new
     copy.__doc__ = DataQualityFlag.copy.__doc__
 
+    def __str__(self):
+        return self.name
+
 
 def load_states(config, section='states'):
     """Read and format a list of `SummaryState` definitions from the
@@ -142,9 +150,12 @@ def load_states(config, section='states'):
     # parse each state section into a new state
     for section in config.sections():
         if re.match('state[-\s]', section):
-            globalv.STATES[section[6:]] = SummaryState.from_ini(section, config)
+            register_state(SummaryState.from_ini(section, config))
 
-    # force All state
-    if not ALLSTATE in globalv.STATES:
-        globalv.STATES[ALLSTATE] = SummaryState(ALLSTATE, start, end)
+    # register All state
+    try:
+        register_state(SummaryState(ALLSTATE, valid=[(start, end)]))
+    except ValueError:
+        pass
+
     return globalv.STATES

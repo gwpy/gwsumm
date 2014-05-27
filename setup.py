@@ -56,13 +56,21 @@ if os.path.isdir('share'):
 else:
     configs = []
 
+# get all HTML files
+if os.path.isdir('share'):
+    htmlfiles = (glob.glob(os.path.join('share', '*.css')) +
+                 glob.glob(os.path.join('share', '*.js')))
+else:
+    htmlfiles = []
+
 setup(name=PACKAGENAME,
       version=VERSION,
       description=DESCRIPTION,
       packages=packagenames,
       ext_modules=[],
       scripts=scripts,
-      data_files=[('etc', configs)],
+      data_files=[('etc', configs),
+                  (os.path.join('share', PACKAGENAME, 'html'), htmlfiles)],
       requires=['gwpy'],
       provides=[PACKAGENAME],
       author=AUTHOR,

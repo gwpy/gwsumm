@@ -24,15 +24,45 @@ formatted to fit the
 `twitter bootstrap library <http://getbootstrap.com/>`_.
 """
 
-from gwsumm import version
+import os.path
+
+from .. import version
+from .html5 import *
+from .bootstrap import *
+from . import markup
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-from .html5 import *
-from .bootstrap import *
+# ----------------------------------------------------------------------------
+# Collect CSS and JS scripts
 
-from . import markup
+sharedir = os.path.join(os.path.split(__file__)[0], os.path.pardir,
+                        os.path.pardir, 'share', 'gwsumm', 'html')
+
+JQUERYJS = ['//code.jquery.com/jquery-1.11.0.min.js',
+            '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.4.0/moment.min.js']
+
+BOOTSTRAPCSS = CSS
+BOOTSTRAPJS = JS
+
+FANCYBOXCSS = ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
+               'jquery.fancybox.css']
+FANCYBOXJS = ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
+              'jquery.fancybox.pack.js']
+
+GWSUMMCSS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
+                     ['datepicker.css', 'gwsummary.css']))
+GWSUMMJS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
+                    ['datepicker.js', 'gwsummary.js']))
+
+CSS = BOOTSTRAPCSS + FANCYBOXCSS + GWSUMMCSS
+JS = JQUERYJS + BOOTSTRAPJS + FANCYBOXJS + GWSUMMJS
+
+
+def ifo_css(ifo):
+    return os.path.normpath(os.path.join(
+        sharedir, 'gwsummary_%s.css' % str(ifo).lower()))
 
 # ----------------------------------------------------------------------------
 # Write HTML table

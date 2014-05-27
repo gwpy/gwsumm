@@ -17,7 +17,6 @@ html, body {
 }
 
 #main {
-    overflow: auto;
     padding-bottom: 141px;
 }
 
@@ -31,23 +30,24 @@ html, body {
 }
 
 .container {
-    padding: 0 40px;
+    padding: 0 20px;
 }
 
 /* below required to get the navbar indented correctly in full page */
 @media (min-width: 1200px) {
-    #wrap .container {
-        width:1170px;
+    #wrap .container,
+    footer .container {
+        max-width: 1200px;
     }
 }
 @media (min-width: 979px) and (max-width: 1200px) {
     #wrap .container {
-        width:960px;
+        width: 960px;
     }
 }
 @media (min-width: 768px) and (max-width: 979px) {
     #wrap .container {
-        width:744px;
+        width: 744px;
     }
 }
 
@@ -76,6 +76,12 @@ h1.normal {
 /* ------------------------------------------------------------------------- */
 /* Navigation bar                                                            */
 
+.nav-wrapper,
+nav,
+nav > div.container {
+    height: 42px;
+}
+
 .navbar-inner,
 .navbar {
     background-color: #eee;
@@ -92,7 +98,6 @@ h1.normal {
     background-image: linear-gradient(to top, #008000 0%, #74CF0C 100%);
     background-size: 100% 41px;
     background-repeat: no-repeat;
-    position: relative;
     margin-top: -1px !important;
 }
 
@@ -107,9 +112,30 @@ h1.normal {
     display: none;
 }
 
-.navbar-text {
+.navbar-text,
+.navbar-brand {
+    color: white;
+    line-height: 10px;
+}
+
+.navbar-header:first-child {
+    margin-left: 0px !important;
+    padding-left: 0px !important;
+}
+
+
+.navbar-header a:link,
+.navbar-header a:hover,
+.navbar-header a:focus,
+.navbar-header a:visited,
+.navbar-header a:active {
     color: white;
 }
+
+.navbar-header a:active {
+    border: 0;
+}
+
 
 .navbar .nav > li > a {
     text-decoration: none;
@@ -142,7 +168,7 @@ h1.normal {
 }
 
 .navbar,
-.navbar .dropdown{
+.navbar .dropdown {
     line-height: 10px;
     min-height: 20px;
 }
@@ -155,16 +181,22 @@ h1.normal {
     line-height: 20px !important;
 }
 
-#state {
-    margin-top: 8px;
-    color: #ddd;
-}
-
 #statemenu {
     width: auto;
     text-align: right;
 }
 
+#statemenu a {
+    cursor: pointer;
+}
+
+.ifo-switch {
+    color: black !important;
+}
+
+.ifo-switch:hover {
+    color: white !important;
+}
 
 .navbar-toggle {
     min-height: none;
@@ -199,7 +231,7 @@ h1.normal {
     }
 
     .navbar-header > .navbar-nav > li > a {
-        
+
     }
 
     .navbar-collapse a {
@@ -254,7 +286,7 @@ h1.normal {
 
 
 @media (min-width: 1000px) {
-    #main .row > div:after{
+    #main .row > div:after {
         content: "";
         background: #eee;
         position: absolute;
@@ -271,6 +303,8 @@ h1.normal {
 
 #main h1 {
     margin-top: 0;
+    padding-top: 10px;
+    padding-bottom: 5px;
 }
 
 .row-divider {
@@ -284,11 +318,41 @@ h1.normal {
 a#calendar {
     cursor: pointer;
     color: white;
+    padding-left: 0px !important;
+    padding-right: 6px !important;
+    margin-left: 8px !important;
+    margin-right: 2px !important;
 }
 
 a#calendar:active,
 a#calendar:hover {
     background-color: inherit;
+}
+
+a.step-forward, a.step-back {
+    cursor: pointer;
+    color: #ccc;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+    margin-left: 2px !important;
+    margin-right: 2px !important;
+}
+
+a.step-forward:hover,
+a.step-back:hover {
+    color: white;
+}
+
+a.view-this {
+    cursor: pointer;
+}
+
+a.view-this:hover {
+    background-color: #fdf59a;
+}
+
+.datepicker .disabled:hover {
+    background-color: white !important;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -355,8 +419,16 @@ footer a {
     display: block;
 }
 
+footer a.reference {
+    display: inline;
+}
+
 /* ------------------------------------------------------------------------- */
 /* Table                                                                     */
+
+table tr.tdiv {
+    border-top: 1px solid #ccc;
+}
 
 table.data th {
     border-bottom: 1px solid #333;
@@ -373,9 +445,33 @@ table.data td:first-child {
     padding-left: 0px;
 }
 
+table.watchdog {
+    width: 100%;
+}
+
+table.watchdog tr.header {
+    border-top: 1px solid #333;
+    border-bottom: 1px solid #333;
+}
+
+table.watchdog tr.IOP > th,
+table.watchdog tr.IOP > td {
+    color: #ddd;
+}
+
+table.watchdog th {
+    border-bottom: 0;
+}
+
+
+
+
 /* ------------------------------------------------------------------------- */
 /* Image                                                                     */
 
 img {
     width: 100%;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Buttons                                                                   */

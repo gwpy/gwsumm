@@ -19,36 +19,125 @@
 
 /* ------------------------------------------------------------------------- */
 /* Calendar links                                                            */
-var re_dateurl = new RegExp('\/\\d{8}\/')
-var re_monthurl = new RegExp('\/\\d{6}\/')
+var re_dayurl = new RegExp('day\/\\d{8}\/')
+var re_monthurl = new RegExp('month\/\\d{6}\/')
+var re_yearurl = new RegExp('year\/\\d{4}\/')
+
+function findDateFormat() {
+    var url = window.location.href;
+    if (re_dayurl.test(url)) {
+        return 'day';
+    }
+    else if (re_monthurl.test(url)) {
+        return 'month';
+    }
+    else if (re_yearurl.test(url)) {
+        return 'year';
+    }
+    return undefined;
+}
+
+function getPageDate() {
+    var dateformat = findDateFormat();
+    if (dateformat == 'day') {
+        var datestring = String(re_dayurl.exec(
+                                    window.location.href)).split('/')[1];
+        return moment(datestring, 'YYYYMMDD');
+    }
+    else if (dateformat == 'month') {
+        var datestring = String(re_monthurl.exec(
+                                    window.location.href)).split('/')[1];
+        return moment(datestring, 'YYYYMM');
+    }
+    else if (dateformat == 'year') {
+        var datestring = String(re_yearurl.exec(
+                                    window.location.href)).split('/')[1];
+        return moment(datestring, 'YYYY');
+    }
+    return undefined;
+}
+
+function stepDate(step) {
+    var dateformat = findDateFormat();
+    if (!dateformat) { return; }
+    var date = getPageDate();
+    var newdate = date.add(dateformat, step);
+    if (dateformat == 'day') {
+        move_to_date({type: 'moveDate', date: newdate});
+    }
+    else if (dateformat == 'month') {
+        move_to_date({type: 'moveMonth', date: newdate});
+    }
+    else if (dateformat == 'year') {
+        move_to_date({type: 'moveYear', date: newdate});
+    }
+}
+
+// Load a given 'state'
+$.fn.load_state = function loadState(page) {
+    if ($(this).attr('id') == undefined) {
+        return
+    }
+    $('#main').load(page);
+    $(this).set_state();
+}
+
+// Set a given state in the menu
+$.fn.set_state = function setState() {
+    if ($(this).attr('id') == undefined) {
+        return;
+    }
+    var id = $(this).attr('id').substring(6);
+    $('#states').html($(this).attr('title') + ' <b class="caret"></b>');
+    $('.state').removeClass('open');
+    $(this).toggleClass('open');
+    window.location.hash = '#' + id;
+    $('a.ifo-switch').each(function() {
+        var oldurl = $(this).attr('href');
+        var oldhash = oldurl.split('#')[1];
+        $(this).attr('href', oldurl.replace(oldhash, id));
+    });
+}
 
 // Move to the date selected
 function move_to_date(ev) {
-    var newdate = ev.date;
-    d = newdate.getDate();
-    dd = (d < 10 ? '0' : '') + d;
-    m = newdate.getMonth()+1;
-    mm = (m < 10 ? '0' : '') + m;
-    y = newdate.getFullYear();
     var url = window.location.href;
-    if ((ev.viewMode == 'days') && (re_dateurl.test(url))) {
-        newurl = url.replace(re_dateurl, '/' + y + mm + dd + '/');
-        window.location = newurl;
+    var date = moment(ev.date);
+    // find new date format
+    if (ev.type == 'moveDate') {
+        var newformat = 'day/' + date.format('YYYYMMDD') + '/';
     }
-    else if ((ev.viewMode == 'months') && (re_monthurl.test(url))) {
-        newurl = url.replace(re_monthurl, '/' + y + mm + '/');
-        window.location = newurl;
+    else if (ev.type == 'moveMonth') {
+        var newformat = 'month/' + date.format('YYYYMM') + '/';
     }
-    else if ((ev.viewMode == 'years') && (re_yearurl.test(url))) {
-        newurl = url.replace(re_yearurl, '/' + y + '/');
-        window.location = newurl;
+    else if (ev.type == 'moveYear') {
+        var newformat = 'year/' + date.format('YYYY') + '/';
     }
+    // work through starting formats and proceed
+    if (re_dayurl.test(url)) {
+        var newurl = url.replace(re_dayurl, newformat);
+    }
+    else if (re_monthurl.test(url)) {
+        var newurl = url.replace(re_dayurl, newformat);
+    }
+    else if (re_yearurl.test(url)) {
+        var newurl = url.replace(re_dayurl, newformat);
+    }
+    else if (window.location.href ==
+             document.getElementsByTagName('base')[0].href) {
+        var newurl = window.location.href + newformat;
+    }
+    else {
+        alert("ERROR: Cannot format new date. If the problem persists, please report this at https://github.com/gwpy/gwsumm/issues/");
+    }
+    window.location = newurl;
 }
 
 // fix width of fixed navbar
 function reset_width_on_resize() {
     $('#nav').width($("#nav").width());
 }
+
 
 /* ------------------------------------------------------------------------- */
 /* Document ready and loaded                                                  */
@@ -64,11 +153,46 @@ $(window).load(function() {
         });
     });
 
+    // define inter-IFO links
+    var thisbase = document.getElementsByTagName('base')[0].href;
+    $('a.ifo-switch').each(function() {
+        var newbase = $(this).data('new-base') + '/';
+        $(this).attr('href', window.location.href.replace(thisbase, newbase));
+    });
+
     // define the calendar
-    $('#calendar').datepicker({weekStart: 1}).on('changeDate', move_to_date);
+    $('#calendar').datepicker({
+        weekStart: 1,
+        endDate: moment().utc().format('DD/MM/YYYY'),
+        todayHighlight: true,
+        todayBtn: "linked"
+        }).on('moveDate', move_to_date)
+              .on('moveMonth', move_to_date)
+              .on('moveYear', move_to_date);
+
+    // load correct run type
+    if (location.hash.length > 1) {
+        hash = location.hash.substring(1);
+        path = location.pathname + hash + '.html';
+        $('#state_' + hash).load_state(path);
+    }
 
     // load the fancybox
-    $(".fancybox").fancybox({helpers: {title: {type: 'inside'}}});
+    $(".fancybox").fancybox({nextEffect: 'none',
+                             prevEffect: 'none',
+                             helpers: {overlay: {locked: false}}});
+
+    $('.dropdown-toggle').on('click', function() {
+        var target = $(this).nextAll('.dropdown-menu');
+        var dropleft = $(this).offset().left;
+        var dropwidth = target.width();
+        var left = $(window).width();
+        var offright = (dropleft + dropwidth > left);
+        if (offright) {
+            target.addClass('pull-right');
+        }
+    });
+
 })
 
 // When document is resized, fix the width of the sticky navbar

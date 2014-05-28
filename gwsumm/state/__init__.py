@@ -107,8 +107,10 @@ class SummaryState(DataQualityFlag):
             self.ready = True
             return self
         # otherwise find out which flags we need
-        self &= get_segments(self.definition, self.valid, config=config,
-                             **kwargs)
+        segs = get_segments(self.definition, self.valid, config=config,
+                            **kwargs)
+        self.valid = segs.valid
+        self.active = segs.active
         self.ready = True
         return self
 

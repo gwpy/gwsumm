@@ -106,12 +106,15 @@ function move_to_date(ev) {
     // find new date format
     if (ev.type == 'moveDate') {
         var newformat = 'day/' + date.format('YYYYMMDD') + '/';
+        var dispdate = date.format('MMMM Do YYYY');
     }
     else if (ev.type == 'moveMonth') {
         var newformat = 'month/' + date.format('YYYYMM') + '/';
+        var dispdate = date.format('MMMM YYYY');
     }
     else if (ev.type == 'moveYear') {
         var newformat = 'year/' + date.format('YYYY') + '/';
+        var dispdate = date.format('YYYY');
     }
     // work through starting formats and proceed
     if (re_dayurl.test(url)) {
@@ -130,7 +133,13 @@ function move_to_date(ev) {
     else {
         alert("ERROR: Cannot format new date. If the problem persists, please report this at https://github.com/gwpy/gwsumm/issues/");
     }
-    window.location = newurl;
+    $.ajax({
+        type: 'HEAD',
+        url : newurl,
+        success: function(){window.location = newurl},
+        error: function(){alert('No page found for ' + dispdate +
+                                '. Please report unexpected problems to '+
+                                'detchar+code@ligo.org.')}});
 }
 
 // fix width of fixed navbar

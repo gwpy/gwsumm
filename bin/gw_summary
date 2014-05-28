@@ -481,23 +481,25 @@ mkdir(plotdir)
 if not hasattr(opts, 'archive'):
     opts.archive = False
 
-if opts.archive is True:
+if opts.html_only:
+    opts.archive = False
+elif opts.archive is True:
     opts.archive = 'GW_SUMMARY_ARCHIVE'
 
-if opts.archive and not opts.html_only:
+if opts.archive:
     from gwsumm import archive
     archivedir = os.path.join(base, 'archive')
     mkdir(archivedir)
-    archivename = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
-                                           % (ifo, opts.archive, opts.gpsstart,
-                                              opts.gpsend - opts.gpsstart))
-    if os.path.isfile(archivename):
-        vprint("Reading archived data from %s..." % archivename)
-        archive.read_data_archive(archivename)
+    opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+                                % (ifo, opts.archive, opts.gpsstart,
+                                        opts.gpsend - opts.gpsstart))
+    if os.path.isfile(opts.archive):
+        vprint("Reading archived data from %s..." % opts.archive)
+        archive.read_data_archive(opts.archive)
         vprint(" Done.\n")
     else:
         vprint("No archive found in %s, one will be created at the end.\n"
-               % archivename)
+               % opts.archive)
 
 # -----------------------------------------------------------------------------
 # Read HTML configuration
@@ -631,17 +633,17 @@ for tab in alltabs:
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
-        vprint("%s complete!\n" % (name))
     page = tab.write_html(css=css, js=javascript, tabs=tabs,
                           ifo=ifo, ifomap=ifobases, about=about.index,
                           writedata=not opts.html_only,
                           writehtml=not opts.no_html)
+    vprint("%s complete!\n" % (name))
 
 # -----------------------------------------------------------------------------
 # Finalise
 
 if opts.archive:
-    vprint("Writing data to archive in %s..." % archivename)
+    vprint("Writing data to archive in %s..." % opts.archive)
     archive.write_data_archive(opts.archive)
     vprint(" Done.\n")
 

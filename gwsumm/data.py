@@ -494,7 +494,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     segcache = fcache.sieve(
                                    segment=segment.protract(resamplepad))
                 else:
-                    segcache = fcache
+                    segcache = fcache.sieve(segment=segment)
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                      start=float(segment[0]),
                                      end=float(segment[1]), type=ctype,

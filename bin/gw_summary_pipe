@@ -65,10 +65,38 @@ class GWSummaryJob(pipeline.CondorDAGJob):
         cmds.setdefault('getenv', 'True')
         for key, val in cmds.iteritems():
             self.add_condor_cmd(key, val)
+        # add sub-command option
+        self._command = None
 
     def add_opt(self, opt, value=''):
         pipeline.CondorDAGJob.add_opt(self, opt, str(value))
     add_opt.__doc__ = pipeline.CondorDAGJob.add_opt.__doc__
+
+    def set_command(self, command):
+        self._command = command
+
+    def get_command(self):
+        return self._command
+
+    def write_sub_file(self):
+        pipeline.CondorDAGJob.write_sub_file(self)
+        if self.get_command():
+            with open(self.get_sub_file(), 'r') as f:
+                sub = f.read()
+            sub = sub.replace('arguments = "', 'arguments = " %s'
+                              % self.get_command())
+            with open(self.get_sub_file(), 'w') as f:
+                f.write(sub)
+
+
+class GWSummaryDAGNode(pipeline.CondorDAGNode):
+    def get_cmd_line(self):
+        cmd = pipeline.CondorDAGNode.get_cmd_line(self)
+        if self.job().get_command():
+            return '%s %s' % (self.job().get_command(), cmd)
+        else:
+            return cmd
+
 
 # ----------------------------------------------------------------------------
 # Parse command line
@@ -149,7 +177,7 @@ popts.add_argument('--nds', action='store_true', default='guess',
 popts.add_argument('--single-process', action='store_true', default=False,
                    help="restrict gw_summary to a single process, mainly for "
                         "debugging purposes, default: %(default)s")
-popts.add_argument('--max-processes', action='store', type=int, default=None,
+popts.add_argument('--multi-process', action='store', type=int, default=None,
                    help="maximum number of concurrent sub-processes for each "
                         "gw_summary job, {number of CPUs} / {min(number of "
                         "jobs, 4)}")
@@ -287,22 +315,29 @@ if len(opts.global_config):
 
 # add common command-line options
 if opts.day:
-    job.add_opt('day', opts.day)
+    job.set_command('day')
+    job.add_arg(opts.day)
 elif opts.week:
-    job.add_opt('week', opts.week)
+    job.set_command('week')
+    job.add_arg(opts.week)
 elif opts.month:
-    job.add_opt('month', opts.month)
+    job.set_command('month')
+    job.add_arg(opts.month)
 elif opts.year:
-    job.add_opt('year', opts.year)
+    job.set_command('year')
+    job.add_arg(opts.year)
 elif opts.gps_start_time or opts.gps_end_time:
-    job.add_opt('gps-start-time', str(opts.gps_start_time))
-    job.add_opt('gps-end-time', str(opts.gps_end_time))
+    job.set_command('gps')
+    job.add_arg(str(opts.gps_start_time))
+    job.add_arg(str(opts.gps_end_time))
+else:
+    job.set_command('day')
 if opts.nds is True:
     job.add_opt('nds')
 if opts.single_process:
     job.add_opt('single-process')
-elif opts.max_processes is not None:
-    job.add_opt('max-processes', opts.max_processes)
+elif opts.multi_process is not None:
+    job.add_opt('multi-process', opts.multi_process)
 if opts.verbose:
     job.add_opt('verbose')
 if opts.ifo:
@@ -311,7 +346,7 @@ job.add_opt('output-dir', outdir)
 
 # make surrounding HTML first
 if not opts.skip_html_wrapper:
-    wrapper = pipeline.CondorDAGNode(wrapjob)
+    wrapper = GWSummaryDAGNode(wrapjob)
     wrapper.add_var_arg('--html-only')
     wrapper.add_var_arg('--config-file %s' % ','.join(opts.config_file))
     for configfile in opts.config_file:
@@ -329,7 +364,7 @@ wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
 
 # create node for each config file
 for configfile in opts.config_file:
-    node = pipeline.CondorDAGNode(job)
+    node = GWSummaryDAGNode(job)
     node.add_var_arg('--no-html')
     node.add_var_arg('--config-file %s' % configfile)
     if opts.archive:
@@ -337,7 +372,7 @@ for configfile in opts.config_file:
         archivetag = jobtag.upper().replace('-', '_')
         if opts.ifo and archivetag.startswith('%s_' % opts.ifo.upper()):
             archivetag = archivetag[3:]
-        node.add_var_arg('--archive-tag %s' % archivetag)
+        node.add_var_arg('--archive %s' % archivetag)
     for cf in configfile.split(','):
         node.add_input_file(cf)
     node.set_category('gw_summary')

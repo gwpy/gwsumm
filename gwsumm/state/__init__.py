@@ -152,7 +152,9 @@ def load_states(config, section='states'):
     # parse each state section into a new state
     for section in config.sections():
         if re.match('state[-\s]', section):
-            register_state(SummaryState.from_ini(section, config))
+            key = section[6:]
+            register_state(SummaryState.from_ini(section, config),
+                           name=key)
 
     # register All state
     try:

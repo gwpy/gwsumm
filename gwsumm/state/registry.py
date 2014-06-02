@@ -55,8 +55,7 @@ def register_state(state, name=None, force=False):
     if not name in globalv.STATES or force:
         globalv.STATES[name] = state
     else:
-        raise ValueError("Tab '%s' has already been registered to the %s "
-                         "class" % (name, state.name))
+        raise ValueError("State %r has already been registered." % name)
 
 
 def get_state(name):

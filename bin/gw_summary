@@ -143,6 +143,10 @@ class YearAction(DateAction):
 
 class GPSAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=False):
+        try:
+            values = float(values)
+        except (TypeError, ValueError):
+            pass
         setattr(namespace, self.dest, to_gps(values))
 
 # ----------------------------------------------------------------------------
@@ -187,7 +191,7 @@ popts = sharedopts.add_argument_group("Process options",
                                       "processed.")
 popts.add_argument('--nds', action='store_true', default='guess',
                    help='use NDS as the data source')
-popts.add_argument('--multi-processes', action='store', type=int,
+popts.add_argument('--multi-process', action='store', type=int,
                    default=1, dest='multiprocess', metavar='N',
                    help="use a maximum of N parallel processes at any time")
 popts.add_argument('-b', '--bulk-read', action='store_true', default=False,
@@ -332,8 +336,8 @@ if not opts.on_segdb_error in ['raise', 'warn', 'ignore']:
 config = GWSummConfigParser(dict_type=OrderedDict)
 config.optionxform = str
 if opts.ifo:
-    config.set(None, 'ifo', opts.ifo)
-config.set(None, 'user', getpass.getuser())
+    config.set(DEFAULTSECT, 'ifo', opts.ifo)
+config.set(DEFAULTSECT, 'user', getpass.getuser())
 config.read(opts.config_file)
 config.files = map(os.path.abspath, opts.config_file)
 
@@ -367,11 +371,11 @@ if opts.mode == 'week':
 # record times in ConfigParser
 span = Segment(opts.gpsstart, opts.gpsend)
 utc = tconvert(opts.gpsstart)
-config.set('DEFAULT', 'gps-start-time', str(int(opts.gpsstart)))
-config.set('DEFAULT', 'gps-end-time', str(int(opts.gpsend)))
-config.set('DEFAULT', 'yyyy', utc.strftime('%Y'))
-config.set('DEFAULT', 'yyyymm', utc.strftime('%Y%m'))
-config.set('DEFAULT', 'yyyymmdd', utc.strftime('%Y%m%d'))
+config.set(DEFAULTSECT, 'gps-start-time', str(int(opts.gpsstart)))
+config.set(DEFAULTSECT, 'gps-end-time', str(int(opts.gpsend)))
+config.set(DEFAULTSECT, 'yyyy', utc.strftime('%Y'))
+config.set(DEFAULTSECT, 'yyyymm', utc.strftime('%Y%m'))
+config.set(DEFAULTSECT, 'yyyymmdd', utc.strftime('%Y%m%d'))
 
 starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')
@@ -623,12 +627,12 @@ for tab in tabs:
 alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
     mkdir(tab.href)
+    vprint("\n-------------------------------------------------\n")
+    if tab.parent:
+        name = '%s/%s' % (tab.parent.name, tab.name)
+    else:
+        name = tab.name
     if not opts.html_only:
-        vprint("\n-------------------------------------------------\n")
-        if tab.parent:
-            name = '%s/%s' % (tab.parent.name, tab.name)
-        else:
-            name = tab.name
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,

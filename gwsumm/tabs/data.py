@@ -68,6 +68,22 @@ class DataTab(DataTabBase):
     """
     type = 'data'
 
+    def __init__(self, *args, **kwargs):
+        """Initialise a new `DataTab`.
+
+        All ``*args`` and ``**kwargs`` are passed up-stream to the base
+        class constructor, excepting the following:
+
+        Parameters
+        ----------
+        ismeta : `bool`, optional, default: `False`
+            indicates that this tab only contains data already by others
+            and so doesn't need to be processed.
+        """
+        ismeta = kwargs.pop('ismeta', False)
+        super(DataTabBase, self).__init__(*args, **kwargs)
+        self.ismeta = ismeta
+
     # -------------------------------------------
     # SummaryTab configuration parser
 
@@ -98,6 +114,17 @@ class DataTab(DataTabBase):
             if not isinstance(state, SummaryState):
                 job.states[i] = get_state(state)
 
+        # get meta tag
+        try:
+            ismeta = cp.get(section, 'meta-tab')
+        except NoOptionError:
+            ismeta = False
+        else:
+            if ismeta is None:
+                ismeta = True
+            else:
+                ismeta = bool(ismeta.title())
+        job.ismeta = ismeta
 
         # -------------------
         # parse plot requests
@@ -188,7 +215,7 @@ class DataTab(DataTabBase):
         """
         # shortcut segment query for each state
         alldefs = [state.definition for state in self.states if
-                   state.name != ALLSTATE]
+                   state.name != ALLSTATE and not state.ready]
         allvalid = reduce(operator.or_, [state.valid for state in self.states])
         get_segments(alldefs, allvalid, config=config, return_=False)
         # individually double-check, set ready condition
@@ -206,6 +233,8 @@ class DataTab(DataTabBase):
             all other keyword arguments are passed directly onto the
             :meth:`~StateTab.process_state` method.
         """
+        if self.ismeta:
+            return
         # load state segments
         self.finalize_states(config=config)
         vprint("States finalised\n")
@@ -332,6 +361,18 @@ class DataTab(DataTabBase):
 
     # -------------------------------------------------------------------------
     # HTML operations
+
+    def write_html(self, *args, **kwargs):
+        writedata = kwargs.pop('writedata', True)
+        vprint("Writing HTML:\n")
+        if writedata:
+            for state, frame in zip(self.states, self.frames):
+                self.write_state_html(state)
+                vprint("    %s written\n" % frame)
+        writehtml = kwargs.pop('writehtml', True)
+        if writehtml:
+            super(DataTab, self).write_html(*args, **kwargs)
+            vprint("    %s written\n" % self.index)
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this tab.

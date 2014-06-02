@@ -275,7 +275,7 @@ class PlotTab(Tab):
             raise TypeError("Cannot append plot of type %r" % type(plot))
         self.plots.append(plot)
 
-    def scaffold_plots(self):
+    def scaffold_plots(self, state=None):
         """Build a grid of plots using bootstrap's scaffolding.
 
         Returns
@@ -285,11 +285,16 @@ class PlotTab(Tab):
         """
         page = html.markup.page()
 
+        if state:
+            plots = [p for p in self.plots if p.state in [state, None]]
+        else:
+            plots = self.plots
+
         # get layout
         if self.layout:
             layout = list(self.layout)
         else:
-            layout = len(self.plots) == 1 and [1] or [2]
+            layout = len(plots) == 1 and [1] or [2]
         for i, l in enumerate(layout):
             if isinstance(l, (list, tuple)):
                 layout[i] = l
@@ -297,10 +302,10 @@ class PlotTab(Tab):
                 layout[i] = (l, None)
             else:
                 raise ValueError("Cannot parse layout element '%s'." % l)
-        while sum(zip(*layout)[0]) < len(self.plots):
+        while sum(zip(*layout)[0]) < len(plots):
             layout.append(layout[-1])
         l = i = 0
-        for j, plot in enumerate(self.plots):
+        for j, plot in enumerate(plots):
             # start new row
             if i == 0:
                 page.div(class_='row')
@@ -329,7 +334,7 @@ class PlotTab(Tab):
                 l += 1
                 page.div.close()
             # detect last plot
-            elif j == (len(self.plots) - 1):
+            elif j == (len(plots) - 1):
                 page.div.close()
                 break
             # or move to next column
@@ -370,7 +375,10 @@ class PlotTab(Tab):
         gwsumm.tabs.Tab.write_html : for details of all valid unnamed
         keyword arguments
         """
-        return super(PlotTab, self).write_html((pre, post), **kwargs)
+        if post:
+            return super(PlotTab, self).write_html((pre, post), **kwargs)
+        else:
+            return super(PlotTab, self).write_html(pre, **kwargs)
 
 register_tab(PlotTab)
 
@@ -587,7 +595,7 @@ class StateTab(PlotTab):
         if pre:
             page.add(str(pre))
         if plots:
-            page.add(str(self.scaffold_plots()))
+            page.add(str(self.scaffold_plots(state=state)))
         if post:
             page.add(str(post))
         # write to file
@@ -633,7 +641,7 @@ class StateTab(PlotTab):
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
-        return Tab.write_html(self,
+        return super(StateTab, self).write_html(
             self.frames[0], title=title, subtitle=subtitle, tabs=tabs, ifo=ifo,
             ifomap=ifomap, brand=brand, css=css, js=js, about=about,
             footer=footer, **inargs)

@@ -20,6 +20,7 @@
 """
 
 import os
+import re
 from urlparse import urlparse
 from shutil import copyfile
 
@@ -208,15 +209,44 @@ class Tab(object):
             if self.name.lower() == 'summary':
                 p = ''
             else:
-                p = re_cchar.sub('_', self.name).lower()
+                p = re_cchar.sub('_', self.shortname).lower()
             tab_ = self
             while tab_.parent:
-                p = os.path.join(re_cchar.sub('_', tab_.parent.name).lower(), p)
+                p = os.path.join(re_cchar.sub(
+                        '_', tab_.parent.shortname).lower(), p)
                 tab_ = tab_.parent
             if self.base:
                 return os.path.normpath(os.path.join(self.base, p))
             else:
                 return os.path.normpath(p)
+
+    @property
+    def title(self):
+        """Page title for this tab.
+        """
+        if self.parent:
+            title = self.name
+            tab_ = self
+            while tab_.parent:
+                title = '%s/%s' % (tab_.parent.name, title)
+                tab_ = tab_.parent
+            return title
+        else:
+            return self.name
+
+    @property
+    def shorttitle(self):
+        """Page title for this tab.
+        """
+        if self.parent:
+            title = self.shortname
+            tab_ = self
+            while tab_.parent:
+                title = '%s/%s' % (tab_.parent.shortname, title)
+                tab_ = tab_.parent
+            return title
+        else:
+            return self.shortname
 
     # -------------------------------------------
     # Tab instance methods
@@ -364,6 +394,8 @@ class Tab(object):
                         else:
                             css[i] = localscript
         # initialise page
+        if title is None:
+            title = self.shorttitle
         initargs.setdefault('doctype', html.DOCTYPE)
         initargs.setdefault('metainfo', html.META)
         self.page = html.markup.page()
@@ -431,19 +463,15 @@ class Tab(object):
         """
         # work title as Parent Name/Tab Name
         if title is None and subtitle is None:
-            if self.parent:
-                title = self.name
-                tab_ = self
-                while tab_.parent:
-                    title = '%s/%s' % (tab_.parent.name, title)
-                    tab_ = tab_.parent
+            title = self.title
+            try:
                 title, subtitle = title.rsplit('/', 1)
-            else:
-                title = self.name
+            except ValueError:
                 subtitle = None
         return html.banner(title, subtitle=subtitle)
 
-    def build_html_navbar(self, brand=None, tabs=list()):
+    def build_html_navbar(self, brand=None, tabs=list(),
+                          ifo=None, ifomap=dict()):
         """Build the navigation bar for this `Tab`.
 
         Parameters
@@ -453,16 +481,27 @@ class Tab(object):
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
             in the navigation bar.
+        ifo : `str`, optional
+            prefix for this IFO.
+        ifomap : `dict`, optional
+            `dict` of (ifo, {base url}) pairs to map to summary pages for
+            other IFOs.
 
         Returns
         -------
         page : `~gwsumm.html.markup.page`
             a markup page containing the navigation bar.
         """
+        # build interferometer cross-links
+        if ifo is not None:
+            brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
+        else:
+            brand_ = html.markup.page()
         # build HTML brand
-        if not isinstance(brand, html.markup.page):
-            brand = html.markup.page()
-            brand.div(str(brand), class_='navbar-brand')
+        if isinstance(brand, html.markup.page):
+            brand_.add(str(brand))
+        else:
+            brand_.div(str(brand), class_='navbar-brand')
         # combine and return
         return html.navbar(self._build_nav_links(tabs), brand=brand,
                            dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
@@ -689,7 +728,8 @@ class SummaryArchiveMixin(object):
         try:
             requiredbase = mode.get_base(date, mode=self.mode)
         except ValueError:
-            return '%d-%d' % (self.start, self.end)
+            return html.markup.oneliner.div('%d-%d' % (self.start, self.end),
+                                            class_='navbar-brand')
         if not requiredbase in self.base:
             raise RuntimeError("Tab base %r inconsistent with required "
                                "format including %r for archive calendar"
@@ -697,8 +737,7 @@ class SummaryArchiveMixin(object):
         # format calendar
         return html.calendar(date, mode=self.mode % 3)
 
-    def build_html_navbar(self, brand=None, calendar=True, ifo=None,
-                          ifomap=dict(), tabs=list()):
+    def build_html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.
 
         The navigation bar will consist of a switch for this page linked
@@ -726,10 +765,7 @@ class SummaryArchiveMixin(object):
             a markup page containing the navigation bar.
         """
         # build interferometer cross-links
-        if ifo is not None:
-            brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
-        else:
-            brand_ = html.markup.page()
+        brand_ = html.markup.page()
         # add calendar
         if calendar:
             brand_.add(str(self.build_html_calendar()))
@@ -739,5 +775,5 @@ class SummaryArchiveMixin(object):
         elif brand:
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
-        return html.navbar(self._build_nav_links(tabs), brand=brand_,
-                           dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
+        return super(SummaryArchiveMixin, self).build_html_navbar(brand=brand_,
+                                                                  **kwargs)

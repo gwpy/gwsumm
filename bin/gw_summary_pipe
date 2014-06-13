@@ -31,7 +31,7 @@ from multiprocessing import cpu_count
 
 from glue import (datafind, pipeline)
 
-from gwpy.io.nds import kerberos as gwkerberos
+from gwpy.io import kerberos as gwkerberos
 
 from gwsumm import version
 from gwsumm.utils import (mkdir, which)

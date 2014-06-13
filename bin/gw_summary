@@ -647,9 +647,10 @@ for tab in alltabs:
 # Finalise
 
 if opts.archive:
-    vprint("Writing data to archive in %s..." % opts.archive)
+    vprint("\n-------------------------------------------------\n")
+    vprint("Writing data to archive...")
     archive.write_data_archive(opts.archive)
-    vprint(" Done.\n")
+    vprint("Done. Archive written in\n%s\n" % os.path.abspath(opts.archive))
 
 vprint("""
 ------------------------------------------------------------------------------

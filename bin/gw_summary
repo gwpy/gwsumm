@@ -459,11 +459,11 @@ if not opts.html_only:
                                    key=lambda x: x[0]):
             key = re_cchar.sub('_', key.rstrip())
             if key.isdigit():
-                if not hasattr(channel, 'bitmask'):
-                    channel.bitmask = []
-                while len(channel.bitmask) < int(key):
-                    channel.bitmask.append(None)
-                channel.bitmask.append(val)
+                if not hasattr(channel, 'bits'):
+                    channel.bits = []
+                while len(channel.bits) < int(key):
+                    channel.bits.append(None)
+                channel.bits.append(val)
             else:
                 try:
                     setattr(channel, key, eval(val.rstrip()))

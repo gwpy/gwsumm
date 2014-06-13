@@ -435,14 +435,14 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
                     stateseries.dx = 0
                     if channel.sample_rate is not None:
                         stateseries.sample_rate = channel.sample_rate
-                stateseries.bitmask = channel.bitmask
+                stateseries.bits = channel.bits
                 newflags = stateseries.to_dqflags()
                 if flags is None:
                     flags = newflags
                 else:
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
-            nflags += len([m for m in channel.bitmask if m is not None])
+            nflags += len([m for m in channel.bits if m is not None])
             if flags is not None:
                 ax.plot(*flags[::-1], **plotargs)
 

@@ -191,7 +191,7 @@ class SEIWatchDogTab(base):
                     cause = '%s (no cause found)' % stage
                 else:
                     firstbit = map(int, bin(int(bits))[2:][::-1]).index(1)
-                    cause = latch.bitmask[firstbit]
+                    cause = latch.bits[firstbit]
                 t2 = Time(t, format='gps', scale='utc')
                 vprint("        Trip GPS %d (%s), cause: %s.\n"
                        % (t, t2.iso, cause))
@@ -227,10 +227,10 @@ class SEIWatchDogTab(base):
     def build_inner_html(self, state):
         """Build HTML summary of watchdog trips
         """
-        # find one example of each channel, and get the bitmask
+        # find one example of each channel, and get the bits
         hepichannel = get_channel(HEPI_LATCH_CHANNEL
                                   % (self.ifo, self.chambers[1]))
-        hepimask = hepichannel.bitmask
+        hepimask = hepichannel.bits
         if self.chambers == HAMs:
              isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
@@ -239,7 +239,7 @@ class SEIWatchDogTab(base):
                                         % (self.ifo, self.chambers[0])),
                             get_channel(BSC_ST2_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
-        isimask = [bit for c in isichannels for bit in c.bitmask]
+        isimask = [bit for c in isichannels for bit in c.bits]
         mask = hepimask + isimask
 
         # count trips
@@ -271,7 +271,7 @@ class SEIWatchDogTab(base):
         for i, bit in enumerate(mask):
             class_ = []
             if (i == len(hepimask) or
-                    i == len(hepimask + isichannels[0].bitmask)):
+                    i == len(hepimask + isichannels[0].bits)):
                 class_.append('tdiv')
             if re.match('(ISI (.*)IOP|(.*) Reset)', bit):
                 class_.append('IOP')

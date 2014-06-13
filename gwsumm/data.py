@@ -513,8 +513,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     data = data.filter(*filter_[channel.ndsname])
                 if isinstance(data, StateVector):
                     data.unit = units.dimensionless_unscaled
-                    if hasattr(channel, 'bitmask'):
-                        data.bitmask = channel.bitmask
+                    if hasattr(channel, 'bits'):
+                        data.bits = channel.bits
                 globalv.DATA[channel.ndsname].append(data)
                 globalv.DATA[channel.ndsname].coalesce()
             vprint('.')

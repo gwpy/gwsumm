@@ -106,8 +106,6 @@ class HvetoTab(base):
         home_, postbase = daydir.split('/public_html/', 1)
         user = os.path.split(home_)[1]
         new.url = '/~%s/%s/' % (user, postbase)
-
-
         return new
 
     def process(self, config=GWSummConfigParser(), **kwargs):
@@ -208,8 +206,7 @@ class HvetoTab(base):
                  p.state = self.states[0]
                  self.plots.insert(0, p)
 
-
-    def build_inner_html(self, state):
+    def write_state_html(self, state):
         """Write the '#main' HTML content for this `HvetoTab`.
         """
         page = html.markup.page()
@@ -222,56 +219,61 @@ class HvetoTab(base):
                    % html.markup.oneliner.a('the DetChar group',
                                             href='mailto:detchar@ligo.org'))
             page.div.close()
-            return page
 
         # otherwise...
+        else:
+            # print results table
+            page.h1('Result summary')
+            if self.primary:
+                channel = get_channel(self.primary)
+                page.p()
+                page.strong('Primary channel: ')
+                if channel.url:
+                    page.add(html.markup.oneliner.a(self.primary,
+                                                    href=channel.url,
+                                                    target='_blank'))
+                else:
+                    page.add(self.primary)
+                page.p.close()
+            headers = list(self.summaryrows)
+            data = []
+            for i, round in enumerate(self.rounds):
+                data.append([str(i + 1)] + [str(round[key]) for key in headers])
+                channel = get_channel(data[-1][1])
+                # format CIS url and type
+                if re.search('.[a-z]+\Z', channel.name):
+                    name, ctype = channel.name.rsplit('.', 1)
+                    c2 = get_channel(name)
+                    cype = ctype in ['rms'] and ctype.upper() or ctype.title()
+                else:
+                    c2 = channel
+                    ctype = 'Raw'
+                if c2.url:
+                    data[-1][1] = html.markup.oneliner.a(str(channel),
+                                                  href=c2.url,
+                                                  target='_blank')
+                else:
+                    data[-1][1] = str(channel)
+            page.add(str(html.data_table(['Round'] + headers, data,
+                         table='data')))
 
-        # print results table
-        page.h1('Result summary')
-        if self.primary:
-            channel = get_channel(self.primary)
-            page.p()
-            page.strong('Primary channel: ')
-            if channel.url:
-                page.add(html.markup.oneliner.a(self.primary, href=channel.url,
-                                                target='_blank'))
-            else:
-                page.add(self.primary)
-            page.p.close()
-        headers = list(self.summaryrows)
-        data = []
-        for i, round in enumerate(self.rounds):
-            data.append([str(i + 1)] + [str(round[key]) for key in headers])
-            channel = get_channel(data[-1][1])
-            # format CIS url and type
-            if re.search('.[a-z]+\Z', channel.name):
-                name, ctype = channel.name.rsplit('.', 1)
-                c2 = get_channel(name)
-                cype = ctype in ['rms'] and ctype.upper() or ctype.title()
-            else:
-                c2 = channel
-                ctype = 'Raw'
-            if c2.url:
-                data[-1][1] = html.markup.oneliner.a(str(channel),
-                                              href=c2.url,
-                                              target='_blank')
-            else:
-                data[-1][1] = str(channel)
-        page.add(str(html.data_table(['Round'] + headers, data, table='data')))
+            # add plots
+            page.hr(class_='row-divider')
+            page.add(str(self.scaffold_plots(state)))
+            page.hr(class_='row-divider')
 
-        # add plots
-        page.hr(class_='row-divider')
-        page.add(str(self.scaffold_plots(state)))
-        page.hr(class_='row-divider')
+            # link full results
+            page.div(class_='btn-group')
+            page.a('Click here for the full Hveto results',
+                   href=self.url, rel='external', target='_blank',
+                   class_='btn btn-default btn-info btn-xl')
+            page.div.close()
 
-        # link full results
-        page.div(class_='btn-group')
-        page.a('Click here for the full Hveto results',
-               href=self.url, rel='external', target='_blank',
-               class_='btn btn-default btn-info btn-xl')
-        page.div.close()
-
-        return page
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
 register_tab(HvetoTab)
 

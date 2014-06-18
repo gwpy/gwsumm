@@ -436,7 +436,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
                     if channel.sample_rate is not None:
                         stateseries.sample_rate = channel.sample_rate
                 stateseries.bits = channel.bits
-                newflags = stateseries.to_dqflags()
+                newflags = stateseries.to_dqflags().values()
                 if flags is None:
                     flags = newflags
                 else:

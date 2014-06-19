@@ -162,7 +162,7 @@ class DataSummaryPlot(SummaryPlot):
     defaults = {}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, href=None, new=True, **pargs):
+                 tag=None, href=None, new=True, all_data=False, **pargs):
         super(DataSummaryPlot, self).__init__(href=href, new=new)
         self.channels = channels
         self.span = (start, end)
@@ -170,6 +170,7 @@ class DataSummaryPlot(SummaryPlot):
         self._outdir = outdir
         if tag is not None:
             self.tag = tag
+        self.all_data = all_data
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
         self.plot = None

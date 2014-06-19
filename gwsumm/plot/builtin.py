@@ -122,7 +122,11 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
 
         # add data
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
-            data = [get_timeseries(c, self.state,
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data = [get_timeseries(c, valid,
                                    query=False).join(pad=numpy.nan)
                     for c in channels]
             # double-check empty
@@ -212,7 +216,11 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         ratio = self.ratio
 
         # get data
-        specgrams = get_spectrogram(self.channels[0], self.state, query=False,
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        specgrams = get_spectrogram(self.channels[0], valid, query=False,
                                     format=sdform)
         # calculate ratio spectrum
         if ratio in ['median', 'mean']:
@@ -358,7 +366,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
 
         # plot segments
         for flag, label in zip(self.flags, labels)[::-1]:
-            if self.state:
+            if self.state and not self.all_data:
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
@@ -422,7 +430,7 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
         # plot segments
         nflags = 0
         for channel in self.channels[::-1]:
-            if self.state:
+            if self.state and not self.all_data:
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
@@ -498,7 +506,11 @@ class SpectrumSummaryPlot(DataSummaryPlot):
 
         # add data
         for label, color, channel in zip(labels, colors, self.channels):
-            data = get_spectrum(str(channel), self.state, query=False,
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data = get_spectrum(str(channel), valid, query=False,
                                 format=sdform)
 
             # anticipate log problems
@@ -607,7 +619,11 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
         # get data
         data = []
         for channel in self.channels:
-            data.append(get_timeseries(channel, self.state,
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data.append(get_timeseries(channel, valid,
                                        query=False).join(pad=numpy.nan))
             # allow channel data to set parameters
             if hasattr(data[-1].channel, 'amplitude_range'):
@@ -750,8 +766,11 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         ntrigs = 0
         for channel, label, pargs in izip(self.channels, labels, plotargs):
             channel = get_channel(channel)
-            table = get_triggers(str(channel), self.etg, self.state,
-                                 query=False)
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            table = get_triggers(str(channel), self.etg, valid, query=False)
             ntrigs += len(table)
             # access channel parameters for limits
             for c, column in zip(('x', 'y', 'c'), (xcolumn, ycolumn, ccolumn)):
@@ -830,7 +849,11 @@ class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
         # add data
         for label, channel in zip(labels, self.channels):
             label = label.replace('_', r'\_')
-            data = get_timeseries(channel, self.state, query=False)
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data = get_timeseries(channel, valid, query=False)
             # handle no timeseries
             if not len(data):
                 ax.plot([0], [0], visible=False, label=label)
@@ -915,8 +938,11 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         data = []
         for label, channel in zip(labels, self.channels):
             channel = get_channel(channel)
-            table_ = get_triggers(str(channel), etg, self.state,
-                                  query=False)
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            table_ = get_triggers(str(channel), etg, valid, query=False)
             data.append(get_table_column(table_, column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
@@ -1001,7 +1027,11 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
         # generate data
         keys = []
         for channel in self.channels:
-            table_ = get_triggers(str(channel), etg, self.state, query=False)
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            table_ = get_triggers(str(channel), etg, valid, query=False)
             if column:
                 rates = binned_event_rates(
                     table_, stride, column, bins, operator, self.start,

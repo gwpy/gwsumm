@@ -142,15 +142,27 @@ class DailyAhopeTab(base):
         # read the cache files
         if os.path.isfile(self.inspiralcachefile):
             with open(self.inspiralcachefile, 'r') as fobj:
-                self.inspiralcache = Cache.fromfile(fobj).sieve(
-                                         segment=self.span)
+                try:
+                    self.inspiralcache = Cache.fromfile(fobj).sieve(
+                                             segment=self.span)
+                except ValueError as e:
+                    if "could not convert \'\\n\' to CacheEntry" in str(e):
+                        self.inspiralcache = Cache()
+                    else:
+                        raise
         else:
             warn("Cache file %s not found." % self.inspiralcachefile)
             self.inspiralcache = None
         if os.path.isfile(self.tmpltbankcachefile):
             with open(self.tmpltbankcachefile, 'r') as fobj:
-                self.tmpltbankcache = Cache.fromfile(fobj).sieve(
-                                         segment=self.span)
+                try:
+                    self.tmpltbankcache = Cache.fromfile(fobj).sieve(
+                                              segment=self.span)
+                except ValueError:
+                    if "could not convert \'\\n\' to CacheEntry" in str(e):
+                        self.tmpltbankcache = Cache()
+                    else:
+                        raise
         else:
             warn("Cache file %s not found." % self.tmpltbankcachefile)
             self.tmpltbankcache = Cache()

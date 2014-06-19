@@ -245,6 +245,11 @@ class DataTab(DataTabBase):
             queue = JoinableQueue(count_free_cores())
         else:
             queue = None
+        # pre-process requests for 'all-data' plots
+        all_data = any([(p.all_data & p.new) for p in self.plots])
+        if all_data:
+            self.process_state(None, config=config, multiprocess=multiprocess,
+                               **stateargs)
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
@@ -262,8 +267,40 @@ class DataTab(DataTabBase):
                       config=GWSummConfigParser(), datacache=None,
                       trigcache=None, plotqueue=None, segdb_error='raise'):
         """Process data for this tab in a given state
+
+        Parameters
+        ----------
+        state : `~gwsumm.state.SummaryState`
+            the state to process. Can give `None` to process ALLSTATE with
+            no plots, useful to load all data for other states
+        nds : `bool`, ``'guess'``, optional
+            `True` to use NDS to read data, otherwise read from frames.
+            Use ``'guess'`` to read from frames if possible, otherwise
+            using NDS.
+        multiprocess : `bool`, `int`, optional
+            use multiple processes to read data and make plots. If `True`
+            use all cores on host, otherwise give an `int` to manually
+            select the number of cores to use.
+        config : `ConfigParser`, optional
+            configuration for this analysis
+        datacache : `~glue.lal.Cache`, optional
+            `Cache` of files from which to read time-series data
+        trigcache : `~glue.lal.Cache`, optional
+            `Cache` of files from which to read event triggers
+        plotqueue : `multiprocessing.JoinableQueue`, optional
+            queue in which to place plotting processes
+        segdb_error : `str`, optional
+            if ``'raise'``: raise exceptions when the segment database
+            reports exceptions, if ``'warn''`, print warnings but continue,
+            otherwise ``'ignore'`` them completely and carry on.
         """
-        vprint("Processing '%s' state\n" % state.name)
+        if state:
+            vprint("Processing '%s' state\n" % state.name)
+            all_data = False
+        else:
+            vprint("Pre-processing all-data requests\n")
+            all_data = True
+            state = get_state(ALLSTATE)
 
         # flag those plots that were already written by this process
         for p in self.plots:
@@ -275,7 +312,7 @@ class DataTab(DataTabBase):
 
         # find channels that need a TimeSeries
         tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
-                                       'histogram')
+                                       'histogram', all_data=all_data)
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(tschannels))
@@ -285,7 +322,7 @@ class DataTab(DataTabBase):
             vprint("    All time-series data loaded\n")
 
         # find channels that need a StateVector
-        svchannels = self.get_channels('statevector')
+        svchannels = self.get_channels('statevector', all_data=all_data)
         if len(svchannels):
             vprint("    %d channels identified as StateVectors\n"
                    % len(svchannels))
@@ -303,14 +340,15 @@ class DataTab(DataTabBase):
         except NoSectionError:
             fftparams = {}
 
-        for channel in self.get_channels('spectrogram', 'spectrum'):
+        for channel in self.get_channels('spectrogram', 'spectrum',
+                                         all_data=all_data):
             get_spectrogram(channel, state, config=config, return_=False,
                             multiprocess=multiprocess, **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
 
-        for channel in self.get_channels('spectrum'):
+        for channel in self.get_channels('spectrum', all_data=all_data):
             get_spectrum(channel, state, config=config, return_=False,
                          **fftparams)
 
@@ -318,7 +356,7 @@ class DataTab(DataTabBase):
         # process segments
 
         # find flags that need a DataQualityFlag
-        dqflags = self.get_flags('segments')
+        dqflags = self.get_flags('segments', all_data=all_data)
         if len(dqflags):
             vprint("    %d data-quality flags identified for SegDB query\n"
                    % len(dqflags))
@@ -327,12 +365,16 @@ class DataTab(DataTabBase):
         # --------------------------------------------------------------------
         # process triggers
 
-        for etg, channel in self.get_triggers('triggers'):
+        for etg, channel in self.get_triggers('triggers', all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
                          cache=trigcache)
 
         # --------------------------------------------------------------------
         # make plots
+
+        if all_data:
+            vprint("    Done.\n")
+            return
 
         vprint("    Plotting... \n")
 
@@ -506,16 +548,23 @@ class DataTab(DataTabBase):
             an alphabetically-sorted `list` of channels
         """
         isnew = kwargs.pop('new', True)
-        for key in kwargs:
-            raise TypeError("'%s' is an invalid keyword argument for "
-                            "this function")
         out = set()
         for plot in self.plots:
-            if plot.type in types and (isnew and plot.new or not isnew):
-                out.update(plot.channels)
+            if not plot.type in types:
+                continue
+            if isnew and not plot.new:
+                continue
+            skip = False
+            for key, val in kwargs.iteritems():
+                if getattr(plot, key) != val:
+                    skip = True
+                    break
+            if skip:
+                continue
+            out.update(plot.channels)
         return sorted(out, key=lambda ch: ch.name)
 
-    def get_flags(self, *types):
+    def get_flags(self, *types, **kwargs):
         """Return the `set` of data-quality flags required for plots of the
         given ``types``.
 
@@ -529,14 +578,25 @@ class DataTab(DataTabBase):
         flags : `list`
             an alphabetically-sorted `list` of flags
         """
+        isnew = kwargs.pop('new', True)
         out = set()
         for plot in self.plots:
-            if plot.type in types and plot.new:
-                out.update([f for cflag in plot.flags for f in
-                            re_flagdiv.split(cflag)[::2] if f])
+            if not plot.type in types:
+                continue
+            if isnew and not plot.new:
+                continue
+            skip = False
+            for key, val in kwargs.iteritems():
+                if getattr(plot, key) != val:
+                    skip = True
+                    break
+            if skip:
+                continue
+            out.update([f for cflag in plot.flags for f in
+                        re_flagdiv.split(cflag)[::2] if f])
         return sorted(out, key=lambda dqf: str(dqf))
 
-    def get_triggers(self, *types):
+    def get_triggers(self, *types, **kwargs):
         """Return the `set` of data-quality flags required for plots of the
         given ``types``.
 
@@ -550,11 +610,22 @@ class DataTab(DataTabBase):
         flags : `list`
             an alphabetically-sorted `list` of flags
         """
+        isnew = kwargs.pop('new', True)
         out = set()
         for plot in self.plots:
-            if plot.type in types and plot.new:
-                for channel in plot.channels:
-                    out.add((plot.etg, channel))
+            if not plot.type in types:
+                continue
+            if isnew and not plot.new:
+                continue
+            skip = False
+            for key, val in kwargs.iteritems():
+                if getattr(plot, key) != val:
+                    skip = True
+                    break
+            if skip:
+                continue
+            for channel in plot.channels:
+                out.add((plot.etg, channel))
         return sorted(out, key=lambda ch: ch[1].name)
 
 register_tab(DataTab)

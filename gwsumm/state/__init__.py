@@ -81,7 +81,7 @@ class SummaryState(DataQualityFlag):
         """
         # get span times
         start = config.getint('general', 'gps-start-time')
-        end = config.getint('general', 'gps-end-time')
+        end = min(globalv.NOW, config.getint('general', 'gps-end-time'))
         # get parameters
         try:
             params = dict(config.nditems(section))

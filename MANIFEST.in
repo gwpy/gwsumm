@@ -1,0 +1,4 @@
+include LICENSE README.rst MANIFEST.in
+include examples/*py
+include vcs.py
+include ez_setup.py

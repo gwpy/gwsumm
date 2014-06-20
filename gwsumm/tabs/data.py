@@ -213,6 +213,8 @@ class DataTab(DataTabBase):
     def finalize_states(self, config=ConfigParser()):
         """Fetch the segments for each state for this `SummaryTab`
         """
+        # finalize all-state
+        get_state(ALLSTATE).fetch(config=config)
         # shortcut segment query for each state
         alldefs = [state.definition for state in self.states if
                    state.name != ALLSTATE and not state.ready]

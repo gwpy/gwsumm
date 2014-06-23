@@ -212,6 +212,18 @@ if os.path.isdir('bin'):
 else:
     scripts = []
 
+if os.path.isdir('share'):
+    configs = glob.glob(os.path.join('share', '*.ini'))
+else:
+    configs = []
+
+# get all HTML files
+if os.path.isdir('share'):
+    htmlfiles = (glob.glob(os.path.join('share', '*.css')) +
+                 glob.glob(os.path.join('share', '*.js')))
+else:
+    htmlfiles = []
+
 # -----------------------------------------------------------------------------
 # run setup
 
@@ -229,6 +241,8 @@ setup(name=PACKAGENAME,
       cmdclass=cmdclass,
       scripts=scripts,
       setup_requires=setup_requires,
+      data_files=[('etc', configs),
+                  (os.path.join('share', PACKAGENAME, 'html'), htmlfiles)],
       requires=[
           'glue',
           'numpy',

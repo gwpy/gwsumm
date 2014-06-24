@@ -40,7 +40,7 @@ from .. import globalv
 from ..data import get_channel
 from ..utils import split_channels
 
-__all__ = ['SummaryPlot', 'DataSummaryPlot', 'PlotList']
+__all__ = ['SummaryPlot', 'DataSummaryPlot']
 
 re_cchar = re.compile("[\W\s_]+")
 
@@ -375,36 +375,3 @@ class DataSummaryPlot(SummaryPlot):
         return outputfile
 
 register_plot(DataSummaryPlot)
-
-
-class PlotList(list):
-    """A searchable list of plots that have been configured to be
-    generated
-    """
-
-    @property
-    def timeseries(self):
-        return self.find_all('timeseries')
-
-    @property
-    def spectra(self):
-        return self.find_all('spectrum')
-
-    @property
-    def spectrograms(self):
-        return self.find_all('spectrogram')
-
-    @property
-    def segments(self):
-        return self.find_all('segments')
-
-    def find_all(self, type):
-        return [s for s in self if s.type.lower() == type]
-
-    def unique(self):
-        new = self.__class__()
-        for entry in self:
-            if not entry in new:
-                new.append(entry)
-        return new
-

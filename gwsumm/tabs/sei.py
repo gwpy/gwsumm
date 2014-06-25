@@ -224,7 +224,7 @@ class SEIWatchDogTab(base):
             config=config, nds=nds, multiprocess=multiprocess,
             datacache=datacache, trigcache=trigcache, **kwargs)
 
-    def build_inner_html(self, state):
+    def write_state_html(self, state):
         """Build HTML summary of watchdog trips
         """
         # find one example of each channel, and get the bits
@@ -379,10 +379,11 @@ class SEIWatchDogTab(base):
         page.div.close()
         page.div.close()
 
-        # call super just in case
-        page.add(str(super(SEIWatchDogTab, self).build_inner_html(state)))
-
-        return page
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
 register_tab(SEIWatchDogTab)
 

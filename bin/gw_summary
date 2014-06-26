@@ -471,7 +471,10 @@ if not opts.html_only:
                     setattr(channel, key, val.rstrip())
 
 # read states
-load_states(config)
+try:
+    load_states(config)
+except NoSectionError:
+    register_state(SummaryState(ALLSTATE, valid=[span]))
 
 # build directories
 mkdir(opts.output_dir)
@@ -508,13 +511,19 @@ if opts.archive:
 # -----------------------------------------------------------------------------
 # Read HTML configuration
 
-css = [cval for (key, cval) in config.items('html') if re.match('css\d+', key)]
-if not css:
+try:
+    css = [cval for (key, cval) in config.items('html') if
+           re.match('css\d+', key)]
+except NoSectionError:
     css = html.CSS
-javascript = [jval for (key, jval) in config.items('html') if
-              re.match('javascript\d+', key)]
-if not javascript:
-    css = html.JS
+    javascript = html.JS
+else:
+    if not css:
+        css = html.CSS
+    javascript = [jval for (key, jval) in config.items('html') if
+                  re.match('javascript\d+', key)]
+    if not javascript:
+        css = html.JS
 
 # -----------------------------------------------------------------------------
 # Read tabs
@@ -608,9 +617,14 @@ if opts.bulk_read and not opts.html_only:
 
 # find new ifo bases
 ifobases = {}
-for key, val in config.nditems('html'):
-    if re.search('-base\Z', key):
-        ifobases[key.rsplit('-', 1)[0].upper()] = val
+try:
+    bases_ = config.nditems('html')
+except NoSectionError:
+    pass
+else:
+    for key, val in config.nditems('html'):
+        if re.search('-base\Z', key):
+            ifobases[key.rsplit('-', 1)[0].upper()] = val
 ifobases.pop(ifo, None)
 
 # sort tabs by 'Summary', then lower case only, then everything else

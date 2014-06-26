@@ -19,15 +19,19 @@
 """Thin wrapper around configparser
 """
 
-try:
-    from configparser import *
-except ImportError:
-    from ConfigParser import *
-    from ConfigParser import __all__
-else:
-    from configparser import __all__
+import sys
+from StringIO import StringIO
 
-__all__.append('GWSummConfigParser')
+if sys.version_info[0] >= 3:
+    from configparser import *
+    from configparser import InterpolationMissingOptionError
+    from configparser import __all__ as _cp__all__
+else:
+    from ConfigParser import *
+    from ConfigParser import InterpolationMissingOptionError
+    from ConfigParser import __all__ as _cp__all__
+
+__all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 
 
 class GWSummConfigParser(ConfigParser):
@@ -47,3 +51,20 @@ class GWSummConfigParser(ConfigParser):
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)
         return readok
+
+    @classmethod
+    def from_configparser(cls, cp):
+        """Copy an existing :class:`~ConfigParser.ConfigParser`.
+        """
+        # set up temporary buffer
+        buf = StringIO()
+        # write to buffer
+        cp.write(buf)
+        buf.seek(0)
+        # read new GWSummConfigParser
+        new = cls()
+        new.readfp(buf)
+        return new
+
+    def __repr__(self):
+        return '<GWSummConfigParser()>'

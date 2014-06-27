@@ -191,35 +191,37 @@ class SEIWatchDogTab(base):
                         stage = system
                     cause = '%s (no cause found)' % stage
                 else:
-                    firstbit = map(int, bin(int(bits))[2:][::-1]).index(1)
-                    cause = latch.bits[firstbit]
+                    allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
+                    causes = [latch.bits[b] for b in allbits]
                 t2 = Time(t, format='gps', scale='utc')
-                vprint("        Trip GPS %d (%s), cause: %s.\n"
-                       % (t, t2.iso, cause))
-                # configure plot
-                mapsec = 'sei-wd-map-%s' % cause
-                if (not config.has_section(mapsec) and
-                        re.match('ISI ST\d ', cause)):
-                    mapsec = ('sei-wd-map-%s'
-                              % (' '.join(cause.split(' ', 2)[::2])))
-                if config.has_section(mapsec):
-                    pstart = gpstime - self.plot_duration / 2.
-                    if self.chambers == HAMs or system == 'HPI':
-                        platform = chamber
+                vprint("        Trip GPS %s (%s), triggers:\n" % (t, t2.iso))
+                for cause in causes:
+                    vprint("            %s\n" % cause)
+                    # configure plot
+                    mapsec = 'sei-wd-map-%s' % cause
+                    if (not config.has_section(mapsec) and
+                            re.match('ISI ST\d ', cause)):
+                        mapsec = ('sei-wd-map-%s'
+                                  % (' '.join(cause.split(' ', 2)[::2])))
+                    if config.has_section(mapsec):
+                        pstart = gpstime - self.plot_duration / 2.
+                        if self.chambers == HAMs or system == 'HPI':
+                            platform = chamber
+                        else:
+                            platform = '%s_%s' % (
+                                chamber, gpschannel.signal.split('_')[0])
+                        p = os.path.join(self.plotdir,
+                                         '%s-%s_%s_WATCHDOG_TRIP-%d-%d.png'
+                                         % (ifo, system, platform, pstart,
+                                            self.plot_duration))
+                        self.plots.append(SeiWatchDogPlot(
+                                              t, chamber, cause, config,
+                                              p, ifo=ifo,
+                                              nds=nds is True or False))
+                        plot = self.plots[-1]
                     else:
-                        platform = '%s_%s' % (chamber,
-                                              gpschannel.signal.split('_')[0])
-                    p = os.path.join(self.plotdir,
-                                     '%s-%s_%s_WATCHDOG_TRIP-%d-%d.png'
-                                     % (ifo, system, platform, pstart,
-                                        self.plot_duration))
-                    self.plots.append(SeiWatchDogPlot(t, chamber, cause, config,
-                                                      p, ifo=ifo,
-                                                      nds=nds is True or False))
-                    plot = self.plots[-1]
-                else:
-                    plot = None
-                self.trips.append((t, chamber, cause, plot))
+                        plot = None
+                    self.trips.append((t, chamber, cause, plot))
 
         super(SEIWatchDogTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,

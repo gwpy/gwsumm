@@ -29,6 +29,7 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
 from gwpy.plotter.utils import (color_cycle, marker_cycle)
@@ -480,7 +481,8 @@ class SpectrumSummaryPlot(DataSummaryPlot):
     defaults = {'logx': True,
                 'logy': True,
                 'color': [],
-                'format': None}
+                'format': None,
+                'reference-linestyle': '--'}
 
     def process(self):
         """Load all data, and generate this `SpectrumSummaryPlot`
@@ -490,6 +492,14 @@ class SpectrumSummaryPlot(DataSummaryPlot):
 
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
+
+        # get reference arguments
+        ref = dict()
+        for key in self.pargs.keys():
+            if key == 'reference':
+                ref['source'] = self.pargs.pop(key)
+            if key.startswith(('reference-', 'reference_')):
+                ref[key[len('reference-'):]] = self.pargs.pop(key)
 
         # get colors
         colors = self.pargs.pop('color', [])
@@ -534,6 +544,11 @@ class SpectrumSummaryPlot(DataSummaryPlot):
                 self.pargs.setdefault('ylim', data[0].channel.asd_range)
             elif hasattr(data[0].channel, 'psd_range'):
                 self.pargs.setdefault('ylim', data[0].channel.psd_range)
+
+        # display references
+        if ref and 'source' in ref:
+            refspec = Spectrum.read(ref.pop('source'), format='dat')
+            ax.plot(refspec, **ref)
 
         # customise
         legendargs = {}

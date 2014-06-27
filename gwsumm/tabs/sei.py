@@ -19,6 +19,8 @@
 """`SummaryTab` for seismic watchdog monitoring
 """
 
+from __future__ import print_function
+
 import os
 import re
 from math import ceil
@@ -381,6 +383,27 @@ class SEIWatchDogTab(base):
         # close tabs
         page.div.close()
         page.div.close()
+
+        # write trips to data file
+        tripfile = os.path.join(self.path, 'trips.dat')
+        with open(tripfile, 'w') as f:
+            for id in groups:
+                t, chamber, cause, _ = self.trips[id]
+                if cause in hepimask:
+                    stage = 'HEPI'
+                elif self.chambers == HAMs:
+                    stage = 'ISI'
+                elif cause in isichannels[0].bits:
+                    stage = 'ISI1'
+                else:
+                    stage = 'ISI2'
+                print(t, chamber, stage, file=f)
+
+        page.p()
+        page.add('The list of trips can be downloaded ')
+        page.a('here.', href=tripfile, alt=os.path.basename(tripfile),
+               title='Trip data')
+        page.p.close()
 
         # write to file
         idx = self.states.index(state)

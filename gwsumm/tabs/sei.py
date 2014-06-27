@@ -65,6 +65,7 @@ BSC_ST1_LATCH_CHANNEL = '%s:ISI-%s_ST1_WD_MON_FIRSTTRIG_LATCH'
 BSC_ST2_GPS_CHANNEL = '%s:ISI-%s_ST2_WD_MON_GPS_TIME'
 BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
+re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset)')
 
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.
@@ -273,7 +274,7 @@ class SEIWatchDogTab(base):
             if (i == len(hepimask) or
                     i == len(hepimask + isichannels[0].bits)):
                 class_.append('tdiv')
-            if re.match('(ISI (.*)IOP|(.*) Reset)', bit):
+            if re_no_count.match(bit):
                 class_.append('IOP')
             if class_:
                 page.tr(class_=' '.join(class_))
@@ -289,7 +290,7 @@ class SEIWatchDogTab(base):
                     pass
                 page.td(c or '-')
                 # exclude IOP from total
-                if not re.match('(ISI (.*)IOP|(.*) Reset)', bit):
+                if not re_no_count.match(bit):
                     totals[i][j] = c
             # add row total
             totals[i][-1] = totals[i].sum()

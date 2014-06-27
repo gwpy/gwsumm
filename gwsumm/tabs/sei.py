@@ -65,7 +65,7 @@ BSC_ST1_LATCH_CHANNEL = '%s:ISI-%s_ST1_WD_MON_FIRSTTRIG_LATCH'
 BSC_ST2_GPS_CHANNEL = '%s:ISI-%s_ST2_WD_MON_GPS_TIME'
 BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
-re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset)')
+re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.

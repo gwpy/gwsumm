@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Registry for GWSumm data states.
-
-All Tabs should be registered for easy identification from the
-configuration INI files
+"""Registry for `states <SummaryState>`.
 """
 
 from .. import (globalv, version)
@@ -28,41 +25,82 @@ from ..utils import re_quote
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-__all__ = ['register_state', 'get_state']
+__all__ = ['register_state', 'get_state', 'get_states']
 
 
-def register_state(state, name=None, force=False):
-    """Register a new `SummaryState` to the given ``name``
+def register_state(state, key=None, force=False):
+    """Register a new `SummaryState` to the given ``key``
 
     Parameters
     ----------
     state : `SummaryState`
         defining Class for this state type.
-    name : `str`, optional
-        unique descriptive name for this type of state, must not
-        contain any spaces, e.g. 'hveto'. If ``name=None``, the `Tab.type`
-        class attribute of the given state will be used.
+    key : `str`, optional
+        unique descriptive name for the `SummaryState` to be registered.
+        If ``key=None``, the :attr:`~SummaryState.key`
+        attribute of the given state will be used.
     force : `bool`
-        overwrite existing registration for this type
+        overwrite existing registration for this key
 
     Raises
     ------
     ValueError
-        if name is already registered and ``force`` not given as `True`
+        if key is already registered and ``force`` not given as `True`
     """
-    if name is None:
-        name = state.name
-    if not name in globalv.STATES or force:
-        globalv.STATES[name] = state
+    if key is None:
+        key = state.key
+    if not key in globalv.STATES or force:
+        globalv.STATES[key] = state
     else:
-        raise ValueError("State %r has already been registered." % name)
+        raise ValueError("State %r has already been registered." % key)
 
 
-def get_state(name):
-    """Query the registry for the `SummaryState` registered to the given name
+def get_state(key):
+    """Query the registry for the `SummaryState` registered to the given key
+
+    Parameters
+    ----------
+    key : `str`
+        registered key of desired `SummaryState`. This may not match the
+        `~SummaryState.name` attribute` if the state was registered with
+        a different key.
+
+    Returns
+    -------
+    state : `SummaryState`
+        the `SummaryState` registered with the given key
+
+    Raises
+    ------
+    ValueError:
+        if the ``key`` doesn't map to a registered `SummaryState`
     """
-    name = re_quote.sub('', name)
+    key = re_quote.sub('', key)
     try:
-        return globalv.STATES[name]
+        return globalv.STATES[key]
     except KeyError:
-        raise ValueError("No Tab registered with name '%s'" % name)
+        raise ValueError("No SummaryState registered with name '%s'" % key)
+
+
+def get_states(keys=set()):
+    """Query the registry for a list of states (defaults to all)
+
+    Parameters
+    ----------
+    keys : `set` of `str`
+        the set of state keys to query in the registry
+
+    Returns
+    -------
+    states : `dict`
+        a `dict` of (``key``, `SummaryState`) pairs
+
+    Raises
+    ------
+    ValueError:
+        if any of the ``keys`` doesn't map to a registered `SummaryState`
+    """
+    if not keys:
+        return globalv.STATES.copy()
+    else:
+        return dict((key, get_state(key)) for key in keys)

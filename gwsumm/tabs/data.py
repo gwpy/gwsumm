@@ -20,8 +20,8 @@
 """
 
 import abc
-import re
 import operator
+import re
 
 from multiprocessing import (Process, JoinableQueue)
 from time import sleep
@@ -65,24 +65,67 @@ class DataTab(DataTabBase):
     """A tab where plots and data summaries are built upon request
 
     This is the 'default' tab for the command-line gw_summary executable.
+
+    All ``*args`` and ``**kwargs`` are passed up-stream to the base
+    class constructor, excepting the following:
+
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    states : `list` of `states <gwsumm.state.SummaryState>`
+        the `list` of states (`~gwsumm.state.SummaryState`) over which
+        this `DataTab` should be processed. More states can be added
+        later (but before running :meth:`~DataTab.process`) via
+        :meth:`~DataTab.add_state`.
+    ismeta : `bool`, optional, default: `False`
+        indicates that this tab only contains data already by others
+        and so doesn't need to be processed.
+    **kwargs
+        other keyword arguments
+
+    See Also
+    --------
+    gwsumm.tabs.StateTab
+        for details on the other keyword arguments (``**kwargs``)
+        accepted by the constructor for the `DataTab`.
     """
     type = 'data'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, start, end, states=list([ALLSTATE]),
+                 ismeta=False, **kwargs):
         """Initialise a new `DataTab`.
+        """
+        ismeta = kwargs.pop('ismeta', False)
+        super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
+        self.ismeta = ismeta
 
-        All ``*args`` and ``**kwargs`` are passed up-stream to the base
-        class constructor, excepting the following:
+    @property
+    def states(self):
+        """The `list` of `states <gwsumm.state.SummaryState` for this `DataTab`
+        """
+        return self._states
+
+    @states.setter
+    def states(self, statelist):
+        self._states = []
+        for state in statelist:
+            self.add_state(state)
+
+    def add_state(self, state):
+        """Add a `SummaryState` to this `DataTab`
 
         Parameters
         ----------
-        ismeta : `bool`, optional, default: `False`
-            indicates that this tab only contains data already by others
-            and so doesn't need to be processed.
+        state : `~gwsumm.state.SummaryState`, `str`
+            the `SummaryState` to add, or the key of a state that has been
+            registered
         """
-        ismeta = kwargs.pop('ismeta', False)
-        super(DataTabBase, self).__init__(*args, **kwargs)
-        self.ismeta = ismeta
+        if isinstance(state, SummaryState):
+            self._states.append(state)
+        else:
+            self._states.append(get_state(state))
+        return self._states[-1]
 
     # -------------------------------------------
     # SummaryTab configuration parser
@@ -103,16 +146,12 @@ class DataTab(DataTabBase):
 
         Returns
         -------
-        tab : :class:`SummaryTab`
-            a new tab defined from the configuration
+        tab : `DataTab`
+            a new `DataTab` defined from the configuration
         """
         job = super(DataTab, cls).from_ini(cp, section, **kwargs)
+        job.plots = []
         job._config = cp._sections[section]
-
-        # force states to `SummaryState`
-        for i, state in enumerate(job.states):
-            if not isinstance(state, SummaryState):
-                job.states[i] = get_state(state)
 
         # get meta tag
         try:
@@ -237,6 +276,7 @@ class DataTab(DataTabBase):
         """
         if self.ismeta:
             return
+        config = GWSummConfigParser.from_configparser(config)
         # load state segments
         self.finalize_states(config=config)
         vprint("States finalised\n")
@@ -389,7 +429,7 @@ class DataTab(DataTabBase):
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
-            if (plotqueue and plot._threadsafe):
+            if plotqueue and plot._threadsafe:
                 process = Process(target=plot.queue, args=(plotqueue,))
                 process.daemon = True
                 process.start()

@@ -19,12 +19,9 @@
 """This module defines a number of `Tab` subclasses.
 """
 
-from gwpy.segments import (Segment, DataQualityFlag)
-from gwpy.time import (from_gps, to_gps)
-
 from .core import (Tab, SummaryArchiveMixin)
-from .registry import (get_tab, register_tab)
-from ..plot import SummaryPlot
+from .registry import register_tab
+from ..plot import get_plot
 from ..utils import *
 from ..config import *
 from .. import html
@@ -32,6 +29,9 @@ from .. import html
 from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+SummaryPlot = get_plot(None)
+DataPlot = get_plot('data')
 
 
 class ExternalTab(Tab):
@@ -61,6 +61,10 @@ class ExternalTab(Tab):
         dropdown menu. This is only relevant if this tab has a parent.
     base : `str`
         path for HTML base attribute for this tab.
+
+    Configuration
+    -------------
+
     """
     type = 'external'
 
@@ -78,9 +82,44 @@ class ExternalTab(Tab):
     def url(self, link):
         self._url = link
 
-    def build_html_content(self, content, class_='container', id_='main'):
+    @classmethod
+    def from_ini(cls, cp, section):
+        """Configure a new `ExternalTab` from a `ConfigParser` section
+
+        Parameters
+        ----------
+        cp : :class:`~gwsumm.config.ConfigParser`
+            configuration to parse.
+        section : `str`
+            name of section to read
+
+        See Also
+        --------
+        Tab.from_ini :
+            for documentation of the standard configuration
+            options
+
+        Notes
+        -----
+        On top of the standard configuration options, the `ExternalTab` can
+        be configured with the ``url`` option, specifying the URL of the
+        external content to be included:
+
+        .. code-block:: ini
+
+           [tab-external]
+           name = External data
+           type = external
+           url = https://www.example.org/index.html
+
+
+        """
+        url = cp.get(section, 'url')
+        return super(ExternalTab, cls).from_ini(cp, section, url)
+
+    def build_html_content(self, content, divclass='container', divid='main'):
         page = html.markup.page()
-        page.div(content, class_=class_, id_=id_)
+        page.div(content, class_=divclass, id_=divid)
         page.add(str(html.load(self.url, id_=id_)))
         return page
 
@@ -122,10 +161,10 @@ class PlotTab(Tab):
     ----------
     name : `str`
         name of this tab (required)
-    plots : `list`
+    plots : `list`, optional
         list of plots to display on this tab. More plots can be added
         at any time via :meth:`PlotTab.add_plot`
-    layout : `int`, `list`
+    layout : `int`, `list`, optional
         the number of plots to display in each row, or a list of numbers
         to define each row individually. If the number of plots defined
         by the layout is less than the total number of plots, the layout
@@ -134,28 +173,33 @@ class PlotTab(Tab):
         For example ``layout=[1, 2, 3]`` will display a single plot on
         the top row, two plots on the second, and 3 plots on each row
         thereafter.
-    index : `str`
+    foreword : `~gwsumm.html.markup.page`, `str`, optional
+        content to include in the #main HTML before the plots
+    afterword : `~gwsumm.html.markup.page`, `str`, optional
+        content to include in the #main HTML after the plots
+    index : `str`, optional
         HTML file in which to write. By default each tab is written to
         an index.html file in its own directory. Use :attr:`~Tab.index`
         to find out the default index, if not given.
-    shortname : `str`
+    shortname : `str`, optional
         shorter name for this tab to use in the navigation bar. By
         default the regular name is used
-    parent : :class:`~gwsumm.tabs.Tab`
+    parent : :class:`~gwsumm.tabs.Tab`, optional
         parent of this tab. This is used to position this tab in the
         navigation bar.
-    children : `list`
+    children : `list`, optional
         list of child :class:`Tabs <~gwsumm.tabs.Tab>` of this one. This
         is used to position this tab in the navigation bar.
-    group : `str`
+    group : `str`, optional
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    base : `str`
+    base : `str`, optiona,
         path for HTML base attribute for this tab.
     """
     type = 'plots'
 
-    def __init__(self, name, plots=[], layout=None, **kwargs):
+    def __init__(self, name, plots=list(), layout=None, foreword=None,
+                 afterword=None, **kwargs):
         """Initialise a new :class:`PlotTab`.
         """
         super(PlotTab, self).__init__(name, **kwargs)
@@ -163,6 +207,8 @@ class PlotTab(Tab):
         for p in plots:
             self.add_plot(p)
         self.layout = layout
+        self.foreword = foreword
+        self.afterword = afterword
 
     @property
     def layout(self):
@@ -182,13 +228,47 @@ class PlotTab(Tab):
             l = eval(l)
         self._layout = l
 
+    @property
+    def foreword(self):
+        """HTML content to be included before the plots
+        """
+        return self._pre
+
+    @foreword.setter
+    def foreword(self, content):
+        if isinstance(content, html.markup.page) or content is None:
+            self._pre = content
+        else:
+            self._pre = html.markup.page()
+            if not str(content).startswith('<'):
+                self._pre.p(str(content))
+            else:
+                self._pre.add(str(content))
+
+    @property
+    def afterword(self):
+        """HTML content to be included after the plots
+        """
+        return self._post
+
+    @afterword.setter
+    def afterword(self, content):
+        if isinstance(content, html.markup.page) or content is None:
+            self._post = content
+        else:
+            self._post = html.markup.page()
+            if not str(content).startswith('<'):
+                self._post.p(str(content))
+            else:
+                self._post.add(str(content))
+
     @classmethod
-    def from_ini(cls, cp, section, base=''):
+    def from_ini(cls, cp, section, *args, **kwargs):
         """Define a new tab from a :class:`~gwsumm.config.GWConfigParser`
 
         Parameters
         ----------
-        cp : :class:`~gwsumm.config.GWConfigParser`
+        cp : :class:`~ConfigParser.GWConfigParser`
             customised configuration parser containing given section
         section : `str`
             name of section to parse
@@ -198,39 +278,10 @@ class PlotTab(Tab):
         tab : `PlotTab`
             a new tab defined from the configuration
         """
-        # get tab name
-        try:
-            # name given explicitly
-            name = re_quote.sub('', cp.get(section, 'name'))
-        except NoOptionError:
-            # otherwise strip 'tab-' from section name
-            name = section[4:]
-        try:
-            shortname = re_quote.sub('', cp.get(section, 'shortname'))
-        except NoOptionError:
-            shortname = name
-        # get parent:
-        #     if parent is not given, this assumes a top-level tab
-        try:
-            parent = re_quote.sub('', cp.get(section, 'parent'))
-        except NoOptionError:
-            parent = None
-        else:
-            if parent == 'None':
-                parent = None
-        # get group
-        try:
-            group = cp.get(section, 'group')
-        except NoOptionError:
-            group = None
-        # get HTML file
-        try:
-            index = cp.get(section, 'index')
-        except NoOptionError:
-            index = None
-        # get GPS start time
-        start = cp.getfloat(section, 'gps-start-time')
-        end = cp.getfloat(section, 'gps-end-time')
+        cp = GWSummConfigParser.from_configparser(cp)
+
+        kwargs.setdefault('base', '')
+
         # get layout
         if cp.has_option(section, 'layout'):
             try:
@@ -245,7 +296,7 @@ class PlotTab(Tab):
                 if isinstance(l, (tuple, list)):
                     l = l[0]
                 if not l in [1, 2, 3, 4, 6, 12]:
-                    raise ValueError("Cannot print more than %d plots in a "
+                    raise ValueError("Cannot print more than 12 plots in a "
                                      "single row. The chosen layout value for "
                                      "each row must be a divisor of 12 to fit "
                                      "the Bootstrap scaffolding. For details "
@@ -253,11 +304,26 @@ class PlotTab(Tab):
                                      "scaffolding.html")
         else:
             layout = None
+        kwargs.setdefault('layout', layout)
+
+        # get plots
+        kwargs.setdefault('plots',
+                          zip(*sorted([(int(opt), url) for (opt, url) in
+                                       cp.nditems(section) if opt.isdigit()],
+                                      key=lambda a: a[0]))[1])
+
+        # get content
+        try:
+            kwargs.setdefault('foreword', cp.get(section, 'foreword'))
+        except NoOptionError:
+            pass
+        try:
+            kwargs.setdefault('afterword', cp.get(section, 'afterword'))
+        except NoOptionError:
+            pass
 
         # build and return tab
-        new = cls(name, start, end, index=index, shortname=shortname,
-                  parent=parent, group=group, base=base, layout=layout)
-        return new
+        return super(PlotTab, cls).from_ini(cp, section, *args, **kwargs)
 
     def add_plot(self, plot):
         """Add a plot to this tab.
@@ -286,7 +352,8 @@ class PlotTab(Tab):
         page = html.markup.page()
 
         if state:
-            plots = [p for p in self.plots if p.state in [state, None]]
+            plots = [p for p in self.plots if not isinstance(p, DataPlot) or
+                     p.state in [state, None]]
         else:
             plots = self.plots
 
@@ -342,43 +409,44 @@ class PlotTab(Tab):
                 i += 1
         return page
 
-    def build_html_content(self, sandwich, class_='container', id_='main'):
+    def build_html_content(self, content, divclass='container', divid='main'):
         page = html.markup.page()
-        page.div(class_=class_, id_=id_)
-        if isinstance(sandwich, (list, tuple)):
-            pre, post = sandwich
-        else:
-            pre = sandwich
-            post = None
-        if pre:
-            page.add(str(pre))
+        page.div(class_=divclass, id_=divid)
+        if self.foreword:
+            page.add(str(self.foreword))
+        if content:
+            page.add(str(self.content))
         page.add(str(self.scaffold_plots()))
-        if post:
-            page.add(str(post))
+        if self.afterword:
+            page.add(str(self.afterword))
         page.div.close()
         return page
 
-    def write_html(self, pre=None, post=None, **kwargs):
+    def write_html(self, foreword=None, afterword=None, **kwargs):
         """Write the HTML page for this tab.
 
         Parameters
         ----------
-        pre : `str`, :class:`~gwsumm.html.markup.page`
-            content to place above the plot grid
-        post : `str`, :class:`~gwsumm.html.markup.page`
-            content to place below the plot grid
+        foreword : `str`, :class:`~gwsumm.html.markup.page`, optional
+            content to place above the plot grid, defaults to
+            :attr:`PlotTab.foreword`
+        afterword : `str`, :class:`~gwsumm.html.markup.page`, optional
+            content to place below the plot grid, defaults to
+            :attr:`PlotTab.afterword`
         **kwargs
-            other keyword arguments to be passed to :meth:`~Tab.write_html`
+            other keyword arguments to be passed through
+            :meth:`~Tab.write_html`
 
         See Also
         --------
         gwsumm.tabs.Tab.write_html : for details of all valid unnamed
-        keyword arguments
+                                     keyword arguments
         """
-        if post:
-            return super(PlotTab, self).write_html((pre, post), **kwargs)
-        else:
-            return super(PlotTab, self).write_html(pre, **kwargs)
+        if foreword is not None:
+            self.foreword = foreword
+        if afterword is not None:
+            self.afterword = self.afterword
+        return super(PlotTab, self).write_html(None, **kwargs)
 
 register_tab(PlotTab)
 
@@ -389,7 +457,7 @@ class ArchivedPlotTab(SummaryArchiveMixin, PlotTab):
     """
     type = 'archived-plots'
 
-    def __init__(self, name, start, end, mode=None, plots=[], **kwargs):
+    def __init__(self, name, start, end, mode=None, plots=list(), **kwargs):
         super(ArchivedPlotTab, self).__init__(name, plots=plots, **kwargs)
         self.span = (start, end)
         self.mode = mode
@@ -443,12 +511,11 @@ class StateTab(PlotTab):
     """
     type = 'state'
 
-    def __init__(self, name, states=[], **kwargs):
+    def __init__(self, name, states=list(), **kwargs):
         """Initialise a new `Tab`.
         """
         super(StateTab, self).__init__(name, **kwargs)
         # process states
-        self._states = []
         if not isinstance(states, (tuple, list)):
             states = [states]
         self.states = states
@@ -497,9 +564,9 @@ class StateTab(PlotTab):
     # StateTab methods
 
     @classmethod
-    def from_ini(cls, cp, section, base=''):
+    def from_ini(cls, cp, section, *args, **kwargs):
         # parse core Tab information
-        new = super(StateTab, cls).from_ini(cp, section, base=base)
+        new = super(StateTab, cls).from_ini(cp, section, *args, **kwargs)
         # parse states and retrieve their definitions
         if cp.has_option(section, 'states'):
             # states listed individually
@@ -564,15 +631,15 @@ class StateTab(PlotTab):
                            dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
 
     @staticmethod
-    def build_html_content(frame, class_='container', id_='main'):
+    def build_html_content(frame, divclass='container', divid='main'):
         """Build the #main div for this tab.
 
-        In this construction, the <div id="id_"> is empty, with a
+        In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
         """
         page = html.markup.page()
-        page.div('', class_=class_, id_=id_)
-        page.add(str(html.load(frame, id_=id_)))
+        page.div('', class_=divclass, id_=divid)
+        page.add(str(html.load(frame, id_=divid)))
         return page
 
     def write_state_html(self, state, pre=None, post=None, plots=True):
@@ -582,13 +649,6 @@ class StateTab(PlotTab):
         ----------
         state : `~gwsumm.state.SummaryState`
             `SummaryState` over which to generate inner HTML
-        content : `str`, :class:`~gwsumm.html.markup.page`
-            simple string content, or a structured `page` of markup to
-            embed as the content of the #main div.
-        class_ : `str`
-            name of HTML class attribute to assign to enclosing div
-        id_ : `str`
-            name of HTML id attribute to assign to enclosing div
         """
         # build page
         page = html.markup.page()
@@ -641,7 +701,7 @@ class StateTab(PlotTab):
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
-        return super(StateTab, self).write_html(
+        return super(PlotTab, self).write_html(
             self.frames[0], title=title, subtitle=subtitle, tabs=tabs, ifo=ifo,
             ifomap=ifomap, brand=brand, css=css, js=js, about=about,
             footer=footer, **inargs)
@@ -654,10 +714,20 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
     """
     type = 'archived-state'
 
-    def __init__(self, name, start, end, mode=None, states=[], **kwargs):
+    def __init__(self, name, start, end, mode=None, states=list(), **kwargs):
         super(ArchivedStateTab, self).__init__(name, states=states, **kwargs)
         self.span = (start, end)
         self.mode = mode
+
+    @classmethod
+    def from_ini(cls, config, section, start=None, end=None, **kwargs):
+        config = GWSummConfigParser.from_configparser(config)
+        if start is None:
+            start = config.getint(section, 'gps-start-time')
+        if end is None:
+            end = config.getint(section, 'gps-end-time')
+        return super(ArchivedStateTab, cls).from_ini(config, section, start,
+                                                     end, **kwargs)
 
 register_tab(ArchivedStateTab)
 
@@ -670,7 +740,7 @@ class AboutTab(SummaryArchiveMixin, Tab):
         self.span = (start, end)
         self.mode = mode
 
-    def write_html(self, config=[], **kwargs):
+    def write_html(self, config=list(), **kwargs):
         return super(AboutTab, self).write_html(
             html.about_this_page(config=config), **kwargs)
 

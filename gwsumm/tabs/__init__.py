@@ -16,7 +16,66 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definitions of GWSumm jobs
+"""A `Tab` is a single, configurable page of output, containing some data.
+Each `Tab` is written in its own HTML page, and can be written to contain
+any set of data, with any format.
+
+Abstract Tab classes
+--------------------
+
+The :mod:`gwsumm.tabs` module provides a few base classes from which users
+can write their own tab `classes <class>`.
+These include:
+
+.. autosummary::
+   :nosignatures:
+   :toctree: api
+
+   Tab
+   SummaryArchiveMixin
+
+
+Available Tabs
+--------------
+
+Along with the base classes, GWSumm provides a set of `Tab` subclasses covering
+some common data displays.
+These include:
+
+.. autosummary::
+   :toctree: api
+
+   ExternalTab
+   PlotTab
+   StateTab
+
+Each of these tab classes is also available with the `SummaryArchiveMixin`
+applied, allowing users to archive their output with a calendar, and crosslinks:
+
+.. autosummary::
+   :nosignatures:
+   :toctree: api
+
+   ArchivedExternalTab
+   ArchivedPlotTab
+   ArchivedStateTab
+
+
+Data generation
+---------------
+
+All of the above tabs simply format data that has already been generated.
+GWSumm also provides a `DataTab`, allowing users to configure plots and have
+them generated on-the-fly by reading in the raw data, processing, and saving
+plots to disk.
+
+This is achieved via the following class
+
+.. autosummary::
+   :toctree: api
+
+   DataTab
+
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

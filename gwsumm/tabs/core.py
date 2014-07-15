@@ -83,6 +83,7 @@ class Tab(object):
     :attr:`~Tab.group`.
     """
     type = 'basic'
+    """Type identifier for this `Tab`"""
 
     def __init__(self, name, index=None, shortname=None, parent=None,
                  children=list(), group=None, base=''):
@@ -106,7 +107,7 @@ class Tab(object):
 
     @property
     def name(self):
-        """Short name for this `Tab`.
+        """Full name for this `Tab`
 
         :type: `str`
         """
@@ -118,7 +119,7 @@ class Tab(object):
 
     @property
     def shortname(self):
-        """Short name for this tab.
+        """Short name for this tab
 
         This will be displayed in the navigation bar.
 
@@ -130,10 +131,9 @@ class Tab(object):
     def shortname(self, name):
         self._shortname = name
 
-
     @property
     def parent(self):
-        """Short name of the parent page for this `Tab`.
+        """Short name of the parent page for this `Tab`
 
         A given tab can either be a parent for a set of child tabs, or can
         have a parent, it cannot be both. In this system, the `parent`
@@ -153,7 +153,7 @@ class Tab(object):
 
     @property
     def children(self):
-        """List of child tabs for this `Tab`.
+        """List of child tabs for this `Tab`
 
         If this tab is given children, it cannot also have a parent, as it
         will define its own dropdown menu in the HTML navigation bar, linking
@@ -172,7 +172,7 @@ class Tab(object):
 
     @property
     def index(self):
-        """The HTML path (relative to the :attr:`~Tab.base`) for this tab.
+        """The HTML path (relative to the :attr:`~Tab.base`) for this tab
         """
         if not self._index:
             self._index = os.path.join(self.path, 'index.html')
@@ -184,7 +184,7 @@ class Tab(object):
 
     @property
     def href(self):
-        """HTML href (relative to the :attr:`~Tab.base`) for this tab.
+        """HTML href (relative to the :attr:`~Tab.base`) for this tab
 
         This attribute is just a convenience to clean-up the
         :attr:`~Tab.index` for a given tab, by removing index.htmls.
@@ -222,7 +222,7 @@ class Tab(object):
 
     @property
     def title(self):
-        """Page title for this tab.
+        """Page title for this tab
         """
         if self.parent:
             title = self.name
@@ -236,7 +236,7 @@ class Tab(object):
 
     @property
     def shorttitle(self):
-        """Page title for this tab.
+        """Page title for this tab
         """
         if self.parent:
             title = self.shortname
@@ -247,6 +247,30 @@ class Tab(object):
             return title
         else:
             return self.shortname
+
+    @property
+    def group(self):
+        """Dropdown group for this `Tab` in the navigation bar
+
+        :type: `str`
+        """
+        return self._group
+
+    @group.setter
+    def group(self, gp):
+        self._group = str(gp)
+
+    @property
+    def base(self):
+        """HTML <base> URL for this `Tab`
+
+        :type: `str`
+        """
+        return self._base
+
+    @base.setter
+    def base(self, url):
+        self._base = str(url)
 
     # -------------------------------------------
     # Tab instance methods
@@ -291,7 +315,7 @@ class Tab(object):
     # SummaryTab configuration parser
 
     @classmethod
-    def from_ini(cls, cp, section, base=''):
+    def from_ini(cls, cp, section, *args, **kwargs):
         """Define a new tab from a :class:`~gwsumm.config..GWConfigParser`
 
         Parameters
@@ -300,11 +324,40 @@ class Tab(object):
             customised configuration parser containing given section
         section : `str`
             name of section to parse
+        *args, **kwargs
+            other positional and keyword arguments to pass to the class
+            constructor (`__init__`)
 
         Returns
         -------
         tab : `Tab`
             a new tab defined from the configuration
+
+        Notes
+        -----
+        This method parses the following configuration options
+
+        .. autosummary::
+
+           ~Tab.name
+           ~Tab.shortname
+           ~Tab.parent
+           ~Tab.group
+           ~Tab.index
+
+        Sub-classes should parse their own configuration values and then pass
+        these as ``*args`` and ``**kwargs`` to this method via :class:`super`:
+
+        .. code-block:: python
+
+           class MyTab(Tab):
+               [...]
+               def from_ini(cls, cp, section)
+                   \"\"\"Define a new `MyTab`.
+                   \"\"\"
+                   foo = cp.get(section, 'foo')
+                   bar = cp.get(section, 'bar')
+                   return super(MyTab, cls).from_ini(cp, section, foo, bar=bar)
         """
         # get tab name
         try:
@@ -314,30 +367,31 @@ class Tab(object):
             # otherwise strip 'tab-' from section name
             name = section[4:]
         try:
-            shortname = re_quote.sub('', cp.get(section, 'shortname'))
+            kwargs.setdefault('shortname',
+                              re_quote.sub('', cp.get(section, 'shortname')))
         except NoOptionError:
-            shortname = name
+            pass
         # get parent:
         #     if parent is not given, this assumes a top-level tab
         try:
-            parent = re_quote.sub('', cp.get(section, 'parent'))
+            kwargs.setdefault('parent',
+                              re_quote.sub('', cp.get(section, 'parent')))
         except NoOptionError:
-            parent = None
+            pass
         else:
-            if parent == 'None':
-                parent = None
+            if kwargs['parent'] == 'None':
+                kwargs['parent'] = None
         # get group
         try:
-            group = cp.get(section, 'group')
+            kwargs.setdefault('group', cp.get(section, 'group'))
         except NoOptionError:
-            group = None
+            pass
         # get HTML file
         try:
-            index = cp.get(section, 'index')
+            kwargs.setdefault('index', cp.get(section, 'index'))
         except NoOptionError:
-            index = None
-        return cls(name, index=index, shortname=shortname, parent=parent,
-                   group=group, base=base)
+            pass
+        return cls(name, *args, **kwargs)
 
     # -------------------------------------------------------------------------
     # HTML operations
@@ -571,7 +625,7 @@ class Tab(object):
         return navlinks
 
     @staticmethod
-    def build_html_content(content, class_='container', id_='main'):
+    def build_html_content(content, divclass='container', divid='main'):
         """Build the #main div for this tab.
 
         Parameters
@@ -585,7 +639,7 @@ class Tab(object):
             A new `page` with the input content wrapped as
         """
         page = html.markup.page()
-        page.div(str(content), class_=class_, id_=id_)
+        page.div(str(content), class_=divclass, id_=divid)
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None,

@@ -26,6 +26,7 @@ import os.path
 import re
 import warnings
 from math import (floor, ceil)
+from urlparse import urlparse
 
 try:
     from collections import OrderedDict
@@ -40,7 +41,7 @@ from .. import globalv
 from ..data import get_channel
 from ..utils import split_channels
 
-__all__ = ['SummaryPlot', 'DataSummaryPlot']
+__all__ = ['SummaryPlot', 'DataPlot']
 
 re_cchar = re.compile("[\W\s_]+")
 
@@ -76,7 +77,12 @@ class SummaryPlot(object):
 
     @href.setter
     def href(self, url):
-        self._href = url and os.path.normpath(url) or None
+        if url is None:
+            self._href = None
+        elif urlparse(url).netloc:
+            self._href = url
+        else:
+            self._href = os.path.normpath(url)
 
     @property
     def new(self):
@@ -123,19 +129,21 @@ class SummaryPlot(object):
     def __str__(self):
         return str(self.href)
 
+register_plot(SummaryPlot)
 
-class DataSummaryPlot(SummaryPlot):
+
+class DataPlot(SummaryPlot):
     """A `SummaryPlot` from instrumental data.
 
     Parameters
     ----------
     channels : `list`
         a list of channel names that define the data sources for this
-        `DataSummaryPlot`
+        `DataPlot`
     start : `float`
-        GPS start time of this `DataSummaryPlot`.
+        GPS start time of this `DataPlot`.
     end : `float`
-        GPS end time of this `DataSummaryPlot`.
+        GPS end time of this `DataPlot`.
     tag : `str`
         a descriptive tag for this `TabSummaryPlot`, used as part of the output
         file name
@@ -163,7 +171,7 @@ class DataSummaryPlot(SummaryPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, href=None, new=True, all_data=False, **pargs):
-        super(DataSummaryPlot, self).__init__(href=href, new=new)
+        super(DataPlot, self).__init__(href=href, new=new)
         self.channels = channels
         self.span = (start, end)
         self.state = state
@@ -199,7 +207,7 @@ class DataSummaryPlot(SummaryPlot):
     @property
     def state(self):
         """`~gwsumm.state.SummaryState` defining validity of this
-        `DataSummaryPlot`.
+        `DataPlot`.
         """
         return self._state
 
@@ -233,7 +241,7 @@ class DataSummaryPlot(SummaryPlot):
 
     @property
     def tag(self):
-        """File tag for this `DataSummaryPlot`.
+        """File tag for this `DataPlot`.
         """
         try:
             return self._tag
@@ -305,7 +313,7 @@ class DataSummaryPlot(SummaryPlot):
 
     @classmethod
     def from_ini(cls, config, section, start, end, channels=None, **kwargs):
-        """Define a new `DataSummaryPlot`.
+        """Define a new `DataPlot`.
         """
         # read parameters
         try:
@@ -374,4 +382,4 @@ class DataSummaryPlot(SummaryPlot):
         self.plot.close()
         return outputfile
 
-register_plot(DataSummaryPlot)
+register_plot(DataPlot)

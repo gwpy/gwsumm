@@ -42,15 +42,16 @@ from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
 from ..segments import get_segments
 from ..triggers import get_triggers
 from ..state import ALLSTATE
-from .core import DataSummaryPlot
-from .registry import register_plot
+from .registry import (get_plot, register_plot)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+DataPlot = get_plot('data')
 
-class TimeSeriesSummaryPlot(DataSummaryPlot):
-    """SummaryPlot of some `TimeSeries` data.
+
+class TimeSeriesDataPlot(DataPlot):
+    """DataPlot of some `TimeSeries` data.
     """
     type = 'timeseries'
     defaults = {'logy': False,
@@ -58,7 +59,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
 
     def add_state_segments(self, ax, **kwargs):
         """Add an `Axes` below the given ``ax`` displaying the `SummaryState`
-        for this `TimeSeriesSummaryPlot`.
+        for this `TimeSeriesDataPlot`.
 
         Parameters
         ----------
@@ -79,7 +80,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
 
     def init_plot(self, plot=TimeSeriesPlot):
         """Initialise the Figure and Axes objects for this
-        `TimeSeriesSummaryPlot`.
+        `TimeSeriesDataPlot`.
         """
         self.plot = plot()
         ax = self.plot.gca()
@@ -103,7 +104,7 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
             ax.set_xlim(float(self.start), float(self.end))
-        return super(TimeSeriesSummaryPlot, self).finalize(
+        return super(TimeSeriesDataPlot, self).finalize(
                    outputfile=outputfile)
 
     def process(self, outputfile=None):
@@ -174,11 +175,11 @@ class TimeSeriesSummaryPlot(DataSummaryPlot):
         self.add_state_segments(ax)
         return self.finalize(outputfile=outputfile)
 
-register_plot(TimeSeriesSummaryPlot)
+register_plot(TimeSeriesDataPlot)
 
 
-class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
-    """SummaryPlot a Spectrogram
+class SpectrogramDataPlot(TimeSeriesDataPlot):
+    """DataPlot a Spectrogram
     """
     type = 'spectrogram'
     defaults = {'ratio': None,
@@ -189,7 +190,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
                 'colorlabel': None}
 
     def __init__(self, *args, **kwargs):
-        super(SpectrogramSummaryPlot, self).__init__(*args, **kwargs)
+        super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
         self.ratio = self.pargs.pop('ratio')
 
     @property
@@ -197,7 +198,7 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         try:
             return self._tag
         except AttributeError:
-            tag = super(SpectrogramSummaryPlot, self).tag
+            tag = super(SpectrogramDataPlot, self).tag
             if self.ratio:
                 tag += '_%s_RATIO' % re_cchar.sub('_', self.ratio.upper())
             return tag
@@ -258,10 +259,10 @@ class SpectrogramSummaryPlot(TimeSeriesSummaryPlot):
         self.add_state_segments(ax)
         return self.finalize()
 
-register_plot(SpectrogramSummaryPlot)
+register_plot(SpectrogramDataPlot)
 
 
-class SegmentSummaryPlot(TimeSeriesSummaryPlot):
+class SegmentDataPlot(TimeSeriesDataPlot):
     """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
     """
     type = 'segments'
@@ -273,7 +274,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
 
     def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
                  **kwargs):
-        super(SegmentSummaryPlot, self).__init__([], start, end, state=state,
+        super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                                  outdir=outdir, tag=tag,
                                                  **kwargs)
         self.flags = flags
@@ -288,14 +289,14 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
 
     @property
     def ifos(self):
-        """Interferometer set for this `SegmentSummaryPlot`
+        """Interferometer set for this `SegmentDataPlot`
         """
         allflags = [f for flag in self.flags for f in flag.split(',')]
         return set([f[:2] for f in allflags])
 
     @property
     def tag(self):
-        """File tag for this `DataSummaryPlot`.
+        """File tag for this `DataPlot`.
         """
         try:
             return self._tag
@@ -309,7 +310,7 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
                  **kwargs):
-        new = super(SegmentSummaryPlot, cls).from_ini(config, section, start,
+        new = super(SegmentDataPlot, cls).from_ini(config, section, start,
                                                       end, state=state,
                                                       **kwargs)
         # get flags
@@ -389,29 +390,29 @@ class SegmentSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_bitmask(mask, topdown=True)
         return self.finalize()
 
-register_plot(SegmentSummaryPlot)
+register_plot(SegmentDataPlot)
 
 
-class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
-    """SummaryPlot of some `StateVector` data.
+class StateVectorDataPlot(TimeSeriesDataPlot):
+    """DataPlot of some `StateVector` data.
 
-    While technically a sub-class of the `TimeSeriesSummaryPlot`, for
+    While technically a sub-class of the `TimeSeriesDataPlot`, for
     data access and processing reasons, the output shadows that of the
-    `SegmentSummaryPlot` more closely.
+    `SegmentDataPlot` more closely.
     """
     type = 'statevector'
-    defaults = SegmentSummaryPlot.defaults.copy()
+    defaults = SegmentDataPlot.defaults.copy()
 
-    # copy from SegmentSummaryPlot
-    flag = property(fget=SegmentSummaryPlot.flags.__get__,
-                    fset=SegmentSummaryPlot.flags.__set__,
-                    fdel=SegmentSummaryPlot.flags.__delete__,
+    # copy from SegmentDataPlot
+    flag = property(fget=SegmentDataPlot.flags.__get__,
+                    fset=SegmentDataPlot.flags.__set__,
+                    fdel=SegmentDataPlot.flags.__delete__,
                     doc="""List of flags generated for this
-                        `StateVectorSummaryPlot`.""")
-    get_segment_color = SegmentSummaryPlot.__dict__['get_segment_color']
+                        `StateVectorDataPlot`.""")
+    get_segment_color = SegmentDataPlot.__dict__['get_segment_color']
 
     def __init__(self, *args, **kwargs):
-        super(StateVectorSummaryPlot, self).__init__(*args, **kwargs)
+        super(StateVectorDataPlot, self).__init__(*args, **kwargs)
         self.flags = []
 
     def process(self):
@@ -470,10 +471,10 @@ class StateVectorSummaryPlot(TimeSeriesSummaryPlot):
             plot.add_bitmask(mask, topdown=True)
         return self.finalize()
 
-register_plot(StateVectorSummaryPlot)
+register_plot(StateVectorDataPlot)
 
 
-class SpectrumSummaryPlot(DataSummaryPlot):
+class SpectrumDataPlot(DataPlot):
     """Spectrum plot for a `SummaryTab`
     """
     type = 'spectrum'
@@ -483,7 +484,7 @@ class SpectrumSummaryPlot(DataSummaryPlot):
                 'format': None}
 
     def process(self):
-        """Load all data, and generate this `SpectrumSummaryPlot`
+        """Load all data, and generate this `SpectrumDataPlot`
         """
         plot = self.plot = SpectrumPlot(figsize=[12, 6])
         ax = plot.gca()
@@ -551,10 +552,10 @@ class SpectrumSummaryPlot(DataSummaryPlot):
 
         return self.finalize()
 
-register_plot(SpectrumSummaryPlot)
+register_plot(SpectrumDataPlot)
 
 
-class TimeSeriesHistogramPlot(DataSummaryPlot):
+class TimeSeriesHistogramPlot(DataPlot):
     """HistogramPlot from a Series
     """
     type = 'histogram'
@@ -563,7 +564,7 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
-        `TimeSeriesSummaryPlot`.
+        `TimeSeriesDataPlot`.
         """
         self.plot = plot(figsize=[12, 6])
         ax = self.plot.gca()
@@ -657,7 +658,7 @@ class TimeSeriesHistogramPlot(DataSummaryPlot):
 register_plot(TimeSeriesHistogramPlot)
 
 
-class TriggerSummaryPlot(TimeSeriesSummaryPlot):
+class TriggerDataPlot(TimeSeriesDataPlot):
     type = 'triggers'
     defaults = {'x': 'time',
                 'y': 'snr',
@@ -678,7 +679,7 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, etg=None, **kwargs):
-        super(TriggerSummaryPlot, self).__init__(channels, start, end,
+        super(TriggerDataPlot, self).__init__(channels, start, end,
                                                  state=state, outdir=outdir,
                                                  tag=tag, **kwargs)
         self.etg = etg
@@ -686,15 +687,15 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
 
     @property
     def tag(self):
-        """Unique identifier for this `TriggerSummaryPlot`.
+        """Unique identifier for this `TriggerDataPlot`.
 
-        Extends the standard `TimeSeriesSummaryPlot` tag with the ETG
+        Extends the standard `TimeSeriesDataPlot` tag with the ETG
         and each of the column names.
         """
         try:
             return self._tag
         except AttributeError:
-            tag = super(TriggerSummaryPlot, self).tag
+            tag = super(TriggerDataPlot, self).tag
             tag += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
@@ -703,10 +704,10 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
 
     def finalize(self, outputfile=None):
         if isinstance(self.plot, TimeSeriesPlot):
-            return super(TriggerSummaryPlot, self).finalize(
+            return super(TriggerDataPlot, self).finalize(
                        outputfile=outputfile)
         else:
-            return super(TimeSeriesSummaryPlot, self).finalize(
+            return super(TimeSeriesDataPlot, self).finalize(
                        outputfile=outputfile)
 
     def process(self):
@@ -827,10 +828,10 @@ class TriggerSummaryPlot(TimeSeriesSummaryPlot):
         # finalise
         return self.finalize()
 
-register_plot(TriggerSummaryPlot)
+register_plot(TriggerDataPlot)
 
 
-class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
+class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
     """Custom time-series plot to handle discontiguous `TimeSeries`.
     """
     type = 'trigger-timeseries'
@@ -900,7 +901,7 @@ class TriggerTimeSeriesSummaryPlot(TimeSeriesSummaryPlot):
         self.add_state_segments(ax)
         return self.finalize()
 
-register_plot(TriggerTimeSeriesSummaryPlot)
+register_plot(TriggerTimeSeriesDataPlot)
 
 
 class TriggerHistogramPlot(TimeSeriesHistogramPlot):
@@ -910,7 +911,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
-        `TimeSeriesSummaryPlot`.
+        `TimeSeriesDataPlot`.
         """
         self.plot = plot(figsize=[12, 6])
         ax = self.plot.gca()
@@ -976,12 +977,12 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
 register_plot(TriggerHistogramPlot)
 
 
-class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
-    """TimeSeriesSummaryPlot of trigger rate.
+class TriggerRateDataPlot(TimeSeriesDataPlot):
+    """TimeSeriesDataPlot of trigger rate.
     """
     type = 'trigger-rate'
     _threadsafe = False
-    defaults = TimeSeriesSummaryPlot.defaults.copy()
+    defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({'column': None,
                      'ylabel': 'Rate [Hz]'})
 
@@ -991,7 +992,7 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
         if 'column' in kwargs and 'bins' not in kwargs:
             raise ValueError("'bins' must be configured for rate plots if "
                              "'column' is given.")
-        super(TriggerRateSummaryPlot, self).__init__(*args, **kwargs)
+        super(TriggerRateDataPlot, self).__init__(*args, **kwargs)
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -1047,8 +1048,8 @@ class TriggerRateSummaryPlot(TimeSeriesSummaryPlot):
         channels = self.channels
         outputfile = self.outputfile
         self.channels = keys
-        out = super(TriggerRateSummaryPlot, self).process(outputfile=outputfile)
+        out = super(TriggerRateDataPlot, self).process(outputfile=outputfile)
         self.channels = channels
         return out
 
-register_plot(TriggerRateSummaryPlot)
+register_plot(TriggerRateDataPlot)

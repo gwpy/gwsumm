@@ -39,14 +39,14 @@ from ..data import get_channel
 from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState)
 from ..triggers import get_triggers
-from ..plot.core import SummaryPlot
-from ..plot.registry import (get_plot, register_plot)
+from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 base = get_tab('default')
+SummaryPlot = get_plot(None)
 SegmentPlot = get_plot('segments')
 
 HVETO_COLUMNS = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']

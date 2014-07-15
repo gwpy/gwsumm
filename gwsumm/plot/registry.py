@@ -62,7 +62,8 @@ def get_plot(name):
     """Query the registry for the plot class registered to the given
     name
     """
-    name = re.sub('[\'\"]', '', name)
+    if isinstance(name, str):
+        name = re.sub('[\'\"]', '', name)
     try:
         return _PLOTS[name]
     except KeyError:

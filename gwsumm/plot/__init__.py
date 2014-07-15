@@ -16,7 +16,28 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Plotting utilities for GWSummary
+"""A `Plot` is a representation of an image to be included in the HTML
+output a :doc:`tab </tabs>`.
+
+For simple purposes, a `Plot` is just a reference to an existing image file
+that can be imported into an HTML page via the ``<img>`` tag.
+
+For more complicated purposes, a number of data plot classes are provided to
+allow users to generate images on-the-fly.
+The available classes are:
+
+.. autosummary::
+   :toctree: api
+
+   TimeSeriesDataPlot
+   SpectrogramDataPlot
+   SegmentDataPlot
+   StateVectorDataPlot
+   SpectrumDataPlot
+   TimeSeriesHistogramPlot
+   TriggerTimeSeriesDataPlot
+   TriggerHistogramPlot
+   TriggerRateDataPlot
 """
 
 from gwpy.plotter import rcParams

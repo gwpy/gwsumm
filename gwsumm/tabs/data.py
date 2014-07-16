@@ -149,8 +149,8 @@ class DataTab(DataTabBase):
         tab : `DataTab`
             a new `DataTab` defined from the configuration
         """
+        kwargs.setdefault('plots', [])
         job = super(DataTab, cls).from_ini(cp, section, **kwargs)
-        job.plots = []
         job._config = cp._sections[section]
 
         # get meta tag

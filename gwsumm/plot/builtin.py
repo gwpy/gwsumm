@@ -486,6 +486,15 @@ class SpectrumDataPlot(DataPlot):
                 'reference-linestyle': '--'}
 
     def process(self):
+        pargs = self.pargs.copy()
+        try:
+            self._process()
+        except OverflowError:
+            self.pargs = pargs
+            self.pargs['alpha'] = 0.0
+            self._process()
+
+    def _process(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
         plot = self.plot = SpectrumPlot(figsize=[12, 6])
@@ -508,6 +517,8 @@ class SpectrumDataPlot(DataPlot):
             colors = colors.split(',')
         while len(colors) < len(self.channels):
             colors.append(None)
+
+        alpha = self.pargs.pop('alpha', 0.1)
 
         # get labels
         labels = self.pargs.pop('labels', map(str, self.channels))
@@ -533,9 +544,10 @@ class SpectrumDataPlot(DataPlot):
 
             if color is not None:
                 ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
-                                     color=color)
+                                     color=color, alpha=alpha)
             else:
-                ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'))
+                ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
+                                     alpha=alpha)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'frequency_range'):

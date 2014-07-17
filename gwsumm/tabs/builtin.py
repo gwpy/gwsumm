@@ -307,10 +307,13 @@ class PlotTab(Tab):
         kwargs.setdefault('layout', layout)
 
         # get plots
-        kwargs.setdefault('plots',
-                          zip(*sorted([(int(opt), url) for (opt, url) in
-                                       cp.nditems(section) if opt.isdigit()],
-                                      key=lambda a: a[0]))[1])
+        try:
+            kwargs.setdefault(
+                'plots', zip(*sorted([(int(opt), url) for (opt, url) in
+                                      cp.nditems(section) if opt.isdigit()],
+                                     key=lambda a: a[0]))[1])
+        except IndexError:
+            pass
 
         # get content
         try:

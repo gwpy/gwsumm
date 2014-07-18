@@ -62,5 +62,4 @@ def generate_all_state(start, end, register=True, **kwargs):
     all_.ready = True
     if register:
         register_state(all_)
-    print(all_.active)
     return all_

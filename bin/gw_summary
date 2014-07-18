@@ -474,7 +474,7 @@ if not opts.html_only:
 try:
     load_states(config)
 except NoSectionError:
-    register_state(SummaryState(ALLSTATE, valid=[span]))
+    generate_all_state(*span)
 
 # build directories
 mkdir(opts.output_dir)

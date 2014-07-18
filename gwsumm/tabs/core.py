@@ -258,7 +258,10 @@ class Tab(object):
 
     @group.setter
     def group(self, gp):
-        self._group = str(gp)
+        if gp is None:
+            self._group = None
+        else:
+            self._group = str(gp)
 
     @property
     def base(self):

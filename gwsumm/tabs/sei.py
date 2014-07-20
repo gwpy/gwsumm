@@ -397,7 +397,8 @@ class SEIWatchDogTab(base):
                     stage = 'ISI1'
                 else:
                     stage = 'ISI2'
-                print(t, chamber, stage, file=f)
+                cause = cause.replace(' ', '_')
+                print(t, chamber, stage, cause, file=f)
 
         page.p()
         page.add('The list of trips can be downloaded ')

@@ -36,6 +36,7 @@ import argparse
 import calendar
 import getpass
 import warnings
+import httplib
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
@@ -451,7 +452,10 @@ if not opts.html_only:
     for section in config.sections():
         if re_channel.match(section):
             channelsections.append(section)
-    newchannels = get_channels(channelsections)
+    try:
+        newchannels = get_channels(channelsections)
+    except httplib.HTTPException:
+        newchannels = []
 
     # read custom channel definitions
     for channel, section in zip(newchannels, channelsections):

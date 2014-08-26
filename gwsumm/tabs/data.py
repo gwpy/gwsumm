@@ -466,8 +466,8 @@ class DataTab(DataTabBase):
     def write_state_placeholder(self, state):
         """Write a placeholder '#main' content for this tab
         """
-        email = html.markup.oneliner.a('the author',
-                                       href='mailto:duncan.macleod@ligo.org.')
+        email = html.markup.oneliner.a('the DetChar group',
+                                       href='mailto:detchar+code@ligo.org')
         page = html.markup.page()
         page.div(class_='row')
         page.div(class_='col-md-12')

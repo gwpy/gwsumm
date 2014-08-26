@@ -22,6 +22,7 @@
 import abc
 import operator
 import re
+import os.path
 
 from multiprocessing import (Process, JoinableQueue)
 from time import sleep
@@ -449,14 +450,41 @@ class DataTab(DataTabBase):
     def write_html(self, *args, **kwargs):
         writedata = kwargs.pop('writedata', True)
         vprint("Writing HTML:\n")
-        if writedata:
-            for state, frame in zip(self.states, self.frames):
+        for state, frame in zip(self.states, self.frames):
+            idx = self.states.index(state)
+            if writedata:
                 self.write_state_html(state)
                 vprint("    %s written\n" % frame)
+            elif not os.path.isfile(self.frames[idx]):
+                self.write_state_placeholder(state)
+                vprint("    %s placeholder written\n" % frame)
         writehtml = kwargs.pop('writehtml', True)
         if writehtml:
             super(DataTab, self).write_html(*args, **kwargs)
             vprint("    %s written\n" % self.index)
+
+    def write_state_placeholder(self, state):
+        """Write a placeholder '#main' content for this tab
+        """
+        email = html.markup.oneliner.a('the author',
+                                       href='mailto:duncan.macleod@ligo.org.')
+        page = html.markup.page()
+        page.div(class_='row')
+        page.div(class_='col-md-12')
+        page.div(class_='alert alert-info')
+        page.p("These data have not been generated yet, please check back "
+               "later.")
+        page.p("If this state persists for more than a three or four hours, "
+               "please contact %s." % email)
+        page.div.close()
+        page.div.close()
+        page.div.close()
+
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this tab.

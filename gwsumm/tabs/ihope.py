@@ -180,7 +180,7 @@ class DailyAhopeTab(base):
             datacache=Cache(), trigcache=self.inspiralcache,
             plotqueue=plotqueue)
 
-    def build_inner_html(self, state):
+    def write_state_html(self, state):
         """Write the '#main' HTML content for this `DailyAhopeTab`.
         """
         # if no files, presume not run yet
@@ -193,44 +193,49 @@ class DailyAhopeTab(base):
                    % html.markup.oneliner.a('the CBC DQ group',
                                             href='mailto:cbc+dq@ligo.org'))
             page.div.close()
-            return page
 
-        # otherwise, carry on...
-        page = self.scaffold_plots(state)
+        else:
+            # otherwise, carry on...
+            page = self.scaffold_plots(state)
 
-        # link full results
-        page.div(class_='btn-group')
-        page.a('Click here for the full Daily Ahope results',
-               href=self.ihopepage, rel='external', target='_blank',
-               class_='btn btn-default btn-info btn-xl')
-        page.div.close()
+            # link full results
+            page.div(class_='btn-group')
+            page.a('Click here for the full Daily Ahope results',
+                   href=self.ihopepage, rel='external', target='_blank',
+                   class_='btn btn-default btn-info btn-xl')
+            page.div.close()
 
-        if self.loudest:
-            table = get_triggers(self.channel, self.name, state,
-                                 query=False)
-            rank = get_table_column(table, self.loudest['rank']).argsort()
-            indexes = rank[-self.loudest['N']:][::-1]
-            page.h1('Loudest events')
-            page.p('The following table displays the %d loudest events as '
-                   'recorded by Daily Ahope.' % self.loudest['N'])
-            headers = self.loudest['labels']
-            if 'time' in headers[0]:
-                headers.insert(1, 'UTC time')
-                date = True
-            else:
-                data = False
-            data = []
-            for idx in indexes:
-                row = table[idx]
-                data.append([])
-                for column in self.loudest['columns']:
-                    data[-1].append('%.3f' % float(get_row_value(row, column)))
-                if date:
-                    data[-1].insert(1, tconvert(row.get_end()).strftime(
-                                           '%B %d %Y, %H:%M:%S.%f')[:-3])
-            page.add(str(html.data_table(headers, data, table='data')))
+            if self.loudest:
+                table = get_triggers(self.channel, self.name, state,
+                                     query=False)
+                rank = get_table_column(table, self.loudest['rank']).argsort()
+                indexes = rank[-self.loudest['N']:][::-1]
+                page.h1('Loudest events')
+                page.p('The following table displays the %d loudest events as '
+                       'recorded by Daily Ahope.' % self.loudest['N'])
+                headers = self.loudest['labels']
+                if 'time' in headers[0]:
+                    headers.insert(1, 'UTC time')
+                    date = True
+                else:
+                    data = False
+                data = []
+                for idx in indexes:
+                    row = table[idx]
+                    data.append([])
+                    for column in self.loudest['columns']:
+                        data[-1].append('%.3f' % float(get_row_value(row,
+                                                                     column)))
+                    if date:
+                        data[-1].insert(1, tconvert(row.get_end()).strftime(
+                                               '%B %d %Y, %H:%M:%S.%f')[:-3])
+                page.add(str(html.data_table(headers, data, table='data')))
 
-        return page
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
 register_tab(DailyAhopeTab)
 register_tab(DailyAhopeTab, name='daily-ihope')

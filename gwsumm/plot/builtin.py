@@ -504,12 +504,15 @@ class SpectrumDataPlot(DataPlot):
         sdform = self.pargs.pop('format')
 
         # get reference arguments
-        ref = dict()
-        for key in self.pargs.keys():
-            if key == 'reference':
-                ref['source'] = self.pargs.pop(key)
-            if key.startswith(('reference-', 'reference_')):
-                ref[key[len('reference-'):]] = self.pargs.pop(key)
+        refs = []
+        refkey = 'None'
+        for key in sorted(self.pargs.keys()):
+            if key == 'reference' or re.match('reference\d+', key):
+                refs.append(dict())
+                refs[-1]['source'] = self.pargs.pop(key)
+                refkey = key
+            if re.match('%s[-_]' % refkey, key):
+                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
 
         # get colors
         colors = self.pargs.pop('color', [])
@@ -544,10 +547,10 @@ class SpectrumDataPlot(DataPlot):
 
             if color is not None:
                 ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
-                                     color=color, alpha=alpha)
+                                     color=color, alpha=alpha, zorder=1)
             else:
                 ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
-                                     alpha=alpha)
+                                     alpha=alpha, zorder=1)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'frequency_range'):
@@ -559,9 +562,15 @@ class SpectrumDataPlot(DataPlot):
                 self.pargs.setdefault('ylim', data[0].channel.psd_range)
 
         # display references
-        if ref and 'source' in ref:
-            refspec = Spectrum.read(ref.pop('source'), format='dat')
-            ax.plot(refspec, **ref)
+        for i, ref in enumerate(refs):
+            if 'source' in ref:
+                try:
+                    refspec = Spectrum.read(ref.pop('source'), format='dat')
+                except IOError as e:
+                    warnings.warn('IOError: %s' % str(e))
+                else:
+                    ref.setdefault('zorder', -len(refs) + 1)
+                    ax.plot(refspec, **ref)
 
         # customise
         legendargs = {}

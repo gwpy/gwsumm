@@ -167,7 +167,7 @@ class TimeSeriesDataPlot(DataPlot):
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
-        if len(mmmchans) > 1:
+        if len(mmmchans) > 1 or labels[0] != mmmchans.keys()[0]:
             plot.add_legend(ax=ax, markerscale=4)
 
         # add extra axes and finalise

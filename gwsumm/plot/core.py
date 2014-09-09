@@ -299,7 +299,7 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = OrderedDict()
         for c in all_:
-            name = str(c).rsplit('.', 1)[0]
+            name = c.texname.rsplit('.', 1)[0]
             if name in out.keys():
                 out[name].append(c)
             else:

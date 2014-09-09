@@ -351,6 +351,9 @@ def state_switcher(states, default=0):
     page.b('', class_='caret')
     page.a.close()
     page.ul(class_='dropdown-menu', id_='statemenu')
+    page.li("Select an option below to view these data in another state "
+            "(different time segments).", class_="dropdown-header")
+    page.li('', class_="divider")
     for i, (state, href) in enumerate(states):
         page.li()
         page.a(str(state), class_='state', title=str(state),

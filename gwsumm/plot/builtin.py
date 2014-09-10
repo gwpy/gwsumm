@@ -22,6 +22,7 @@
 from __future__ import division
 
 import hashlib
+import warnings
 from itertools import (izip, cycle)
 
 try:

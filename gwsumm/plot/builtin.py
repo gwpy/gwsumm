@@ -174,7 +174,8 @@ class TimeSeriesDataPlot(DataPlot):
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        self.add_state_segments(ax)
+        if self.state:
+            self.add_state_segments(ax)
         return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesDataPlot)
@@ -258,7 +259,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
-        self.add_state_segments(ax)
+        if self.state:
+            self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(SpectrogramDataPlot)
@@ -859,7 +861,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             plot.add_legend(ax=ax, markerscale=4)
 
         # add state segments
-        if isinstance(plot, TimeSeriesPlot):
+        if isinstance(plot, TimeSeriesPlot) and self.state:
             self.add_state_segments(ax)
 
         # finalise
@@ -935,7 +937,8 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        self.add_state_segments(ax)
+        if self.state:
+            self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(TriggerTimeSeriesDataPlot)

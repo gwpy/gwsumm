@@ -504,10 +504,10 @@ class SpectrumDataPlot(DataPlot):
         ax = plot.gca()
 
         if self.state:
-            kwargs.setdefault(
+            self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
-        suptitle = kwargs.pop('suptitle', None):
+        suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle)
 

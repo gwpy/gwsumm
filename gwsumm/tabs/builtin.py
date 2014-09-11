@@ -24,6 +24,7 @@ from .registry import register_tab
 from ..plot import get_plot
 from ..utils import *
 from ..config import *
+from ..state import ALLSTATE
 from .. import html
 
 from gwsumm import version
@@ -623,7 +624,7 @@ class StateTab(PlotTab):
         elif brand:
             brand_.div(str(brand), class_='navbar-brand')
         # build state switch
-        if len(self.states) > 1:
+        if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             statebtn = html.state_switcher(zip(self.states, self.frames), 0)
         else:
             statebtn = False

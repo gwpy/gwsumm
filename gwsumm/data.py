@@ -22,7 +22,7 @@
 import operator
 import os
 import urllib2
-from math import (floor, ceil, pi)
+from math import (floor, ceil, pi, sqrt)
 from Queue import Queue
 import threading
 try:
@@ -515,8 +515,17 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     data.unit = units.dimensionless_unscaled
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
+                # XXX: HACK for failing unit check
                 globalv.DATA[channel.ndsname].append(data)
-                globalv.DATA[channel.ndsname].coalesce()
+                try:
+                    globalv.DATA[channel.ndsname].coalesce()
+                except ValueError as e:
+                    if not 'units do not match' in str(e):
+                        raise
+                    warnings.warn(str(e))
+                    globalv.DATA[channel.ndsname][-1].unit = (
+                        globalv.DATA[channel.ndsname][0].unit)
+                    globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):
             vprint("\n")

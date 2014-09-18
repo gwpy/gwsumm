@@ -126,7 +126,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             for f in new:
                 vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
                        % (len(new[f].active), f,
-                          abs(new[f].valid)/abs(newsegs)*100))
+                          float(abs(new[f].valid))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
 

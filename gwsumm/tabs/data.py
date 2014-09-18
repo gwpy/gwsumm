@@ -225,6 +225,7 @@ class DataTab(DataTabBase):
                 PlotClass = get_plot(pdef)
             # if the plot definition declares multiple states
             if 'all_states' in mods:
+                mods.setdefault('all_data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
                                               state=None, outdir=plotdir,

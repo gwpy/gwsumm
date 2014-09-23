@@ -125,10 +125,15 @@ class TimeSeriesDataPlot(DataPlot):
 
         # add data
         for label, channels in zip(labels, zip(*mmmchans.items())[1]):
+            # pad data request to over-fill plots (no gaps at the end)
             if self.state and not self.all_data:
                 valid = self.state.active
+            elif channels[0].sample_rate:
+                valid = SegmentList([self.span.protract(
+                    1/channels[0].sample_rate.value)])
             else:
                 valid = SegmentList([self.span])
+            # get data
             data = [get_timeseries(c, valid,
                                    query=False).join(pad=numpy.nan)
                     for c in channels]

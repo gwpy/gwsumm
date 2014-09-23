@@ -133,8 +133,9 @@ class TimeSeriesDataPlot(DataPlot):
                                    query=False).join(pad=numpy.nan)
                     for c in channels]
             # double-check empty
-            if not 'x0' in data[0].metadata:
-                data[0].epoch = self.start
+            for ts in data:
+                if not 'x0' in ts.metadata:
+                    ts.epoch = self.start
             # double-check log scales
             if self.pargs['logy']:
                 for ts in data:

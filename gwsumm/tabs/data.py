@@ -24,14 +24,20 @@ import operator
 import re
 import os.path
 
+from copy import copy
 from multiprocessing import (Process, JoinableQueue)
+from Queue import Empty
 from time import sleep
 from StringIO import StringIO
+from datetime import timedelta
 
 from numpy import isclose
 
+from astropy.time import Time
+
 from .. import (version, globalv, html)
 from ..config import *
+from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
                     get_spectrum)
 from ..plot import get_plot
@@ -100,6 +106,7 @@ class DataTab(DataTabBase):
         ismeta = kwargs.pop('ismeta', False)
         super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
         self.ismeta = ismeta
+        self.subplots = []
 
     @property
     def states(self):
@@ -171,12 +178,54 @@ class DataTab(DataTabBase):
         #    All config entries whose key is a single integer is
         #    interpreted as a requested plot.
 
+        start, end = job.span
+
+        # parse subplot request
+        try:
+            subidx = cp.getint(section, 'subplot')
+        except NoOptionError:
+            subidx = None
+        else:
+            job.subplots = []
+            subplots = []
+            try:
+                subdelta = timedelta(seconds=cp.getfloat(
+                    section, 'subplot-duration'))
+            except NoOptionError:
+                mode = get_mode()
+                if mode == MODE_ENUM['DAY']:
+                    subdelta = timedelta(hours=1)
+                elif mode == MODE_ENUM['WEEK']:
+                    subdelta = timedelta(days=1)
+                elif mode == MODE_ENUM['MONTH']:
+                    subdelta = timedelta(weeks=1)
+                elif mode == MODE_ENUM['YEAR']:
+                    subdelta = timedelta(months=1)
+                else:
+                    d = int(end - start)
+                    if d <= 601:
+                        subdelta = timedelta(minutes=1)
+                    elif d <= 7201:
+                        subdelta = timedelta(minutes=10)
+                    elif d <= 86401:
+                        subdelta = timedelta(hours=1)
+                    elif d <= 259201:
+                        subdelta = timedelta(hours=6)
+                    else:
+                        subdelta = timedelta(days=1)
+            startd = Time(float(start), format='gps', scale='utc').datetime
+            endd = Time(float(end), format='gps', scale='utc').datetime
+            while startd < endd:
+                e = min(endd, startd + subdelta)
+                sps = int(Time(startd, format='datetime', scale='utc').gps)
+                spe = int(Time(e, format='datetime', scale='utc').gps)
+                subplots.append((sps, spe))
+                startd += subdelta
+
         # find and order the plots
         requests = sorted([(int(opt), val) for (opt, val) in
                            cp.nditems(section) if opt.isdigit()],
                           key=lambda a: a[0])
-        if requests:
-            start, end = job.span
 
         # parse plot definition
         for index, definition in requests:
@@ -234,6 +283,11 @@ class DataTab(DataTabBase):
                     plot = PlotClass(sources, start, end, state=None,
                                      outdir=plotdir, **mods)
                 job.plots.append(plot)
+                if subidx == index:
+                    for span in subplots:
+                        subplot = copy(plot)
+                        subplot.span = span
+                        job.subplots.append(subplot)
             # otherwise define individually for multiple states
             else:
                 for state in job.states:
@@ -245,6 +299,11 @@ class DataTab(DataTabBase):
                         plot = PlotClass(sources, start, end, state=state,
                                          outdir=plotdir, **mods)
                     job.plots.append(plot)
+                    if subidx == index:
+                        for span in subplots:
+                            subplot = copy(plot)
+                            subplot.span = span
+                            job.subplots.append(subplot)
 
         return job
 
@@ -347,7 +406,7 @@ class DataTab(DataTabBase):
             state = get_state(ALLSTATE)
 
         # flag those plots that were already written by this process
-        for p in self.plots:
+        for p in self.plots + self.subplots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
 
@@ -423,7 +482,7 @@ class DataTab(DataTabBase):
         vprint("    Plotting... \n")
 
         # filter out plots that aren't for this state
-        new_plots = [p for p in self.plots if
+        new_plots = [p for p in self.plots + self.subplots if
                      p.new and (p.state is None or p.state.name == state.name)]
 
         # process each one
@@ -494,7 +553,16 @@ class DataTab(DataTabBase):
         format.
         """
         page = html.markup.page()
+
         # link data
+        if self.subplots:
+            page.hr(class_='row-divider')
+            page.h1('Sub-plots')
+            layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+            plist = [p for p in self.subplots if p.state in [state, None]]
+            page.add(str(self.scaffold_plots(plots=plist, state=state,
+                                             layout=layout)))
+
         page.hr(class_='row-divider')
         page.div(class_='row')
         page.div(class_='col-md-12')

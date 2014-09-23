@@ -188,6 +188,9 @@ popts.add_argument('--multi-process', action='store', type=int, default=None,
 popts.add_argument('-a', '--archive', action='store_true', default=False,
                    help="Read archived data from the FILE, and "
                         "write back to it at the end")
+popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
+                   default='raise', choices=['raise', 'ignore', 'warn'],
+                   help="action upon error fetching segments from SegDB")
 
 outopts = parser.add_argument_group("Output options")
 outopts.add_argument('-o', '--output-dir', action='store', type=str,
@@ -350,6 +353,7 @@ if opts.verbose:
     job.add_opt('verbose')
 if opts.ifo:
     job.add_opt('ifo', opts.ifo)
+job.add_opt('on-segdb-error', opts.on_segdb_error)
 job.add_opt('output-dir', outdir)
 
 # make surrounding HTML first

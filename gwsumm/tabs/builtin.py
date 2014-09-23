@@ -345,7 +345,7 @@ class PlotTab(Tab):
             raise TypeError("Cannot append plot of type %r" % type(plot))
         self.plots.append(plot)
 
-    def scaffold_plots(self, state=None):
+    def scaffold_plots(self, plots=None, state=None, layout=None):
         """Build a grid of plots using bootstrap's scaffolding.
 
         Returns
@@ -355,17 +355,19 @@ class PlotTab(Tab):
         """
         page = html.markup.page()
 
-        if state:
-            plots = [p for p in self.plots if not isinstance(p, DataPlot) or
-                     p.state in [state, None]]
-        else:
-            plots = self.plots
+        if plots is None:
+            if state:
+                plots = [p for p in self.plots if not isinstance(p, DataPlot) or
+                         p.state in [state, None]]
+            else:
+                plots = self.plots
 
         # get layout
-        if self.layout:
-            layout = list(self.layout)
-        else:
-            layout = len(plots) == 1 and [1] or [2]
+        if layout is None:
+            if self.layout:
+                layout = list(self.layout)
+            else:
+                layout = len(plots) == 1 and [1] or [2]
         for i, l in enumerate(layout):
             if isinstance(l, (list, tuple)):
                 layout[i] = l

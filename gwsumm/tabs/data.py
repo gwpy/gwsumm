@@ -310,7 +310,7 @@ class DataTab(DataTabBase):
     # -------------------------------------------
     # SummaryTab processing
 
-    def finalize_states(self, config=ConfigParser()):
+    def finalize_states(self, config=ConfigParser(), segdb_error='raise'):
         """Fetch the segments for each state for this `SummaryTab`
         """
         # finalize all-state
@@ -340,8 +340,10 @@ class DataTab(DataTabBase):
             return
         config = GWSummConfigParser.from_configparser(config)
         # load state segments
-        self.finalize_states(config=config)
+        self.finalize_states(config=config,
+                             segdb_error=stateargs.get('segdb_error', 'raise'))
         vprint("States finalised\n")
+
         # setup plotting queue
         def plot_worker(queue):
             while True:

@@ -360,7 +360,7 @@ class DataTab(DataTabBase):
                         plot.process()
                         sleep(1)
                     except Exception as e:
-                        vprint('%s caught: %s' % (type(e).__name__, str(e)),
+                        vprint('%s caught: %s\n' % (type(e).__name__, str(e)),
                                stream=sys.stderr)
                     finally:
                         queue.task_done()

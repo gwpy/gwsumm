@@ -23,6 +23,7 @@ import abc
 import operator
 import re
 import os.path
+import sys
 
 from copy import copy
 from multiprocessing import (Process, JoinableQueue, Pool, util)

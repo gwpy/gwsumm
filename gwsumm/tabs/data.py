@@ -19,6 +19,8 @@
 """This module defines tabs for generating plots from data on-the-fly.
 """
 
+from __future__ import print_function
+
 import abc
 import operator
 import re
@@ -360,8 +362,8 @@ class DataTab(DataTabBase):
                         plot.process()
                         sleep(1)
                     except Exception as e:
-                        vprint('%s caught: %s\n' % (type(e).__name__, str(e)),
-                               stream=sys.stderr)
+                        print('%s caught: %s' % (type(e).__name__, str(e)),
+                              file=sys.stderr)
                     finally:
                         queue.task_done()
 

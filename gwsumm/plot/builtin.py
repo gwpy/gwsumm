@@ -661,6 +661,15 @@ class TimeSeriesHistogramPlot(DataPlot):
         # get histogram parameters
         (plot, ax) = self.init_plot()
 
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle)
+
+        # get spectrum format: 'amplitude' or 'power'
         # extract histogram arguments
         histargs = self.parse_histogram_kwargs()
 

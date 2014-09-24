@@ -247,8 +247,11 @@ class DataPlot(SummaryPlot):
         except AttributeError:
             state = re_cchar.sub('_', self.state is None and 'MULTI' or
                                       self.state.name)
-            hash = hashlib.md5("".join(map(str,
-                                           self.channels))).hexdigest()[:6]
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            hash = hashlib.md5(chans+filts).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
             return '_'.join([state, hash, type_]).upper()
 

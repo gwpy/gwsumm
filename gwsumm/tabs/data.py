@@ -289,6 +289,7 @@ class DataTab(DataTabBase):
                 if subidx == index:
                     for span in subplots:
                         subplot = copy(plot)
+                        subplot.pargs = plot.pargs.copy()
                         subplot.span = span
                         job.subplots.append(subplot)
             # otherwise define individually for multiple states
@@ -305,6 +306,7 @@ class DataTab(DataTabBase):
                     if subidx == index:
                         for span in subplots:
                             subplot = copy(plot)
+                            subplot.pargs = plot.pargs.copy()
                             subplot.span = span
                             job.subplots.append(subplot)
 

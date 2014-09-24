@@ -498,7 +498,11 @@ class DataTab(DataTabBase):
         # --------------------------------------------------------------------
         # process triggers
 
-        for etg, channel in self.get_triggers('triggers', all_data=all_data):
+        for etg, channel in self.get_triggers('triggers',
+                                              'trigger-timeseries',
+                                              'trigger-rate',
+                                              'trigger-histogram',
+                                              all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
                          cache=trigcache)
 

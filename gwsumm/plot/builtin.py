@@ -972,6 +972,11 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
     """HistogramPlot from a LIGO_LW Table
     """
     type = 'trigger-histogram'
+    _threadsafe = False
+
+    def __init__(self, *args, **kwargs):
+        super(TriggerHistogramPlot, self).__init__(*args, **kwargs)
+        self.etg = self.pargs.pop('etg')
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -987,7 +992,6 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         # get histogram parameters
         (plot, ax) = self.init_plot()
 
-        etg = self.pargs.pop('etg')
         column = self.pargs.pop('column')
 
         # extract histogram arguments
@@ -1007,7 +1011,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            table_ = get_triggers(str(channel), etg, valid, query=False)
+            table_ = get_triggers(str(channel), self.etg, valid, query=False)
             data.append(get_table_column(table_, column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
@@ -1057,11 +1061,11 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             raise ValueError("'bins' must be configured for rate plots if "
                              "'column' is given.")
         super(TriggerRateDataPlot, self).__init__(*args, **kwargs)
+        self.etg = self.pargs.pop('etg')
 
     def process(self):
         """Read in all necessary data, and generate the figure.
         """
-        etg = self.pargs.pop('etg')
 
         # get rate arguments
         stride = self.pargs.pop('stride')
@@ -1096,7 +1100,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            table_ = get_triggers(str(channel), etg, valid, query=False)
+            table_ = get_triggers(str(channel), self.etg, valid, query=False)
             if column:
                 rates = binned_event_rates(
                     table_, stride, column, bins, operator, self.start,

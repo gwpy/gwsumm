@@ -501,8 +501,6 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                      nproc=nproc,
                                      resample=qresample, verbose=verbose)
             for (channel, data) in tsd.iteritems():
-                if channel.sample_rate is None:
-                    override_sample_rate(channel, data.sample_rate)
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):
                     continue

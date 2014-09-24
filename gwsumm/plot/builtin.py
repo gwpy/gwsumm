@@ -721,6 +721,7 @@ register_plot(TimeSeriesHistogramPlot)
 
 
 class TriggerDataPlot(TimeSeriesDataPlot):
+    _threadsafe = False
     type = 'triggers'
     defaults = {'x': 'time',
                 'y': 'snr',

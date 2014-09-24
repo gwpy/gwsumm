@@ -226,8 +226,7 @@ class DataPlot(SummaryPlot):
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
-        self._channels = ChannelList(get_channel(c) for c in self._channels)
-        return self._channels
+        return ChannelList(get_channel(c) for c in self._channels)
 
     @channels.setter
     def channels(self, channellist):

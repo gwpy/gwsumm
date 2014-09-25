@@ -28,7 +28,7 @@ import os.path
 import sys
 
 from copy import copy
-from multiprocessing import (Process, JoinableQueue, Pool, util)
+from multiprocessing import (Process, JoinableQueue)
 from Queue import Empty
 from time import sleep
 from StringIO import StringIO
@@ -324,11 +324,10 @@ class DataTab(DataTabBase):
         alldefs = [state.definition for state in self.states if
                    state.name != ALLSTATE and not state.ready]
         allvalid = reduce(operator.or_, [state.valid for state in self.states])
-        get_segments(alldefs, allvalid, config=config, return_=False,
-                     segdb_error=segdb_error)
+        get_segments(alldefs, allvalid, config=config, return_=False)
         # individually double-check, set ready condition
         for state in self.states:
-            state.fetch(config=config, query=False, segdb_error=segdb_error)
+            state.fetch(config=config, query=False)
 
     def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
         """Process data for this `StateTab`.
@@ -350,32 +349,10 @@ class DataTab(DataTabBase):
         vprint("States finalised\n")
 
         # setup plotting queue
-        def plot_worker(queue):
-            while True:
-                try:
-                    plot = queue.get(block=True, timeout=0.5)
-                except Empty:
-                    if queue._closed:
-                        break
-                    else:
-                        sleep(1)
-                else:
-                    try:
-                        plot.process()
-                        sleep(1)
-                    except Exception as e:
-                        print('%s caught: %s' % (type(e).__name__, str(e)),
-                              file=sys.stderr)
-                    finally:
-                        queue.task_done()
-
-        # if using multiprocessing, set up a pool of processes to use
-        if multiprocess:
-            queue = JoinableQueue()
-            if multiprocess is True:
-                multiprocess = count_free_cores()
-            pool = Pool(multiprocess, plot_worker, (queue,))
-            pool.close()
+        if multiprocess and isinstance(multiprocess, int):
+            queue = JoinableQueue(count_free_cores(multiprocess))
+        elif multiprocess:
+            queue = JoinableQueue(count_free_cores())
         else:
             queue = None
         # pre-process requests for 'all-data' plots
@@ -389,10 +366,10 @@ class DataTab(DataTabBase):
             self.process_state(state, config=config, multiprocess=multiprocess,
                                plotqueue=queue, **stateargs)
 
-        # wait for multi-processed plotting to complete
+        # consolidate child processes
         if queue is not None:
-            queue.close()
             vprint("Waiting for plotting processes to complete.. ")
+            queue.close()
             queue.join()
             vprint('done.\n')
 
@@ -525,13 +502,15 @@ class DataTab(DataTabBase):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
             if plotqueue and plot._threadsafe:
-                plotqueue.put(plot)
+                process = Process(target=plot.queue, args=(plotqueue,))
+                process.daemon = True
+                process.start()
                 nproc += 1
+                sleep(0.5)
             # process plot now
             else:
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
-
         if nproc:
             vprint("        %d plot processes queued.\n" % nproc)
         vprint("    Done.\n")

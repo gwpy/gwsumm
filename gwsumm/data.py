@@ -312,6 +312,13 @@ def find_frame_type(channel):
         return channel.frametype
 
 
+def find_types(site=None, match=None):
+    """Query the DataFind server for frame types matching the given options
+    """
+    conn = datafind.GWDataFindHTTPConnection()
+    return conn.find_types(site=site, match=match)
+
+
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=None, query=True, nds='guess',
                         multiprocess=True, statevector=False, return_=True):
@@ -434,7 +441,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             elif ftype == '%s_T' % ifo:
                 new = type(new)([s for s in new if abs(s) >= 1.])
             elif ((globalv.NOW - new[0][0]) < 86400 * 20 and
-                  ftype == '%s_R' % ifo):
+                  ftype == '%s_R' % ifo and
+                  find_types(site=ifo[0], match='_C\Z')):
                 ftype = '%s_C' % ifo
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=ftype,

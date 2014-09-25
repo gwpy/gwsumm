@@ -506,7 +506,8 @@ class SpectrumDataPlot(DataPlot):
     def _process(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = SpectrumPlot(figsize=[12, 6])
+        plot = self.plot = SpectrumPlot(
+            figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
 
         if self.state:
@@ -524,7 +525,7 @@ class SpectrumDataPlot(DataPlot):
         refs = []
         refkey = 'None'
         for key in sorted(self.pargs.keys()):
-            if key == 'reference' or re.match('reference\d+', key):
+            if key == 'reference' or re.match('reference\d+\Z', key):
                 refs.append(dict())
                 refs[-1]['source'] = self.pargs.pop(key)
                 refkey = key
@@ -595,6 +596,10 @@ class SpectrumDataPlot(DataPlot):
                         raise
                 else:
                     ref.setdefault('zorder', -len(refs) + 1)
+                    if 'filter' in ref:
+                        refspec = refspec.filter(*ref.pop('filter'))
+                    if 'scale' in ref:
+                        refspec *= ref.pop('scale', 1)
                     ax.plot(refspec, **ref)
 
         # customise

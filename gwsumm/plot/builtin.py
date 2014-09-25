@@ -581,10 +581,18 @@ class SpectrumDataPlot(DataPlot):
         # display references
         for i, ref in enumerate(refs):
             if 'source' in ref:
+                source = ref.pop('source')
                 try:
-                    refspec = Spectrum.read(ref.pop('source'), format='dat')
+                    refspec = Spectrum.read(source)
                 except IOError as e:
                     warnings.warn('IOError: %s' % str(e))
+                except Exception as e:
+                    # hack for old versions of GWpy
+                    # TODO: remove me when GWSumm requires GWpy > 0.1
+                    if 'Format could not be identified' in str(e):
+                        refspec = Spectrum.read(source, format='dat')
+                    else:
+                        raise
                 else:
                     ref.setdefault('zorder', -len(refs) + 1)
                     ax.plot(refspec, **ref)

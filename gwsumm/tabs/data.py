@@ -502,17 +502,17 @@ class DataTab(DataTabBase):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
             if plotqueue and plot._threadsafe:
+                plotqueue.put(1)
                 process = Process(target=plot.queue, args=(plotqueue,))
                 process.daemon = True
                 process.start()
                 nproc += 1
-                sleep(0.5)
             # process plot now
             else:
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
         if nproc:
-            vprint("        %d plot processes queued.\n" % nproc)
+            vprint("        %d plot processes executed.\n" % nproc)
         vprint("    Done.\n")
 
     # -------------------------------------------------------------------------

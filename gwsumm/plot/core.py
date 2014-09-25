@@ -351,13 +351,12 @@ class DataPlot(SummaryPlot):
     def queue(self, queue):
         """Submit this plot to the queue for processing.
         """
-        # tell the queue we are processing
-        queue.put(1)
         # process data
         try:
             self.process()
         # announce done regardless of status
         finally:
+            queue.get()
             queue.task_done()
 
     def process(self):

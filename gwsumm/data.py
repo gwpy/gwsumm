@@ -32,6 +32,7 @@ except ImportError:
 
 import numpy
 import nds2
+import warnings
 
 from astropy import units
 

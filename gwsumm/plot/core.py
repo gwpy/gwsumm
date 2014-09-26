@@ -284,6 +284,55 @@ class DataPlot(SummaryPlot):
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods
 
+    def parse_legend_kwargs(self, **defaults):
+        """Pop the legend arguments from the `pargs` for this Plot
+        """
+        legendargs = defaults.copy()
+        for key in self.pargs.keys():
+            if re.match('legend[-_]', key):
+                legendargs[key[7:]] = self.pargs.pop(key)
+        return legendargs
+
+    def parse_plot_kwargs(self, **defaults):
+        """Pop keyword arguments for `Axes.plot` from the `pargs` for this Plot
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('label', self._parse_labels())
+        chans_ = self.get_channel_groups()
+        for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
+                      'linewidth', 'marker', 'markeredgecolor',
+                      'markeredgewidth', 'markerfacecolor',
+                      'markerfacecoloralt', 'markersize']:
+            try:
+                val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))
+            except KeyError:
+                continue
+            else:
+                plotargs[kwarg] = val
+        chans = self.get_channel_groups().keys()
+        for key, val in plotargs.iteritems():
+            if (not isinstance(val, (list, tuple)) or len(val) != len(chans_)):
+                plotargs[key] = [val]*len(self.get_channel_groups())
+        out = []
+        for i in range(len(chans)):
+            out.append(dict((key, val[i]) for key, val in plotargs.items() if
+                            val is not None and val[i] is not None))
+        return out
+
+    def _parse_labels(self, defaults=None):
+        """Pop the labels for plotting from the `pargs` for this Plot
+        """
+        chans = self.get_channel_groups().keys()
+        if defaults is None:
+            defaults = chans
+        labels = self.pargs.pop('labels', defaults)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n ').replace('_', r'\_'), labels)
+        while len(labels) < len(chans):
+            labels.append(None)
+        return labels
+
     def add_channel(self, channel):
         self._channels.append(channel)
 

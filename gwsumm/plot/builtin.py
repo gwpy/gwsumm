@@ -89,18 +89,6 @@ class TimeSeriesDataPlot(DataPlot):
         ax.set_epoch(float(self.start))
         return self.plot, ax
 
-    def parse_kwargs(self):
-        plotargs = {}
-        for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
-                       'linewidth', 'marker', 'markeredgecolor',
-                       'markeredgewidth', 'markerfacecolor',
-                       'markerfacecoloralt', 'markersize']:
-            try:
-                plotargs[kwarg] = self.pargs[kwarg]
-            except KeyError:
-                pass
-        return plotargs
-
     def finalize(self, outputfile=None):
         plot = self.plot
         ax = plot.axes[0]
@@ -114,17 +102,12 @@ class TimeSeriesDataPlot(DataPlot):
         """
         (plot, ax) = self.init_plot()
 
-        plotargs = self.parse_kwargs()
-
-        # work out labels
-        mmmchans = self.get_channel_groups()
-        labels = self.pargs.pop('labels', mmmchans.keys())
-        if isinstance(labels, (unicode, str)):
-            labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
+        plotargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
 
         # add data
-        for label, channels in zip(labels, zip(*mmmchans.items())[1]):
+        mmmchans = self.get_channel_groups()
+        for channels, pargs in zip(mmmchans.values(), plotargs):
             # pad data request to over-fill plots (no gaps at the end)
             if self.state and not self.all_data:
                 valid = self.state.active
@@ -147,11 +130,9 @@ class TimeSeriesDataPlot(DataPlot):
                     ts[ts.data == 0] = 1e-100
             # plot groups or single TimeSeries
             if len(channels) > 1:
-                ax.plot_timeseries_mmm(*data, label=label.replace('_', r'\_'),
-                                       **plotargs)
+                ax.plot_timeseries_mmm(*data, **pargs)
             else:
-                ax.plot_timeseries(data[0], label=label.replace('_', r'\_'),
-                                   **plotargs)
+                ax.plot_timeseries(data[0], **pargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):
@@ -175,7 +156,7 @@ class TimeSeriesDataPlot(DataPlot):
             except AttributeError:
                 setattr(ax, key, val)
         if len(mmmchans) > 1 or labels[0] != mmmchans.keys()[0]:
-            plot.add_legend(ax=ax, markerscale=4)
+            plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
         if not plot.colorbars:
@@ -490,8 +471,9 @@ class SpectrumDataPlot(DataPlot):
     type = 'spectrum'
     defaults = {'logx': True,
                 'logy': True,
-                'color': [],
                 'format': None,
+                'alpha': 0.1,
+                'zorder': 1,
                 'reference-linestyle': '--'}
 
     def process(self):
@@ -521,6 +503,10 @@ class SpectrumDataPlot(DataPlot):
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
 
+        # parse plotting arguments
+        plotargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
+
         # get reference arguments
         refs = []
         refkey = 'None'
@@ -532,23 +518,8 @@ class SpectrumDataPlot(DataPlot):
             if re.match('%s[-_]' % refkey, key):
                 refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
 
-        # get colors
-        colors = self.pargs.pop('color', [])
-        if isinstance(colors, str):
-            colors = colors.split(',')
-        while len(colors) < len(self.channels):
-            colors.append(None)
-
-        alpha = self.pargs.pop('alpha', 0.1)
-
-        # get labels
-        labels = self.pargs.pop('labels', map(str, self.channels))
-        if isinstance(labels, (unicode, str)):
-            labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
-
         # add data
-        for label, color, channel in zip(labels, colors, self.channels):
+        for channel, pargs in zip(self.channels, plotargs):
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
@@ -563,12 +534,7 @@ class SpectrumDataPlot(DataPlot):
                 for sp in data:
                     sp[sp.data == 0] = 1e-100
 
-            if color is not None:
-                ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
-                                     color=color, alpha=alpha, zorder=1)
-            else:
-                ax.plot_spectrum_mmm(*data, label=label.replace('_', r'\_'),
-                                     alpha=alpha, zorder=1)
+            ax.plot_spectrum_mmm(*data, **pargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'frequency_range'):
@@ -603,10 +569,7 @@ class SpectrumDataPlot(DataPlot):
                     ax.plot(refspec, **ref)
 
         # customise
-        legendargs = {}
         for key, val in self.pargs.iteritems():
-            if re.match('legend[-_]', key):
-                legendargs[key[7:]] = val
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
@@ -717,13 +680,14 @@ class TimeSeriesHistogramPlot(DataPlot):
                 ax.plot([], label=label)
 
         # customise plot
+        legendargs = self.parse_legend_kwargs()
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax)
+            plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
         if not plot.colorbars:
@@ -872,6 +836,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                           label=label, **pargs)
 
         # customise plot
+        legendargs = self.parse_legend_kwargs(markerscale=4)
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
@@ -895,7 +860,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                 ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
 
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax, markerscale=4)
+            plot.add_legend(ax=ax, **legendargs)
 
         # add state segments
         if isinstance(plot, TimeSeriesPlot) and self.state:
@@ -963,13 +928,14 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
                         linestyle='--', color='red')
 
         # customise plot
+        legendargs = self.parse_legend_kwargs()
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax)
+            plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
         if not plot.colorbars:
@@ -1009,6 +975,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
 
         # extract histogram arguments
         histargs = self.parse_histogram_kwargs()
+        legendargs = self.parse_legend_kwargs()
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
@@ -1048,7 +1015,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
             except AttributeError:
                 setattr(ax, key, val)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax)
+            plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
         if not plot.colorbars:

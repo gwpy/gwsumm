@@ -206,7 +206,7 @@ class Tab(object):
         if self._index:
             return os.path.split(self._index)[0]
         else:
-            if self.name.lower() == 'summary':
+            if self.shortname.lower() == 'summary':
                 p = ''
             else:
                 p = re_cchar.sub('_', self.shortname).lower()

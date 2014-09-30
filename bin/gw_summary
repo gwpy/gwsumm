@@ -377,6 +377,7 @@ config.set(DEFAULTSECT, 'gps-end-time', str(int(opts.gpsend)))
 config.set(DEFAULTSECT, 'yyyy', utc.strftime('%Y'))
 config.set(DEFAULTSECT, 'yyyymm', utc.strftime('%Y%m'))
 config.set(DEFAULTSECT, 'yyyymmdd', utc.strftime('%Y%m%d'))
+config.set(DEFAULTSECT, 'duration', str(int(opts.gpsend - opts.gpsstart)))
 
 starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')

@@ -28,7 +28,11 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from dateutil import tz
+
 import numpy
+
+from astropy.time import Time
 
 from gwpy.segments import DataQualityDict
 
@@ -45,7 +49,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 Tab = get_tab('default')
-
+UTC = tz.gettz('UTC')
 
 class GuardianTab(Tab):
     """Summarises the data recorded by an Advanced LIGO Guardian node.
@@ -197,10 +201,21 @@ class GuardianTab(Tab):
             # print transitions
             page.p('This state was entered %d times as follows:'
                    % len(self.transitions[bit]))
-            headers = ['Time', 'Transition from']
-            data = [(t[0],
-                     '%s [%d]' % (self.grdstates.get(t[1], 'Unknown'), t[1]))
-                    for t in self.transitions[bit]]
+            headers = ['GPS time', 'UTC time', 'Local time', 'Transition from']
+            data = []
+            if self.ifo in ['H1', 'C1', 'P1']:
+                localzone = tz.gettz('America/Los_Angeles')
+            elif self.ifo in ['L1']:
+                localzone = tz.gettz('America/Chicago')
+            else:
+                localzone = tz.gettz('Europe/Berlin')
+            for t, from_ in self.transitions[bit]:
+                t2 = Time(t, format='gps', scale='utc')
+                tlocal = Time(
+                    t2.datetime.replace(tzinfo=UTC).astimezone(localzone),
+                    format='datetime', scale='utc')
+                data.append((t, t2.iso, tlocal.iso, '%s [%d]' % (
+                             self.grdstates.get(from_, 'Unknown'), from_)))
             page.add(str(html.data_table(headers, data, table='guardian data')))
 
             # print segments

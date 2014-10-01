@@ -194,6 +194,10 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 tag += '_%s_RATIO' % re_cchar.sub('_', self.ratio.upper())
             return tag
 
+    @tag.setter
+    def tag(self, filetag):
+        self._tag = filetag or self.type.upper()
+
     def process(self):
         # initialise
         (plot, ax) = self.init_plot()
@@ -298,6 +302,10 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                                  self.state.name)
             hash_ = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
             return '_'.join([state, hash_, self.type]).upper()
+
+    @tag.setter
+    def tag(self, filetag):
+        self._tag = filetag or self.type.upper()
 
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
@@ -742,6 +750,10 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                 if column:
                     tag += '_%s' % re_cchar.sub('_', column)
             return tag.upper()
+
+    @tag.setter
+    def tag(self, filetag):
+        self._tag = filetag or self.type.upper()
 
     def finalize(self, outputfile=None):
         if isinstance(self.plot, TimeSeriesPlot):

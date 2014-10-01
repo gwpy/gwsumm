@@ -91,11 +91,10 @@ class GuardianTab(Tab):
         flags = [new.segmenttag % name for name in labels]
         new.plots.append(get_plot('segments')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
-            valid=None,
+            valid={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
+            tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
             title='%s Guardian %s state' % (
-                new.ifo, new.node.replace('_', r'\_')),
-            tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node)))
-
+                new.ifo, new.node.replace('_', r'\_'))))
         return new
 
     def process(self, nds='guess', multiprocess=True,

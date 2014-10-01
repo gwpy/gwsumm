@@ -122,12 +122,11 @@ class GuardianTab(Tab):
         # --------------------------------------------------------------------
         # find segments and transitions
 
-        self.transitions = {}
+        self.transitions = dict((v, []) for v in self.grdstates)
 
         for data in grddata:
             segs = DataQualityDict()
             for v, name in self.grdstates.iteritems():
-                self.transitions[v] = []
                 tag = self.segmenttag % name
                 instate = data == v
                 segs[tag] = instate.to_dqflag(name=name)

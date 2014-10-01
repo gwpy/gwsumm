@@ -38,6 +38,8 @@ from numpy import isclose
 
 from astropy.time import Time
 
+from gwpy.segments import DataQualityFlag
+
 from .. import (version, globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
@@ -618,8 +620,8 @@ class DataTab(DataTabBase):
 
         flags = self.get_flags('segments')
         if len(flags):
-            page.h1('Data-quality flag information')
-            page.add("The following data-quality flags were used to generate "
+            page.h1('Segment information')
+            page.add("The following flags were used in "
                      "the above data. This list does not include state "
                      "information")
             # make summary table
@@ -645,29 +647,23 @@ class DataTab(DataTabBase):
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):
                 flag = get_segments(flag, state.active, query=False).copy()
-                n = flag.name
                 page.div(class_='panel panel-default')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
                                               'data-parent': '#accordion'})
                 page.div(class_='panel-heading')
-                page.h4(n, class_='panel-title')
+                page.h4(flag.name, class_='panel-title')
                 page.div.close()
                 page.a.close()
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')
                 page.div(class_='panel-body')
                 # write segment summary
-                page.p('This flag was defined and had a known state during '
+                page.p('This %s was defined and had a known state during '
                        'the following segments:')
-                segwizard = StringIO()
-                flag.valid.write(segwizard, format='segwizard')
-                page.pre(segwizard.getvalue())
-                segwizard.close()
+                page.add(self.print_segments(flag.valid))
                 # write segment table
                 page.p('This flag was active during the following segments:')
-                segwizard = StringIO()
-                flag.write(segwizard, format='segwizard')
-                page.pre(segwizard.getvalue())
-                segwizard.close()
+                page.add(self.print_segments(flag.active))
+
                 page.div.close()
                 page.div.close()
                 page.div.close()
@@ -677,6 +673,18 @@ class DataTab(DataTabBase):
 
         return super(DataTab, self).write_state_html(state, plots=True,
                                                      post=page)
+
+    @staticmethod
+    def print_segments(flag):
+        """Print the contents of a `SegmentList` in HTML
+        """
+        if isinstance(flag, DataQualityFlag):
+            flag = flag.active
+        dtype = float(abs(flag)).is_integer() and int or float
+        segwizard = StringIO()
+        flag.write(segwizard, format='segwizard', coltype=dtype)
+        return html.markup.oneliner.pre(segwizard.getvalue())
+
 
     # -------------------------------------------------------------------------
     # methods

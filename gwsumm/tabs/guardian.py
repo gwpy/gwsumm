@@ -72,7 +72,7 @@ class GuardianTab(Tab):
             raise ValueError("GuardianTab does not accept state selection")
         new.plots = []
         new.plotdir = plotdir
-        new.ifo = config.get('DEFAULT', 'ifo')
+        new.ifo = config.get(section, 'ifo')
 
         # record node and states
         new.node = config.get(section, 'node')
@@ -92,7 +92,8 @@ class GuardianTab(Tab):
         new.plots.append(get_plot('segments')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
             valid=None,
-            title='Guardian %s state' % new.node.replace('_', r'\_'),
+            title='%s Guardian %s state' % (
+                new.ifo, new.node.replace('_', r'\_')),
             tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node)))
 
         return new

@@ -544,8 +544,15 @@ for section in filter(lambda n: re.match('tab[-\s]', n),
             type_ = config.get(section, 'type')
         except NoOptionError:
             type_ = 'default'
+        else:
+            if not type_.startswith('archived-'):
+                type_ = 'archived-%s' % type_
+        PlotTab = get_tab('plots')
         Tab = get_tab(type_)
-        tab = Tab.from_ini(config, section, plotdir=plotdir, base=base)
+        if issubclass(Tab, PlotTab):
+            tab = Tab.from_ini(config, section, plotdir=plotdir, base=base)
+        else:
+            tab = Tab.from_ini(config, section, base=base)
         alltabs.append(tab)
 
 # sort tabs into hierarchical list
@@ -653,7 +660,7 @@ for tab in alltabs:
         name = '%s/%s' % (tab.parent.name, tab.name)
     else:
         name = tab.name
-    if not opts.html_only:
+    if not opts.html_only and isinstance(tab, get_tab('archived-data')):
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,

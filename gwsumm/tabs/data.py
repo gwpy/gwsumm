@@ -102,7 +102,7 @@ class DataTab(DataTabBase):
         for details on the other keyword arguments (``**kwargs``)
         accepted by the constructor for the `DataTab`.
     """
-    type = 'data'
+    type = 'archived-data'
 
     def __init__(self, name, start, end, states=list([ALLSTATE]),
                  ismeta=False, **kwargs):

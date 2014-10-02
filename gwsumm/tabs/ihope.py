@@ -238,7 +238,7 @@ class DailyAhopeTab(base):
         return self.frames[idx]
 
 register_tab(DailyAhopeTab)
-register_tab(DailyAhopeTab, name='daily-ihope')
+register_tab(DailyAhopeTab, name='archived-daily-ihope')
 
 register_reader('daily ihope', SnglInspiralTable,
                 get_reader('ligolw', SnglInspiralTable))

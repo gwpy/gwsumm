@@ -55,7 +55,7 @@ HVETO_COLUMNS = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']
 class HvetoTab(base):
     """Custom tab displaying a summary of Hveto results.
     """
-    type = 'hveto'
+    type = 'archived-hveto'
     summaryrows = ['Winning channel', 'Time Window [s]', 'SNR Thresh.',
                    'Significance', 'N. trigs',
                    'Use %', 'Efficiency [%]', 'Deadtime [%]',

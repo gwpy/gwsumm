@@ -72,7 +72,7 @@ re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.
     """
-    type = 'seismic-watchdog'
+    type = 'archived-seismic-watchdog'
     window = 5
 
     @classmethod

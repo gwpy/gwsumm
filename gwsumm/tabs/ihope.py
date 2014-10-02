@@ -48,7 +48,7 @@ base = get_tab('default')
 class DailyAhopeTab(base):
     """Custom tab displaying a summary of Daily iHope results.
     """
-    type = 'daily-ahope'
+    type = 'archived-daily-ahope'
 
     @classmethod
     def from_ini(cls, config, section, plotdir=os.curdir, base=''):

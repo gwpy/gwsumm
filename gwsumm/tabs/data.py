@@ -657,7 +657,7 @@ class DataTab(DataTabBase):
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')
                 page.div(class_='panel-body')
                 # write segment summary
-                page.p('This %s was defined and had a known state during '
+                page.p('This flag was defined and had a known state during '
                        'the following segments:')
                 page.add(self.print_segments(flag.valid))
                 # write segment table

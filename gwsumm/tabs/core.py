@@ -766,6 +766,16 @@ class SummaryArchiveMixin(object):
     # -------------------------------------------------------------------------
     # SummaryArchive methods
 
+    @classmethod
+    def from_ini(cls, config, section, start=None, end=None, **kwargs):
+        config = GWSummConfigParser.from_configparser(config)
+        if start is None:
+            start = config.getint(section, 'gps-start-time')
+        if end is None:
+            end = config.getint(section, 'gps-end-time')
+        return super(SummaryArchiveMixin, cls).from_ini(config, section, start,
+                                                     end, **kwargs)
+
     def build_html_calendar(self):
         """Build the datepicker calendar for this tab.
 

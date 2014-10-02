@@ -84,7 +84,7 @@ class ExternalTab(Tab):
         self._url = link
 
     @classmethod
-    def from_ini(cls, cp, section):
+    def from_ini(cls, cp, section, *args, **kwargs):
         """Configure a new `ExternalTab` from a `ConfigParser` section
 
         Parameters
@@ -116,12 +116,12 @@ class ExternalTab(Tab):
 
         """
         url = cp.get(section, 'url')
-        return super(ExternalTab, cls).from_ini(cp, section, url)
+        return super(ExternalTab, cls).from_ini(cp, section, url, *args, **kwargs)
 
     def build_html_content(self, content, divclass='container', divid='main'):
         page = html.markup.page()
         page.div(content, class_=divclass, id_=divid)
-        page.add(str(html.load(self.url, id_=id_)))
+        page.add(str(html.load(self.url, id_=divid)))
         return page
 
     def write_html(self, **kwargs):
@@ -724,16 +724,6 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
         super(ArchivedStateTab, self).__init__(name, states=states, **kwargs)
         self.span = (start, end)
         self.mode = mode
-
-    @classmethod
-    def from_ini(cls, config, section, start=None, end=None, **kwargs):
-        config = GWSummConfigParser.from_configparser(config)
-        if start is None:
-            start = config.getint(section, 'gps-start-time')
-        if end is None:
-            end = config.getint(section, 'gps-end-time')
-        return super(ArchivedStateTab, cls).from_ini(config, section, start,
-                                                     end, **kwargs)
 
 register_tab(ArchivedStateTab)
 

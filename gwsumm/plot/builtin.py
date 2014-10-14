@@ -265,7 +265,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
     defaults = {'mask': None,
                 'color': None,
                 'on_is_bad': False,
-                'add_label': 'inset',
+                'insetlabels': 'inset',
                 'edgecolor': 'black'}
 
     def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
@@ -348,7 +348,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         # get labels
         flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
         labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
-        addlabel = self.pargs.pop('add_label')
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
         labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
@@ -357,8 +357,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         mask = self.pargs.pop('mask')
         activecolor, validcolor = self.get_segment_color()
         edgecolor = self.pargs.pop('edgecolor')
-        plotargs = {'add_label': addlabel,
-                    'facecolor': activecolor,
+        plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'valid': {'facecolor': validcolor}}
         for key in plotargs:
@@ -420,11 +419,10 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
 
         # extract plotting arguments
         mask = self.pargs.pop('mask')
-        addlabel = self.pargs.pop('add_label')
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         activecolor, validcolor = self.get_segment_color()
         edgecolor = self.pargs.pop('edgecolor')
-        plotargs = {'add_label': addlabel,
-                    'facecolor': activecolor,
+        plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'valid': {'facecolor': validcolor}}
 

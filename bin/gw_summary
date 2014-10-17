@@ -547,9 +547,9 @@ for section in filter(lambda n: re.match('tab[-\s]', n),
         else:
             if not type_.startswith('archived-'):
                 type_ = 'archived-%s' % type_
-        PlotTab = get_tab('plots')
+        DataTab = get_tab('archived-data')
         Tab = get_tab(type_)
-        if issubclass(Tab, PlotTab):
+        if issubclass(Tab, DataTab):
             tab = Tab.from_ini(config, section, plotdir=plotdir, base=base)
         else:
             tab = Tab.from_ini(config, section, base=base)

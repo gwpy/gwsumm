@@ -73,7 +73,7 @@ class ThreadChannelQuery(threading.Thread):
         self.out.task_done()
 
 
-def get_channel(channel, find_trend_source=True):
+def get_channel(channel, find_trend_source=True, timeout=5):
     """Define a new :class:`~gwpy.detector.channel.Channel`
 
     Parameters
@@ -109,7 +109,7 @@ def get_channel(channel, find_trend_source=True):
             # trends are not stored in CIS, but try and get their raw source
             if re.search('.[a-z]+\Z', name):
                 raise TypeError()
-            new = Channel.query(name)
+            new = Channel.query(name, timeout=timeout)
         except TypeError:
             # set default trend type based on mode
             if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:

@@ -117,8 +117,8 @@ class TimeSeriesDataPlot(DataPlot):
             else:
                 valid = SegmentList([self.span])
             # get data
-            data = [get_timeseries(c, valid,
-                                   query=False).join(pad=numpy.nan)
+            data = [get_timeseries(c, valid, query=False).join(
+                        gap='ignore', pad=numpy.nan)
                     for c in channels]
             # double-check empty
             for ts in data:
@@ -669,8 +669,8 @@ class TimeSeriesHistogramPlot(DataPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            data.append(get_timeseries(channel, valid,
-                                       query=False).join(pad=numpy.nan))
+            data.append(get_timeseries(channel, valid, query=False).join(
+                gap='ignore', pad=numpy.nan))
             # allow channel data to set parameters
             if hasattr(data[-1].channel, 'amplitude_range'):
                 self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)

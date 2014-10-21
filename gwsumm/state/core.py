@@ -19,12 +19,17 @@
 """Definition of the `SummaryState` class.
 """
 
+import datetime
 import re
 
+from astropy.time import Time
+
+from gwpy.detector import get_timezone_offset
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
+from gwpy.time import (to_gps, from_gps)
 
 from .. import globalv
-from ..config import GWSummConfigParser
+from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..utils import re_cchar
 from ..segments import get_segments
 
@@ -50,7 +55,7 @@ class SummaryState(DataQualityFlag):
         registry key for this state, defaults to :attr:`~SummaryState.name`
     """
     def __init__(self, name, valid=SegmentList(), active=SegmentList(),
-                 description=None, definition=None, key=None):
+                 description=None, definition=None, hours=None, key=None):
         """Initialise a new `SummaryState`
         """
         # allow users to specify valid as (start, end)
@@ -63,6 +68,7 @@ class SummaryState(DataQualityFlag):
         self.description = description
         self.definition = definition
         self.key = key
+        self.hours = hours
         if valid and active:
             self.ready = True
         else:
@@ -178,10 +184,43 @@ class SummaryState(DataQualityFlag):
         name = params.pop('name', section)
         if re.match('state[-\s]', name):
             name = section[6:]
+        # get hours
+        hours = params.pop('hours', None)
+        if hours is not None:
+            segs = re.split('(,|, )', hours)[::2]
+            hours = []
+            offset = 0
+            for seg in segs:
+                try:
+                    # parse hour segment
+                    hours.append(map(float, seg.split('-', 1)))
+                except ValueError:
+                    # parse time-zone
+                    if seg == segs[-1]:
+                        if seg.lower() == 'utc':
+                            offset = 0
+                        elif seg.lower() == 'local':
+                            try:
+                                ifo = config.get(DEFAULTSECT, 'ifo')
+                            except NoOptionError:
+                                raise ValueError("The relevant IFO must be "
+                                                 "given either from the --ifo "
+                                                 "command-line option, or the "
+                                                 "[DEFAULT] section of any "
+                                                 "INI file")
+                            offset = get_timezone_offset(ifo, from_gps(start))
+                        else:
+                            offset = get_timezone_offset(seg, from_gps(start))
+                    else:
+                        raise
+            # apply time-zone
+            for i, (h0, h1) in enumerate(hours):
+                hours[i] = (h0 - offset / 3600., h1 - offset / 3600.)
+        # generate state
         if name == ALLSTATE:
             return generate_all_state(start, end, register=False, **params)
         else:
-            return cls(name, valid=[(start, end)], **params)
+            return cls(name, valid=[(start, end)], hours=hours, **params)
 
     def fetch(self, config=GWSummConfigParser(), **kwargs):
         """Finalise this state by fetching its defining segments,
@@ -195,6 +234,23 @@ class SummaryState(DataQualityFlag):
                             **kwargs)
         self.valid = segs.valid
         self.active = segs.active
+        # restrict to given hours
+        if self.hours:
+            segs_ = SegmentList()
+            # get start day
+            d = Time(float(self.start), format='gps', scale='utc').datetime
+            d.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_ = Time(float(self.end), format='gps', scale='utc').datetime
+            while d < end_:
+                # get GPS of day
+                t = to_gps(d)
+                # for each [start, end) hour pair, build a segment
+                for h0, h1 in self.hours:
+                    segs_.append(Segment(t + h0 * 3600, t + h1*3600))
+                # increment and return
+                d += datetime.timedelta(1)
+            self.valid &= segs_
+            self.active &= segs_
         self.ready = True
         return self
 

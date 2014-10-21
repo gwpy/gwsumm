@@ -55,7 +55,7 @@ HVETO_COLUMNS = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']
 class HvetoTab(base):
     """Custom tab displaying a summary of Hveto results.
     """
-    type = 'hveto'
+    type = 'archived-hveto'
     summaryrows = ['Winning channel', 'Time Window [s]', 'SNR Thresh.',
                    'Significance', 'N. trigs',
                    'Use %', 'Efficiency [%]', 'Deadtime [%]',
@@ -98,10 +98,7 @@ class HvetoTab(base):
         gps = int(new.span[0])
         duration = int(abs(new.span))
         basedir = os.path.normpath(config.get(section, 'base-directory'))
-        daydir = os.path.join(
-            basedir, '%s-%s-%d-%d' % (config.get('DEFAULT', 'ifo'),
-                                      config.get(section, 'directory-tag'),
-                                      gps, duration))
+        daydir = os.path.join(basedir, config.get(section, 'directory-tag'))
         new.directory = daydir
         home_, postbase = daydir.split('/public_html/', 1)
         user = os.path.split(home_)[1]
@@ -136,7 +133,7 @@ class HvetoTab(base):
                 self.primary = '%s:%s' % (ifo, name)
                 if 'DEtype:' in self.conf:
                     etg = re_quote.sub('', self.conf['DEtype:'])
-                    if self.primary.endswith('_%s' % etg):
+                    if re.search('_%s\Z' % etg, self.primary, re.I):
                         self.primary = self.primary[:-len(etg)-1]
             else:
                 self.primary = None
@@ -158,7 +155,7 @@ class HvetoTab(base):
                                             line.split(' ')[1:])))
                 # fix channel name
                 c = '%s:%s' % (ifo, self.rounds[-1]['Winning channel'])
-                if c.endswith(('_omicron', '_excesspower')):
+                if 'DEtype:' in self.conf and re.search('_%s\Z' % etg, c, re.I):
                      c = c.rsplit('_', 1)[0]
                 self.rounds[-1]['Winning channel'] = c
 
@@ -241,7 +238,8 @@ class HvetoTab(base):
                 data.append([str(i + 1)] + [str(round[key]) for key in headers])
                 channel = get_channel(data[-1][1])
                 # format CIS url and type
-                if re.search('.[a-z]+\Z', channel.name):
+                if re.search('\.[a-z]+\Z', channel.name):
+                    print channel.name
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
                     cype = ctype in ['rms'] and ctype.upper() or ctype.title()
@@ -259,7 +257,7 @@ class HvetoTab(base):
 
             # add plots
             page.hr(class_='row-divider')
-            page.add(str(self.scaffold_plots(state)))
+            page.add(str(self.scaffold_plots(state=state)))
             page.hr(class_='row-divider')
 
             # link full results

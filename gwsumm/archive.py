@@ -87,9 +87,8 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
             if segments:
                 group = h5file.create_group('segments')
                 # loop over channels
-                for dqflag in globalv.SEGMENTS.itervalues():
-                    # loop over time-series
-                    dqflag.write(group, format='hdf')
+                for name, dqflag in globalv.SEGMENTS.iteritems():
+                    dqflag.write(group, name=name, format='hdf')
     except:
         if backup:
             restore_backup(backup, outfile)
@@ -141,9 +140,9 @@ def read_data_archive(sourcefile):
             group = h5file['segments']
         except KeyError:
             group = dict()
-        for dataset in group.itervalues():
+        for name, dataset in group.iteritems():
             dqflag = DataQualityFlag.read(dataset, format='hdf')
-            globalv.SEGMENTS += {dqflag.name: dqflag}
+            globalv.SEGMENTS += {name: dqflag}
 
 
 def backup_existing_archive(filename, suffix='.hdf',

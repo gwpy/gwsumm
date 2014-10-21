@@ -19,18 +19,30 @@
 """This module defines tabs for generating plots from data on-the-fly.
 """
 
-import abc
-import re
-import operator
+from __future__ import print_function
 
+import abc
+import operator
+import re
+import os.path
+import sys
+
+from copy import copy
 from multiprocessing import (Process, JoinableQueue)
+from Queue import Empty
 from time import sleep
 from StringIO import StringIO
+from datetime import timedelta
 
 from numpy import isclose
 
+from astropy.time import Time
+
+from gwpy.segments import DataQualityFlag
+
 from .. import (version, globalv, html)
 from ..config import *
+from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
                     get_spectrum)
 from ..plot import get_plot
@@ -65,24 +77,68 @@ class DataTab(DataTabBase):
     """A tab where plots and data summaries are built upon request
 
     This is the 'default' tab for the command-line gw_summary executable.
+
+    All ``*args`` and ``**kwargs`` are passed up-stream to the base
+    class constructor, excepting the following:
+
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    states : `list` of `states <gwsumm.state.SummaryState>`
+        the `list` of states (`~gwsumm.state.SummaryState`) over which
+        this `DataTab` should be processed. More states can be added
+        later (but before running :meth:`~DataTab.process`) via
+        :meth:`~DataTab.add_state`.
+    ismeta : `bool`, optional, default: `False`
+        indicates that this tab only contains data already by others
+        and so doesn't need to be processed.
+    **kwargs
+        other keyword arguments
+
+    See Also
+    --------
+    gwsumm.tabs.StateTab
+        for details on the other keyword arguments (``**kwargs``)
+        accepted by the constructor for the `DataTab`.
     """
-    type = 'data'
+    type = 'archived-data'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, name, start, end, states=list([ALLSTATE]),
+                 ismeta=False, **kwargs):
         """Initialise a new `DataTab`.
+        """
+        ismeta = kwargs.pop('ismeta', False)
+        super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
+        self.ismeta = ismeta
+        self.subplots = []
 
-        All ``*args`` and ``**kwargs`` are passed up-stream to the base
-        class constructor, excepting the following:
+    @property
+    def states(self):
+        """The `list` of `states <gwsumm.state.SummaryState` for this `DataTab`
+        """
+        return self._states
+
+    @states.setter
+    def states(self, statelist):
+        self._states = []
+        for state in statelist:
+            self.add_state(state)
+
+    def add_state(self, state):
+        """Add a `SummaryState` to this `DataTab`
 
         Parameters
         ----------
-        ismeta : `bool`, optional, default: `False`
-            indicates that this tab only contains data already by others
-            and so doesn't need to be processed.
+        state : `~gwsumm.state.SummaryState`, `str`
+            the `SummaryState` to add, or the key of a state that has been
+            registered
         """
-        ismeta = kwargs.pop('ismeta', False)
-        super(DataTabBase, self).__init__(*args, **kwargs)
-        self.ismeta = ismeta
+        if isinstance(state, SummaryState):
+            self._states.append(state)
+        else:
+            self._states.append(get_state(state))
+        return self._states[-1]
 
     # -------------------------------------------
     # SummaryTab configuration parser
@@ -103,16 +159,12 @@ class DataTab(DataTabBase):
 
         Returns
         -------
-        tab : :class:`SummaryTab`
-            a new tab defined from the configuration
+        tab : `DataTab`
+            a new `DataTab` defined from the configuration
         """
+        kwargs.setdefault('plots', [])
         job = super(DataTab, cls).from_ini(cp, section, **kwargs)
         job._config = cp._sections[section]
-
-        # force states to `SummaryState`
-        for i, state in enumerate(job.states):
-            if not isinstance(state, SummaryState):
-                job.states[i] = get_state(state)
 
         # get meta tag
         try:
@@ -131,12 +183,54 @@ class DataTab(DataTabBase):
         #    All config entries whose key is a single integer is
         #    interpreted as a requested plot.
 
+        start, end = job.span
+
+        # parse subplot request
+        try:
+            subidx = cp.getint(section, 'subplot')
+        except NoOptionError:
+            subidx = None
+        else:
+            job.subplots = []
+            subplots = []
+            try:
+                subdelta = timedelta(seconds=cp.getfloat(
+                    section, 'subplot-duration'))
+            except NoOptionError:
+                mode = get_mode()
+                if mode == MODE_ENUM['DAY']:
+                    subdelta = timedelta(hours=1)
+                elif mode == MODE_ENUM['WEEK']:
+                    subdelta = timedelta(days=1)
+                elif mode == MODE_ENUM['MONTH']:
+                    subdelta = timedelta(weeks=1)
+                elif mode == MODE_ENUM['YEAR']:
+                    subdelta = timedelta(months=1)
+                else:
+                    d = int(end - start)
+                    if d <= 601:
+                        subdelta = timedelta(minutes=1)
+                    elif d <= 7201:
+                        subdelta = timedelta(minutes=10)
+                    elif d <= 86401:
+                        subdelta = timedelta(hours=1)
+                    elif d <= 259201:
+                        subdelta = timedelta(hours=6)
+                    else:
+                        subdelta = timedelta(days=1)
+            startd = Time(float(start), format='gps', scale='utc').datetime
+            endd = Time(float(end), format='gps', scale='utc').datetime
+            while startd < endd:
+                e = min(endd, startd + subdelta)
+                sps = int(Time(startd, format='datetime', scale='utc').gps)
+                spe = int(Time(e, format='datetime', scale='utc').gps)
+                subplots.append((sps, spe))
+                startd += subdelta
+
         # find and order the plots
         requests = sorted([(int(opt), val) for (opt, val) in
                            cp.nditems(section) if opt.isdigit()],
                           key=lambda a: a[0])
-        if requests:
-            start, end = job.span
 
         # parse plot definition
         for index, definition in requests:
@@ -185,6 +279,7 @@ class DataTab(DataTabBase):
                 PlotClass = get_plot(pdef)
             # if the plot definition declares multiple states
             if 'all_states' in mods:
+                mods.setdefault('all_data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
                                               state=None, outdir=plotdir,
@@ -193,6 +288,12 @@ class DataTab(DataTabBase):
                     plot = PlotClass(sources, start, end, state=None,
                                      outdir=plotdir, **mods)
                 job.plots.append(plot)
+                if subidx == index:
+                    for span in subplots:
+                        subplot = copy(plot)
+                        subplot.pargs = plot.pargs.copy()
+                        subplot.span = span
+                        job.subplots.append(subplot)
             # otherwise define individually for multiple states
             else:
                 for state in job.states:
@@ -204,13 +305,19 @@ class DataTab(DataTabBase):
                         plot = PlotClass(sources, start, end, state=state,
                                          outdir=plotdir, **mods)
                     job.plots.append(plot)
+                    if subidx == index:
+                        for span in subplots:
+                            subplot = copy(plot)
+                            subplot.pargs = plot.pargs.copy()
+                            subplot.span = span
+                            job.subplots.append(subplot)
 
         return job
 
     # -------------------------------------------
     # SummaryTab processing
 
-    def finalize_states(self, config=ConfigParser()):
+    def finalize_states(self, config=ConfigParser(), segdb_error='raise'):
         """Fetch the segments for each state for this `SummaryTab`
         """
         # finalize all-state
@@ -237,9 +344,12 @@ class DataTab(DataTabBase):
         """
         if self.ismeta:
             return
+        config = GWSummConfigParser.from_configparser(config)
         # load state segments
-        self.finalize_states(config=config)
+        self.finalize_states(config=config,
+                             segdb_error=stateargs.get('segdb_error', 'raise'))
         vprint("States finalised\n")
+
         # setup plotting queue
         if multiprocess and isinstance(multiprocess, int):
             queue = JoinableQueue(count_free_cores(multiprocess))
@@ -305,7 +415,7 @@ class DataTab(DataTabBase):
             state = get_state(ALLSTATE)
 
         # flag those plots that were already written by this process
-        for p in self.plots:
+        for p in self.plots + self.subplots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
 
@@ -367,7 +477,11 @@ class DataTab(DataTabBase):
         # --------------------------------------------------------------------
         # process triggers
 
-        for etg, channel in self.get_triggers('triggers', all_data=all_data):
+        for etg, channel in self.get_triggers('triggers',
+                                              'trigger-timeseries',
+                                              'trigger-rate',
+                                              'trigger-histogram',
+                                              all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
                          cache=trigcache)
 
@@ -381,7 +495,7 @@ class DataTab(DataTabBase):
         vprint("    Plotting... \n")
 
         # filter out plots that aren't for this state
-        new_plots = [p for p in self.plots if
+        new_plots = [p for p in self.plots + self.subplots if
                      p.new and (p.state is None or p.state.name == state.name)]
 
         # process each one
@@ -389,18 +503,18 @@ class DataTab(DataTabBase):
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
-            if (plotqueue and plot._threadsafe):
+            if plotqueue and plot._threadsafe:
+                plotqueue.put(1)
                 process = Process(target=plot.queue, args=(plotqueue,))
                 process.daemon = True
                 process.start()
                 nproc += 1
-                sleep(0.5)
             # process plot now
             else:
                 plot.process()
                 vprint("        %s written\n" % plot.outputfile)
         if nproc:
-            vprint("        %d plot processes queued.\n" % nproc)
+            vprint("        %d plot processes executed.\n" % nproc)
         vprint("    Done.\n")
 
     # -------------------------------------------------------------------------
@@ -409,14 +523,41 @@ class DataTab(DataTabBase):
     def write_html(self, *args, **kwargs):
         writedata = kwargs.pop('writedata', True)
         vprint("Writing HTML:\n")
-        if writedata:
-            for state, frame in zip(self.states, self.frames):
+        for state, frame in zip(self.states, self.frames):
+            idx = self.states.index(state)
+            if writedata:
                 self.write_state_html(state)
                 vprint("    %s written\n" % frame)
+            elif not os.path.isfile(self.frames[idx]):
+                self.write_state_placeholder(state)
+                vprint("    %s placeholder written\n" % frame)
         writehtml = kwargs.pop('writehtml', True)
         if writehtml:
             super(DataTab, self).write_html(*args, **kwargs)
             vprint("    %s written\n" % self.index)
+
+    def write_state_placeholder(self, state):
+        """Write a placeholder '#main' content for this tab
+        """
+        email = html.markup.oneliner.a('the DetChar group',
+                                       href='mailto:detchar+code@ligo.org')
+        page = html.markup.page()
+        page.div(class_='row')
+        page.div(class_='col-md-12')
+        page.div(class_='alert alert-info')
+        page.p("These data have not been generated yet, please check back "
+               "later.")
+        page.p("If this state persists for more than a three or four hours, "
+               "please contact %s." % email)
+        page.div.close()
+        page.div.close()
+        page.div.close()
+
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this tab.
@@ -425,7 +566,16 @@ class DataTab(DataTabBase):
         format.
         """
         page = html.markup.page()
+
         # link data
+        if self.subplots:
+            page.hr(class_='row-divider')
+            page.h1('Sub-plots')
+            layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+            plist = [p for p in self.subplots if p.state in [state, None]]
+            page.add(str(self.scaffold_plots(plots=plist, state=state,
+                                             layout=layout)))
+
         page.hr(class_='row-divider')
         page.div(class_='row')
         page.div(class_='col-md-12')
@@ -470,8 +620,8 @@ class DataTab(DataTabBase):
 
         flags = self.get_flags('segments')
         if len(flags):
-            page.h1('Data-quality flag information')
-            page.add("The following data-quality flags were used to generate "
+            page.h1('Segment information')
+            page.add("The following flags were used in "
                      "the above data. This list does not include state "
                      "information")
             # make summary table
@@ -497,12 +647,11 @@ class DataTab(DataTabBase):
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):
                 flag = get_segments(flag, state.active, query=False).copy()
-                n = flag.name
                 page.div(class_='panel panel-default')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
                                               'data-parent': '#accordion'})
                 page.div(class_='panel-heading')
-                page.h4(n, class_='panel-title')
+                page.h4(flag.name, class_='panel-title')
                 page.div.close()
                 page.a.close()
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')
@@ -510,16 +659,11 @@ class DataTab(DataTabBase):
                 # write segment summary
                 page.p('This flag was defined and had a known state during '
                        'the following segments:')
-                segwizard = StringIO()
-                flag.valid.write(segwizard, format='segwizard')
-                page.pre(segwizard.getvalue())
-                segwizard.close()
+                page.add(self.print_segments(flag.valid))
                 # write segment table
                 page.p('This flag was active during the following segments:')
-                segwizard = StringIO()
-                flag.write(segwizard, format='segwizard')
-                page.pre(segwizard.getvalue())
-                segwizard.close()
+                page.add(self.print_segments(flag.active))
+
                 page.div.close()
                 page.div.close()
                 page.div.close()
@@ -529,6 +673,18 @@ class DataTab(DataTabBase):
 
         return super(DataTab, self).write_state_html(state, plots=True,
                                                      post=page)
+
+    @staticmethod
+    def print_segments(flag):
+        """Print the contents of a `SegmentList` in HTML
+        """
+        if isinstance(flag, DataQualityFlag):
+            flag = flag.active
+        dtype = float(abs(flag)).is_integer() and int or float
+        segwizard = StringIO()
+        flag.write(segwizard, format='segwizard', coltype=dtype)
+        return html.markup.oneliner.pre(segwizard.getvalue())
+
 
     # -------------------------------------------------------------------------
     # methods

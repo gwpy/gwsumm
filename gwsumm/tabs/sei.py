@@ -19,6 +19,8 @@
 """`SummaryTab` for seismic watchdog monitoring
 """
 
+from __future__ import print_function
+
 import os
 import re
 from math import ceil
@@ -65,11 +67,12 @@ BSC_ST1_LATCH_CHANNEL = '%s:ISI-%s_ST1_WD_MON_FIRSTTRIG_LATCH'
 BSC_ST2_GPS_CHANNEL = '%s:ISI-%s_ST2_WD_MON_GPS_TIME'
 BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
+re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.
     """
-    type = 'seismic-watchdog'
+    type = 'archived-seismic-watchdog'
     window = 5
 
     @classmethod
@@ -190,41 +193,43 @@ class SEIWatchDogTab(base):
                         stage = system
                     cause = '%s (no cause found)' % stage
                 else:
-                    firstbit = map(int, bin(int(bits))[2:][::-1]).index(1)
-                    cause = latch.bits[firstbit]
+                    allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
+                    causes = [latch.bits[b] for b in allbits]
                 t2 = Time(t, format='gps', scale='utc')
-                vprint("        Trip GPS %d (%s), cause: %s.\n"
-                       % (t, t2.iso, cause))
-                # configure plot
-                mapsec = 'sei-wd-map-%s' % cause
-                if (not config.has_section(mapsec) and
-                        re.match('ISI ST\d ', cause)):
-                    mapsec = ('sei-wd-map-%s'
-                              % (' '.join(cause.split(' ', 2)[::2])))
-                if config.has_section(mapsec):
-                    pstart = gpstime - self.plot_duration / 2.
-                    if self.chambers == HAMs or system == 'HPI':
-                        platform = chamber
+                vprint("        Trip GPS %s (%s), triggers:\n" % (t, t2.iso))
+                for cause in causes:
+                    vprint("            %s\n" % cause)
+                    # configure plot
+                    mapsec = 'sei-wd-map-%s' % cause
+                    if (not config.has_section(mapsec) and
+                            re.match('ISI ST\d ', cause)):
+                        mapsec = ('sei-wd-map-%s'
+                                  % (' '.join(cause.split(' ', 2)[::2])))
+                    if config.has_section(mapsec):
+                        pstart = gpstime - self.plot_duration / 2.
+                        if self.chambers == HAMs or system == 'HPI':
+                            platform = chamber
+                        else:
+                            platform = '%s_%s' % (
+                                chamber, gpschannel.signal.split('_')[0])
+                        p = os.path.join(self.plotdir,
+                                         '%s-%s_%s_WATCHDOG_TRIP-%d-%d.png'
+                                         % (ifo, system, platform, pstart,
+                                            self.plot_duration))
+                        self.plots.append(SeiWatchDogPlot(
+                                              t, chamber, cause, config,
+                                              p, ifo=ifo,
+                                              nds=nds is True or False))
+                        plot = self.plots[-1]
                     else:
-                        platform = '%s_%s' % (chamber,
-                                              gpschannel.signal.split('_')[0])
-                    p = os.path.join(self.plotdir,
-                                     '%s-%s_%s_WATCHDOG_TRIP-%d-%d.png'
-                                     % (ifo, system, platform, pstart,
-                                        self.plot_duration))
-                    self.plots.append(SeiWatchDogPlot(t, chamber, cause, config,
-                                                      p, ifo=ifo,
-                                                      nds=nds is True or False))
-                    plot = self.plots[-1]
-                else:
-                    plot = None
-                self.trips.append((t, chamber, cause, plot))
+                        plot = None
+                    self.trips.append((t, chamber, cause, plot))
 
         super(SEIWatchDogTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
             datacache=datacache, trigcache=trigcache, **kwargs)
 
-    def build_inner_html(self, state):
+    def write_state_html(self, state):
         """Build HTML summary of watchdog trips
         """
         # find one example of each channel, and get the bits
@@ -273,7 +278,7 @@ class SEIWatchDogTab(base):
             if (i == len(hepimask) or
                     i == len(hepimask + isichannels[0].bits)):
                 class_.append('tdiv')
-            if re.match('(ISI (.*)IOP|(.*) Reset)', bit):
+            if re_no_count.match(bit):
                 class_.append('IOP')
             if class_:
                 page.tr(class_=' '.join(class_))
@@ -289,7 +294,7 @@ class SEIWatchDogTab(base):
                     pass
                 page.td(c or '-')
                 # exclude IOP from total
-                if not re.match('(ISI (.*)IOP|(.*) Reset)', bit):
+                if not re_no_count.match(bit):
                     totals[i][j] = c
             # add row total
             totals[i][-1] = totals[i].sum()
@@ -379,10 +384,33 @@ class SEIWatchDogTab(base):
         page.div.close()
         page.div.close()
 
-        # call super just in case
-        page.add(str(super(SEIWatchDogTab, self).build_inner_html(state)))
+        # write trips to data file
+        tripfile = os.path.join(self.path, 'trips.dat')
+        with open(tripfile, 'w') as f:
+            for id in groups:
+                t, chamber, cause, _ = self.trips[id]
+                if cause in hepimask:
+                    stage = 'HEPI'
+                elif self.chambers == HAMs:
+                    stage = 'ISI'
+                elif cause in isichannels[0].bits:
+                    stage = 'ISI1'
+                else:
+                    stage = 'ISI2'
+                cause = cause.replace(' ', '_')
+                print(t, chamber, stage, cause, file=f)
 
-        return page
+        page.p()
+        page.add('The list of trips can be downloaded ')
+        page.a('here.', href=tripfile, alt=os.path.basename(tripfile),
+               title='Trip data')
+        page.p.close()
+
+        # write to file
+        idx = self.states.index(state)
+        with open(self.frames[idx], 'w') as fobj:
+            fobj.write(str(page))
+        return self.frames[idx]
 
 register_tab(SEIWatchDogTab)
 

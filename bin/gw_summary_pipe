@@ -150,6 +150,10 @@ htcopts.add_argument('-l', '--log-dir', action='store', type=str,
 htcopts.add_argument('-m', '--maxjobs', action='store', type=int, default=None,
                      metavar='N', help="Restrict the DAG to submit only N jobs "
                                        "at any one time, default: %(default)s")
+htcopts.add_argument('-T', '--condor-timeout', action='store', type=float,
+                     default=None, metavar='T',
+                     help='Configure condor to terminate jobs after T hours '
+                          'to prevent idling, default: %(default)s')
 htcopts.add_argument('-c', '--condor-command', action='append', type=str,
                      default=[],
                      help="Extra condor submit commands to add to "
@@ -184,6 +188,9 @@ popts.add_argument('--multi-process', action='store', type=int, default=None,
 popts.add_argument('-a', '--archive', action='store_true', default=False,
                    help="Read archived data from the FILE, and "
                         "write back to it at the end")
+popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
+                   default='raise', choices=['raise', 'ignore', 'warn'],
+                   help="action upon error fetching segments from SegDB")
 
 outopts = parser.add_argument_group("Output options")
 outopts.add_argument('-o', '--output-dir', action='store', type=str,
@@ -286,6 +293,10 @@ executable = opts.executable
 
 # parse command line condor commands into dict
 condorcmds = {}
+if opts.condor_timeout:
+    condorcmds['periodic_remove'] = (
+        'JobStatus == 1 && CurrentTime-EnteredCurrentStatus > 3600*%d'
+        % opts.condor_timeout)
 for cmd_ in opts.condor_command:
     key, value = cmd_.split('=', 1)
     condorcmds[key.rstrip().lower()] = value.strip()
@@ -342,6 +353,7 @@ if opts.verbose:
     job.add_opt('verbose')
 if opts.ifo:
     job.add_opt('ifo', opts.ifo)
+job.add_opt('on-segdb-error', opts.on_segdb_error)
 job.add_opt('output-dir', outdir)
 
 # make surrounding HTML first

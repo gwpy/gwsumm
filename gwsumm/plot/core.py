@@ -226,8 +226,7 @@ class DataPlot(SummaryPlot):
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
-        self._channels = ChannelList(get_channel(c) for c in self._channels)
-        return self._channels
+        return ChannelList(get_channel(c) for c in self._channels)
 
     @channels.setter
     def channels(self, channellist):
@@ -248,8 +247,11 @@ class DataPlot(SummaryPlot):
         except AttributeError:
             state = re_cchar.sub('_', self.state is None and 'MULTI' or
                                       self.state.name)
-            hash = hashlib.md5("".join(map(str,
-                                           self.channels))).hexdigest()[:6]
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            hash = hashlib.md5(chans+filts).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
             return '_'.join([state, hash, type_]).upper()
 
@@ -282,6 +284,55 @@ class DataPlot(SummaryPlot):
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods
 
+    def parse_legend_kwargs(self, **defaults):
+        """Pop the legend arguments from the `pargs` for this Plot
+        """
+        legendargs = defaults.copy()
+        for key in self.pargs.keys():
+            if re.match('legend[-_]', key):
+                legendargs[key[7:]] = self.pargs.pop(key)
+        return legendargs
+
+    def parse_plot_kwargs(self, **defaults):
+        """Pop keyword arguments for `Axes.plot` from the `pargs` for this Plot
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('label', self._parse_labels())
+        chans_ = self.get_channel_groups()
+        for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
+                      'linewidth', 'marker', 'markeredgecolor',
+                      'markeredgewidth', 'markerfacecolor',
+                      'markerfacecoloralt', 'markersize']:
+            try:
+                val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))
+            except KeyError:
+                continue
+            else:
+                plotargs[kwarg] = val
+        chans = self.get_channel_groups().keys()
+        for key, val in plotargs.iteritems():
+            if (not isinstance(val, (list, tuple)) or len(val) != len(chans_)):
+                plotargs[key] = [val]*len(self.get_channel_groups())
+        out = []
+        for i in range(len(chans)):
+            out.append(dict((key, val[i]) for key, val in plotargs.items() if
+                            val is not None and val[i] is not None))
+        return out
+
+    def _parse_labels(self, defaults=None):
+        """Pop the labels for plotting from the `pargs` for this Plot
+        """
+        chans = self.get_channel_groups().keys()
+        if defaults is None:
+            defaults = chans
+        labels = self.pargs.pop('labels', defaults)
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: str(s).strip('\n ').replace('_', r'\_'), labels)
+        while len(labels) < len(chans):
+            labels.append(None)
+        return labels
+
     def add_channel(self, channel):
         self._channels.append(channel)
 
@@ -299,7 +350,7 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = OrderedDict()
         for c in all_:
-            name = str(c).rsplit('.', 1)[0]
+            name = c.texname.rsplit('.', 1)[0]
             if name in out.keys():
                 out[name].append(c)
             else:
@@ -349,13 +400,12 @@ class DataPlot(SummaryPlot):
     def queue(self, queue):
         """Submit this plot to the queue for processing.
         """
-        # tell the queue we are processing
-        queue.put(1)
         # process data
         try:
             self.process()
         # announce done regardless of status
         finally:
+            queue.get()
             queue.task_done()
 
     def process(self):

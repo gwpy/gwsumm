@@ -19,7 +19,7 @@
 """Utilities for segment handling and display
 """
 
-from __future__ import print_function
+from __future__ import (division, print_function)
 import sys
 
 try:
@@ -124,8 +124,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     raise
                 new = DataQualityDict()
             for f in new:
-                vprint("    Downloaded %d new segments from database for %s.\n"
-                       % (len(new[f].active), f))
+                vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
+                       % (len(new[f].active), f,
+                          float(abs(new[f].valid))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
 

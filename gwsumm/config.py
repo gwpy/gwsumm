@@ -37,9 +37,9 @@ __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 class GWSummConfigParser(ConfigParser):
     optionxform = str
 
-    def nditems(self, section):
+    def nditems(self, section, **kwargs):
         try:
-            items = ConfigParser.items(self, section)
+            items = ConfigParser.items(self, section, **kwargs)
         except ValueError as e:
             msg = str(e)
             raise ValueError('[%s]: %s' % (section, msg))

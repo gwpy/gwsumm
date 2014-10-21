@@ -22,7 +22,7 @@
 import operator
 import os
 import urllib2
-from math import (floor, ceil, pi)
+from math import (floor, ceil, pi, sqrt)
 from Queue import Queue
 import threading
 try:
@@ -32,6 +32,7 @@ except ImportError:
 
 import numpy
 import nds2
+import warnings
 
 from astropy import units
 
@@ -308,8 +309,15 @@ def find_frame_type(channel):
             ftype = 'lldetchar'
         else:
             ftype = 'R'
-        channel.frametype = '%s_%s' % (channel.ifo, ftype)
+        channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
         return channel.frametype
+
+
+def find_types(site=None, match=None):
+    """Query the DataFind server for frame types matching the given options
+    """
+    conn = datafind.GWDataFindHTTPConnection()
+    return conn.find_types(site=site, match=match)
 
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
@@ -434,7 +442,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             elif ftype == '%s_T' % ifo:
                 new = type(new)([s for s in new if abs(s) >= 1.])
             elif ((globalv.NOW - new[0][0]) < 86400 * 20 and
-                  ftype == '%s_R' % ifo):
+                  ftype == '%s_R' % ifo and
+                  find_types(site=ifo[0], match='_C\Z')):
                 ftype = '%s_C' % ifo
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=ftype,
@@ -515,8 +524,17 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     data.unit = units.dimensionless_unscaled
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
+                # XXX: HACK for failing unit check
                 globalv.DATA[channel.ndsname].append(data)
-                globalv.DATA[channel.ndsname].coalesce()
+                try:
+                    globalv.DATA[channel.ndsname].coalesce()
+                except ValueError as e:
+                    if not 'units do not match' in str(e):
+                        raise
+                    warnings.warn(str(e))
+                    globalv.DATA[channel.ndsname][-1].unit = (
+                        globalv.DATA[channel.ndsname][0].unit)
+                    globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):
             vprint("\n")

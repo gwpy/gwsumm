@@ -191,7 +191,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         except AttributeError:
             tag = super(SpectrogramDataPlot, self).tag
             if self.ratio:
-                tag += '_%s_RATIO' % re_cchar.sub('_', self.ratio.upper())
+                tag += '_%s_RATIO' % re_cchar.sub('_', str(self.ratio).upper())
             return tag
 
     @tag.setter
@@ -222,6 +222,9 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         if ratio in ['median', 'mean']:
             allspec = specgrams.join(gap='ignore')
             ratio = getattr(allspec, ratio)(axis=0)
+        elif isinstance(ratio, int):
+            allspec = specgrams.join(gap='ignore')
+            ratio = allspec.percentile(ratio)
         # plot data
         for specgram in specgrams:
             if ratio is not None:

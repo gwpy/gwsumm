@@ -647,6 +647,14 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     raise ZeroDivisionError("FFT length is 0")
                 else:
                     raise
+            except ValueError as e:
+                if 'has no unit' in str(e):
+                    unit = ts.unit
+                    ts.unit = 'count'
+                    specgram = ts.spectrogram(stride, nproc=nproc, **fftparams)
+                    specgram.unit = unit ** 2 / units.Hertz
+                else:
+                    raise
             if filter_:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
             globalv.SPECTROGRAMS[channel.ndsname].append(specgram)

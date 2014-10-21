@@ -725,6 +725,16 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
         self.span = (start, end)
         self.mode = mode
 
+    @classmethod
+    def from_ini(cls, config, section, start=None, end=None, **kwargs):
+        config = GWSummConfigParser.from_configparser(config)
+        if start is None:
+            start = config.getint(section, 'gps-start-time')
+        if end is None:
+            end = config.getint(section, 'gps-end-time')
+        return super(ArchivedStateTab, cls).from_ini(config, section, start,
+                                                     end, **kwargs)
+
 register_tab(ArchivedStateTab)
 
 

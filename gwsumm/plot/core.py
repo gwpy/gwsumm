@@ -35,6 +35,7 @@ except ImportError:
 
 from gwpy.segments import Segment
 from gwpy.detector import ChannelList
+from gwpy.plotter.utils import rUNDERSCORE
 
 from .registry import register_plot
 from .. import globalv
@@ -328,7 +329,8 @@ class DataPlot(SummaryPlot):
         labels = self.pargs.pop('labels', defaults)
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n ').replace('_', r'\_'), labels)
+        labels = map(lambda s: rUNDERSCORE.sub(r'\_', str(s).strip('\n ')),
+                     labels)
         while len(labels) < len(chans):
             labels.append(None)
         return labels

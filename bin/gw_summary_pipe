@@ -113,9 +113,6 @@ usage = ('%s --global-config defaults.ini --config-file myconfig.ini '
 parser = argparse.ArgumentParser(usage=usage, description=__doc__,
                                  formatter_class=GWHelpFormatter)
 
-parser.add_argument("-p", "--profile", action="store_true", default=False,
-                    help="show second timer with verbose statements, "
-                         "default: %(default)s")
 parser.add_argument("-v", "--verbose", action="store_true", default=False,
                     help="show verbose output, default: %(default)s")
 parser.add_argument("-V", "--version", action="version",
@@ -172,6 +169,9 @@ copts.add_argument('-g', '--global-config', action='append', type=str,
                    metavar='FILE', default=[],
                    help="INI file for use in all workflow jobs, may be given "
                         "multiple times")
+copts.add_argument('-p', '--priority', action='append', type=str, default=[],
+                   help="priority for DAG node, should be given "
+                        "once for each --config-file in the same order")
 
 popts = parser.add_argument_group("Process options",
                                   "Configure how this summary will be "
@@ -375,7 +375,7 @@ wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
 wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
 
 # create node for each config file
-for configfile in opts.config_file:
+for i, configfile in enumerate(opts.config_file):
     node = GWSummaryDAGNode(job)
     node.add_var_arg('--no-html')
     node.add_var_arg('--config-file %s' % configfile)
@@ -388,6 +388,10 @@ for configfile in opts.config_file:
     for cf in configfile.split(','):
         node.add_input_file(cf)
     node.set_category('gw_summary')
+    try:
+        node.set_priority(opts.priority[i])
+    except IndexError:
+        node.set_priority(0)
     node.set_retry(1)
     if not opts.skip_html_wrapper:
         node.add_parent(wrapper)

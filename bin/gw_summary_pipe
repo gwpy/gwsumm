@@ -295,8 +295,7 @@ executable = opts.executable
 condorcmds = {}
 if opts.condor_timeout:
     condorcmds['periodic_remove'] = (
-        'JobStatus == 1 && CurrentTime-EnteredCurrentStatus > 3600*%d'
-        % opts.condor_timeout)
+        'CurrentTime-EnteredCurrentStatus > %d' % (3600 * opts.condor_timeout))
 for cmd_ in opts.condor_command:
     key, value = cmd_.split('=', 1)
     condorcmds[key.rstrip().lower()] = value.strip()

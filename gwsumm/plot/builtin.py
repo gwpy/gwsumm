@@ -484,7 +484,8 @@ class SpectrumDataPlot(DataPlot):
                 'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
-                'reference-linestyle': '--'}
+                'no_percentiles': False,
+                'reference_linestyle': '--'}
 
     def process(self):
         pargs = self.pargs.copy()
@@ -512,6 +513,8 @@ class SpectrumDataPlot(DataPlot):
 
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
+        use_percentiles = str(
+            self.pargs.pop('no_percentiles')).lower() == 'false'
 
         # parse plotting arguments
         plotargs = self.parse_plot_kwargs()
@@ -544,7 +547,11 @@ class SpectrumDataPlot(DataPlot):
                 for sp in data:
                     sp[sp.data == 0] = 1e-100
 
-            ax.plot_spectrum_mmm(*data, **pargs)
+            if use_percentiles:
+                ax.plot_spectrum_mmm(*data, **pargs)
+            else:
+                pargs.pop('alpha', None)
+                ax.plot_spectrum(data[0], **pargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'frequency_range'):

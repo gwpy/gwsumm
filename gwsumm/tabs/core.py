@@ -446,7 +446,7 @@ class Tab(object):
                     if (not os.path.isfile(localscript) or not
                             os.path.samefile(script, localscript)):
                         copyfile(script, localscript)
-                        if i > len(css):
+                        if i >= len(css):
                             js[i-len(css)] = localscript
                         else:
                             css[i] = localscript

@@ -101,6 +101,7 @@ class Tab(object):
         self.base = base
         self.index = index
         self.page = None
+        self.hidden = False
 
     # -------------------------------------------
     # Tab properties
@@ -586,13 +587,16 @@ class Tab(object):
         # build navbar links
         navlinks = []
         for tab in tabs:
-            if len(tab.children):
+            if tab.hidden:
+                continue
+            children = [t for t in tab.children if not t.hidden]
+            if len(children):
                 navlinks.append([tab.shortname, []])
                 links = []
                 active = None
                 # build groups
-                groups = set([t.group for t in tab.children])
-                groups = dict((g, [t for t in tab.children if t.group == g])
+                groups = set([t.group for t in children])
+                groups = dict((g, [t for t in children if t.group == g])
                               for g in groups)
                 nogroup = groups.pop(None, [])
                 for child in nogroup:
@@ -615,7 +619,7 @@ class Tab(object):
                         links[-1][1].append((name, child.href))
                         if child == self:
                             active = [len(links) - 1, i]
-                if tab.children[0].shortname == 'Summary':
+                if children[0].shortname == 'Summary':
                     links.insert(1, None)
                     if active and isinstance(active, int) and active > 0:
                         active += 1

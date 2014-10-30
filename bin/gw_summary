@@ -670,10 +670,11 @@ for tab in alltabs:
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
-    page = tab.write_html(css=css, js=javascript, tabs=tabs,
-                          ifo=ifo, ifomap=ifobases, about=about.index,
-                          writedata=not opts.html_only,
-                          writehtml=not opts.no_html)
+    if not tab.hidden:
+        page = tab.write_html(css=css, js=javascript, tabs=tabs,
+                              ifo=ifo, ifomap=ifobases, about=about.index,
+                              writedata=not opts.html_only,
+                              writehtml=not opts.no_html)
     vprint("%s complete!\n" % (name))
 
 # -----------------------------------------------------------------------------

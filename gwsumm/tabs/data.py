@@ -336,7 +336,8 @@ class DataTab(DataTabBase):
         get_state(ALLSTATE).fetch(config=config)
         # shortcut segment query for each state
         alldefs = [state.definition for state in self.states if
-                   state.name != ALLSTATE and not state.ready]
+                   state.name != ALLSTATE and state.definition and
+                   not state.ready]
         allvalid = reduce(operator.or_, [state.valid for state in self.states])
         get_segments(alldefs, allvalid, config=config, return_=False)
         # individually double-check, set ready condition

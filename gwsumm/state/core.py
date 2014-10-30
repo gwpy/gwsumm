@@ -66,7 +66,10 @@ class SummaryState(DataQualityFlag):
         super(SummaryState, self).__init__(name=name, valid=valid,
                                            active=active)
         self.description = description
-        self.definition = definition
+        if definition:
+            self.definition = re.sub('(\s|\n)', '', definition)
+        else:
+            self.definition = None
         self.key = key
         self.hours = hours
         if valid and active:
@@ -139,7 +142,10 @@ class SummaryState(DataQualityFlag):
 
     @definition.setter
     def definition(self, d):
-        self._definition = str(d)
+        if d:
+            self._definition = str(d)
+        else:
+            self._definition = None
 
     @property
     def key(self):
@@ -230,10 +236,16 @@ class SummaryState(DataQualityFlag):
         if self.ready:
             return self
         # otherwise find out which flags we need
-        segs = get_segments(self.definition, self.valid, config=config,
-                            **kwargs)
-        self.valid = segs.valid
-        self.active = segs.active
+        if self.definition:
+            segs = get_segments(self.definition, self.valid, config=config,
+                                **kwargs)
+            self.valid = segs.valid
+            self.active = segs.active
+        else:
+            start = config.getfloat(DEFAULTSECT, 'gps-start-time')
+            end = config.getfloat(DEFAULTSECT, 'gps-end-time')
+            self.valid = [(start, end)]
+            self.active = self.valid
         # restrict to given hours
         if self.hours:
             segs_ = SegmentList()
@@ -251,6 +263,7 @@ class SummaryState(DataQualityFlag):
                 d += datetime.timedelta(1)
             self.valid &= segs_
             self.active &= segs_
+        # FIXME
         self.ready = True
         return self
 

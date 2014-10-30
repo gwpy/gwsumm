@@ -436,7 +436,8 @@ class DataTab(DataTabBase):
 
         # find channels that need a TimeSeries
         tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
-                                       'histogram', all_data=all_data)
+                                       'histogram', all_data=all_data,
+                                       read=True)
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(tschannels))
@@ -446,7 +447,8 @@ class DataTab(DataTabBase):
             vprint("    All time-series data loaded\n")
 
         # find channels that need a StateVector
-        svchannels = self.get_channels('statevector', all_data=all_data)
+        svchannels = self.get_channels('statevector', all_data=all_data,
+                                       read=True)
         if len(svchannels):
             vprint("    %d channels identified as StateVectors\n"
                    % len(svchannels))
@@ -465,14 +467,15 @@ class DataTab(DataTabBase):
             fftparams = {}
 
         for channel in self.get_channels('spectrogram', 'spectrum',
-                                         all_data=all_data):
+                                         all_data=all_data, read=True):
             get_spectrogram(channel, state, config=config, return_=False,
                             multiprocess=multiprocess, **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
 
-        for channel in self.get_channels('spectrum', all_data=all_data):
+        for channel in self.get_channels('spectrum', all_data=all_data,
+                                         read=True):
             get_spectrum(channel, state, config=config, return_=False,
                          **fftparams)
 

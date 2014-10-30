@@ -171,7 +171,8 @@ class DataPlot(SummaryPlot):
     defaults = {}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, href=None, new=True, all_data=False, **pargs):
+                 tag=None, href=None, new=True, all_data=False,
+                 read=True, **pargs):
         super(DataPlot, self).__init__(href=href, new=new)
         self.channels = channels
         self.span = (start, end)
@@ -183,6 +184,7 @@ class DataPlot(SummaryPlot):
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
         self.plot = None
+        self.read = read
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot properties

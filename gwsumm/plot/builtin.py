@@ -509,7 +509,7 @@ class SpectrumDataPlot(DataPlot):
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
-            plot.suptitle(suptitle)
+            plot.suptitle(suptitle, y=0.99)
 
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')

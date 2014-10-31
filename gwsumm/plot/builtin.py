@@ -446,6 +446,8 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                     if channel.sample_rate is not None:
                         stateseries.sample_rate = channel.sample_rate
                 stateseries.bits = channel.bits
+                if not 'int' in str(stateseries.dtype):
+                    stateseries = stateseries.astype('uint32')
                 newflags = stateseries.to_dqflags().values()
                 if flags is None:
                     flags = newflags

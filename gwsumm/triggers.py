@@ -97,13 +97,14 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
                                                           segment[1])
-                    etg = 'ligolw'
+                    form = 'ligolw'
                 else:
                     segcache = cache.sieve(segment=segment)
+                    form = etg.lower()
                 # read triggers and store
                 segcache = segcache.checkfilesexist()[0]
                 table = TableClass.read(segcache, columns=columns,
-                                        format=etg.lower(), filt=filter_)
+                                        format=form, filt=filter_)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:

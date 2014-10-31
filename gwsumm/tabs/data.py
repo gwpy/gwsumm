@@ -688,6 +688,7 @@ class DataTab(DataTabBase):
         page.div.close()
 
         return super(DataTab, self).write_state_html(state, plots=True,
+                                                     pre=self.foreword,
                                                      post=page)
 
     @staticmethod

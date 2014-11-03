@@ -196,7 +196,7 @@ class DailyAhopeTab(base):
 
         else:
             # otherwise, carry on...
-            page = self.scaffold_plots(state)
+            page = self.scaffold_plots(state=state)
 
             # link full results
             page.div(class_='btn-group')

@@ -609,7 +609,11 @@ class Tab(object):
                 groups = set([t.group for t in children])
                 groups = dict((g, [t for t in children if t.group == g])
                               for g in groups)
-                nogroup = groups.pop(None, [])
+                nogroup = sorted(groups.pop(None, []),
+                                 key=lambda c: c.shortname.lower()
+                                               in ['summary', 'overview'] and
+                                               c.shortname.upper() or
+                                               c.shortname.lower())
                 for child in nogroup:
                     links.append((child.shortname, child.href))
                     if child == self:

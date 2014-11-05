@@ -427,6 +427,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     from gwpy.io.nds import kinit
                     kinit()
                     ndsconnection = nds2.connection(host, port)
+                else:
+                    raise
             source = 'nds'
             ndstype = channels[0].type
         elif nds:

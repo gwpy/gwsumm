@@ -33,6 +33,7 @@ except ImportError:
 import numpy
 import nds2
 import warnings
+import operator
 
 from astropy import units
 
@@ -50,6 +51,13 @@ from gwpy.io import nds as ndsio
 from . import (globalv, version)
 from .mode import *
 from .utils import *
+
+OPERATOR = {
+    '*': operator.mul,
+    '-': operator.sub,
+    '+': operator.add,
+    '/': operator.div,
+}
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -326,30 +334,31 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     """Retrieve the data for a set of channels
     """
     # separate channels by type
-    frametypes = dict()
-    for channel in channels:
-        channel = get_channel(channel)
-        ifo = channel.ifo
-        ftype = find_frame_type(channel)
-        id_ = (ifo, ftype)
-        if id_ in frametypes:
-            frametypes[id_].append(channel)
-        else:
-            frametypes[id_] = [channel]
-    out = dict()
-    for channellist in frametypes.itervalues():
-        data = _get_timeseries_dict(channellist, segments, config=config,
-                                    cache=cache, query=query, nds=nds,
-                                    multiprocess=multiprocess,
-                                    statevector=statevector)
-        if not return_:
-            continue
-        for (name, tslist) in data.iteritems():
-            if name in out:
-                out[name].extend(tslist)
+    if query:
+        frametypes = dict()
+        allchannels = [
+            c for group in
+                map(lambda x: re_channel.findall(Channel(x).ndsname), channels)
+            for c in group]
+        for channel in allchannels:
+            channel = get_channel(channel)
+            ifo = channel.ifo
+            ftype = find_frame_type(channel)
+            id_ = (ifo, ftype)
+            if id_ in frametypes:
+                frametypes[id_].append(channel)
             else:
-                out[name] = tslist
-    return out
+                frametypes[id_] = [channel]
+        for channellist in frametypes.itervalues():
+            data = _get_timeseries_dict(channellist, segments, config=config,
+                                        cache=cache, query=query, nds=nds,
+                                        multiprocess=multiprocess,
+                                        statevector=statevector, return_=False)
+    if not return_:
+        return
+    else:
+        return _get_timeseries_dict(channels, segments, config=config,
+                                    query=False, statevector=statevector)
 
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
@@ -427,6 +436,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     from gwpy.io.nds import kinit
                     kinit()
                     ndsconnection = nds2.connection(host, port)
+                else:
+                    raise
             source = 'nds'
             ndstype = channels[0].type
         elif nds:
@@ -582,6 +593,40 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     channel = get_channel(channel)
+
+    # find meta-channels
+    specs = []
+    channels = re_channel.findall(channel.ndsname)
+    for c in channels:
+        specs.append(_get_spectrogram(c, segments, config=config, cache=cache,
+                                      query=query, nds=nds, format=format,
+                                      return_=return_,
+                                      multiprocess=multiprocess,
+                                      **fftparams))
+    if return_:
+        # build meta-spectrogram
+        out = SpectrogramList()
+        operators = [channel.name[m.span()[1]] for m in
+                     list(re_channel.finditer(channel.ndsname))[:-1]]
+        for i in range(len(segments)):
+            out.append(specs[0][i].copy())
+            out[-1].name = str(channel)
+            for op, spec in zip(operators, specs[1:]):
+                try:
+                    op = OPERATOR[op]
+                except KeyError as e:
+                    e.args = ('Cannot parse math operator %r' % op,)
+                    raise
+                out[-1] = op(out[-1], spec[i])
+        return out
+
+
+def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
+                     query=True, nds='guess', format='power', return_=True,
+                     multiprocess=True, **fftparams):
+    if isinstance(segments, DataQualityFlag):
+        segments = segments.active
+    channel = get_channel(channel)
     # read segments from global memory
     havesegs = globalv.SPECTROGRAMS.get(channel.ndsname,
                                         SpectrogramList()).segments
@@ -713,6 +758,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
                 specgram = speclist.join(gap='ignore')
             else:
                 raise
+        globalv.SPECTRUM[name] = specgram.percentile(50)
         try:
             globalv.SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):

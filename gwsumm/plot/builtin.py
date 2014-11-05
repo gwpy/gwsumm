@@ -597,11 +597,27 @@ class SpectrumDataPlot(DataPlot):
                     ax.plot(refspec, **ref)
 
         # customise
+        hlines = list(self.pargs.pop('hline', []))
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
+
+        # add horizontal lines to add
+        if hlines:
+            if not isinstance(hlines[-1], float):
+                lineparams = hlines.pop(-1)
+            else:
+                lineparams = {'color':'r', 'linestyle': '--'}
+        for yval in hlines:
+            try:
+                yval = float(yval)
+            except ValueError:
+                continue
+            else:
+                ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
+
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.colorbars:

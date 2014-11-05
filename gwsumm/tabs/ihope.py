@@ -28,15 +28,17 @@ from glue.lal import Cache
 from glue.ligolw import (utils as llwutils)
 from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
 
-from gwpy.time import tconvert
+from gwpy.segments import DataQualityFlag
+from gwpy.time import from_gps
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
 from .. import (version, html, globalv)
-from ..config import GWSummConfigParser
+from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..data import find_cache_segments
 from ..triggers import get_triggers
 from ..utils import re_quote
+from ..state import SummaryState
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -54,13 +56,32 @@ class DailyAhopeTab(base):
     def from_ini(cls, config, section, plotdir=os.curdir, base=''):
         """Define a new `DailyAhopeTab` from a `ConfigParser`.
         """
+        # parse states
+        ifo = config.get(DEFAULTSECT, 'ifo')
+        start = config.getint(DEFAULTSECT, 'gps-start-time')
+        end = config.getint(DEFAULTSECT, 'gps-end-time')
+        if config.has_option(section, 'states'):
+            raise ValueError("DailyAhopeTab does not support configuration of "
+                             "multiple states, please use the 'state' option "
+                             "to name the Hveto state")
+        try:
+            state = re_quote.sub('', config.get(section, 'state'))
+        except NoOptionError:
+            state = 'Daily Ahope'
+        if state in globalv.STATES:
+            raise ValueError("State name for DailyAhopeTab must be unique, "
+                             "please do not select '%s'" % state)
+        globalv.STATES[state] = SummaryState(state, valid=(start, end))
+        globalv.STATES[state].definition = '%s:ahope' % ifo
+        config.set(section, 'states', state)
+
         # parse generic configuration
         new = super(DailyAhopeTab, cls).from_ini(config, section,
                                                  plotdir=plotdir, base=base)
         new.channel = re_quote.sub('', config.get(section, 'channel'))
 
         # work out day directory and url
-        utc = tconvert(new.span[0])
+        utc = from_gps(new.span[0])
         basedir = os.path.normpath(config.get(section, 'base-directory'))
         daydir = os.path.join(basedir, utc.strftime('%Y%m'),
                               utc.strftime('%Y%m%d'))
@@ -73,6 +94,8 @@ class DailyAhopeTab(base):
         new.inspiralcachefile = os.path.join(daydir,  cachefile)
         cachefile = config.get(section, 'tmpltbank-cache')
         new.tmpltbankcachefile = os.path.join(daydir, cachefile)
+        segfile = config.get(section, 'segment-file')
+        new.segmentfile = os.path.join(daydir, segfile)
 
         # get loudest options
         if config.has_option(section, 'loudest'):
@@ -139,6 +162,18 @@ class DailyAhopeTab(base):
                     pass
 
     def process(self, *args, **kwargs):
+        # read the segment files
+        if os.path.isfile(self.segmentfile):
+            segs = DataQualityFlag.read(self.segmentfile, coalesce=False)
+            self.states[0].known = segs.known
+            self.states[0].active = segs.active
+            self.states[0].ready = True
+        else:
+            warn('Segment file %s not found.' % self.segmentfile)
+            return
+        if len(self.states[0].active) == 0:
+            warn('No segments analysed by daily ahope.')
+            return
         # read the cache files
         if os.path.isfile(self.inspiralcachefile):
             with open(self.inspiralcachefile, 'r') as fobj:
@@ -152,7 +187,7 @@ class DailyAhopeTab(base):
                         raise
         else:
             warn("Cache file %s not found." % self.inspiralcachefile)
-            self.inspiralcache = None
+            return
         if os.path.isfile(self.tmpltbankcachefile):
             with open(self.tmpltbankcachefile, 'r') as fobj:
                 try:
@@ -168,13 +203,11 @@ class DailyAhopeTab(base):
             self.tmpltbankcache = Cache()
 
         # only process if the cachfile was found
-        if self.inspiralcache is not None:
-            super(DailyAhopeTab, self).process(*args, **kwargs)
+        super(DailyAhopeTab, self).process(*args, **kwargs)
 
     def process_state(self, state, nds='guess', multiprocess=False,
                       config=GWSummConfigParser(), plotqueue=None,
                       segdb_error='raise'):
-        self.get_tmpltbank_data()
         super(DailyAhopeTab, self).process_state(
             state, nds=nds, multiprocess=multiprocess, config=config,
             datacache=Cache(), trigcache=self.inspiralcache,
@@ -183,17 +216,40 @@ class DailyAhopeTab(base):
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `DailyAhopeTab`.
         """
-        # if no files, presume not run yet
-        if self.inspiralcache is None:
+        daydir = os.path.split(self.segmentfile)[0]
+        # did it run
+        if not os.path.isdir(daydir):
             page = html.markup.page()
             page.div(class_='alert alert-warning')
-            page.p("No data were found for this day, please try again later.")
+            page.p("No analysis was performed for this period, "
+                   "please try again later.")
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the CBC DQ group',
+                                            class_='alert-link',
                                             href='mailto:cbc+dq@ligo.org'))
             page.div.close()
-
+        elif (not os.path.isfile(self.segmentfile) or
+              len(self.states[0].active) != 0 and
+              not os.path.isfile(self.inspiralcache)):
+            page = html.markup.page()
+            page.div(class_='alert alert-danger')
+            page.p("This analysis seems to have failed.")
+            page.p("If you believe these data should have been found, please "
+                   "contact %s."
+                   % html.markup.oneliner.a('the CBC DQ group',
+                                            class_='alert-link',
+                                            href='mailto:cbc+dq@ligo.org'))
+            page.div.close()
+        elif len(self.states[0].active) == 0:
+            page = html.markup.page()
+            page.div(class_='alert alert-info')
+            page.p("This analysis found no segments over which to run.")
+            page.p("If you believe this to be an error, please contact %s."
+                   % html.markup.oneliner.a('the CBC DQ group',
+                                            class_='alert-link',
+                                            href='mailto:cbc+dq@ligo.org'))
+            page.div.close()
         else:
             # otherwise, carry on...
             page = self.scaffold_plots(state=state)
@@ -227,7 +283,7 @@ class DailyAhopeTab(base):
                         data[-1].append('%.3f' % float(get_row_value(row,
                                                                      column)))
                     if date:
-                        data[-1].insert(1, tconvert(row.get_end()).strftime(
+                        data[-1].insert(1, from_gps(row.get_end()).strftime(
                                                '%B %d %Y, %H:%M:%S.%f')[:-3])
                 page.add(str(html.data_table(headers, data, table='data')))
 

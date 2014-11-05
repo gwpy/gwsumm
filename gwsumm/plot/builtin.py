@@ -219,12 +219,21 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         specgrams = get_spectrogram(self.channels[0], valid, query=False,
                                     format=sdform)
         # calculate ratio spectrum
-        if ratio in ['median', 'mean']:
-            allspec = specgrams.join(gap='ignore')
-            ratio = getattr(allspec, ratio)(axis=0)
-        elif isinstance(ratio, int):
-            allspec = specgrams.join(gap='ignore')
-            ratio = allspec.percentile(ratio)
+        if ratio in ['median', 'mean'] or isinstance(ratio, int):
+            try:
+                allspec = specgrams.join(gap='ignore')
+            except ValueError as e:
+                if 'units do not match' in str(e):
+                    warnings.warn(str(e))
+                    for spec in specgrams[1:]:
+                        spec.unit = specgrams[0].unit
+                    allspec = specgrams.join(gap='ignore')
+                else:
+                    raise
+            if isinstance(ratio, int):
+                ratio = allspec.percentile(ratio)
+            else:
+                ratio = getattr(allspec, ratio)(axis=0)
         # plot data
         for specgram in specgrams:
             if ratio is not None:

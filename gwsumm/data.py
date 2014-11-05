@@ -703,7 +703,16 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         speclist = get_spectrogram(channel, segments, config=config,
                                    cache=cache, query=False, nds=nds,
                                    **fftparams)
-        specgram = speclist.join(gap='ignore')
+        try:
+            specgram = speclist.join(gap='ignore')
+        except ValueError as e:
+            if 'units do not match' in str(e):
+                warnings.warn(str(e))
+                for spec in speclist[1:]:
+                    spec.unit = speclist[0].unit
+                specgram = speclist.join(gap='ignore')
+            else:
+                raise
         try:
             globalv.SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):

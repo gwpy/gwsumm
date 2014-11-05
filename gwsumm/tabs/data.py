@@ -178,18 +178,6 @@ class DataTab(DataTabBase):
                 ismeta = bool(ismeta.title())
         job.ismeta = ismeta
 
-        # hidden
-        try:
-            hidden = cp.get(section, 'hidden')
-        except NoOptionError:
-            hidden = False
-        else:
-            if hidden is None:
-                hidden = True
-            else:
-                hidden = bool(hidden.title())
-        job.hidden = hidden
-
         # -------------------
         # parse plot requests
         #    All config entries whose key is a single integer is

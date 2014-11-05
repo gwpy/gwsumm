@@ -86,7 +86,7 @@ class Tab(object):
     """Type identifier for this `Tab`"""
 
     def __init__(self, name, index=None, shortname=None, parent=None,
-                 children=list(), group=None, base=''):
+                 children=list(), group=None, base='', hidden=False):
         """Initialise a new `Tab`.
         """
         # names
@@ -101,7 +101,7 @@ class Tab(object):
         self.base = base
         self.index = index
         self.page = None
-        self.hidden = False
+        self.hidden = hidden
 
     # -------------------------------------------
     # Tab properties
@@ -395,6 +395,17 @@ class Tab(object):
             kwargs.setdefault('index', cp.get(section, 'index'))
         except NoOptionError:
             pass
+        # get hidden param
+        try:
+            hidden = cp.get(section, 'hidden')
+        except NoOptionError:
+            hidden = False
+        else:
+            if hidden is None:
+                hidden = True
+            else:
+                hidden = bool(hidden.title())
+        kwargs.setdefault('hidden', hidden)
         return cls(name, *args, **kwargs)
 
     # -------------------------------------------------------------------------
@@ -771,14 +782,16 @@ class SummaryArchiveMixin(object):
     # SummaryArchive methods
 
     @classmethod
-    def from_ini(cls, config, section, start=None, end=None, **kwargs):
+    def from_ini(cls, config, section, start=None, end=None, hidden=None,
+                 **kwargs):
         config = GWSummConfigParser.from_configparser(config)
         if start is None:
             start = config.getint(section, 'gps-start-time')
         if end is None:
             end = config.getint(section, 'gps-end-time')
+
         return super(SummaryArchiveMixin, cls).from_ini(config, section, start,
-                                                     end, **kwargs)
+                                                        end, **kwargs)
 
     def build_html_calendar(self):
         """Build the datepicker calendar for this tab.

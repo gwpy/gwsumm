@@ -73,7 +73,7 @@ class TimeSeriesDataPlot(DataPlot):
             method.
         """
         kwargs.setdefault('edgecolor', 'black')
-        kwargs.setdefault('facecolor', 'green')
+        kwargs.setdefault('facecolor', (0.2, 0.8, 0.2))
         kwargs.setdefault('valid', {'facecolor': 'red'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)

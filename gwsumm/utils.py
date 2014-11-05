@@ -30,7 +30,7 @@ from gwpy.io import nds as ndsio
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
-re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\Z|\.[a-z]+\Z)')
+re_channel = re.compile(r'(?:[A-Z]\d:[A-Z1-9]+-\w+)(?:\.[a-zA-Z0-9]+)?')
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
 

@@ -249,7 +249,7 @@ class DataPlot(SummaryPlot):
             return self._tag
         except AttributeError:
             state = re_cchar.sub('_', self.state is None and 'MULTI' or
-                                      self.state.name)
+                                      self.state.name).rstrip('_')
             chans = "".join(map(str, self.channels))
             filts = "".join(map(str,
                 [getattr(c, 'filter', getattr(c, 'frequency_response', ''))

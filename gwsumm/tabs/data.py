@@ -544,6 +544,7 @@ class DataTab(DataTabBase):
         """Write a placeholder '#main' content for this tab
         """
         email = html.markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
                                        href='mailto:detchar+code@ligo.org')
         page = html.markup.page()
         page.div(class_='row')

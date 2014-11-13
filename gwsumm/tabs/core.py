@@ -210,11 +210,11 @@ class Tab(object):
             if self.shortname.lower() == 'summary':
                 p = ''
             else:
-                p = re_cchar.sub('_', self.shortname).lower()
+                p = re_cchar.sub('_', self.shortname.strip('_')).lower()
             tab_ = self
             while tab_.parent:
                 p = os.path.join(re_cchar.sub(
-                        '_', tab_.parent.shortname).lower(), p)
+                        '_', tab_.parent.shortname.strip('_')).lower(), p)
                 tab_ = tab_.parent
             if self.base:
                 return os.path.normpath(os.path.join(self.base, p))
@@ -226,10 +226,10 @@ class Tab(object):
         """Page title for this tab
         """
         if self.parent:
-            title = self.name
+            title = self.name.strip('_')
             tab_ = self
             while tab_.parent:
-                title = '%s/%s' % (tab_.parent.name, title)
+                title = '%s/%s' % (tab_.parent.name.strip('_'), title)
                 tab_ = tab_.parent
             return title
         else:
@@ -240,14 +240,14 @@ class Tab(object):
         """Page title for this tab
         """
         if self.parent:
-            title = self.shortname
+            title = self.shortname.strip('_')
             tab_ = self
             while tab_.parent:
-                title = '%s/%s' % (tab_.parent.shortname, title)
+                title = '%s/%s' % (tab_.parent.shortname.strip('_'), title)
                 tab_ = tab_.parent
             return title
         else:
-            return self.shortname
+            return self.shortname.strip('_')
 
     @property
     def group(self):
@@ -602,7 +602,7 @@ class Tab(object):
                 continue
             children = [t for t in tab.children if not t.hidden]
             if len(children):
-                navlinks.append([tab.shortname, []])
+                navlinks.append([tab.shortname.strip('_'), []])
                 links = []
                 active = None
                 # build groups
@@ -615,14 +615,15 @@ class Tab(object):
                                                c.shortname.upper() or
                                                c.shortname.lower())
                 for child in nogroup:
-                    links.append((child.shortname, child.href))
+                    links.append((child.shortname.strip('_'), child.href))
                     if child == self:
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
                     # sort group by name
                     re_group = re.compile('(\A{0}\s|\s{0}\Z)'.format(
                                               group.strip('_')), re.I)
-                    names = [re_group.sub('', t.shortname) for t in groups[group]]
+                    names = [re_group.sub('', t.shortname)
+                             for t in groups[group]]
                     groups[group] = zip(*sorted(
                         zip(groups[group], names),
                         key=lambda (t, n): n.lower() in ['summary', 'overview']
@@ -630,7 +631,7 @@ class Tab(object):
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):
-                        name = re_group.sub('', child.shortname)
+                        name = re_group.sub('', child.shortname.strip('_'))
                         links[-1][1].append((name, child.href))
                         if child == self:
                             active = [len(links) - 1, i]
@@ -643,7 +644,7 @@ class Tab(object):
                 navlinks[-1][1].extend(links)
                 navlinks[-1].append(active)
             else:
-                navlinks.append((tab.shortname, tab.href))
+                navlinks.append((tab.shortname.strip('_'), tab.href))
         return navlinks
 
     @staticmethod

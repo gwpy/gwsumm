@@ -43,8 +43,8 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
     'numpydoc',
-    'gwpy.sphinx.autoclassapi',
-    'gwpy.sphinx.directives',
+    'gwpy.utils.sphinx.autoclassapi',
+    'gwpy.utils.sphinx.directives',
 ]
 
 # Configure autosummary

@@ -643,7 +643,7 @@ except NoSectionError:
 else:
     for key, val in config.nditems('html'):
         if re.search('-base\Z', key):
-            ifobases[key.rsplit('-', 1)[0].upper()] = val
+            ifobases[key.rsplit('-', 1)[0].title()] = val
 ifobases.pop(ifo, None)
 
 # sort tabs by 'Summary', then lower case only, then everything else

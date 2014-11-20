@@ -608,7 +608,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         out = SpectrogramList()
         operators = [channel.name[m.span()[1]] for m in
                      list(re_channel.finditer(channel.ndsname))[:-1]]
-        for i in range(len(segments)):
+        for i in range(len(specs[0])):
             out.append(specs[0][i].copy())
             out[-1].name = str(channel)
             for op, spec in zip(operators, specs[1:]):

@@ -200,6 +200,8 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
                 urltype='file', gaps='warn'):
     """Query the datafind server for GWF files for the given type
     """
+    vprint('    Finding %s-%s frames for [%d, %d)...'
+           % (ifo[0], frametype, int(gpsstart), int(gpsend)))
     # find datafind host:port
     try:
         host = config.get('datafind', 'server')
@@ -260,6 +262,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
                                                 gpsend, urltype=urltype,
                                                 on_gaps=gaps)[1:])
     cache, _ = cache.checkfilesexist()
+    vprint(' %d found.\n' % len(cache))
     return cache
 
 
@@ -497,8 +500,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 ctype = None
         # loop through segments, recording data for each
         if len(new) and nproc > 1:
-            vprint("    Fetching data (from %s) for %d channels"
-                   % (source, len(qchannels)))
+            vprint("    Fetching data (from %s) for %d channels [%s]"
+                   % (source, len(qchannels), nds and ndstype or ftype))
         for segment in new:
             if nds:
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],

@@ -327,7 +327,8 @@ class DataTab(DataTabBase):
                    state.name != ALLSTATE and state.definition and
                    not state.ready]
         allvalid = reduce(operator.or_, [state.valid for state in self.states])
-        get_segments(alldefs, allvalid, config=config, return_=False)
+        get_segments(alldefs, allvalid, config=config,
+                     segdb_error=segdb_error, return_=False)
         # individually double-check, set ready condition
         for state in self.states:
             state.fetch(config=config, query=False)

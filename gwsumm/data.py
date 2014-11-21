@@ -455,7 +455,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 new = type(new)([s for s in new if abs(s) >= 60.])
             elif ftype == '%s_T' % ifo:
                 new = type(new)([s for s in new if abs(s) >= 1.])
-            elif ((globalv.NOW - new[0][0]) < 86400 * 20 and
+            elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
                   ftype == '%s_R' % ifo and
                   find_types(site=ifo[0], match='_C\Z')):
                 ftype = '%s_C' % ifo

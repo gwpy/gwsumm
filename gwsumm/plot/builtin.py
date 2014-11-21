@@ -118,7 +118,7 @@ class TimeSeriesDataPlot(DataPlot):
                 valid = SegmentList([self.span])
             # get data
             data = [get_timeseries(c, valid, query=False).join(
-                        gap='ignore', pad=numpy.nan)
+                        gap='pad', pad=numpy.nan)
                     for c in channels]
             # double-check empty
             for ts in data:

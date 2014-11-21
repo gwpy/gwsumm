@@ -50,6 +50,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 DataPlot = get_plot('data')
+GREEN = (0.2, 0.8, 0.2)
 
 
 class TimeSeriesDataPlot(DataPlot):
@@ -73,7 +74,7 @@ class TimeSeriesDataPlot(DataPlot):
             method.
         """
         kwargs.setdefault('edgecolor', 'black')
-        kwargs.setdefault('facecolor', (0.2, 0.8, 0.2))
+        kwargs.setdefault('facecolor', GREEN)
         kwargs.setdefault('valid', {'facecolor': 'red'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
@@ -344,7 +345,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
             onisbad = bool(onisbad)
 
         # choose colors
-        good = color or 'green'
+        good = color or GREEN
         if color is None or color.lower() != 'red':
             bad = 'red'
         else:

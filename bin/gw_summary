@@ -660,7 +660,6 @@ for tab in tabs:
 
 alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
-    mkdir(tab.href)
     vprint("\n-------------------------------------------------\n")
     if tab.parent:
         name = '%s/%s' % (tab.parent.name, tab.name)
@@ -672,6 +671,7 @@ for tab in alltabs:
                     multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
     if not tab.hidden:
+        mkdir(tab.href)
         page = tab.write_html(css=css, js=javascript, tabs=tabs,
                               ifo=ifo, ifomap=ifobases, about=about.index,
                               writedata=not opts.html_only,

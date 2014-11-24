@@ -323,12 +323,20 @@ class DataTab(DataTabBase):
         # finalize all-state
         get_state(ALLSTATE).fetch(config=config)
         # shortcut segment query for each state
-        alldefs = [state.definition for state in self.states if
-                   state.name != ALLSTATE and state.definition and
-                   not state.ready]
-        allvalid = reduce(operator.or_, [state.valid for state in self.states])
-        get_segments(alldefs, allvalid, config=config,
-                     segdb_error=segdb_error, return_=False)
+        alldefs = {}
+        for state in self.states:
+            if state.name == ALLSTATE or state.ready or not state.definition:
+                continue
+            try:
+                alldefs[state.url].append(state)
+            except KeyError:
+                alldefs[state.url] = [state]
+        for url,states_ in alldefs.iteritems():
+            allvalid = reduce(operator.or_,
+                              [state.valid for state in states_])
+            defs = [s.definition for s in states_]
+            get_segments(defs, allvalid, config=config, url=url,
+                         segdb_error=segdb_error, return_=False)
         # individually double-check, set ready condition
         for state in self.states:
             state.fetch(config=config, query=False)

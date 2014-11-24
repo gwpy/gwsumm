@@ -39,7 +39,7 @@ __version__ = version.version
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
-                 query=True, return_=True, segdb_error='raise'):
+                 query=True, return_=True, segdb_error='raise', url=None):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -103,10 +103,13 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         else:
             # parse configuration for query
             kwargs = {}
-            try:
-                kwargs['url'] = config.get('segment-database', 'url')
-            except (NoSectionError, NoOptionError):
-                pass
+            if url is not None:
+                kwargs['url'] = url
+            else:
+                try:
+                    kwargs['url'] = config.get('segment-database', 'url')
+                except (NoSectionError, NoOptionError):
+                    pass
             try:
                 if 'url' in kwargs and 'dqsegdb' in kwargs['url']:
                     new = DataQualityDict.query_dqsegdb(allflags, newsegs,

@@ -55,7 +55,8 @@ class SummaryState(DataQualityFlag):
         registry key for this state, defaults to :attr:`~SummaryState.name`
     """
     def __init__(self, name, valid=SegmentList(), active=SegmentList(),
-                 description=None, definition=None, hours=None, key=None):
+                 description=None, definition=None, hours=None, key=None,
+                 url=None):
         """Initialise a new `SummaryState`
         """
         # allow users to specify valid as (start, end)
@@ -72,6 +73,7 @@ class SummaryState(DataQualityFlag):
             self.definition = None
         self.key = key
         self.hours = hours
+        self.url = url
         if valid and active:
             self.ready = True
         else:

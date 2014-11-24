@@ -625,7 +625,7 @@ class DataTab(DataTabBase):
                 data.append([link, ctype, rate, unit])
             page.add(str(html.data_table(headers, data, table='data')))
 
-        flags = self.get_flags('segments')
+        flags = self.get_flags('segments', unique=False)
         if len(flags):
             page.h1('Segment information')
             page.add("The following flags were used in "
@@ -745,6 +745,7 @@ class DataTab(DataTabBase):
             an alphabetically-sorted `list` of flags
         """
         isnew = kwargs.pop('new', True)
+        uniq = kwargs.pop('unique', True)
         out = set()
         for plot in self.plots:
             if not plot.type in types:
@@ -758,8 +759,11 @@ class DataTab(DataTabBase):
                     break
             if skip:
                 continue
-            out.update([f for cflag in plot.flags for f in
-                        re_flagdiv.split(cflag)[::2] if f])
+            if uniq:
+                out.update([f for cflag in plot.flags for f in
+                            re_flagdiv.split(cflag)[::2] if f])
+            else:
+                out.update(plot.flags)
         return sorted(out, key=lambda dqf: str(dqf))
 
     def get_triggers(self, *types, **kwargs):

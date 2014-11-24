@@ -266,7 +266,7 @@ class DataPlot(SummaryPlot):
     def outputfile(self):
         """Output file for this `TabSummaryPlot`.
         """
-        ifos = ''.join(self.ifos)
+        ifos = ''.join(sorted(self.ifos))
         tag = self.tag
         gps = floor(self.start)
         dur = ceil(self.end - self.start)

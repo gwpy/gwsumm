@@ -30,6 +30,7 @@ __version__ = version.version
 
 from .. import markup
 from ..utils import highlight_syntax
+from ...mode import *
 from ...utils import re_cchar
 
 # set resources
@@ -228,7 +229,7 @@ def dropdown_link(page, link, active=False, class_=''):
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
-             id_='calendar', dateformat='%B %d %Y', mode='days'):
+             id_='calendar', dateformat=None, mode='days'):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -244,6 +245,17 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         a onliner string of HTML containing the calendar text and a
         triggering dropdown
     """
+    if dateformat is None:
+        if mode in [SUMMARY_MODE_DAY, 'days']:
+            dateformat = '%B %d %Y'
+        elif mode in [SUMMARY_MODE_WEEK, 'weeks']:
+            dateformat = 'Week of %B %d %Y'
+        elif mode in [SUMMARY_MODE_MONTH, 'months']:
+            dateformat = '%B %Y'
+        elif mode in [SUMMARY_MODE_YEAR, 'years']:
+            dateformat = '%Y'
+        else:
+            raise ValueError("Cannot set dateformat for mode=%r" % mode)
     datestring = date.strftime(dateformat)
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()

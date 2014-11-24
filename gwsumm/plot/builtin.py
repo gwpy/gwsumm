@@ -37,7 +37,7 @@ from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
-from .. import (globalv, version)
+from .. import (globalv, mode, version)
 from ..utils import (re_quote, re_cchar, split_channels)
 from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
                     add_timeseries)
@@ -87,6 +87,9 @@ class TimeSeriesDataPlot(DataPlot):
         """
         self.plot = plot()
         ax = self.plot.gca()
+        if mode.MODE_NAME[mode.get_mode()] == 'MONTH':
+            ax.set_xscale('days')
+            ax.set_xlabel('_auto')
         ax.set_epoch(float(self.start))
         return self.plot, ax
 

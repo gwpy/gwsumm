@@ -42,6 +42,8 @@ warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
 warnings.filterwarnings('ignore', category=RuntimeWarning)
 
+from dateutil.relativedelta import relativedelta
+
 try:
     import ROOT
 except ImportError:
@@ -59,6 +61,8 @@ except ImportError:
     from astropy.utils import OrderedDict
 
 from astropy import units
+
+from glue.lal import Cache
 
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
@@ -106,6 +110,7 @@ class GWHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 
 # define actions for formatting dates
 class DateAction(argparse.Action):
+    TIMESCALE = {'days': 1}
     @staticmethod
     def set_gps_times(namespace, startdate, enddate):
         setattr(namespace, 'gpsstart', to_gps(startdate))
@@ -119,22 +124,29 @@ class DateAction(argparse.Action):
                                % (self.dest.title(), self.METAVAR))
         else:
             self.set_gps_times(namespace, date,
-                               date + datetime.timedelta(days=1))
+                               date + relativedelta(**self.TIMESCALE))
             setattr(namespace, self.dest, date)
         return date
 
 
 class DayAction(DateAction):
+    TIMESCALE = {'days': 1}
     DATEFORMAT = '%Y%m%d'
     METAVAR = 'YYYYMMDD'
 
 
+class WeekAction(DayAction):
+    TIMESCALE = {'days': 7}
+
+
 class MonthAction(DateAction):
+    TIMESCALE = {'months': 1}
     DATEFORMAT = '%Y%m'
     METAVAR = 'YYYYMM'
 
 
 class YearAction(DateAction):
+    TIMESCALE = {'years': 1}
     DATEFORMAT = '%Y'
     METAVAR = 'YYYY'
 
@@ -286,8 +298,8 @@ subparser['week'] = subparsers.add_parser('week', parents=[sharedopts],
                                           epilog=parser.epilog,
                                           formatter_class=GWHelpFormatter,
                                           help="Process one week of data")
-subparser['week'].add_argument('week', action=DayAction, type=str,
-                               metavar=DayAction.METAVAR,
+subparser['week'].add_argument('week', action=WeekAction, type=str,
+                               metavar=WeekAction.METAVAR,
                                help="Week to process (given as starting day)")
 add_output_options(subparser['week'])
 add_archive_options(subparser['week'])
@@ -499,8 +511,11 @@ if not hasattr(opts, 'archive'):
 
 if opts.html_only:
     opts.archive = False
+    opts.daily_archive = False
 elif opts.archive is True:
     opts.archive = 'GW_SUMMARY_ARCHIVE'
+
+archives = []
 
 if opts.archive:
     from gwsumm import archive
@@ -510,12 +525,35 @@ if opts.archive:
                                 % (ifo, opts.archive, opts.gpsstart,
                                         opts.gpsend - opts.gpsstart))
     if os.path.isfile(opts.archive):
-        vprint("Reading archived data from %s..." % opts.archive)
-        archive.read_data_archive(opts.archive)
-        vprint(" Done.\n")
+        archives.append(opts.archive)
     else:
         vprint("No archive found in %s, one will be created at the end.\n"
                % opts.archive)
+
+# read daily archive for week/month/... mode
+if hasattr(opts, 'daily_archive') and opts.daily_archive:
+    from gwsumm import archive
+    s = utc
+    e = tconvert(opts.gpsend)
+    while s < e:
+        daybase = mode.get_base(s, mode=mode.SUMMARY_MODE_DAY)
+        ds = tconvert(s)
+        s += datetime.timedelta(days=1)
+        de = tconvert(s)
+        archivedir = os.path.join(daybase, 'archive')
+        arch = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+                            % (ifo, opts.daily_archive, ds, de-ds))
+        if os.path.isfile(arch):
+            archives.append(arch)
+    # don't read any actual data
+    cache = Cache()
+else:
+    cache = None
+
+for arch in archives:
+    vprint("Reading archived data from %s..." % arch)
+    archive.read_data_archive(arch)
+    vprint(" Done.\n")
 
 # -----------------------------------------------------------------------------
 # Read HTML configuration
@@ -664,7 +702,8 @@ for tab in alltabs:
         name = tab.name
     if not opts.html_only and isinstance(tab, get_tab('archived-data')):
         vprint("Processing %s\n" % name)
-        tab.process(config=config, nds=opts.nds,
+        tab.process(config=config, nds=opts.nds, datacache=cache,
+                    trigcache=cache,
                     multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
     if not tab.hidden:

@@ -376,6 +376,7 @@ class DataTab(DataTabBase):
             queue.close()
             queue.join()
             vprint('done.\n')
+            sleep(2)
 
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,

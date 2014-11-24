@@ -75,9 +75,6 @@ from gwsumm.data import get_timeseries_dict
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-# find channels
-re_channel = re.compile('[A-Z]\d:[A-Z]+-[A-Z0-9_]+(\.[a-z]+)?(,[a-z\-]+)?\Z')
-
 # XXX HACK: disable colon separator in ConfigParser
 GWSummConfigParser.OPTCRE = re.compile(
     r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')

@@ -62,11 +62,9 @@ def load(url, id_='main', error=False):
     if not ps.netloc and not error:
         return markup.given_oneliner.script('$("#%s").load("%s");' % (id_, url))
     elif ps.netloc and not error:
-        op = 'html'
         error = ('alert("Cannot load content from %r, use browser console '
                 'to inspect failure.");')
     else:
-        op = 'load'
         if not isinstance(error, (str, markup.page)):
             error = 'Failed to load content from %r' % url
         error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
@@ -76,6 +74,6 @@ def load(url, id_='main', error=False):
     $.ajax({
         url : %r,
         type : 'GET',
-        success: function(data){$("#%s").%s(data);},
+        success: function(data){$("#%s").html(data);},
         error: function(xhr, status, error){%s}
-        });\n""" % (url, id_, op, error))
+        });\n""" % (url, id_, error))

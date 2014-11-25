@@ -54,21 +54,28 @@ def load_state(url):
     return page
 
 
-def load(url, id_='main'):
+def load(url, id_='main', error=False):
     """Construct the HTML script required to load a url into the
     HTML element with the given unique ``id_``.
     """
     ps = urlparse(url)
-    if ps.netloc:
-        return markup.given_oneliner.script("""
+    if not ps.netloc and not error:
+        return markup.given_oneliner.script('$("#%s").load("%s");' % (id_, url))
+    elif ps.netloc and not error:
+        op = 'html'
+        error = ('alert("Cannot load content from %r, use browser console '
+                'to inspect failure.");')
+    else:
+        op = 'load'
+        if not isinstance(error, (str, markup.page)):
+            error = 'Failed to load content from %r' % url
+        error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
+                                '<p>%s</p></div>");'
+                 % (id_, error))
+    return markup.given_oneliner.script("""
     $.ajax({
         url : %r,
         type : 'GET',
-        success: function(data){$("#%s").html(data);},
-        error: function(xhr, status, error){
-                   alert("Cannot load content from %r, use browser console" +
-                         " to inspect failure.");
-                   }
-        });\n""" % (url, id_, url))
-    else:
-        return markup.given_oneliner.script('$("#%s").load("%s");' % (id_, url))
+        success: function(data){$("#%s").%s(data);},
+        error: function(xhr, status, error){%s}
+        });\n""" % (url, id_, op, error))

@@ -69,11 +69,12 @@ class ExternalTab(Tab):
     """
     type = 'external'
 
-    def __init__(self, name, url, **kwargs):
+    def __init__(self, name, url, error=True, **kwargs):
         """Initialise a new `ExternalTab`.
         """
         super(ExternalTab, self).__init__(name, **kwargs)
         self.url = url
+        self.error = error
 
     @property
     def url(self):
@@ -116,12 +117,15 @@ class ExternalTab(Tab):
 
         """
         url = cp.get(section, 'url')
+        if cp.has_option(section, 'error'):
+            kwargs.setdefault(
+                'error', re_quote.sub('', cp.get(section, 'error')))
         return super(ExternalTab, cls).from_ini(cp, section, url, *args, **kwargs)
 
     def build_html_content(self, content, divclass='container', divid='main'):
         page = html.markup.page()
         page.div(content, class_=divclass, id_=divid)
-        page.add(str(html.load(self.url, id_=divid)))
+        page.add(str(html.load(self.url, id_=divid, error=self.error)))
         return page
 
     def write_html(self, **kwargs):

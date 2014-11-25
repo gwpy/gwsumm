@@ -64,6 +64,13 @@ from astropy import units
 
 from glue.lal import Cache
 
+try:
+    from lal import lal
+except ImportError:
+    HASLAL = False
+else:
+    HASLAL = True
+
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import psd
@@ -394,6 +401,13 @@ config.set(DEFAULTSECT, 'dd', utc.strftime('%d'))
 config.set(DEFAULTSECT, 'yyyymm', utc.strftime('%Y%m'))
 config.set(DEFAULTSECT, 'yyyymmdd', utc.strftime('%Y%m%d'))
 config.set(DEFAULTSECT, 'duration', str(int(opts.gpsend - opts.gpsstart)))
+if HASLAL:
+    nleap = lal.GPSLeapSeconds(int(opts.gpsstart))
+    config.set(DEFAULTSECT, 'leap-seconds', str(nleap))
+    config.set(DEFAULTSECT, 'gps-start-time-noleap',
+               str(int(opts.gpsstart) - nleap))
+    config.set(DEFAULTSECT, 'gps-end-time-noleap',
+               str(int(opts.gpsend) - nleap))
 
 starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')

@@ -572,7 +572,7 @@ class Tab(object):
         else:
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
-        return html.navbar(self._build_nav_links(tabs), brand=brand,
+        return html.navbar(self._build_nav_links(tabs), brand=brand_,
                            dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
 
     def _build_nav_links(self, tabs):

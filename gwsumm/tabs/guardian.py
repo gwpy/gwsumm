@@ -146,6 +146,20 @@ class GuardianTab(Tab):
         """Write the HTML for the given state of this `GuardianTab`
         """
         page = self.scaffold_plots()
+        page.div(class_='alert alert-info alert-dismissible')
+        # add close button
+        page.button(type="button", class_="close", **{'data-dismiss': "alert"})
+        page.span('&times;', **{'aria-hidden': "true"})
+        page.span('Close', class_="sr-only")
+        page.button.close()
+        # show message
+        page.p('For all of the following data, "Unknown" simply labels any '
+               'state in this node that was not chosen for display, and does '
+               'not mean that the state was unrecognised by the Guardian '
+               'system. Transitions from an "Unkown" state are not listed in '
+               'the below table, but are included in the totals.')
+        page.div.close()
+
         page.div(class_='row')
         page.div(class_='col-md-12')
 

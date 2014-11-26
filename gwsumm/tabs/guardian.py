@@ -168,7 +168,8 @@ class GuardianTab(Tab):
         page.p("The table below lists for each state (row), the number of "
                "transitions into that state from each other state (columns).")
         page.p("Only those states named in the configuration are shown, but "
-               "the 'Total' includes transitions from any and all states.")
+               "the 'Total' includes transitions from any and all states. "
+               "'-' indicates no transitions from that state")
         page.table(class_='transitions data')
         page.tr(class_='header')
         for th in ['State'] + self.grdstates.values() + ['Total']:
@@ -184,7 +185,10 @@ class GuardianTab(Tab):
                     continue
                 count = len([t for t in self.transitions[bit] if
                              t[1] == bit2])
-                page.td(str(count))
+                if count:
+                    page.td(str(count))
+                else:
+                    page.td('-')
             page.th(str(len(self.transitions[bit])))
             page.tr.close()
         page.table.close()

@@ -454,6 +454,8 @@ class PlotTab(Tab):
         gwsumm.tabs.Tab.write_html : for details of all valid unnamed
                                      keyword arguments
         """
+        if not kwargs.pop('writehtml', True):
+            return
         if foreword is not None:
             self.foreword = foreword
         if afterword is not None:

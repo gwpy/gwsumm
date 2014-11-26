@@ -36,7 +36,7 @@ from astropy.time import Time
 
 from gwpy.segments import DataQualityDict
 
-from ..config import GWSummConfigParser
+from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import ALLSTATE
 from .registry import (get_tab, register_tab)
 from .. import (globalv, version, html)
@@ -84,6 +84,11 @@ class GuardianTab(Tab):
                 continue
             else:
                 new.grdstates[int(key)] = name
+        try:
+            new.transstates = map(
+                int, config.get(section, 'transitions').split(','))
+        except NoOptionError:
+            new.transstates = new.grdstates.keys()
 
         # build plots
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
@@ -175,7 +180,7 @@ class GuardianTab(Tab):
         for th in ['State'] + self.grdstates.values() + ['Total']:
             page.th(th)
         page.tr.close()
-        for i, bit in enumerate(self.grdstates):
+        for i, bit in enumerate(self.transstates):
             page.tr()
             name = self.grdstates[bit]
             page.th(name)

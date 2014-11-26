@@ -136,6 +136,8 @@ class ExternalTab(Tab):
         gwsumm.tabs.Tab.write_html : for details of all valid keyword
         arguments
         """
+        if not kwargs.pop('writehtml', True):
+            return
         link = html.markup.given_oneliner.a('click here to view the original',
                                             class_='reference',
                                             href=self.url.split()[0])

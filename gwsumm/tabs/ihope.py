@@ -39,6 +39,7 @@ from ..data import find_cache_segments
 from ..triggers import get_triggers
 from ..utils import re_quote
 from ..state import SummaryState
+from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -207,11 +208,14 @@ class DailyAhopeTab(base):
 
     def process_state(self, state, nds='guess', multiprocess=False,
                       config=GWSummConfigParser(), plotqueue=None,
-                      segdb_error='raise'):
+                      segdb_error='raise', trigcache=None, datacache=None):
+        if trigcache is None:
+            trigcache = self.inspiralcache
+        if datacache is None:
+            datacache = Cache()
         super(DailyAhopeTab, self).process_state(
             state, nds=nds, multiprocess=multiprocess, config=config,
-            datacache=Cache(), trigcache=self.inspiralcache,
-            plotqueue=plotqueue)
+            datacache=datacache, trigcache=trigcache, plotqueue=plotqueue)
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `DailyAhopeTab`.
@@ -231,7 +235,7 @@ class DailyAhopeTab(base):
             page.div.close()
         elif (not os.path.isfile(self.segmentfile) or
               len(self.states[0].active) != 0 and
-              not os.path.isfile(self.inspiralcache)):
+              not os.path.isfile(self.inspiralcachefile)):
             page = html.markup.page()
             page.div(class_='alert alert-danger')
             page.p("This analysis seems to have failed.")
@@ -286,6 +290,21 @@ class DailyAhopeTab(base):
                         data[-1].insert(1, from_gps(row.get_end()).strftime(
                                                '%B %d %Y, %H:%M:%S.%f')[:-3])
                 page.add(str(html.data_table(headers, data, table='data')))
+
+            if self.subplots:
+                page.hr(class_='row-divider')
+                page.h1('Sub-plots')
+                layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+                plist = [p for p in self.subplots if p.state in [state, None]]
+                page.add(str(self.scaffold_plots(plots=plist, state=state,
+                                                 layout=layout)))
+
+                # link full results
+                page.div(class_='btn-group')
+                page.a('Click here for the full Daily Ahope results',
+                       href=self.ihopepage, rel='external', target='_blank',
+                       class_='btn btn-default btn-info btn-xl')
+                page.div.close()
 
         # write to file
         idx = self.states.index(state)

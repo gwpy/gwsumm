@@ -100,14 +100,19 @@ class DailyAhopeTab(base):
 
         # get loudest options
         if config.has_option(section, 'loudest'):
-            new.loudest = {'N': config.getint(section, 'loudest')}
+            # set defaults
+            new.loudest = {
+                'N': config.getint(section, 'loudest'),
+                'columns': ['end', 'new_snr', 'snr', 'mchirp',
+                            'mass1', 'mass2', 'reduced_chisq'],
+                'rank': 'new_snr',
+                'dt': 8,
+            }
+            # override from config
             if config.has_option(section, 'loudest-columns'):
                 new.loudest['columns'] = map(
                     lambda s: re_quote.sub('', s),
                     config.get(section, 'loudest-columns').split(','))
-            else:
-                new.loudest['columns'] = ['end', 'new_snr', 'snr', 'mchirp',
-                                          'mass1', 'mass2', 'reduced_chisq']
             if config.has_option(section, 'loudest-labels'):
                 new.loudest['labels'] = map(
                     lambda s: re_quote.sub('', s),
@@ -118,8 +123,8 @@ class DailyAhopeTab(base):
             if config.has_option(section, 'loudest-rank'):
                 new.loudest['rank'] = re_quote.sub(
                     '', config.get(section, 'loudest-rank'))
-            else:
-                new.loudest['rank'] = 'new_snr'
+            if config.has_option(section, 'loudest-dt'):
+                new.loudest['dt'] = config.getfloat(section, 'loudest-dt')
         else:
             new.loudest = None
 
@@ -270,11 +275,21 @@ class DailyAhopeTab(base):
             if self.loudest:
                 table = get_triggers(self.channel, self.name, state,
                                      query=False)
-                rank = get_table_column(table, self.loudest['rank']).argsort()
-                indexes = rank[-self.loudest['N']:][::-1]
+                rank = get_table_column(
+                    table, self.loudest['rank']).argsort()[::-1]
+                loudest = []
+                i = 0
+                while len(loudest) < self.loudest['N'] and i < rank.size:
+                    t = table[rank[i]]
+                    if i == 0 or all([abs(float(t.get_end()) -
+                                          float(t2.get_end())) >=
+                                      self.loudest['dt'] for t2 in loudest]):
+                        loudest.append(t)
+                    i += 1
                 page.h1('Loudest events')
                 page.p('The following table displays the %d loudest events as '
-                       'recorded by Daily Ahope.' % self.loudest['N'])
+                       'recorded by Daily Ahope (with at least %s-second '
+                       'separation).' % (self.loudest['N'], self.loudest['dt']))
                 headers = self.loudest['labels']
                 if 'time' in headers[0]:
                     headers.insert(1, 'UTC time')
@@ -282,8 +297,7 @@ class DailyAhopeTab(base):
                 else:
                     data = False
                 data = []
-                for idx in indexes:
-                    row = table[idx]
+                for row in loudest:
                     data.append([])
                     for column in self.loudest['columns']:
                         data[-1].append('%.3f' % float(get_row_value(row,

@@ -317,7 +317,8 @@ class DataTab(DataTabBase):
     # -------------------------------------------
     # SummaryTab processing
 
-    def finalize_states(self, config=ConfigParser(), segdb_error='raise'):
+    def finalize_states(self, config=ConfigParser(), segdb_error='raise',
+                        **kwargs):
         """Fetch the segments for each state for this `SummaryTab`
         """
         # finalize all-state
@@ -336,7 +337,7 @@ class DataTab(DataTabBase):
                               [state.valid for state in states_])
             defs = [s.definition for s in states_]
             get_segments(defs, allvalid, config=config, url=url,
-                         segdb_error=segdb_error, return_=False)
+                         segdb_error=segdb_error, return_=False, **kwargs)
         # individually double-check, set ready condition
         for state in self.states:
             state.fetch(config=config, query=False)

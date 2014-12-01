@@ -856,13 +856,12 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             plotargs[0]['size_range'] = clim
 
         # add data
+        valid = SegmentList([self.span])
+        if self.state and not self.all_data:
+            valid &= self.state.active
         ntrigs = 0
         for channel, label, pargs in izip(self.channels, labels, plotargs):
             channel = get_channel(channel)
-            if self.state and not self.all_data:
-                valid = self.state.active
-            else:
-                valid = SegmentList([self.span])
             table = get_triggers(str(channel), self.etg, valid, query=False)
             ntrigs += len(table)
             # access channel parameters for limits

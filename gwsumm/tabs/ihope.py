@@ -259,11 +259,13 @@ class DailyAhopeTab(base):
             page = self.scaffold_plots(state=state)
 
             # link full results
+            page.hr(class_='row-divider')
             page.div(class_='btn-group')
             page.a('Click here for the full Daily Ahope results',
                    href=self.ihopepage, rel='external', target='_blank',
                    class_='btn btn-default btn-info btn-xl')
             page.div.close()
+            page.hr(class_='row-divider')
 
             if self.loudest:
                 table = get_triggers(self.channel, self.name, state,
@@ -300,11 +302,13 @@ class DailyAhopeTab(base):
                                                  layout=layout)))
 
                 # link full results
+                page.hr(class_='row-divider')
                 page.div(class_='btn-group')
                 page.a('Click here for the full Daily Ahope results',
                        href=self.ihopepage, rel='external', target='_blank',
                        class_='btn btn-default btn-info btn-xl')
                 page.div.close()
+                page.hr(class_='row-divider')
 
         # write to file
         idx = self.states.index(state)

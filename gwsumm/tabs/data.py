@@ -516,6 +516,9 @@ class DataTab(DataTabBase):
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
+            # in case a single tab requests the same plot twice, check again:
+            if plot.outputfile in globalv.WRITTEN_PLOTS:
+                continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
             if plotqueue and plot._threadsafe:

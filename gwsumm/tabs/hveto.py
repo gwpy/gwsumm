@@ -145,7 +145,7 @@ class HvetoTab(base):
                            os.path.join(self.directory, statefile))])
         get_segments(self.states[0].definition, [self.span], cache=cache,
                      return_=False)
-        self.finalize_states(config=config)
+        self.finalize_states(config=config, query=False)
 
         # read results file
         self.rounds = []

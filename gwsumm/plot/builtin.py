@@ -300,6 +300,9 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                                                  **kwargs)
         self.flags = flags
 
+    def get_channel_groups(self, *args, **kwargs):
+        return OrderedDict((f, [f]) for f in self.flags)
+
     @property
     def flags(self):
         return self._flags

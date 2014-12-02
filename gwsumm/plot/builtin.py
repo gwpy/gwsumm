@@ -1275,7 +1275,10 @@ class DutyDataPlot(SegmentDataPlot):
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
             elif 'label' in pargs:
-                pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+                if legendargs.get('ncol', 1) > 1:
+                   pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
+                else:
+                   pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
             if sidebyside:
                 t = times + self.bins * (0.1 + .8 * i/len(self.flags))
@@ -1306,8 +1309,9 @@ class DutyDataPlot(SegmentDataPlot):
                 [ax.set_ylabel('') for ax in axes[:-1]]
 
         if sep:
+            bbox_x = legendargs.get('bbox_to_anchor', (1,))[0]
             axes[0].add_artist(axes[0].legend(['Rolling mean'],
-                               bbox_to_anchor=(1, 1.4)))
+                               bbox_to_anchor=(bbox_x, 1.4)))
             axes[0].lines[0].set_label('_')
         for ax in axes:
             try:

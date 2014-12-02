@@ -30,6 +30,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from matplotlib.pyplot import subplots
+
 from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
@@ -81,17 +83,22 @@ class TimeSeriesDataPlot(DataPlot):
         sax.set_epoch(float(self.start))
         return sax
 
-    def init_plot(self, plot=TimeSeriesPlot):
+    def init_plot(self, plot=TimeSeriesPlot, geometry=(1,1), figsize=[12, 6]):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        self.plot = plot()
-        ax = self.plot.gca()
-        if mode.MODE_NAME[mode.get_mode()] == 'MONTH':
-            ax.set_xscale('days')
-            ax.set_xlabel('_auto')
-        ax.set_epoch(float(self.start))
-        return self.plot, ax
+        self.plot, axes = subplots(
+            nrows=geometry[0], ncols=geometry[1], sharex=True,
+            subplot_kw={'projection': plot._DefaultAxesClass.name},
+            FigureClass=plot, figsize=figsize, squeeze=True)
+        if geometry[0] * geometry[1] == 1:
+            axes = [axes]
+        for ax in axes:
+            if mode.MODE_NAME[mode.get_mode()] == 'MONTH':
+                ax.set_xscale('days')
+                ax.set_xlabel('_auto')
+            ax.set_epoch(float(self.start))
+        return self.plot, axes
 
     def finalize(self, outputfile=None):
         plot = self.plot
@@ -104,7 +111,8 @@ class TimeSeriesDataPlot(DataPlot):
     def process(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
         """
-        (plot, ax) = self.init_plot()
+        (plot, axes) = self.init_plot()
+        ax = axes[0]
 
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
@@ -204,7 +212,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
     def process(self):
         # initialise
-        (plot, ax) = self.init_plot()
+        (plot, axes) = self.init_plot()
+        ax = axes[0]
         ax.grid(b=True, axis='y', which='major')
 
         # parse data arguments
@@ -359,7 +368,8 @@ class SegmentDataPlot(TimeSeriesDataPlot):
             return bad, good
 
     def process(self):
-        (plot, ax) = self.init_plot(plot=SegmentPlot)
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
 
         # get labels
         flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
@@ -431,7 +441,8 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         self.flags = []
 
     def process(self):
-        (plot, ax) = self.init_plot(plot=SegmentPlot)
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
 
         # extract plotting arguments
         mask = self.pargs.pop('mask')
@@ -931,7 +942,8 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
     def process(self):
         """Read in all necessary data, and generate the figure.
         """
-        (plot, ax) = self.init_plot()
+        (plot, axes) = self.init_plot()
+        ax = axes[0]
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)

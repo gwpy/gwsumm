@@ -717,8 +717,7 @@ for tab in alltabs:
     if not opts.html_only and isinstance(tab, get_tab('archived-data')):
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds, datacache=cache,
-                    trigcache=cache,
-                    multiprocess=opts.multiprocess,
+                    trigcache=None, multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
     if not tab.hidden:
         mkdir(tab.href)

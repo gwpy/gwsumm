@@ -54,7 +54,7 @@ def load_state(url):
     return page
 
 
-def load(url, id_='main', error=False):
+def load(url, id_='main', error=False, success=None):
     """Construct the HTML script required to load a url into the
     HTML element with the given unique ``id_``.
     """
@@ -70,10 +70,12 @@ def load(url, id_='main', error=False):
         error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
                                 '<p>%s</p></div>");'
                  % (id_, error))
+    if success is None:
+        success = '$("#%s").html(data);' % id_
     return markup.given_oneliner.script("""
     $.ajax({
         url : %r,
         type : 'GET',
-        success: function(data){$("#%s").html(data);},
+        success: function(data, statusText, jqhxr){%s},
         error: function(xhr, status, error){%s}
-        });\n""" % (url, id_, error))
+        });\n""" % (url, success, error))

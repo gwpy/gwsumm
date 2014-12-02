@@ -32,12 +32,15 @@ except ImportError:
 
 from matplotlib.pyplot import subplots
 
+from dateutil.relativedelta import relativedelta
+
 from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
 from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
+from gwpy.time import (from_gps, to_gps)
 
 from .. import (globalv, mode, version)
 from ..utils import (re_quote, re_cchar, split_channels)
@@ -1167,3 +1170,157 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         return out
 
 register_plot(TriggerRateDataPlot)
+
+
+class DutyDataPlot(SegmentDataPlot):
+    """`DataPlot` of the duty-factor for a `SegmentList`
+    """
+    type = 'duty'
+    defaults = {'alpha': 0.8,
+                'sep': False,
+                'side_by_side': False,
+                'ylim': [0, 100],
+                'ylabel': r'Duty factor [\%]'}
+
+    def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
+                 bins=None, **kwargs):
+        super(DutyDataPlot, self).__init__(flags, start, end, state=state,
+                                           outdir=outdir, tag=tag, **kwargs)
+        self.bins = bins
+
+    def get_bins(self):
+        """Work out the correct histogram binning for this `DutyDataPlot`
+        """
+        # if not given anything, work it out from the mode
+        if self.bins is None:
+            m = mode.MODE_NAME[mode.get_mode()]
+            # for day mode, make hourly duty factor
+            if m in ['DAY']:
+                dt = relativedelta(hours=1)
+            # for week and month mode, use daily
+            elif m in ['WEEK', 'MONTH']:
+                dt = relativedelta(days=1)
+            # for year mode, use a month
+            elif m in ['YEAR']:
+                dt = relativedelta(months=1)
+            # otherwise provide 10 bins
+            else:
+                dt = float(abs(self.span))/10.
+        # if given a float, assume this is the bin size
+        elif isinstance(self.bins, (float, int)):
+            dt = relativedelta(seconds=self.bins)
+        # if we don't have a list, we must have worked out dt
+        if not isinstance(self.bins, (list, tuple, numpy.ndarray)):
+            self.bins = []
+            s = from_gps(self.start)
+            e = from_gps(self.end)
+            while s < e:
+                t = int(to_gps(s + dt) - to_gps(s))
+                self.bins.append(t)
+                s += dt
+        self.bins = numpy.asarray(self.bins)
+        return self.bins
+
+    def calculate_duty_factor(self, segments, bins=None):
+        if not bins:
+            bins = self.get_bins()
+        if isinstance(segments, DataQualityFlag):
+            segments = segments.known & segments.active
+        duty = numpy.zeros(len(bins))
+        mean = numpy.zeros(len(bins))
+        for i in range(len(bins)):
+            bin = SegmentList([Segment(self.start + sum(bins[:i]),
+                                       self.start + sum(bins[:i+1]))])
+            duty[i] = float(abs(segments & bin)) / float(bins[i]) * 100
+            mean[i] = duty[:i+1].mean()
+        return duty, mean
+
+    def process(self, outputfile=None):
+        sep = self.pargs.pop('sep', False)
+        if sep:
+            if self.pargs.get('side_by_side'):
+                raise ValueError('DutyDataPlot parameters \'sep\' and '
+                                 '\'side_by_side\' should not be used together')
+            geometry = (len(self.flags), 1)
+        else:
+            geometry = (1, 1)
+
+        (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
+
+        # extract plotting arguments
+        sidebyside = self.pargs.pop('side_by_side', False)
+        plotargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
+
+        # work out times and plot mean for legend
+        self.get_bins()
+        times = float(self.start) + numpy.concatenate(
+                                 ([0], self.bins[:-1].cumsum()))
+        axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
+
+        bottom = self.pargs.get('ylim')[0]
+
+        # plot segments
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        for i, (ax, flag, pargs, color) in enumerate(
+                zip(cycle(axes), self.flags, plotargs,
+                    cycle(rcParams['axes.color_cycle']))):
+            # get segments
+            segs = get_segments(flag, validity=valid, query=False)
+            duty, mean = self.calculate_duty_factor(segs)
+            # plot duty cycle
+            if sep and pargs.get('label') == flag.replace('_', r'\_'):
+                pargs.pop('label', None)
+            elif 'label' in pargs:
+                pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+            color = pargs.pop('color', color)
+            if sidebyside:
+                t = times + self.bins * (0.1 + .8 * i/len(self.flags))
+                b = ax.bar(t, duty-bottom, bottom=bottom,
+                           width=.8 * self.bins/len(self.flags),
+                           color=color, **pargs)
+            else:
+                b = ax.bar(times, duty-bottom, bottom=bottom, width=self.bins,
+                           color=color, **pargs)
+            # plot mean
+            t = [self.start] + list(times + self.bins/2.) + [self.end]
+            mean = [mean[0]] + list(mean) + [mean[-1]]
+            ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            for ax in axes:
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+        if sep:
+            [ax.set_title('') for ax in axes[1:]]
+            [ax.set_xlabel('') for ax in axes[:-1]]
+            if len(axes) % 2:
+                [ax.set_ylabel('') for ax in axes[:-1]]
+            else:
+                [ax.set_ylabel('') for ax in axes[:-1]]
+
+        if sep:
+            axes[0].add_artist(axes[0].legend(['Rolling mean'],
+                               bbox_to_anchor=(1, 1.4)))
+            axes[0].lines[0].set_label('_')
+        for ax in axes:
+            try:
+                plot.add_legend(ax=ax, **legendargs)
+            except AttributeError:
+                pass
+
+        # add extra axes and finalise
+        if not plot.colorbars:
+            for ax in axes:
+                plot.add_colorbar(ax=ax, visible=False)
+        if self.state:
+            self.add_state_segments(axes[-1])
+        return self.finalize(outputfile=outputfile)
+
+register_plot(DutyDataPlot)

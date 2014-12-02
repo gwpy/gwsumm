@@ -1301,14 +1301,21 @@ class DutyDataPlot(SegmentDataPlot):
                 except AttributeError:
                     setattr(ax, key, val)
         if sep:
-            [ax.set_title('') for ax in axes[1:]]
-            [ax.set_xlabel('') for ax in axes[:-1]]
-            if len(axes) % 2:
-                [ax.set_ylabel('') for ax in axes[:-1]]
-            else:
-                [ax.set_ylabel('') for ax in axes[:-1]]
+            # set text
+            ylabel = axes[0].yaxis.get_label()
+            y = axes[-1].get_position().y0 + (
+                axes[0].get_position().y1 - axes[-1].get_position().y0)/2.
+            t = plot.text(0.04, y, ylabel.get_text(), rotation=90, ha='center',
+                          va='center')
+            t.set_fontproperties(ylabel.get_font_properties())
+            for i, ax in enumerate(axes):
+                ax.set_ylabel('')
+                if i:
+                    ax.set_title('')
+                if i < len(axes) - 1:
+                    ax.set_xlabel('')
 
-        if sep:
+            # add custom legend for mean
             bbox_x = legendargs.get('bbox_to_anchor', (1,))[0]
             axes[0].add_artist(axes[0].legend(['Rolling mean'],
                                bbox_to_anchor=(bbox_x, 1.4)))

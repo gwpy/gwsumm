@@ -34,22 +34,24 @@ import numpy
 
 from astropy.time import Time
 
-from gwpy.segments import DataQualityDict
+from gwpy.segments import (DataQualityDict, SegmentList, Segment)
+from gwpy.plotter import SegmentPlot
 
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import ALLSTATE
 from .registry import (get_tab, register_tab)
 from .. import (globalv, version, html)
-from ..data import get_timeseries
+from ..data import (get_timeseries, get_timeseries_dict)
 from ..segments import get_segments
 from ..plot.registry import (get_plot, register_plot)
-from ..utils import vprint
+from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 Tab = get_tab('default')
 UTC = tz.gettz('UTC')
+REQUESTSTUB = '+request'
 
 class GuardianTab(Tab):
     """Summarises the data recorded by an Advanced LIGO Guardian node.
@@ -94,12 +96,12 @@ class GuardianTab(Tab):
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
         labels = new.grdstates.values()[::-1]
         flags = [new.segmenttag % name for name in labels]
-        new.plots.append(get_plot('segments')(
+        new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
             valid={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
             tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
             title='%s Guardian %s state' % (
-                new.ifo, new.node.replace('_', r'\_'))))
+                new.ifo, new.node.replace('_', r'\_')), zorder=2))
         return new
 
     def process(self, nds='guess', multiprocess=True,
@@ -119,9 +121,12 @@ class GuardianTab(Tab):
         prefix = '%s:GRD-%s_%%s' % (self.ifo, self.node)
 
         state = sorted(self.states, key=lambda s: abs(s.active))[0]
-        grddata = get_timeseries(prefix % 'STATE_N', state, config=config,
-                                 nds=nds, multiprocess=multiprocess,
-                                 cache=datacache)
+        alldata = get_timeseries_dict(
+            [prefix % 'STATE_N', prefix % 'REQUEST_N'],
+            state, config=config, nds=nds, multiprocess=multiprocess,
+            cache=datacache)
+        grddata = alldata[prefix % 'STATE_N']
+        reqdata = alldata[prefix % 'REQUEST_N']
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------
@@ -129,19 +134,26 @@ class GuardianTab(Tab):
 
         self.transitions = dict((v, []) for v in self.grdstates)
 
-        for data in grddata:
-            segs = DataQualityDict()
+        for sdata, rdata in zip(grddata, reqdata):
+            ssegs = DataQualityDict()
+            rsegs = DataQualityDict()
             for v, name in self.grdstates.iteritems():
+                # get segments for state
                 tag = self.segmenttag % name
-                instate = data == v
-                segs[tag] = instate.to_dqflag(name=name)
+                instate = sdata == v
+                ssegs[tag] = instate.to_dqflag(name=name)
                 for trans in (
                         numpy.diff(instate.astype(int)) == 1).nonzero()[0]:
-                    t = data.times[trans+1]
-                    from_ = data[trans].value
+                    t = sdata.times[trans+1]
+                    from_ = sdata[trans].value
                     self.transitions[v].append((t, from_))
+                # get segments for request
+                tag = self.segmenttag % name + REQUESTSTUB
+                instate = rdata == v
+                rsegs[tag] = instate.to_dqflag(name=name)
 
-            globalv.SEGMENTS += segs
+            globalv.SEGMENTS += ssegs
+            globalv.SEGMENTS += rsegs
 
         super(GuardianTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
@@ -256,3 +268,93 @@ class GuardianTab(Tab):
                                                      pre=page)
 register_tab(GuardianTab)
 
+
+class GuardianStatePlot(get_plot('segments')):
+    type = 'guardian'
+    defaults = get_plot('segments').defaults
+    defaults.update({
+        'color': None,
+        'insetlabels': 'inset',
+        'edgecolor': 'black',
+        'linewidth': 0.5,
+        'requestcolor': (0., .4, 1.),
+        'legend_loc': 'upper left',
+        'legend_bbox_to_anchor': (1.01, 1),
+        'legend_borderaxespad': 0.,
+        'legend_fontsize': 12,
+    })
+
+    def process(self):
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
+
+        # get labels
+        flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+
+        # parse plotting arguments
+        legendargs = self.parse_legend_kwargs()
+        activecolor, validcolor = self.get_segment_color()
+        requestcolor = self.pargs.pop('requestcolor')
+        requestargs = self.parse_plot_kwargs()[0]
+        requestargs.pop('label')
+        actargs = requestargs.copy()
+        requestargs.update({
+            'facecolor': requestcolor,
+            'edgecolor': 'none',
+        })
+        actargs.update({
+            'facecolor': activecolor,
+            'valid': None,
+        })
+
+        # plot segments
+        for y, (flag, label) in enumerate(zip(self.flags, labels)[::-1]):
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            inreq = str(flag) + REQUESTSTUB
+            segs = get_segments([flag, inreq], validity=valid, query=False)
+            ax.plot(segs[inreq], label=label, y=y, **requestargs)
+            ax.plot(segs[flag], label=None, y=y, collection=False,
+                    height=.6, **actargs)
+
+        # make custom legend
+        epoch = ax.get_epoch()
+        xlim = ax.get_xlim()
+        seg = SegmentList([Segment(self.start - 10, self.start - 9)])
+        v = requestargs.pop('valid', None)
+        if v:
+            v['collection'] = False
+            v = ax.plot(seg, **v)[0][0]
+        a = ax.plot(seg, facecolor=requestcolor,
+                    edgecolor=requestargs['edgecolor'], collection=False)[0][0]
+        b = ax.plot(seg, facecolor=activecolor, edgecolor=actargs['edgecolor'],
+                    collection=False)[0][0]
+        if v:
+            ax.legend([v, a, b], ['Alive', 'Request', 'Active'], **legendargs)
+        else:
+            ax.legend([a, b], ['Request', 'Active'], **legendargs)
+        ax.set_epoch(epoch)
+        ax.set_xlim(*xlim)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if 'ylim' not in self.pargs:
+            ax.set_ylim(-0.5, len(self.flags) - 0.5)
+
+        # add bit mask axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        return self.finalize()
+
+register_plot(GuardianStatePlot)

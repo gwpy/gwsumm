@@ -1121,6 +1121,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
     _threadsafe = False
     defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({'column': None,
+                     'bbox_to_anchor': (1.15, 1.1),
+                     'legend_markerscale': 3,
                      'ylabel': 'Rate [Hz]'})
 
     def __init__(self, *args, **kwargs):

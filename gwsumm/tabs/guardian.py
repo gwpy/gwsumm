@@ -52,6 +52,7 @@ __version__ = version.version
 Tab = get_tab('default')
 UTC = tz.gettz('UTC')
 REQUESTSTUB = '+request'
+NOMINALSTUB = '+nominal'
 
 class GuardianTab(Tab):
     """Summarises the data recorded by an Advanced LIGO Guardian node.
@@ -122,11 +123,13 @@ class GuardianTab(Tab):
 
         state = sorted(self.states, key=lambda s: abs(s.active))[0]
         alldata = get_timeseries_dict(
-            [prefix % 'STATE_N', prefix % 'REQUEST_N'],
+            [prefix % x for x in ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK']],
             state, config=config, nds=nds, multiprocess=multiprocess,
             cache=datacache)
         grddata = alldata[prefix % 'STATE_N']
         reqdata = alldata[prefix % 'REQUEST_N']
+        nomdata = alldata[prefix % 'NOMINAL_N']
+        okdata = alldata[prefix % 'OK']
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------
@@ -134,9 +137,12 @@ class GuardianTab(Tab):
 
         self.transitions = dict((v, []) for v in self.grdstates)
 
-        for sdata, rdata in zip(grddata, reqdata):
+        for sdata, rdata, ndata, okdata in zip(
+                grddata, reqdata, nomdata, okdata):
             ssegs = DataQualityDict()
             rsegs = DataQualityDict()
+            nsegs = DataQualityDict()
+            oksegs = (okdata == 1).to_dqflag(name='Node OK')
             for v, name in self.grdstates.iteritems():
                 # get segments for state
                 tag = self.segmenttag % name
@@ -151,9 +157,15 @@ class GuardianTab(Tab):
                 tag = self.segmenttag % name + REQUESTSTUB
                 instate = rdata == v
                 rsegs[tag] = instate.to_dqflag(name=name)
+                # get segments for nominal
+                tag = self.segmenttag % name + NOMINALSTUB
+                nom = ndata == v
+                nsegs[tag] = nom.to_dqflag(name=name)
 
             globalv.SEGMENTS += ssegs
             globalv.SEGMENTS += rsegs
+            globalv.SEGMENTS += nsegs
+            globalv.SEGMENTS += {self.segmenttag % 'OK': oksegs}
 
         super(GuardianTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
@@ -278,6 +290,7 @@ class GuardianStatePlot(get_plot('segments')):
         'edgecolor': 'black',
         'linewidth': 0.5,
         'requestcolor': (0., .4, 1.),
+        'nominalcolor': (1.0, 0.7, 0.0),
         'legend_loc': 'upper left',
         'legend_bbox_to_anchor': (1.01, 1),
         'legend_borderaxespad': 0.,
@@ -299,28 +312,38 @@ class GuardianStatePlot(get_plot('segments')):
         # parse plotting arguments
         legendargs = self.parse_legend_kwargs()
         activecolor, validcolor = self.get_segment_color()
+        nominalcolor = self.pargs.pop('nominalcolor')
         requestcolor = self.pargs.pop('requestcolor')
-        requestargs = self.parse_plot_kwargs()[0]
-        requestargs.pop('label')
-        actargs = requestargs.copy()
-        requestargs.update({
-            'facecolor': requestcolor,
+        plotargs = self.parse_plot_kwargs()[0]
+        plotargs.pop('label')
+        actargs = plotargs.copy()
+        plotargs.update({
+            'facecolor': nominalcolor,
             'edgecolor': 'none',
         })
+        reqargs = plotargs.copy()
+        reqargs.update({
+            'facecolor': requestcolor,
+            'valid': None,
+            })
         actargs.update({
             'facecolor': activecolor,
             'valid': None,
         })
 
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+
         # plot segments
         for y, (flag, label) in enumerate(zip(self.flags, labels)[::-1]):
-            if self.state and not self.all_data:
-                valid = self.state.active
-            else:
-                valid = SegmentList([self.span])
             inreq = str(flag) + REQUESTSTUB
-            segs = get_segments([flag, inreq], validity=valid, query=False)
-            ax.plot(segs[inreq], label=label, y=y, **requestargs)
+            nominal = str(flag) + NOMINALSTUB
+            segs = get_segments([flag, inreq, nominal], validity=valid,
+                                query=False)
+            ax.plot(segs[nominal], label=label, y=y, height=1., **plotargs)
+            ax.plot(segs[inreq], label=None, y=y, collection=False, **reqargs)
             ax.plot(segs[flag], label=None, y=y, collection=False,
                     height=.6, **actargs)
 
@@ -328,18 +351,21 @@ class GuardianStatePlot(get_plot('segments')):
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-        v = requestargs.pop('valid', None)
+        v = plotargs.pop('valid', None)
         if v:
             v['collection'] = False
             v = ax.plot(seg, **v)[0][0]
+        n = ax.plot(seg, facecolor=nominalcolor,
+                    edgecolor=plotargs['edgecolor'], collection=False)[0][0]
         a = ax.plot(seg, facecolor=requestcolor,
-                    edgecolor=requestargs['edgecolor'], collection=False)[0][0]
+                    edgecolor=plotargs['edgecolor'], collection=False)[0][0]
         b = ax.plot(seg, facecolor=activecolor, edgecolor=actargs['edgecolor'],
                     collection=False)[0][0]
         if v:
-            ax.legend([v, a, b], ['Alive', 'Request', 'Active'], **legendargs)
+            ax.legend([v, n, a, b], ['Alive', 'Nominal', 'Request', 'Active'],
+                      **legendargs)
         else:
-            ax.legend([a, b], ['Request', 'Active'], **legendargs)
+            ax.legend([n, a, b], ['Nominal', 'Request', 'Active'], **legendargs)
         ax.set_epoch(epoch)
         ax.set_xlim(*xlim)
 
@@ -352,9 +378,24 @@ class GuardianStatePlot(get_plot('segments')):
         if 'ylim' not in self.pargs:
             ax.set_ylim(-0.5, len(self.flags) - 0.5)
 
-        # add bit mask axes and finalise
+        # fake colorbar
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
+
+        # add OK segments along the bottom
+        try:
+            ok = get_segments(flag.split(' ', 1)[0] + ' OK', validity=valid,
+                              query=False)
+        except NameError:
+            pass
+        else:
+            ok.name = 'Node `OK\''
+            sax = plot.add_state_segments(ok, ax, plotargs={
+                'facecolor': activecolor,
+                'valid': {'facecolor': 'red', 'edgecolor': 'black'}})
+            sax.tick_params(axis='y', which='major', labelsize=12)
+            sax.set_epoch(float(self.start))
+
         return self.finalize()
 
 register_plot(GuardianStatePlot)

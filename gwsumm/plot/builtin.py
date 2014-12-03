@@ -1271,6 +1271,11 @@ class DutyDataPlot(SegmentDataPlot):
         sidebyside = self.pargs.pop('side_by_side', False)
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
+        if sep:
+            legendargs.setdefault('loc', 'upper left')
+            legendargs.setdefault('bbox_to_anchor', (1.01, 1))
+            legendargs.setdefault('ncol', 2)
+            legendargs.setdefault('borderaxespad', 0)
 
         # work out times and plot mean for legend
         self.get_bins()
@@ -1336,10 +1341,14 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_xlabel('')
 
             # add custom legend for mean
-            bbox_x = legendargs.get('bbox_to_anchor', (1,))[0]
-            axes[0].add_artist(axes[0].legend(['Rolling mean'],
-                               bbox_to_anchor=(bbox_x, 1.4)))
+            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+            lkwargs = legendargs.copy()
+            lkwargs['loc'] = 'lower right'
+            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
+            lkwargs['fontsize'] = 12
+            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
             axes[0].lines[0].set_label('_')
+
         for ax in axes:
             try:
                 plot.add_legend(ax=ax, **legendargs)

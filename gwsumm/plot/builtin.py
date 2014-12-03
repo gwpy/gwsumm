@@ -386,6 +386,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 
         # extract plotting arguments
+        legendargs = self.parse_legend_kwargs()
         mask = self.pargs.pop('mask')
         activecolor, validcolor = self.get_segment_color()
         edgecolor = self.pargs.pop('edgecolor')
@@ -404,6 +405,25 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False)
             ax.plot(segs, label=label, **plotargs)
+
+        # make custom legend
+        v = plotargs.pop('valid', None)
+        if v:
+            epoch = ax.get_epoch()
+            xlim = ax.get_xlim()
+            seg = SegmentList([Segment(self.start - 10, self.start - 9)])
+            v['collection'] = False
+            v = ax.plot(seg, **v)[0][0]
+            a = ax.plot(seg, facecolor=activecolor, edgecolor=edgecolor,
+                        collection=False)[0][0]
+            if edgecolor not in [None, 'none']:
+                t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]
+                ax.legend([v, a, t], ['Known', 'Active', 'Transition'],
+                          **legendargs)
+            else:
+                ax.legend([v, a], ['Known', 'Active'], **legendargs)
+            ax.set_epoch(epoch)
+            ax.set_xlim(*xlim)
 
         # customise plot
         for key, val in self.pargs.iteritems():

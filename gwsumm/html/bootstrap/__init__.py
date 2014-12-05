@@ -182,7 +182,7 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
     # work out columns
     ngroup = sum([isinstance(x, (tuple, list)) and len(x) and
                  isinstance(x[1], (tuple, list)) for x in links])
-    if ngroup < 2:
+    if ngroup < 1:
         column = ''
     else:
         ncol = min(ngroup, 4)

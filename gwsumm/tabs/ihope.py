@@ -273,7 +273,7 @@ class DailyAhopeTab(base):
             page.hr(class_='row-divider')
 
             if self.loudest:
-                table = get_triggers(self.channel, self.name, state,
+                table = get_triggers(self.channel, self.plots[0].etg, state,
                                      query=False)
                 rank = get_table_column(
                     table, self.loudest['rank']).argsort()[::-1]

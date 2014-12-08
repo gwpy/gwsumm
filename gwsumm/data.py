@@ -451,9 +451,9 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         else:
             ifo = channels[0].ifo
             ftype = channels[0].frametype
-            if ftype == '%s_M' % ifo:
+            if ftype.endswith('%s_M' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 60.])
-            elif ftype == '%s_T' % ifo:
+            elif ftype.endswith('%s_T' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 1.])
             elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
                   ftype == '%s_R' % ifo and

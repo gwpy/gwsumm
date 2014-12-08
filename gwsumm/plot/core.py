@@ -305,7 +305,11 @@ class DataPlot(SummaryPlot):
         for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
                       'linewidth', 'marker', 'markeredgecolor',
                       'markeredgewidth', 'markerfacecolor',
-                      'markerfacecoloralt', 'markersize', 'valid', 'edgecolor']:
+                      'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
+                      'bins', 'range', 'normed', 'weights', 'cumulative',
+                      'bottom', 'histtype', 'align', 'orientation', 'rwidth',
+                      'log', 'stacked', 'logbins', 'alpha', 'linecolor',
+                      'facecolor']:
             try:
                 val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))
             except KeyError:

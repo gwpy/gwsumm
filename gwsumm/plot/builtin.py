@@ -732,13 +732,12 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # get spectrum format: 'amplitude' or 'power'
         # extract histogram arguments
-        histargs = self.parse_histogram_kwargs()
-
-        # work out labels
-        labels = self.pargs.pop('labels', self.channels)
-        if isinstance(labels, (unicode, str)):
-            labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
+        range = self.pargs.pop('range', self.pargs.get('xlim'))
+        histargs = self.parse_plot_kwargs()
+        for d in histargs:
+            d['range'] = range
+            d['log'] = self.pargs.pop('logy', False)
+            d['logbins'] = self.pargs.get('logx', False)
 
         # get data
         data = []
@@ -754,15 +753,17 @@ class TimeSeriesHistogramPlot(DataPlot):
                 self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)
 
         # get range
-        if not 'range' in histargs:
-            histargs['range'] = ax.common_limits(data)
+        if not 'range' in histargs[0]:
+            l = ax.common_limits(data)
+            for d in histargs:
+                d['range'] = l
 
         # plot
-        for label, arr in zip(labels, data):
+        for arr, pargs in zip(data, histargs):
             if arr.size:
-                ax.hist(arr, label=label, **histargs)
+                ax.hist(arr, **pargs)
             else:
-                ax.plot([], label=label)
+                ax.plot([], **pargs)
 
         # customise plot
         legendargs = self.parse_legend_kwargs()

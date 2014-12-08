@@ -763,7 +763,7 @@ class TimeSeriesHistogramPlot(DataPlot):
             if arr.size:
                 ax.hist(arr, **pargs)
             else:
-                ax.plot([], **pargs)
+                ax.hist([], **pargs)
 
         # customise plot
         legendargs = self.parse_legend_kwargs()

@@ -454,7 +454,7 @@ class DataTab(DataTabBase):
                    % len(svchannels))
             get_timeseries_dict(svchannels, state, config=config, nds=nds,
                                 multiprocess=multiprocess, statevector=True,
-                                cache=datacache, return_=False)
+                                cache=datacache, return_=False, dtype='uint32')
             vprint("    All state-vector data loaded\n")
 
         # --------------------------------------------------------------------

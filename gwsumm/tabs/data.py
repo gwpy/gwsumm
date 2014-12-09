@@ -566,7 +566,7 @@ class DataTab(DataTabBase):
         page.div(class_='alert alert-info')
         page.p("These data have not been generated yet, please check back "
                "later.")
-        page.p("If this state persists for more than a three or four hours, "
+        page.p("If this state persists for more than three or four hours, "
                "please contact %s." % email)
         page.div.close()
         page.div.close()

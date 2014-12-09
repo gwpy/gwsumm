@@ -360,6 +360,12 @@ if opts.ifo:
 job.add_opt('on-segdb-error', opts.on_segdb_error)
 job.add_opt('output-dir', outdir)
 
+wrapjob.__dict__ = job.__dict__.copy()
+wrapjob.set_sub_file('%s_local.sub' % os.path.splitext(job.get_sub_file())[0])
+wrapjob.set_universe('local')
+wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
+wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
+
 # make surrounding HTML first
 if not opts.skip_html_wrapper:
     wrapper = GWSummaryDAGNode(wrapjob)
@@ -371,12 +377,6 @@ if not opts.skip_html_wrapper:
     dag.add_node(wrapper)
     if opts.verbose:
         print("    Configured HTML wrapper job.")
-
-wrapjob.__dict__ = job.__dict__.copy()
-wrapjob.set_sub_file('%s_local.sub' % os.path.splitext(job.get_sub_file())[0])
-wrapjob.set_universe('local')
-wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
-wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
 
 # create node for each config file
 if not opts.html_wrapper_only:

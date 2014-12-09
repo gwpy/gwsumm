@@ -332,8 +332,8 @@ def find_types(site=None, match=None):
 
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
-                        cache=None, query=True, nds='guess',
-                        multiprocess=True, statevector=False, return_=True):
+                        cache=None, query=True, nds='guess', multiprocess=True,
+                        statevector=False, return_=True, **ioargs):
     """Retrieve the data for a set of channels
     """
     # separate channels by type
@@ -356,7 +356,8 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
             data = _get_timeseries_dict(channellist, segments, config=config,
                                         cache=cache, query=query, nds=nds,
                                         multiprocess=multiprocess,
-                                        statevector=statevector, return_=False)
+                                        statevector=statevector, return_=False,
+                                        **ioargs)
     if not return_:
         return
     else:
@@ -366,7 +367,8 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=None, query=True, nds='guess',
-                         multiprocess=True, return_=True, statevector=False):
+                         multiprocess=True, return_=True, statevector=False,
+                         **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -505,7 +507,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         for segment in new:
             if nds:
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
-                                      connection=ndsconnection, type=ndstype)
+                                      connection=ndsconnection, type=ndstype,
+                                      **ioargs)
             else:
                 # pad resampling
                 if segment[1] == cachesegments[-1][1] and qresample:
@@ -521,8 +524,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                      start=float(segment[0]),
                                      end=float(segment[1]), type=ctype,
-                                     nproc=nproc,
-                                     resample=qresample, verbose=verbose)
+                                     nproc=nproc, resample=qresample,
+                                     verbose=verbose, **ioargs)
             for (channel, data) in tsd.iteritems():
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):

@@ -124,11 +124,16 @@ bopts.add_argument('-i', '--ifo', action='store', type=str, metavar='IFO',
                    help="Instrument to process. If this option is set in "
                         "the [DEFAULT] of any of the INI files, giving it "
                         "here is redundant.")
-bopts.add_argument('-w', '--skip-html-wrapper', action='store_true',
-                   default=False, help="Do not configure first job for HTML "
-                                       "wrapper, default: %(default)s. Useful "
-                                       "for separating large summary pipeline "
-                                       "across multiple DAGs")
+wrapgroup = bopts.add_mutually_exclusive_group()
+wrapgroup.add_argument('-w', '--skip-html-wrapper', action='store_true',
+                       default=False,
+                       help="Do not configure first job for HTML "
+                            "wrapper, default: %(default)s. Useful "
+                            "for separating large summary pipeline "
+                            "across multiple DAGs")
+wrapgroup.add_argument('-W', '--html-wrapper-only', action='store_true',
+                       help="Only run first job for HTML wrapper.")
+
 bopts.add_argument('-t', '--file-tag', action='store', type=str,
                    default=os.path.basename(__file__),
                    help="file tag for pipeline files, default: %(default)s")
@@ -374,29 +379,30 @@ wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
 wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
 
 # create node for each config file
-for i, configfile in enumerate(opts.config_file):
-    node = GWSummaryDAGNode(job)
-    node.add_var_arg('--no-html')
-    node.add_var_arg('--config-file %s' % configfile)
-    if opts.archive:
-        jobtag = os.path.splitext(os.path.basename(configfile))[0]
-        archivetag = jobtag.upper().replace('-', '_')
-        if opts.ifo and archivetag.startswith('%s_' % opts.ifo.upper()):
-            archivetag = archivetag[3:]
-        node.add_var_arg('--archive %s' % archivetag)
-    for cf in configfile.split(','):
-        node.add_input_file(cf)
-    node.set_category('gw_summary')
-    try:
-        node.set_priority(opts.priority[i])
-    except IndexError:
-        node.set_priority(0)
-    node.set_retry(1)
-    if not opts.skip_html_wrapper:
-        node.add_parent(wrapper)
-    dag.add_node(node)
-    if opts.verbose:
-        print("    Configured job for config %s." % configfile)
+if not opts.html_wrapper_only:
+    for i, configfile in enumerate(opts.config_file):
+        node = GWSummaryDAGNode(job)
+        node.add_var_arg('--no-html')
+        node.add_var_arg('--config-file %s' % configfile)
+        if opts.archive:
+            jobtag = os.path.splitext(os.path.basename(configfile))[0]
+            archivetag = jobtag.upper().replace('-', '_')
+            if opts.ifo and archivetag.startswith('%s_' % opts.ifo.upper()):
+                archivetag = archivetag[3:]
+            node.add_var_arg('--archive %s' % archivetag)
+        for cf in configfile.split(','):
+            node.add_input_file(cf)
+        node.set_category('gw_summary')
+        try:
+            node.set_priority(opts.priority[i])
+        except IndexError:
+            node.set_priority(0)
+        node.set_retry(1)
+        if not opts.skip_html_wrapper:
+            node.add_parent(wrapper)
+        dag.add_node(node)
+        if opts.verbose:
+            print("    Configured job for config %s." % configfile)
 
 if opts.maxjobs:
     dag.add_maxjobs_category('gw_summary', opts.maxjobs)

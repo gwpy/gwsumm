@@ -394,7 +394,7 @@ class GuardianStatePlot(get_plot('segments')):
                 'facecolor': activecolor,
                 'valid': {'facecolor': 'red', 'edgecolor': 'black'}})
             sax.tick_params(axis='y', which='major', labelsize=12)
-            sax.set_epoch(float(self.start))
+            sax.set_epoch(float(self.pargs.get('epoch', self.start)))
 
         return self.finalize()
 

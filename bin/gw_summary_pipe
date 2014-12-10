@@ -128,11 +128,11 @@ wrapgroup = bopts.add_mutually_exclusive_group()
 wrapgroup.add_argument('-w', '--skip-html-wrapper', action='store_true',
                        default=False,
                        help="Do not configure first job for HTML "
-                            "wrapper, default: %(default)s. Useful "
+                            "htmlnode, default: %(default)s. Useful "
                             "for separating large summary pipeline "
                             "across multiple DAGs")
 wrapgroup.add_argument('-W', '--html-wrapper-only', action='store_true',
-                       help="Only run first job for HTML wrapper.")
+                       help="Only run first job for HTML htmlnode.")
 
 bopts.add_argument('-t', '--file-tag', action='store', type=str,
                    default=os.path.basename(__file__),
@@ -319,77 +319,79 @@ if opts.universe != 'local':
 # ----------------------------------------------------------------------------
 # Build individual gw_summary jobs
 
-job = GWSummaryJob(universe, executable, subdir=outdir, logdir=logdir,
-                   tag=opts.file_tag, **condorcmds)
-wrapjob = GWSummaryJob('local', executable, subdir=outdir, logdir=logdir,
-                       tag='%s_local' % opts.file_tag)
+globalconfig = ','.join(opts.global_config)
 
-# add global configurations
-if len(opts.global_config):
-    job.add_file_opt('config-file', ','.join(opts.global_config))
+jobs = []
+if not opts.skip_html_wrapper:
+    htmljob = GWSummaryJob('local', executable, subdir=outdir, logdir=logdir,
+                           tag='%s_local' % opts.file_tag)
+    jobs.append(htmljob)
+if not opts.html_wrapper_only:
+    datajob = GWSummaryJob(universe, executable, subdir=outdir, logdir=logdir,
+                           tag=opts.file_tag, **condorcmds)
+    jobs.append(datajob)
 
 # add common command-line options
-if opts.day:
-    job.set_command('day')
-    job.add_arg(opts.day)
-elif opts.week:
-    job.set_command('week')
-    job.add_arg(opts.week)
-elif opts.month:
-    job.set_command('month')
-    job.add_arg(opts.month)
-elif opts.year:
-    job.set_command('year')
-    job.add_arg(opts.year)
-elif opts.gps_start_time or opts.gps_end_time:
-    job.set_command('gps')
-    job.add_arg(str(opts.gps_start_time))
-    job.add_arg(str(opts.gps_end_time))
-else:
-    job.set_command('day')
-if opts.nds is True:
-    job.add_opt('nds')
-if opts.single_process:
-    job.add_opt('single-process')
-elif opts.multi_process is not None:
-    job.add_opt('multi-process', opts.multi_process)
-if opts.verbose:
-    job.add_opt('verbose')
-if opts.ifo:
-    job.add_opt('ifo', opts.ifo)
-job.add_opt('on-segdb-error', opts.on_segdb_error)
-job.add_opt('output-dir', outdir)
-
-wrapjob.__dict__ = job.__dict__.copy()
-wrapjob.set_sub_file('%s_local.sub' % os.path.splitext(job.get_sub_file())[0])
-wrapjob.set_universe('local')
-wrapjob._CondorJob__condor_cmds = job._CondorJob__condor_cmds.copy()
-wrapjob._CondorJob__condor_cmds.pop('request_memory', None)
+for job in jobs:
+    if opts.day:
+        job.set_command('day')
+        job.add_arg(opts.day)
+    elif opts.week:
+        job.set_command('week')
+        job.add_arg(opts.week)
+    elif opts.month:
+        job.set_command('month')
+        job.add_arg(opts.month)
+    elif opts.year:
+        job.set_command('year')
+        job.add_arg(opts.year)
+    elif opts.gps_start_time or opts.gps_end_time:
+        job.set_command('gps')
+        job.add_arg(str(opts.gps_start_time))
+        job.add_arg(str(opts.gps_end_time))
+    else:
+        job.set_command('day')
+    if opts.nds is True:
+        job.add_opt('nds')
+    if opts.single_process:
+        job.add_opt('single-process')
+    elif opts.multi_process is not None:
+        job.add_opt('multi-process', opts.multi_process)
+    if opts.verbose:
+        job.add_opt('verbose')
+    if opts.ifo:
+        job.add_opt('ifo', opts.ifo)
+    job.add_opt('on-segdb-error', opts.on_segdb_error)
+    job.add_opt('output-dir', outdir)
 
 # make surrounding HTML first
 if not opts.skip_html_wrapper:
-    wrapper = GWSummaryDAGNode(wrapjob)
-    wrapper.add_var_arg('--html-only')
-    wrapper.add_var_arg('--config-file %s' % ','.join(opts.config_file))
+    htmljob.add_opt('html-only', '')
+    htmljob.add_opt('config-file', ','.join(
+        [globalconfig]+opts.config_file))
+
+    htmlnode = GWSummaryDAGNode(htmljob)
     for configfile in opts.config_file:
-        wrapper.add_input_file(opts.config_file)
-    wrapper.set_category('gw_summary')
-    dag.add_node(wrapper)
+        htmlnode.add_input_file(opts.config_file)
+    htmlnode.set_category('gw_summary')
+    dag.add_node(htmlnode)
     if opts.verbose:
-        print("    Configured HTML wrapper job.")
+        print("    Configured HTML htmlnode job.")
 
 # create node for each config file
 if not opts.html_wrapper_only:
+    # add html opts
+    datajob.add_opt('no-html', '')
+    # configure each data node
     for i, configfile in enumerate(opts.config_file):
-        node = GWSummaryDAGNode(job)
-        node.add_var_arg('--no-html')
-        node.add_var_arg('--config-file %s' % configfile)
+        node = GWSummaryDAGNode(datajob)
+        node.add_var_arg('--config-file %s,%s' % (globalconfig, configfile))
         if opts.archive:
             jobtag = os.path.splitext(os.path.basename(configfile))[0]
             archivetag = jobtag.upper().replace('-', '_')
             if opts.ifo and archivetag.startswith('%s_' % opts.ifo.upper()):
                 archivetag = archivetag[3:]
-            node.add_var_arg('--archive %s' % archivetag)
+            node.add_var_opt('archive', archivetag)
         for cf in configfile.split(','):
             node.add_input_file(cf)
         node.set_category('gw_summary')
@@ -399,7 +401,7 @@ if not opts.html_wrapper_only:
             node.set_priority(0)
         node.set_retry(1)
         if not opts.skip_html_wrapper:
-            node.add_parent(wrapper)
+            node.add_parent(htmlnode)
         dag.add_node(node)
         if opts.verbose:
             print("    Configured job for config %s." % configfile)

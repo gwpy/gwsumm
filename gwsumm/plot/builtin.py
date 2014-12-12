@@ -439,6 +439,8 @@ class SegmentDataPlot(TimeSeriesDataPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(SegmentDataPlot)
@@ -522,6 +524,8 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(StateVectorDataPlot)

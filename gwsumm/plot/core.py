@@ -66,8 +66,10 @@ class SummaryPlot(object):
     type = None
     _threadsafe = True
 
-    def __init__(self, href=None, new=True):
+    def __init__(self, href=None, src=None, new=True):
         self.href = href
+        if src:
+            self.src = src
         self.new = new
 
     @property
@@ -97,6 +99,17 @@ class SummaryPlot(object):
     @new.setter
     def new(self, isnew):
         self._new = bool(isnew)
+
+    @property
+    def src(self):
+        try:
+            return self._src
+        except AttributeError:
+            return self.href
+
+    @src.setter
+    def src(self, url):
+        self._src = url
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods

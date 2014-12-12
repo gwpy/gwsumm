@@ -409,6 +409,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     # read channel information
     filter_ = dict()
     resample = dict()
+    dtype_ = dict()
     for channel in channels:
         try:
             filter_[channel.ndsname] = channel.filter
@@ -418,6 +419,10 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             resample[channel] = float(channel.resample)
         except AttributeError:
             pass
+        if channel.dtype is None:
+            dtype_[channel] = ioargs.get('dtype')
+        else:
+            dtype_[channel] = channel.dtype
 
     # work out whether to use NDS or not
     if nds == 'guess':
@@ -478,6 +483,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         # check whether each channel exists for all new times already
         qchannels = []
         qresample = {}
+        qdtype = {}
         for channel in channels:
             oldsegs = globalv.DATA.get(channel.ndsname,
                                        ListClass()).segments
@@ -485,6 +491,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 qchannels.append(channel)
                 if channel in resample:
                     qresample[channel] = resample[channel]
+                qdtype[channel] = dtype_.get(channel, ioargs.get('dtype'))
+        ioargs['dtype'] = qdtype
 
         # find channel type
         if not nds:

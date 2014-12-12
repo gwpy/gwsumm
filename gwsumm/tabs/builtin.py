@@ -356,7 +356,8 @@ class PlotTab(Tab):
             raise TypeError("Cannot append plot of type %r" % type(plot))
         self.plots.append(plot)
 
-    def scaffold_plots(self, plots=None, state=None, layout=None):
+    def scaffold_plots(self, plots=None, state=None, layout=None,
+                       aclass='fancybox plot', **fancyboxargs):
         """Build a grid of plots using bootstrap's scaffolding.
 
         Returns
@@ -389,6 +390,8 @@ class PlotTab(Tab):
         while sum(zip(*layout)[0]) < len(plots):
             layout.append(layout[-1])
         l = i = 0
+        fancyboxargs.setdefault('data-fancybox-group', 1)
+
         for j, plot in enumerate(plots):
             # start new row
             if i == 0:
@@ -407,9 +410,8 @@ class PlotTab(Tab):
             else:
                 colwidth = 12 // int(layout[l][0])
                 page.div(class_='col-md-%d' % colwidth)
-            page.a(href=plot.href, class_='fancybox plot',
-                   **{'data-fancybox-group': '1'})
-            page.img(src=plot.href)
+            page.a(href=plot.href, class_=aclass, **fancyboxargs)
+            page.img(src=plot.src)
             page.a.close()
             page.div.close()
             # detect end of row
@@ -432,7 +434,7 @@ class PlotTab(Tab):
         if self.foreword:
             page.add(str(self.foreword))
         if content:
-            page.add(str(self.content))
+            page.add(str(content))
         page.add(str(self.scaffold_plots()))
         if self.afterword:
             page.add(str(self.afterword))

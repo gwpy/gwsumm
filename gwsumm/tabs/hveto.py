@@ -214,6 +214,7 @@ class HvetoTab(base):
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the DetChar group',
+                                            class_='alert-link',
                                             href='mailto:detchar@ligo.org'))
             page.div.close()
 

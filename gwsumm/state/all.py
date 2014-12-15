@@ -56,7 +56,7 @@ def generate_all_state(start, end, register=True, **kwargs):
     """
     now = min(end, NOW)
     all_ = SummaryState(ALLSTATE,
-                        valid=SegmentList([Segment(start, end)]),
+                        known=SegmentList([Segment(start, end)]),
                         active=SegmentList([Segment(start, now)]),
                         **kwargs)
     all_.ready = True

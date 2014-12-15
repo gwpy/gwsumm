@@ -72,14 +72,14 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     # generate output object
     out = DataQualityDict()
     for f in flags:
-        out[f] = DataQualityFlag(f, valid=validity, active=validity)
+        out[f] = DataQualityFlag(f, known=validity, active=validity)
     for f in allflags:
         globalv.SEGMENTS.setdefault(f, DataQualityFlag(f))
 
     # read segments from global memory and get the union of needed times
     try:
         old = reduce(operator.and_, (globalv.SEGMENTS.get(
-                                        f, DataQualityFlag(f)).valid
+                                        f, DataQualityFlag(f)).known
                                     for f in flags))
     except TypeError:
         old = SegmentList()
@@ -98,7 +98,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     new = DataQualityDict()
                     new[f] = DataQualityFlag.read(cache, f, coalesce=True)
             for flag in new:
-                new[flag].valid &= newsegs
+                new[flag].known &= newsegs
                 new[flag].active &= newsegs
         else:
             # parse configuration for query
@@ -133,7 +133,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             for f in new:
                 vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
                        % (len(new[f].active), f,
-                          float(abs(new[f].valid))/float(abs(newsegs))*100))
+                          float(abs(new[f].known))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
 

@@ -334,7 +334,7 @@ class DataTab(DataTabBase):
                 alldefs[state.url] = [state]
         for url,states_ in alldefs.iteritems():
             allvalid = reduce(operator.or_,
-                              [state.valid for state in states_])
+                              [state.known for state in states_])
             defs = [s.definition for s in states_]
             get_segments(defs, allvalid, config=config, url=url,
                          segdb_error=segdb_error, return_=False, **kwargs)
@@ -652,8 +652,8 @@ class DataTab(DataTabBase):
                 flag = get_segments(flag, state.active, query=False).copy()
                 v = flag.version and str(flag.version) or ''
                 try:
-                    valid = '%.2f (%.2f%%)' % (abs(flag.valid),
-                                               abs(flag.valid) / pc)
+                    valid = '%.2f (%.2f%%)' % (abs(flag.known),
+                                               abs(flag.known) / pc)
                 except ZeroDivisionError:
                     valid = '0.00 (0.00%)'
                     active = '0.00 (0.00%)'
@@ -678,7 +678,7 @@ class DataTab(DataTabBase):
                 # write segment summary
                 page.p('This flag was defined and had a known state during '
                        'the following segments:')
-                page.add(self.print_segments(flag.valid))
+                page.add(self.print_segments(flag.known))
                 # write segment table
                 page.p('This flag was active during the following segments:')
                 page.add(self.print_segments(flag.active))

@@ -72,7 +72,7 @@ class DailyAhopeTab(base):
         if state in globalv.STATES:
             raise ValueError("State name for DailyAhopeTab must be unique, "
                              "please do not select '%s'" % state)
-        globalv.STATES[state] = SummaryState(state, valid=(start, end))
+        globalv.STATES[state] = SummaryState(state, known=(start, end))
         globalv.STATES[state].definition = '%s:ahope' % ifo
         config.set(section, 'states', state)
 

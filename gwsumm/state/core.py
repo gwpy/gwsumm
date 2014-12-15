@@ -41,30 +41,30 @@ class SummaryState(DataQualityFlag):
     ----------
     name : `str`
         name for this state
-    valid : `~gwpy.segments.SegmentList`, optional
-        list of valid segments
+    known : `~gwpy.segments.SegmentList`, optional
+        list of known segments
     active : `~gwpy.segments.SegmentList`, optional
         list of active segments
     description : `str`, optional
         text describing what this state means
     definition : `str`, optional
-        logical combination of flags that define valid and active segments
+        logical combination of flags that define known and active segments
         for this state (see :attr:`documentation <SummaryState.definition>`
         for details)
     key : `str`, optional
         registry key for this state, defaults to :attr:`~SummaryState.name`
     """
-    def __init__(self, name, valid=SegmentList(), active=SegmentList(),
+    def __init__(self, name, known=SegmentList(), active=SegmentList(),
                  description=None, definition=None, hours=None, key=None,
                  url=None):
         """Initialise a new `SummaryState`
         """
-        # allow users to specify valid as (start, end)
-        if (isinstance(valid, Segment) or
-                (isinstance(valid, tuple) and len(valid) == 2 and
-                 not isinstance(valid[0], tuple))):
-            valid = [valid]
-        super(SummaryState, self).__init__(name=name, valid=valid,
+        # allow users to specify known as (start, end)
+        if (isinstance(known, Segment) or
+                (isinstance(known, tuple) and len(known) == 2 and
+                 not isinstance(known[0], tuple))):
+            known = [known]
+        super(SummaryState, self).__init__(name=name, known=known,
                                            active=active)
         self.description = description
         if definition:
@@ -74,7 +74,7 @@ class SummaryState(DataQualityFlag):
         self.key = key
         self.hours = hours
         self.url = url
-        if valid and active:
+        if known and active:
             self.ready = True
         else:
             self.ready = False
@@ -228,7 +228,7 @@ class SummaryState(DataQualityFlag):
         if name == ALLSTATE:
             return generate_all_state(start, end, register=False, **params)
         else:
-            return cls(name, valid=[(start, end)], hours=hours, **params)
+            return cls(name, known=[(start, end)], hours=hours, **params)
 
     def fetch(self, config=GWSummConfigParser(), **kwargs):
         """Finalise this state by fetching its defining segments,
@@ -239,15 +239,15 @@ class SummaryState(DataQualityFlag):
             return self
         # otherwise find out which flags we need
         if self.definition:
-            segs = get_segments(self.definition, self.valid, config=config,
+            segs = get_segments(self.definition, self.known, config=config,
                                 **kwargs)
-            self.valid = segs.valid
+            self.known = segs.known
             self.active = segs.active
         else:
             start = config.getfloat(DEFAULTSECT, 'gps-start-time')
             end = config.getfloat(DEFAULTSECT, 'gps-end-time')
-            self.valid = [(start, end)]
-            self.active = self.valid
+            self.known = [(start, end)]
+            self.active = self.known
         # restrict to given hours
         if self.hours:
             segs_ = SegmentList()
@@ -263,7 +263,7 @@ class SummaryState(DataQualityFlag):
                     segs_.append(Segment(t + h0 * 3600, t + h1*3600))
                 # increment and return
                 d += datetime.timedelta(1)
-            self.valid &= segs_
+            self.known &= segs_
             self.active &= segs_
         # FIXME
         self.ready = True

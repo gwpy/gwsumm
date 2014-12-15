@@ -29,9 +29,11 @@ except ImportError:
 import warnings
 import operator
 
-from gwpy.segments import (DataQualityFlag, DataQualityDict, SegmentList)
+from gwpy.segments import (DataQualityFlag, DataQualityDict,
+                           SegmentList, Segment)
 
 from . import (globalv, version)
+from .config import DEFAULTSECT
 from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -62,11 +64,12 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     # check validity
     if validity is None:
-        start = config.get('general', 'gps-start-time')
-        end = config.get('general', 'gps-end-time')
-        validity = [(start, end)]
+        start = config.get(DEAFULTSECT, 'gps-start-time')
+        end = config.get(DEFAULTSECT, 'gps-end-time')
+        validity = span = SegmentList([Segment(start, end)])
     elif isinstance(validity, DataQualityFlag):
         validity = validity.active
+        span = SegmentList([validity.extent()])
     validity = SegmentList(validity)
 
     # generate output object
@@ -101,6 +104,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 new[flag].known &= newsegs
                 new[flag].active &= newsegs
         else:
+            if len(newsegs) >= 10:
+                qsegs = span
+            else:
+                qsegs = newsegs
             # parse configuration for query
             kwargs = {}
             if url is not None:
@@ -112,10 +119,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     pass
             try:
                 if 'url' in kwargs and 'dqsegdb' in kwargs['url']:
-                    new = DataQualityDict.query_dqsegdb(allflags, newsegs,
+                    new = DataQualityDict.query_dqsegdb(allflags, qsegs,
                                                         **kwargs)
                 else:
-                    new = DataQualityDict.query(allflags, newsegs, **kwargs)
+                    new = DataQualityDict.query(allflags, qsegs, **kwargs)
             except Exception as e:
                 # ignore error from SegDB
                 if segdb_error in ['ignore', None]:
@@ -131,6 +138,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     raise
                 new = DataQualityDict()
             for f in new:
+                new[f].known &= newsegs
+                new[f].active &= newsegs
                 vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
                        % (len(new[f].active), f,
                           float(abs(new[f].known))/float(abs(newsegs))*100))

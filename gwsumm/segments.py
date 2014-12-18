@@ -69,7 +69,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         validity = span = SegmentList([Segment(start, end)])
     elif isinstance(validity, DataQualityFlag):
         validity = validity.active
-        span = SegmentList([validity.extent()])
+        try:
+            span = SegmentList([validity.extent()])
+        except ValueError:
+            span = SegmentList()
     validity = SegmentList(validity)
 
     # generate output object

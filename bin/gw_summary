@@ -185,9 +185,11 @@ parser.add_argument('-V', '--version', action='version',
 
 # define shared commands
 sharedopts = GWArgumentParser(add_help=False)
-verbosegroup = sharedopts.add_mutually_exclusive_group()
-verbosegroup.add_argument('-v', '--verbose', action='store_true',
-                          default=False, help="show verbose output")
+sharedopts.title = 'Progress arguments'
+sharedopts.add_argument('-v', '--verbose', action='store_true',
+                        default=False, help="show verbose output")
+sharedopts.add_argument('-D', '--debug', action='store_true',
+                        default=False, help="show debug output")
 
 # give configuration files
 copts = sharedopts.add_argument_group("Configuration options",
@@ -337,6 +339,9 @@ add_output_options(subparser['gps'])
 # Parse command-line and sanity check
 
 opts = parser.parse_args()
+
+if opts.debug:
+    warnings.simplefilter('error', DeprecationWarning)
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose

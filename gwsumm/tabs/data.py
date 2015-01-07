@@ -608,6 +608,9 @@ class DataTab(DataTabBase):
             data = []
             for channel in channels:
                 channel = get_channel(channel)
+                # don't write combination meta-channels
+                if len(re_channel.findall(channel.ndsname)) > 1:
+                    continue
                 # format CIS url and type
                 if re.search('.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)

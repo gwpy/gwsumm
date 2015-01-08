@@ -471,11 +471,9 @@ if not opts.html_only:
     # parse channel grouns into individual sections
     for section in config.sections():
         if re.match('channels[-\s]', section):
-            items = dict(config.nditems(section))
-            try:
-                names = split_channels(items.pop('channels'))
-            except KeyError:
-                raise NoOptionError('channels', section)
+            names = split_channels(config.get(section, 'channels'))
+            items = dict(config.nditems(section, raw=True))
+            items.pop('channels')
             for name in names:
                 name = name.strip(' \n')
                 if not config.has_section(name):

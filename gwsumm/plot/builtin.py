@@ -930,11 +930,17 @@ class TriggerDataPlot(TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=4)
+        logx = self.pargs.pop('logx', self.pargs.pop('xscale', None) == 'log')
+        logy = self.pargs.pop('logy', self.pargs.pop('yscale', None) == 'log')
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
+        if logx:
+            ax.set_xscale('log')
+        if logy:
+            ax.set_yscale('log')
         if 'title' not in self.pargs.keys() and len(self.channels) == 1:
             plot.title = '%s (%s)' % (self.channels[0].texname, self.etg)
 

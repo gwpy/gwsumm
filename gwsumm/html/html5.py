@@ -79,3 +79,31 @@ def load(url, id_='main', error=False, success=None):
         success: function(data, statusText, jqhxr){%s},
         error: function(xhr, status, error){%s}
         });\n""" % (url, success, error))
+
+
+def comments_box(name, identifier=None, title=None, url=None):
+    """Generate a Disqus comments box
+    """
+    page = markup.page()
+    page.div(id_='disqus_thread')
+    page.script(type='text/javascript')
+    page.add('    var disqus_shortname = "%s";' % name)
+    if identifier:
+        page.add('    var disqus_identifier = "%s";' % identifier)
+    if title:
+        page.add('    var disqus_title = "%s";' % title)
+    if url:
+        page.add('    var disqus_url = "%s";' % url)
+    page.add("""
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    """)
+    page.script.close()
+    page.noscript("Please enable JavaScript to view the")
+    page.a("comments powered by Disqus",
+           href="https://disqus.com/?ref_noscript")
+    return page

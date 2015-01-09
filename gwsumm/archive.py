@@ -21,12 +21,13 @@
 
 import tempfile
 import shutil
+import warnings
 
 from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
 from gwpy.segments import DataQualityFlag
 
-from . import (globalv, version)
+from . import (globalv, mode, version)
 from .data import (get_channel, add_timeseries, add_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -114,7 +115,16 @@ def read_data_archive(sourcefile):
         for dataset in group.itervalues():
             ts = TimeSeries.read(dataset, format='hdf')
             ts.channel = get_channel(ts.channel)
-            add_timeseries(ts, key=ts.channel.ndsname)
+            try:
+                add_timeseries(ts, key=ts.channel.ndsname)
+            except ValueError:
+                if mode.get_mode() == mode.MODE_ENUM['day']:
+                    raise
+                warnings.warn('Caught ValueError in combining daily archives')
+                # get end time
+                globalv.DATA[ts.channel.ndsname].pop(-1)
+                t = globalv.DATA[ts.channel.ndsname][-1].span[-1]
+                add_timeseries(ts.crop(start=t), key=ts.channel.ndsname)
 
         # read all state-vector data
         try:

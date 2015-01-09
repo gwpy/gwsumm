@@ -1238,7 +1238,7 @@ class DutyDataPlot(SegmentDataPlot):
                 dt = relativedelta(months=1)
             # otherwise provide 10 bins
             else:
-                dt = float(abs(self.span))/10.
+                dt = relativedelta(seconds=float(abs(self.span))/10.)
         # if given a float, assume this is the bin size
         elif isinstance(self.bins, (float, int)):
             dt = relativedelta(seconds=self.bins)

@@ -26,6 +26,7 @@ import operator
 import re
 import os.path
 import sys
+import getpass
 
 from copy import copy
 from multiprocessing import (Process, JoinableQueue)
@@ -538,6 +539,26 @@ class DataTab(DataTabBase):
     # -------------------------------------------------------------------------
     # HTML operations
 
+    def build_html_content(self, frame, divclass='container', divid='main'):
+        """Build the #main div for this tab.
+
+        In this construction, the <div id="id\_"> is empty, with a
+        javascript hook to load the given frame into the div when ready.
+        """
+        page = html.markup.page()
+        page.div(class_=divclass, id_=divid)
+        page.div('', id_='content')
+        page.add(str(html.load(frame, id_='content')))
+        if globalv.HTML_COMMENTS_NAME:
+            page.hr(class_='row-divider')
+            page.h1('Comments')
+            page.add(str(html.comments_box(
+                globalv.HTML_COMMENTS_NAME,
+                identifier='/%s/%s' % (getpass.getuser(), self.path))))
+        page.div.close()
+        return page
+
+
     def write_html(self, *args, **kwargs):
         writedata = kwargs.pop('writedata', True)
         vprint("Writing HTML:\n")
@@ -551,7 +572,19 @@ class DataTab(DataTabBase):
                 vprint("    %s placeholder written\n" % frame)
         writehtml = kwargs.pop('writehtml', True)
         if writehtml:
+            # work out whether to print comments
+            comments = False
+            for frame in self.frames:
+                if not ('These data have not been generated yet' in
+                        open(frame).read()):
+                    comments = True
+                    break
+            if not comments:
+                c = globalv.HTML_COMMENTS_NAME
+                globalv.HTML_COMMENTS_NAME = None
             super(DataTab, self).write_html(*args, **kwargs)
+            if not comments:
+                globalv.HTML_COMMENTS_NAME = c
             vprint("    %s written\n" % self.index)
 
     def write_state_placeholder(self, state):

@@ -43,3 +43,6 @@ START = time.time()
 MODE = 4
 WRITTEN_PLOTS = []
 NOW = tconvert('now').seconds
+
+# comments
+HTML_COMMENTS_NAME = None

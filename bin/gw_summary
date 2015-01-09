@@ -590,6 +590,12 @@ else:
     if not javascript:
         css = html.JS
 
+# enable comments
+try:
+    globalv.HTML_COMMENTS_NAME = config.get('html', 'disqus-shortname')
+except (NoOptionError, NoSectionError):
+    pass
+
 # -----------------------------------------------------------------------------
 # Read tabs
 

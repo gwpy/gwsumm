@@ -125,7 +125,7 @@ class GuardianTab(Tab):
         alldata = get_timeseries_dict(
             [prefix % x for x in ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK']],
             state, config=config, nds=nds, multiprocess=multiprocess,
-            cache=datacache)
+            cache=datacache, dtype='int16')
         grddata = alldata[prefix % 'STATE_N']
         reqdata = alldata[prefix % 'REQUEST_N']
         nomdata = alldata[prefix % 'NOMINAL_N']

@@ -1388,3 +1388,158 @@ class DutyDataPlot(SegmentDataPlot):
         return self.finalize(outputfile=outputfile)
 
 register_plot(DutyDataPlot)
+
+
+class SpectralVarianceDataPlot(SpectrumDataPlot):
+    """SpectralVariance histogram plot for a `DataTab`
+    """
+    type = 'variance'
+    data = 'spectrogram'
+    defaults = {
+        'logx': True,
+        'logy': True,
+        'reference_linestyle': '--',
+        'log': True,
+        'nbins': 100,
+        'cmap': 'jet',
+    }
+
+    def __init__(self, channels, *args, **kwargs):
+        if isinstance(channels, (list, tuple)) and len(channels) > 1:
+            raise ValueError("Cannot generate SpectralVariance plot with "
+                             "more than 1 channel")
+        super(SpectralVarianceDataPlot, self).__init__(
+            channels, *args, **kwargs)
+
+    def parse_variance_kwargs(self):
+        varargs = dict()
+        for key in ['low', 'high', 'log', 'nbins', 'bins', 'density', 'norm']:
+            if key in self.pargs:
+                varargs[key] = self.pargs.pop(key)
+        return varargs
+
+    def _process(self):
+        """Load all data, and generate this `SpectrumDataPlot`
+        """
+        plot = self.plot = SpectrumPlot(
+            figsize=self.pargs.pop('figsize', [12, 6]))
+        ax = plot.gca()
+        ax.grid(b=True, axis='both', which='both')
+        ax.grid(b=True, axis='both', which='major')
+
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.99)
+
+        # parse plotting arguments
+        varargs = self.parse_variance_kwargs()
+        plotargs = self.parse_plot_kwargs()[0]
+        legendargs = self.parse_legend_kwargs()
+
+        # get reference arguments
+        refs = []
+        refkey = 'None'
+        for key in sorted(self.pargs.keys()):
+            if key == 'reference' or re.match('reference\d+\Z', key):
+                refs.append(dict())
+                refs[-1]['source'] = self.pargs.pop(key)
+                refkey = key
+            if re.match('%s[-_]' % refkey, key):
+                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
+
+        # get channel arguments
+        if hasattr(self.channels[0], 'asd_range'):
+            low, high = self.channels[0].asd_range
+            varargs.setdefault('low', low)
+            varargs.setdefault('high', high)
+
+        # calculate spectral variance and plot
+        # pad data request to over-fill plots (no gaps at the end)
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        livetime = float(abs(valid))
+
+        plotargs.setdefault('vmin', 1/livetime)
+        plotargs.setdefault('vmax', 1.)
+        plotargs.pop('label')
+        plotargs.setdefault('cmap', 'jet')
+
+        specgram = get_spectrogram(self.channels[0], valid, query=False,
+                                    format='asd').join(gap='ignore')
+
+        if specgram.size:
+            asd = specgram.median(axis=0)
+            asd.name = None
+            variance = specgram.variance(**varargs)
+            # normalize the variance
+            variance /= livetime / specgram.dt.value
+            # plot
+            ax.plot(asd, color='grey', linewidth=0.3)
+            m = ax.plot_variance(variance, **plotargs)
+        #else:
+        #    ax.scatter([1], [1], c=[1], visible=False, vmin=plotargs['vmin'],
+        #               vmax=plotargs['vmax'], cmap=plotargs['cmap'])
+        #plot.add_colorbar(ax=ax, log=True, label='Fractional time at amplitude')
+
+        # allow channel data to set parameters
+        if hasattr(self.channels[0], 'frequency_range'):
+            self.pargs.setdefault('xlim', self.channels[0].frequency_range)
+        if hasattr(self.channels[0], 'asd_range'):
+            self.pargs.setdefault('ylim', self.channels[0].asd_range)
+
+        # display references
+        for i, ref in enumerate(refs):
+            if 'source' in ref:
+                source = ref.pop('source')
+                try:
+                    refspec = Spectrum.read(source)
+                except IOError as e:
+                    warnings.warn('IOError: %s' % str(e))
+                except Exception as e:
+                    # hack for old versions of GWpy
+                    # TODO: remove me when GWSumm requires GWpy > 0.1
+                    if 'Format could not be identified' in str(e):
+                        refspec = Spectrum.read(source, format='dat')
+                    else:
+                        raise
+                else:
+                    if 'filter' in ref:
+                        refspec = refspec.filter(*ref.pop('filter'))
+                    if 'scale' in ref:
+                        refspec *= ref.pop('scale', 1)
+                    ax.plot(refspec, **ref)
+
+        # customise
+        hlines = list(self.pargs.pop('hline', []))
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+        # add horizontal lines to add
+        if hlines:
+            if not isinstance(hlines[-1], float):
+                lineparams = hlines.pop(-1)
+            else:
+                lineparams = {'color':'r', 'linestyle': '--'}
+        for yval in hlines:
+            try:
+                yval = float(yval)
+            except ValueError:
+                continue
+            else:
+                ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
+
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+
+        return self.finalize()
+
+register_plot(SpectralVarianceDataPlot)

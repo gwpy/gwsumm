@@ -563,6 +563,7 @@ class SpectrumDataPlot(DataPlot):
         plot = self.plot = SpectrumPlot(
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
+        ax.grid(b=True, axis='both', which='both')
 
         if self.state:
             self.pargs.setdefault(
@@ -1465,7 +1466,8 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             valid = SegmentList([self.span])
         livetime = float(abs(valid))
 
-        plotargs.setdefault('vmin', 1/livetime)
+        if livetime:
+            plotargs.setdefault('vmin', 1/livetime)
         plotargs.setdefault('vmax', 1.)
         plotargs.pop('label')
         plotargs.setdefault('cmap', 'jet')

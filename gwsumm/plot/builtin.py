@@ -62,6 +62,7 @@ class TimeSeriesDataPlot(DataPlot):
     """DataPlot of some `TimeSeries` data.
     """
     type = 'timeseries'
+    data = 'timeseries'
     defaults = {'logy': False,
                 'hline': list()}
 
@@ -188,6 +189,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     """DataPlot a Spectrogram
     """
     type = 'spectrogram'
+    data = 'spectrogram'
     defaults = {'ratio': None,
                 'format': None,
                 'clim': None,
@@ -290,6 +292,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
     """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
     """
     type = 'segments'
+    data = 'segments'
     defaults = {'mask': None,
                 'color': None,
                 'on_is_bad': False,
@@ -454,6 +457,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
     `SegmentDataPlot` more closely.
     """
     type = 'statevector'
+    data = 'statevector'
     defaults = SegmentDataPlot.defaults.copy()
 
     # copy from SegmentDataPlot
@@ -535,6 +539,7 @@ class SpectrumDataPlot(DataPlot):
     """Spectrum plot for a `SummaryTab`
     """
     type = 'spectrum'
+    data = 'spectrum'
     defaults = {'logx': True,
                 'logy': True,
                 'format': None,
@@ -677,6 +682,7 @@ class TimeSeriesHistogramPlot(DataPlot):
     """HistogramPlot from a Series
     """
     type = 'histogram'
+    data = 'timeseries'
     defaults = {'ylabel': 'Rate [Hz]',
                 'rwidth': 1}
 
@@ -790,6 +796,7 @@ register_plot(TimeSeriesHistogramPlot)
 class TriggerDataPlot(TimeSeriesDataPlot):
     _threadsafe = False
     type = 'triggers'
+    data = 'triggers'
     defaults = {'x': 'time',
                 'y': 'snr',
                 'color': None,
@@ -975,6 +982,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
     """Custom time-series plot to handle discontiguous `TimeSeries`.
     """
     type = 'trigger-timeseries'
+    data = 'triggers'
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -1051,6 +1059,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
     """HistogramPlot from a LIGO_LW Table
     """
     type = 'trigger-histogram'
+    data = 'triggers'
     _threadsafe = False
 
     def __init__(self, *args, **kwargs):
@@ -1129,6 +1138,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
     """TimeSeriesDataPlot of trigger rate.
     """
     type = 'trigger-rate'
+    data = 'triggers'
     _threadsafe = False
     defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({'column': None,
@@ -1209,6 +1219,7 @@ class DutyDataPlot(SegmentDataPlot):
     """`DataPlot` of the duty-factor for a `SegmentList`
     """
     type = 'duty'
+    data = 'segments'
     defaults = {'alpha': 0.8,
                 'sep': False,
                 'side_by_side': False,

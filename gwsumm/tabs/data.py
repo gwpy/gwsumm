@@ -437,8 +437,7 @@ class DataTab(DataTabBase):
 
         # find channels that need a TimeSeries
         tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
-                                       'histogram', all_data=all_data,
-                                       read=True)
+                                       all_data=all_data, read=True)
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(tschannels))
@@ -752,7 +751,7 @@ class DataTab(DataTabBase):
         Parameters
         ----------
         *types : `list` of `str`
-            `list` of plot type strings whose channel sets to return
+            `list` of plot data type strings whose channel sets to return
         new : `bool`, default: `True`
             only include plots whose 'new' attribute is True
 
@@ -764,7 +763,7 @@ class DataTab(DataTabBase):
         isnew = kwargs.pop('new', True)
         out = set()
         for plot in self.plots:
-            if not plot.type in types:
+            if not plot.data in types:
                 continue
             if isnew and not plot.new:
                 continue

@@ -465,6 +465,11 @@ class DataTab(DataTabBase):
             fftparams = dict(config.nditems('fft'))
         except NoSectionError:
             fftparams = {}
+        for key, val in fftparams.iteritems():
+            try:
+                fftparams[key] = eval(val)
+            except (NameError, SyntaxError):
+                pass
 
         for channel in self.get_channels('spectrogram', 'spectrum',
                                          all_data=all_data, read=True):

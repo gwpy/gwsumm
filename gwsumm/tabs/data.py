@@ -471,6 +471,14 @@ class DataTab(DataTabBase):
             get_spectrogram(channel, state, config=config, return_=False,
                             multiprocess=multiprocess, **fftparams)
 
+        for channel in self.get_channels(
+                'rayleigh-spectrogram', 'rayleigh-spectrum',
+                all_data=all_data, read=True):
+            fp2 = fftparams.copy()
+            fp2['method'] = 'rayleigh'
+            get_spectrogram(channel, state, config=config, return_=False,
+                            multiprocess=multiprocess, **fp2)
+
         # --------------------------------------------------------------------
         # process spectra
 
@@ -478,6 +486,10 @@ class DataTab(DataTabBase):
                                          read=True):
             get_spectrum(channel, state, config=config, return_=False,
                          **fftparams)
+
+        for channel in self.get_channels(
+                'rayleigh-spectrum', all_data=all_data, read=True):
+            get_spectrum(channel, state, config=config, return_=False, **fp2)
 
         # --------------------------------------------------------------------
         # process segments

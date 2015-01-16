@@ -637,12 +637,15 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
-                     multiprocess=True, **fftparams):
+                     multiprocess=True, method='median-mean', **fftparams):
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     channel = get_channel(channel)
+    if format in ['rayleigh']:
+        method = format
+    key = '%s,%s' % (channel.ndsname, method)
     # read segments from global memory
-    havesegs = globalv.SPECTROGRAMS.get(channel.ndsname,
+    havesegs = globalv.SPECTROGRAMS.get(key,
                                         SpectrogramList()).segments
     new = segments - havesegs
 
@@ -654,7 +657,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     else:
         nproc = count_free_cores(multiprocess)
 
-    globalv.SPECTROGRAMS.setdefault(channel.ndsname, SpectrogramList())
+    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     query &= abs(new) != 0
     if query:
@@ -669,7 +672,6 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
         # read FFT params
         fftparams = fftparams.copy()
-        fftparams.setdefault('method', 'median-mean')
         for param in ['fftlength', 'overlap']:
             if hasattr(channel, param):
                 fftparams[param] = float(getattr(channel, param))
@@ -697,7 +699,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             if abs(ts.span) < stride:
                 continue
             try:
-                specgram = ts.spectrogram(stride, nproc=nproc,
+                specgram = ts.spectrogram(stride, nproc=nproc, method=method,
                                           **fftparams)
             except ZeroDivisionError:
                 if stride == 0:
@@ -714,10 +716,10 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     specgram.unit = unit ** 2 / units.Hertz
                 else:
                     raise
-            if filter_:
+            if filter_ and method not in ['rayleigh']:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
-            globalv.SPECTROGRAMS[channel.ndsname].append(specgram)
-            globalv.SPECTROGRAMS[channel.ndsname].coalesce()
+            globalv.SPECTROGRAMS[key].append(specgram)
+            globalv.SPECTROGRAMS[key].coalesce()
             vprint('.')
         if len(timeserieslist):
             vprint('\n')
@@ -727,7 +729,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
     # return correct data
     out = SpectrogramList()
-    for specgram in globalv.SPECTROGRAMS[channel.ndsname]:
+    for specgram in globalv.SPECTROGRAMS[key]:
         for seg in segments:
             if abs(seg) < specgram.dt.value:
                 continue

@@ -1545,3 +1545,35 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         return self.finalize()
 
 register_plot(SpectralVarianceDataPlot)
+
+
+class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
+    """Rayleigh statistic versino of `SpectrogramDataPlot`
+    """
+    type = 'rayleigh-spectrogram'
+    data = 'rayleigh-spectrogram'
+    defaults = {'ratio': None,
+                'format': 'rayleigh',
+                'clim': [0.25, 4],
+                'cmap': 'spectral',
+                'logcolor': True,
+                'colorlabel': 'Rayleigh statistic'}
+
+register_plot(RayleighSpectrogramDataPlot)
+
+
+class RayleighSpectrumDataPlot(SpectrumDataPlot):
+    """Rayleigh statistic versino of `SpectrumDataPlot`
+    """
+    type = 'rayleigh-spectrum'
+    data = 'rayleigh-spectrum'
+    defaults = {'format': 'rayleigh',
+                'logx': True,
+                'logy': True,
+                'format': None,
+                'alpha': 0.1,
+                'zorder': 1,
+                'no_percentiles': True,
+                'reference_linestyle': '--'}
+
+register_plot(RayleighSpectrumDataPlot)

@@ -1570,7 +1570,6 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
     defaults = {'format': 'rayleigh',
                 'logx': True,
                 'logy': True,
-                'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
                 'no_percentiles': True,

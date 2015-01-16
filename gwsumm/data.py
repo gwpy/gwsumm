@@ -763,7 +763,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
                % name.rsplit(',', 1)[0])
         speclist = get_spectrogram(channel, segments, config=config,
                                    cache=cache, query=False, nds=nds,
-                                   **fftparams)
+                                   format=format, **fftparams)
         try:
             specgram = speclist.join(gap='ignore')
         except ValueError as e:
@@ -792,8 +792,6 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     cmax = '%s.max' % name
     out = (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
            globalv.SPECTRUM[cmax])
-    if format in ['amplitude', 'asd']:
-        out = [s ** (1/2.) for s in out]
     return out
 
 

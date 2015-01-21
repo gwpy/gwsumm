@@ -58,10 +58,10 @@ class element:
                 kwargs['class_'] = self.parent.class_
 
         if self.parent is None and len(args) == 1:
-            x = [ self.render(self.tag, False, myarg, mydict) for myarg, mydict in _argsdicts(args, kwargs) ]
+            x = [self.render(self.tag, False, myarg, mydict) for myarg, mydict in _argsdicts(args, kwargs)]
             return '\n'.join(x)
         elif self.parent is None and len(args) == 0:
-            x = [ self.render(self.tag, True, myarg, mydict) for myarg, mydict in _argsdicts(args, kwargs) ]
+            x = [self.render(self.tag, True, myarg, mydict) for myarg, mydict in _argsdicts(args, kwargs)]
             return '\n'.join(x)
 
         if self.tag in self.parent.twotags:
@@ -148,20 +148,26 @@ class page:
 
         class_ --               a class that will be added to every element if defined"""
 
-        valid_onetags = [ "AREA", "BASE", "BR", "COL", "FRAME", "HR", "IMG", "INPUT", "LINK", "META", "PARAM" ]
-        valid_twotags = [ "A", "ABBR", "ACRONYM", "ADDRESS", "B", "BDO", "BIG", "BLOCKQUOTE", "BODY", "BUTTON",
-                "CAPTION", "CITE", "CODE", "COLGROUP", "DD", "DEL", "DFN", "DIV", "DL", "DT", "EM", "FIELDSET",
-                "FORM", "FRAMESET", "H1", "H2", "H3", "H4", "H5", "H6", "HEAD", "HTML", "I", "IFRAME", "INS",
-                "KBD", "LABEL", "LEGEND", "LI", "MAP", "NOFRAMES", "NOSCRIPT", "OBJECT", "OL", "OPTGROUP",
-                "OPTION", "P", "PRE", "Q", "SAMP", "SCRIPT", "SELECT", "SMALL", "SPAN", "STRONG", "STYLE",
-                "SUB", "SUP", "TABLE", "TBODY", "TD", "TEXTAREA", "TFOOT", "TH", "THEAD", "TITLE", "TR",
-                "TT", "UL", "VAR", "FOOTER", "NAV"]
-        deprecated_onetags = [ "BASEFONT", "ISINDEX" ]
-        deprecated_twotags = [ "APPLET", "CENTER", "DIR", "FONT", "MENU", "S", "STRIKE", "U" ]
+        valid_onetags = ["AREA", "BASE", "BR", "COL", "FRAME", "HR", "IMG",
+                         "INPUT", "LINK", "META", "PARAM"]
+        valid_twotags = ["A", "ABBR", "ACRONYM", "ADDRESS", "B", "BDO", "BIG",
+                         "BLOCKQUOTE", "BODY", "BUTTON", "CAPTION", "CITE",
+                         "CODE", "COLGROUP", "DD", "DEL", "DFN", "DIV", "DL",
+                         "DT", "EM", "FIELDSET", "FORM", "FRAMESET", "H1",
+                         "H2", "H3", "H4", "H5", "H6", "HEAD", "HTML", "I",
+                         "IFRAME", "INS", "KBD", "LABEL", "LEGEND", "LI",
+                         "MAP", "NOFRAMES", "NOSCRIPT", "OBJECT", "OL",
+                         "OPTGROUP", "OPTION", "P", "PRE", "Q", "SAMP",
+                         "SCRIPT", "SELECT", "SMALL", "SPAN", "STRONG", "STYLE",
+                         "SUB", "SUP", "TABLE", "TBODY", "TD", "TEXTAREA",
+                         "TFOOT", "TH", "THEAD", "TITLE", "TR", "TT", "UL",
+                         "VAR", "FOOTER", "NAV", "HEADER"]
+        deprecated_onetags = ["BASEFONT", "ISINDEX"]
+        deprecated_twotags = ["APPLET", "CENTER", "DIR", "FONT", "MENU", "S", "STRIKE", "U"]
 
-        self.header = [ ]
-        self.content = [ ]
-        self.footer = [ ]
+        self.header = []
+        self.content = []
+        self.footer = []
         self.case = case
         self.separator = separator
 
@@ -212,9 +218,9 @@ class page:
     def __str__(self):
 
         if self._full and (self.mode == 'strict_html' or self.mode == 'loose_html'):
-            end = [ '</body>', '</html>' ]
+            end = ['</body>', '</html>']
         else:
-            end = [ ]
+            end = []
 
         return self.separator.join(self.header + self.content + self.footer + end)
 
@@ -270,7 +276,7 @@ class page:
                     (ignored in xml mode)
 
         script --   dictionary containing src:type pairs, <script type='text/type' src=src></script>
-                    or a list of [ 'src1', 'src2', ... ] in which case 'javascript' is assumed for all
+                    or a list of ['src1', 'src2', ...] in which case 'javascript' is assumed for all
 
         title --    the title of the document as a string to be inserted into
                     a title element as <title>my title</title> (ignored in xml mode)
@@ -354,7 +360,7 @@ class page:
 
     def scripts(self, mydict):
         """Only useful in html, mydict is dictionary of src:type pairs or a list
-        of script sources [ 'src1', 'src2', ... ] in which case 'javascript' is assumed for type.
+        of script sources ['src1', 'src2', ...] in which case 'javascript' is assumed for type.
         Will be rendered as <script type='text/type' src=src></script>"""
 
         if isinstance(mydict, dict):
@@ -406,15 +412,15 @@ def _argsdicts(args, mydict):
     mykeys = list(mydict.keys())
     myvalues = list(map(_totuple, list(mydict.values())))
 
-    maxlength = max(list(map(len, [ args ] + myvalues)))
+    maxlength = max(list(map(len, [args] + myvalues)))
 
     for i in range(maxlength):
         thisdict = { }
         for key, value in zip(mykeys, myvalues):
             try:
-                thisdict[ key ] = value[i]
+                thisdict[key] = value[i]
             except IndexError:
-                thisdict[ key ] = value[-1]
+                thisdict[key] = value[-1]
         try:
             thisarg = args[i]
         except IndexError:

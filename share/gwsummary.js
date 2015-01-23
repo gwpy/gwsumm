@@ -78,7 +78,7 @@ $.fn.load_state = function loadState(page) {
     if ($(this).attr('id') == undefined) {
         return
     }
-    $('#main').load(page);
+    $('#content').load(page);
     $(this).set_state();
 }
 
@@ -133,13 +133,15 @@ function move_to_date(ev) {
     else {
         alert("ERROR: Cannot format new date. If the problem persists, please report this at https://github.com/gwpy/gwsumm/issues/");
     }
-    $.ajax({
+    /*$.ajax({
         type: 'HEAD',
         url : newurl,
         success: function(){window.location = newurl},
         error: function(){alert('No page found for ' + dispdate +
                                 '. Please report unexpected problems to '+
                                 'detchar+code@ligo.org.')}});
+    */
+    window.location = newurl;
 }
 
 // fix width of fixed navbar
@@ -147,21 +149,32 @@ function reset_width_on_resize() {
     $('#nav').width($("#nav").width());
 }
 
+// get basename of URL
+function baseName(str) {
+   base = new String(str).substring(str.lastIndexOf('/') + 1);
+   return base; 
+}
+
+// add startsWith method
+if (typeof String.prototype.startsWith != 'function') {
+  String.prototype.startsWith = function (str){
+    return this.slice(0, str.length) == str;
+  };
+}
+
+function refreshImage() {
+  var suffix = Math.floor((Math.random() * 10000) + 1);
+  $('img').each(function() {
+    var src = $(this).attr('src').split('?')[0];
+    $(this).attr('src', src + "?" + suffix);
+  });
+}
 
 /* ------------------------------------------------------------------------- */
 /* Document ready and loaded                                                  */
 
 // When document is ready, run this stuff:
 $(window).load(function() {
-    // Set the sticky navigation bar
-    $(function() {
-        $('#nav-wrapper').height($("#nav").height());
-        $('#nav').width($("#nav").width());
-        $('#nav').affix({
-            offset: { top: $('#nav').offset().top }
-        });
-    });
-
     // define inter-IFO links
     var thisbase = document.getElementsByTagName('base')[0].href;
     $('a.ifo-switch').each(function() {
@@ -201,6 +214,22 @@ $(window).load(function() {
             target.addClass('pull-right');
         }
     });
+
+    $(".fancybox-stamp").fancybox({
+                    autoSize: false,
+                    autoDimensions: false,
+                    width: 1000,
+                    height: 500,
+                    fitToView: false,
+                    showNavArrows: false,
+                    padding: 0,
+                    title: this.title,
+                    href: $(this).attr('href'),
+                    scrolling: 'no',
+                    type: 'iframe'
+                });
+
+
 
 })
 

@@ -5,437 +5,93 @@
  *
  */
 
-/*****************************************************************************/
-/* DOCUMENT                                                                  */
-
-html, body {
-    height: 100%;
-}
-
-#wrap {
-    min-height: 100%;
-}
-
-#main {
-    padding-bottom: 141px;
-}
-
-.inline-block {
-    display: inline-block;
-    padding-right: 10px;
-}
-
-.text-right {
-    text-align: right;
-}
-
-.container {
-    padding: 0 20px;
-}
-
-/* below required to get the navbar indented correctly in full page */
-@media (min-width: 1200px) {
-    #wrap .container,
-    footer .container {
-        max-width: 1200px;
-    }
-}
-@media (min-width: 979px) and (max-width: 1200px) {
-    #wrap .container {
-        width: 960px;
-    }
-}
-@media (min-width: 768px) and (max-width: 979px) {
-    #wrap .container {
-        width: 744px;
-    }
-}
-
-/* ------------------------------------------------------------------------- */
-/* Header                                                                     */
-
-@media (min-width: 768px) {
-    .header-left > h1 {
-        text-align: right;
-    }
-}
-
-#header .row:first-child {
-    padding: 8px 0;
-}
-
-#header h1 {
-    padding: 0;
-    margin: 0;
-}
-
-h1.normal {
-    font-weight: normal;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Navigation bar                                                            */
-
-.navbar {
-    min-height: 40px;
-    background-color: #eee;
-    background-image: none;
-    border: 0;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #555;
-    /* auto-gradient */
-    background-image: -ms-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
-    background-image: -moz-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
-    background-image: -o-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
-    background-image: -webkit-gradient(linear, left bottom, left top, color-stop(0, #008000), color-stop(1, #74CF0C));
-    background-image: -webkit-linear-gradient(bottom, #008000 0%, #74CF0C 100%);
-    background-image: linear-gradient(to top, #008000 0%, #74CF0C 100%);
-    background-size: 100% 41px;
-    background-repeat: no-repeat;
-    margin-top: -1px;
-    z-index: 100;
-}
-
-.navbar-collapse {
-    max-height: 400px;
-}
-
-#nav.affix {
-    position: fixed;
-    top: 0;
-}
-
-.navbar-brand,
-.navbar-collapse > ul > li > a {
-    padding: 10px 10px;
-}
-
-.navbar-brand,
-.navbar-brand:hover,
-.navbar-brand:active,
-.navbar-brand:focus {
-    font-size: 16px;
-    color: white;
-    height: 40px;
-}
-
-.navbar-collapse > ul > li > a {
-    font-size: 14px;
-    color: #ddd;
-}
-
-.navbar-collapse > ul > li > a,
-.navbar-collapse > ul > li > a:hover,
-.navbar-collapse > ul > li > a:focus,
-.navbar-collapse > ul > li > a:active {
-    background-color: inherit !important;
-}
-
-.navbar-collapse > ul > li > a:hover,
-.navbar-collapse > ul > li > a:focus,
-.navbar-collapse > ul > li > a:active {
-    color: white;
-}
-
-.caret {
-    border-bottom-color: #ddd !important;
-    border-top-color: #ddd !important;
-}
-
-.navbar-toggle {
-    padding: 5px 0 0 0;
-    border-radius: 0;
-}
-
-.navbar-toggle .icon-bar {
-    margin-top: 2px !important;
-    width: 15px;
-    color: white;
-    background-color: white;
-}
-
-.dropdown-menu a,
-.dropdown-header {
-    padding-left: 0;
-}
-
-@media (min-width: 1200px) {
-    .navbar {
-        border-radius: 0px;
-    }
-}
-
-@media (max-width: 1199px) {
-    .collapse,
-    .navbar-collapse {
-        width: 100% !important;
-        height: 100% !important;
-        padding-left: 5px;
-    }
-
-    .navbar-collapse ul > li > a {
-        color: #777;
-    }
-
-    .navbar-collapse ul > li > a:hover,
-    .navbar-collapse ul > li > a:focus,
-    .navbar-collapse ul > li > a:active {
-        color: black;
-    }
-
-    .dropdown-header {
-        padding-left: 10px !important;
-    }
-
-    .list-unstyled > li {
-        padding-left: 5px;
-    }
-
-}
-
-.dropdown-2-col {
-    min-width: 320px;
-}
-
-.dropdown-3-col {
-    min-width: 480px;
-}
-
-.list-unstyled {
-    z-index: 1001;
-}
-
-.dropdown-header {
-    padding-top: 10px;
-    padding-left: 5px;
-}
-
-.list-unstyled > li > a {
-    padding-left: 5px !important;
-}
-
-.dropdown-menu > li a {
-  display: block;
-  padding: 3px 20px;
-  clear: both;
-  font-weight: normal;
-  line-height: 1.42857143;
-  color: #333333;
-  white-space: nowrap;
-}
-.dropdown-menu > li a:hover,
-.dropdown-menu > li a:focus {
-  text-decoration: none;
-  color: #262626;
-  background-color: #f5f5f5;
-}
-.dropdown-menu .active > a,
-.dropdown-menu .active > a:hover,
-.dropdown-menu .active > a:focus {
-  color: #ffffff;
-  text-decoration: none;
-  outline: 0;
-  background-color: #428bca;
-}
-
-#states:before {
-    content: "State:";
-    padding-right: 8px;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Main                                                                      */
-
-#main {
-    padding-top: 10px;
-    z-index: -1 !important;
-}
-
-
-@media (min-width: 1000px) {
-    #main .row > div:after {
-        content: "";
-        background: #eee;
-        position: absolute;
-        bottom: 20%;
-        right: 0;
-        height: 60%;
-        width: 1px;
-    }
-
-    #main .row > div:last-child:after {
-        content: none;
-    }
-}
-
-#main h1 {
-    margin-top: 0;
-    padding-top: 20px;
-}
-
-.row-divider {
-    margin: 30px 10%;
-    width: 80%;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Calendar                                                                  */
-
-a#calendar {
-    cursor: pointer;
-    color: white;
-    padding-left: 0px !important;
-    padding-right: 6px !important;
-    margin-left: 8px !important;
-    margin-right: 2px !important;
-}
-
-a#calendar:active,
-a#calendar:hover {
-    background-color: inherit;
-}
-
-a.step-forward, a.step-back {
-    cursor: pointer;
-    color: #ccc;
-    padding-left: 2px !important;
-    padding-right: 2px !important;
-    margin-left: 2px !important;
-    margin-right: 2px !important;
-}
-
-a.step-forward:hover,
-a.step-back:hover {
-    color: white;
-}
-
-a.view-this {
-    cursor: pointer;
-}
-
-a.view-this:hover {
-    background-color: #fdf59a;
-}
-
-.datepicker .disabled:hover {
-    background-color: white !important;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Accordion                                                                 */
-
-#accordion {
-    padding-top: 10px;
-}
-
-.panel-default {
-    margin-top: 10px;
-}
-
-.panel-default > a {
-    text-decoration: none;
-    padding-top: 10px;
-}
-
-.panel-default .panel-heading {
-    color: #333333;
-    background-color: #f5f5f5;
-    border-bottom: 1px solid;
-    border-color: #dddddd;
-}
-
-.panel-body {
-    padding-bottom: 5px;
-}
-
-/* ------------------------------------------------------------------------- */
-/* Footer                                                                    */
-
-footer {
-    position: relative;
-    margin-top: -121px;
-    height: 120px;
-    clear: both;
-    // margin-top = height + padding-top + padding-bottom
-    padding-top: 20px;
-    border-top: 1px solid;
-    background-color: #f8f8f8;
-    border-color: #e7e7e7;
-    color: #aaa;
-    font-size: small;
-}
-
-footer a {
-    color: #aaa;
-}
-
-footer a:hover {
-    text-decoration: underline;
-}
-
-footer > div {
-    margin-top: 20px;
-    margin-bottom: 20px;
-}
-
-footer p,
-footer a {
-    padding: 2px 0px;
-    margin: 0;
-    display: block;
-}
-
 /* ------------------------------------------------------------------------- */
 /* Table                                                                     */
 
 table tr.tdiv {
-    border-top: 1px solid #ccc;
+  border-top: 1px solid #ccc;
 }
 
 table.data th {
-    border-bottom: 1px solid #333;
+  border-bottom: 1px solid #333;
 }
 
 table.data th,
 table.data td {
-    padding-left: 20px;
-    text-align: left;
+  padding-left: 20px;
+  text-align: left;
 }
 
 table.data th:first-child,
 table.data td:first-child {
-    padding-left: 0px;
+  padding-left: 0px;
 }
 
 table.watchdog {
-    width: 100%;
+  width: 100%;
 }
 
 table.wdtrips tr {
-    border-bottom: 1px solid #ddd;
-    vertical-align: top;
+  border-bottom: 1px solid #ddd;
+  vertical-align: top;
 }
 
 table.watchdog tr.header {
-    border-top: 1px solid #333;
-    border-bottom: 1px solid #333;
+  border-top: 1px solid #333;
+  border-bottom: 1px solid #333;
 }
 
 table.watchdog tr.IOP > th,
 table.watchdog tr.IOP > td {
-    color: #ddd;
+  color: #ddd;
 }
 
 table.watchdog th {
-    border-bottom: 0;
+  border-bottom: 0;
 }
 
 /* ------------------------------------------------------------------------- */
 /* Image                                                                     */
 
-img {
-    width: 100%;
+#idq > h1:first-of-type,
+#idq > hr:first-of-type,
+#idq > p:first-of-type {
+  display: none;
 }
 
 /* ------------------------------------------------------------------------- */
-/* Buttons                                                                   */
+/* Links                                                                     */
+
+a.reference {
+  display: inline;
+}
+
+/* ------------------------------------------------------------------------- */
+/* DetChar                                                                   */
+
+#idq img,
+#upv img {
+  width: auto;
+}
+
+#upv font {
+  color: black;
+}
+
+.fancybox-iframe {
+  width: 1800px;
+  height: 1000px;
+  zoom: 1.00;
+  -moz-transform: scale(0.55);
+  -moz-transform-origin: 0 0;
+  -o-transform: scale(0.55);
+  -o-transform-origin: 0 0;
+  -webkit-transform: scale(0.55);
+  -webkit-transform-origin: 0 0;
+}
+
+.fancybox-nav {
+  height: 10%;
+  width: 5%;
+}
+

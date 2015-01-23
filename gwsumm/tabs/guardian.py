@@ -231,14 +231,14 @@ class GuardianTab(Tab):
         page.div(class_='panel-group', id='accordion')
         for i, bit in enumerate(self.grdstates):
             name = self.grdstates[bit]
-            page.div(class_='panel panel-default', id=str(bit))
+            page.div(class_='panel well panel-primary', id=str(bit))
             # heading
+            page.div(class_='panel-heading')
             page.a(href='#collapse%d' % bit,
                    **{'data-toggle': 'collapse', 'data-parent': '#accordion'})
-            page.div(class_='panel-heading')
             page.h4(name, class_='panel-title')
-            page.div.close()
             page.a.close()
+            page.div.close()
 
             # body
             page.div(id='collapse%d' % bit, class_='panel-collapse collapse')

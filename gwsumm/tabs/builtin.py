@@ -126,12 +126,10 @@ class ExternalTab(Tab):
                 'success', re_quote.sub('', cp.get(section, 'success')))
         return super(ExternalTab, cls).from_ini(cp, section, url, *args, **kwargs)
 
-    def build_html_content(self, content, divclass='container', divid='main'):
-        page = html.markup.page()
-        page.div(content, class_=divclass, id_=divid)
-        page.add(str(html.load(self.url, id_=divid, error=self.error,
-                               success=self.success)))
-        return page
+    def build_html_content(self, content):
+        wrappedcontent = html.load(self.url, id_='content', error=self.error,
+                                   success=self.success)
+        return super(ExternalTab, self).build_html_content(wrappedcontent)
 
     def write_html(self, **kwargs):
         """Write the HTML page for this tab.
@@ -366,6 +364,7 @@ class PlotTab(Tab):
             formatted markup with grid of plots
         """
         page = html.markup.page()
+        page.div(class_='scaffold well')
 
         if plots is None:
             if state:
@@ -426,11 +425,12 @@ class PlotTab(Tab):
             # or move to next column
             else:
                 i += 1
+
+        page.div.close()
         return page
 
-    def build_html_content(self, content, divclass='container', divid='main'):
+    def build_html_content(self, content):
         page = html.markup.page()
-        page.div(class_=divclass, id_=divid)
         if self.foreword:
             page.add(str(self.foreword))
         if content:
@@ -438,8 +438,7 @@ class PlotTab(Tab):
         page.add(str(self.scaffold_plots()))
         if self.afterword:
             page.add(str(self.afterword))
-        page.div.close()
-        return page
+        return Tab.build_html_content(str(page))
 
     def write_html(self, foreword=None, afterword=None, **kwargs):
         """Write the HTML page for this tab.
@@ -630,38 +629,39 @@ class StateTab(PlotTab):
         page : `~gwsumm.html.markup.page`
             a markup page containing the navigation bar.
         """
+        # ---- construct brand
+        brand_ = html.markup.page()
+
+        # build state switch
+        if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
+            brand_.add(str(html.state_switcher(
+                zip(self.states, self.frames), 0)))
         # build interferometer cross-links
         if ifo is not None:
-            brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
+            brand_.add(str(html.base_map_dropdown(ifo, id_='ifos', **ifomap)))
+            class_ = 'navbar navbar-fixed-top navbar-ifo'
         else:
-            brand_ = html.markup.page()
+            class_ = 'navbar navbar-fixed-top'
         # build HTML brand
         if isinstance(brand, html.markup.page):
             brand_.add(str(brand))
         elif brand:
             brand_.div(str(brand), class_='navbar-brand')
-        # build state switch
-        if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
-            statebtn = html.state_switcher(zip(self.states, self.frames), 0)
-        else:
-            statebtn = False
 
         # combine and return
         return html.navbar(self._build_nav_links(tabs), brand=brand_,
-                           states=statebtn,
+                           class_=class_,
                            dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
 
     @staticmethod
-    def build_html_content(frame, divclass='container', divid='main'):
+    def build_html_content(frame):
         """Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
         """
-        page = html.markup.page()
-        page.div('', class_=divclass, id_=divid)
-        page.add(str(html.load(frame, id_=divid)))
-        return page
+        wrappedcontent = html.load(frame, id_='content')
+        return Tab.build_html_content(str(wrappedcontent))
 
     def write_state_html(self, state, pre=None, post=None, plots=True):
         """Write the frame HTML for the specific state of this tab

@@ -41,35 +41,57 @@ JS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}
 
+# -----------------------------------------------------------------------------
+# global HTML constructs
 
-def banner(title, subtitle=None):
+NAVBAR_TOGGLE = """<button class="navbar-toggle" data-toggle="collapse" type="button" data-target=".navbar-collapse">
+  <span class="icon-bar"></span>
+  <span class="icon-bar"></span>
+  <span class="icon-bar"></span>
+</button>"""
+
+
+# -----------------------------------------------------------------------------
+# variable HTML constructs
+
+def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     """Construct a banner heading in bootstrap format
 
     Parameters
     ----------
-    title
+    title : `str`
+        name of page (<h1>)
+    subtitle : `str`, optional
+        description of page (<p>)
+    titleclass : `str`, optional
+        class option for <h1>
+    subtitleclass : `str`, optional
+        class option for <p>
+
+    Returns
+    -------
+    banner : `~gwsumm.html.markup.page`
+        markup.py `page` instance
     """
     page = markup.page()
-    page.div(class_='container', id='header')
-    page.div(class_='row')
-    page.div(class_='col-sm-12')
-    # title
-    if subtitle is not None:
-        page.h1('%s : ' % title, class_="inline-block")
+    page.div(class_='banner')
+    page.div(class_='container')
+    if titleclass is None:
+        page.h1(str(title))
     else:
-        page.h1('%s' % title)
-    # subtitle
-    if subtitle is not None:
-        page.h1(subtitle, class_="normal inline-block")
-    page.div.close()
+        page.h1(str(title), class_=titleclass)
+    if subtitle is not None and subtitleclass is not None:
+        page.p(subtitle, class_=subtitleclass)
+    elif subtitle is not None:
+        page.p(subtitle)
     page.div.close()
     page.div.close()
 
     return page
 
 
-def navbar(links, brand=None, states=None, dropdown_class=[''],
-           yamm=True):
+def navbar(links, class_='navbar navbar-fixed-top navbar-ifo',
+           brand=None, dropdown_class=[''], collapse=True):
     """Construct a navigation bar in bootstrap format.
 
     Parameters
@@ -85,32 +107,32 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
     page : :class:`~gwsumm.html.markup.page`
         stand-alone navbar HTML `page`
     """
+    # set up page
     page = markup.page()
-    page.div(id_='nav-wrapper')
-    if yamm:
-        page.nav(id_='nav', class_='navbar yamm', role='navigation')
-    else:
-        page.nav(id_='nav', class_='navbar', role='navigation')
-    page.div(class_='container')
-    page.div(class_='row')
-    page.div(class_='col-md-12')
-    if states:
-        page.add(str(states))
+    markup.element('header', parent=page)(class_=class_, role='banner')
+    page.div(class_="container")
 
-    # add header
-    page.div(class_='navbar-header')
+    # ---- non-collapable part (<div class="navbar-header">) ----
+
+    page.div(class_="navbar-header")
+
+    # add collapsed menu toggle
+    if collapse:
+        page.add(NAVBAR_TOGGLE)
+
+    # add branding
     if isinstance(brand, markup.page):
         page.add(str(brand))
-    elif brand:
+    elif brand is not None:
         page.div(str(brand), class_='navbar-brand')
-    page.button(type='button', class_='navbar-toggle',
-                **{'data-toggle': 'collapse',
-                   'data-target': '.navbar-collapse'})
-    page.span('', class_='icon-bar')
-    page.span('', class_='icon-bar')
-    page.span('', class_='icon-bar')
-    page.button.close()
+
     page.div.close()
+    if collapse:
+        page.nav(class_="collapse navbar-collapse", role="navigation")
+    else:
+        page.nav(role="navigation")
+
+    # ---- collapsable part (<nav>) ----
 
     # build dropdown menus
     #    - this model allows for multiple copies of the menus to be written
@@ -118,7 +140,6 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
     if isinstance(dropdown_class, (str, unicode)):
         dropdown_class = [dropdown_class]
     if links:
-        page.div(class_='navbar-collapse collapse pull-left')
         for ddclass in dropdown_class:
             page.ul(class_='nav navbar-nav %s' % ddclass)
             for i, link in enumerate(links):
@@ -136,15 +157,10 @@ def navbar(links, brand=None, states=None, dropdown_class=[''],
                     page.add(str(link))
                 page.li.close()
             page.ul.close()
-        page.div.close()
 
-    # close
-    page.div.close()
-    page.div.close()
-    page.div.close()
     page.nav.close()
     page.div.close()
-
+    markup.element('header', parent=page).close()
     return page
 
 
@@ -356,8 +372,8 @@ def state_switcher(states, default=0):
     """
     current, chref = states[default]
     page = markup.page()
-    page.div(class_="btn-group pull-right")
-    page.a(class_='navbar-brand btn dropdown-toggle', href='#', id_='states',
+    page.div(class_="btn-group pull-right state-switch")
+    page.a(class_='navbar-brand dropdown-toggle', href='#', id_='states',
            title="Show/hide state menu", **{'data-toggle': 'dropdown'})
     page.add(str(current))
     page.b('', class_='caret')
@@ -442,7 +458,8 @@ def about_this_page(cmdline=True, config=None):
     return page
 
 
-def base_map_dropdown(this, id_=None, **bases):
+def base_map_dropdown(this,class_='btn-group pull-left base-map', id_=None,
+                      **bases):
     """Construct a dropdown menu that links to a version of the current
     page on another server, based on a new base.
     """
@@ -452,16 +469,15 @@ def base_map_dropdown(this, id_=None, **bases):
     else:
         id_ = dict()
     # format links
-    baselinks = [markup.oneliner.a(key, class_='ifo-switch',
-                                   **{'data-new-base': val}) for
+    baselinks = [markup.oneliner.a(key, **{'data-new-base': val}) for
                  (key, val) in bases.iteritems()]
     # slam it all together
     page = markup.page()
+    page.div(class_=class_, **id_)
     if baselinks:
-        page.div(class_='btn-group pull-left', **id_)
         page.add(str(dropdown(this, baselinks,
                               class_='navbar-brand dropdown-toggle')))
         page.div.close()
     else:
-        page.div(this, class_='navbar-brand', **id_)
+        page.add(str(this))
     return page

@@ -106,4 +106,5 @@ def comments_box(name, identifier=None, title=None, url=None):
     page.noscript("Please enable JavaScript to view the")
     page.a("comments powered by Disqus",
            href="https://disqus.com/?ref_noscript")
+    page.div.close()
     return page

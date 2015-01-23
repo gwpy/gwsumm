@@ -52,7 +52,7 @@ FANCYBOXJS = ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
               'jquery.fancybox.pack.js']
 
 GWSUMMCSS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
-                     ['datepicker.css', 'gwsummary.css']))
+                     ['datepicker.css', 'ligo-boostrap.css', 'gwsummary.css']))
 GWSUMMJS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
                     ['datepicker.js', 'gwsummary.js']))
 

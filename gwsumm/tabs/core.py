@@ -532,11 +532,7 @@ class Tab(object):
         """
         # work title as Parent Name/Tab Name
         if title is None and subtitle is None:
-            title = self.title
-            try:
-                title, subtitle = title.rsplit('/', 1)
-            except ValueError:
-                subtitle = None
+            title = self.title.replace('/', ' : ', 1)
         return html.banner(title, subtitle=subtitle)
 
     def build_html_navbar(self, brand=None, tabs=list(),
@@ -564,15 +560,18 @@ class Tab(object):
         # build interferometer cross-links
         if ifo is not None:
             brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
+            class_ = 'navbar navbar-%s' % ifo.lower()
         else:
             brand_ = html.markup.page()
+            class_ = 'navbar'
         # build HTML brand
         if isinstance(brand, html.markup.page):
             brand_.add(str(brand))
         else:
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
-        return html.navbar(self._build_nav_links(tabs), brand=brand_,
+        return html.navbar(self._build_nav_links(tabs), class_=class_,
+                           brand=brand_,
                            dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
 
     def _build_nav_links(self, tabs):
@@ -648,7 +647,7 @@ class Tab(object):
         return navlinks
 
     @staticmethod
-    def build_html_content(content, divclass='container', divid='main'):
+    def build_html_content(content):
         """Build the #main div for this tab.
 
         Parameters
@@ -662,7 +661,11 @@ class Tab(object):
             A new `page` with the input content wrapped as
         """
         page = html.markup.page()
-        page.div(str(content), class_=divclass, id_=divid)
+        page.div(id_='main')
+        page.div(class_='container')
+        page.div(str(content), id_='content')
+        page.div.close()
+        page.div.close()
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None,
@@ -706,15 +709,18 @@ class Tab(object):
         outdir = os.path.split(self.index)[0]
         if outdir and not os.path.isdir(outdir):
             os.makedirs(outdir)
+
         # initialise HTML page
         self.initialise_html_page(title=title, subtitle=subtitle, css=css,
                                   js=js)
-        # add banner
-        self.page.add(str(self.build_html_banner(title=title,
-                                                 subtitle=subtitle)))
+
         # add navigation
         self.page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
                                                  tabs=tabs, brand=brand)))
+        # add banner
+        self.page.add(str(self.build_html_banner(title=title,
+                                                 subtitle=subtitle)))
+
         # add #main content
         self.page.add(str(self.build_html_content(maincontent)))
         # close page and write
@@ -864,5 +870,5 @@ class SummaryArchiveMixin(object):
         elif brand:
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
-        return super(SummaryArchiveMixin, self).build_html_navbar(brand=brand_,
-                                                                  **kwargs)
+        return super(SummaryArchiveMixin, self).build_html_navbar(
+            brand=brand_, **kwargs)

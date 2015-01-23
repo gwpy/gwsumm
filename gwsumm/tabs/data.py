@@ -58,6 +58,7 @@ from .registry import (get_tab, register_tab)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+Tab = get_tab('basic')
 BaseTab = get_tab('archived-state')
 
 
@@ -560,15 +561,13 @@ class DataTab(DataTabBase):
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def build_html_content(self, frame, divclass='container', divid='main'):
+    def build_html_content(self, frame):
         """Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
         """
         page = html.markup.page()
-        page.div(class_=divclass, id_=divid)
-        page.div('', id_='content')
         page.add(str(html.load(frame, id_='content')))
         if globalv.HTML_COMMENTS_NAME:
             page.hr(class_='row-divider')
@@ -576,8 +575,7 @@ class DataTab(DataTabBase):
             page.add(str(html.comments_box(
                 globalv.HTML_COMMENTS_NAME,
                 identifier='/%s/%s' % (getpass.getuser(), self.path))))
-        page.div.close()
-        return page
+        return Tab.build_html_content(page)
 
 
     def write_html(self, *args, **kwargs):
@@ -723,13 +721,13 @@ class DataTab(DataTabBase):
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):
                 flag = get_segments(flag, state.active, query=False).copy()
-                page.div(class_='panel panel-default')
+                page.div(class_='panel well panel-primary')
+                page.div(class_='panel-heading')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
                                               'data-parent': '#accordion'})
-                page.div(class_='panel-heading')
                 page.h4(flag.name, class_='panel-title')
-                page.div.close()
                 page.a.close()
+                page.div.close()
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')
                 page.div(class_='panel-body')
                 # write segment summary

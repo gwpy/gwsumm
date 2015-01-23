@@ -447,11 +447,16 @@ class DataTab(DataTabBase):
             vprint("    All time-series data loaded\n")
 
         # find channels that need a StateVector
-        svchannels = self.get_channels('statevector', all_data=all_data,
-                                       read=True)
+        svchannels = set(self.get_channels('statevector', all_data=all_data,
+                                           read=True))
+        odcchannels = self.get_channels('odc', all_data=all_data, read=True)
+        for odc in odcchannels:
+            bitmask = get_channel(str(odc).replace('OUT_DQ', 'BITMASK'))
+            svchannels.update([odc, bitmask])
+        svchannels = list(svchannels)
         if len(svchannels):
             vprint("    %d channels identified as StateVectors\n"
-                   % len(svchannels))
+                   % (len(svchannels) - len(odcchannels)))
             get_timeseries_dict(svchannels, state, config=config, nds=nds,
                                 multiprocess=multiprocess, statevector=True,
                                 cache=datacache, return_=False, dtype='uint32')
@@ -648,7 +653,7 @@ class DataTab(DataTabBase):
         page.div(class_='row')
         page.div(class_='col-md-12')
         channels = self.get_channels('timeseries', 'statevector', 'spectrum',
-                                     'spectrogram', new=False)
+                                     'spectrogram', 'odc', new=False)
         if len(channels):
             page.h1('Channel information')
             page.add("The following channels were used to generate the above "

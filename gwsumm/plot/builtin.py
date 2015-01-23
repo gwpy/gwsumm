@@ -1576,3 +1576,134 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
                 'reference_linestyle': '--'}
 
 register_plot(RayleighSpectrumDataPlot)
+
+
+class ODCDataPlot(StateVectorDataPlot):
+    """Custom `StateVectorDataPlot` for ODCs with bitmasks
+    """
+    type = 'odc'
+    data = 'odc'
+    defaults = StateVectorDataPlot.defaults.copy()
+    defaults.update({
+        'maskcolor': (.0, .4, 1.),
+        'legend_loc': 'upper left',
+        'legend_bbox_to_anchor': (1.01, 1),
+        'legend_borderaxespad': 0.,
+        'legend_fontsize': 12,
+    })
+
+    def process(self):
+        # make font size smaller
+        _labelsize = rcParams['ytick.labelsize']
+        rcParams['ytick.labelsize'] = 12
+
+        # make figure
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
+
+        # extract plotting arguments
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        activecolor, validcolor = self.get_segment_color()
+        edgecolor = self.pargs.pop('edgecolor')
+        maskcolor = self.pargs.pop('maskcolor')
+        plotargs = {'facecolor': activecolor,
+                    'edgecolor': edgecolor,
+                    'height': .7,
+                    'valid': {'facecolor': validcolor, 'height': .7}}
+        legendargs = self.parse_legend_kwargs()
+
+        # plot segments
+        nflags = 0
+        for channel in self.channels:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            # read ODC and bitmask vector
+            bitmaskchan = get_channel(str(channel).replace('OUT_DQ', 'BITMASK'))
+            data = get_timeseries(str(channel), valid, query=False,
+                                  statevector=True)
+            bitmask = get_timeseries(bitmaskchan, valid, query=False,
+                                     statevector=True)
+            # plot bitmask
+            flags = {}
+            # plot bits
+            for type_, svlist in zip(['bitmask', 'data'], [bitmask, data]):
+                flags[type_] = None
+                for stateseries in svlist:
+                    if not stateseries.size:
+                        stateseries.epoch = self.start
+                        stateseries.dx = 0
+                        if channel.sample_rate is not None:
+                            stateseries.sample_rate = channel.sample_rate
+                    stateseries.bits = channel.bits
+                    if not 'int' in str(stateseries.dtype):
+                        stateseries = stateseries.astype('uint32')
+                    newflags = stateseries.to_dqflags().values()
+                    if flags[type_] is None:
+                        flags[type_] = newflags
+                    else:
+                        for i, flag in enumerate(newflags):
+                            flags[type_][i] += flag
+            n = len([m for m in channel.bits if m is not None])
+            for i in range(n):
+                try:
+                    mask = flags['bitmask'][i].active
+                except TypeError:
+                    continue
+                segs = flags['data'][i]
+                if segs.name == channel.bits[0]:
+                    ax.plot(segs.known, y=-nflags-i, facecolor=(1., .7, 0.),
+                            edgecolor='none', height=1., label=None,
+                            collection=False, zorder=-1001)
+                else:
+                    ax.plot(mask, y=-nflags-i, facecolor=maskcolor,
+                            edgecolor='none', height=1., label=None,
+                            collection=False, zorder=-1001)
+                ax.plot(segs, y=-nflags-i, label=segs.name, **plotargs)
+            nflags += n
+
+        # make custom legend
+        v = plotargs.pop('valid', None)
+        epoch = ax.get_epoch()
+        xlim = ax.get_xlim()
+        seg = SegmentList([Segment(self.start - 10, self.start - 9)])
+        m = ax.plot(seg, y=0, facecolor=maskcolor, edgecolor='none',
+                    collection=False)[0][0]
+        s = ax.plot(seg, y=0, facecolor=(1., .7, 0.), edgecolor='none',
+                    collection=False)[0][0]
+        v['collection'] = False
+        v = ax.plot(seg, y=0, **v)[0][0]
+        a = ax.plot(seg, y=0, facecolor=activecolor, edgecolor=edgecolor,
+                    collection=False)[0][0]
+        if edgecolor not in [None, 'none']:
+            t = ax.plot(seg, y=0, facecolor=edgecolor, collection=False)[0][0]
+            ax.legend([s, m, v, a, t],
+                      ['Summary', 'In bitmask', 'Known', 'Active', 'Transition'],
+                      **legendargs)
+        else:
+            ax.legend([s, m, v, a],
+                      ['Summary', 'In bitmask', 'Known', 'Active'],
+                      **legendargs)
+        ax.set_epoch(epoch)
+        ax.set_xlim(*xlim)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if 'ylim' not in self.pargs:
+            ax.set_ylim(-nflags+0.5, 0.5)
+
+        # add bit mask axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
+        out = self.finalize()
+        rcParams['ytick.labelsize'] = _labelsize
+        return out
+
+register_plot(ODCDataPlot)

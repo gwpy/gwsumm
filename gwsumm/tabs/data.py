@@ -568,15 +568,18 @@ class DataTab(DataTabBase):
         javascript hook to load the given frame into the div when ready.
         """
         page = html.markup.page()
-        page.add(str(html.load(frame, id_='content')))
+        page.div(id_='main')
+        page.div(class_='container')
+        page.div(str(html.load(frame, id_='content')))
         if globalv.HTML_COMMENTS_NAME:
             page.hr(class_='row-divider')
             page.h1('Comments')
             page.add(str(html.comments_box(
                 globalv.HTML_COMMENTS_NAME,
                 identifier='/%s/%s' % (getpass.getuser(), self.path))))
-        return Tab.build_html_content(page)
-
+        page.div.close()
+        page.div.close()
+        return page
 
     def write_html(self, *args, **kwargs):
         writedata = kwargs.pop('writedata', True)

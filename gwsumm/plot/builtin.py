@@ -1679,11 +1679,11 @@ class ODCDataPlot(StateVectorDataPlot):
         if edgecolor not in [None, 'none']:
             t = ax.plot(seg, y=0, facecolor=edgecolor, collection=False)[0][0]
             ax.legend([s, m, v, a, t],
-                      ['Summary', 'In bitmask', 'Known', 'Active', 'Transition'],
-                      **legendargs)
+                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON',
+                       'Transition'], **legendargs)
         else:
             ax.legend([s, m, v, a],
-                      ['Summary', 'In bitmask', 'Known', 'Active'],
+                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON'],
                       **legendargs)
         ax.set_epoch(epoch)
         ax.set_xlim(*xlim)

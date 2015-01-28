@@ -573,11 +573,14 @@ class DataTab(DataTabBase):
         page.div('', id_='content')
         page.add(str(html.load(frame, id_='content')))
         if globalv.HTML_COMMENTS_NAME:
+            if globalv.IFO:
+                id_ = '/%s/%s/%s' % (getpass.getuser(), globalv.IFO, self.path)
+            else:
+                id_ = '/%s/%s' % (getpass.getuser(), self.path)
             page.hr(class_='row-divider')
             page.h1('Comments')
             page.add(str(html.comments_box(
-                globalv.HTML_COMMENTS_NAME,
-                identifier='/%s/%s' % (getpass.getuser(), self.path))))
+                globalv.HTML_COMMENTS_NAME, identifier=id_)))
         page.div.close()
         page.div.close()
         return page

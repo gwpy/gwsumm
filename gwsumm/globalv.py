@@ -45,4 +45,5 @@ WRITTEN_PLOTS = []
 NOW = tconvert('now').seconds
 
 # comments
+IFO = None
 HTML_COMMENTS_NAME = None

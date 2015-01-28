@@ -367,6 +367,8 @@ try:
     ifo = config.get(DEFAULTSECT, 'ifo')
 except NoOptionError:
     ifo = None
+finally:
+    globalv.IFO = ifo
 
 # interpolate section names
 for section in config.sections():

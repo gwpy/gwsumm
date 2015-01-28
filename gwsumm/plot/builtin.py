@@ -1608,8 +1608,7 @@ class ODCDataPlot(StateVectorDataPlot):
         maskcolor = self.pargs.pop('maskcolor')
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
-                    'height': .7,
-                    'valid': {'facecolor': validcolor, 'height': .7}}
+                    'valid': {'facecolor': validcolor}}
         legendargs = self.parse_legend_kwargs()
 
         # plot segments
@@ -1645,22 +1644,19 @@ class ODCDataPlot(StateVectorDataPlot):
                     else:
                         for i, flag in enumerate(newflags):
                             flags[type_][i] += flag
-            n = len([m for m in channel.bits if m is not (None or '')])
+            n = len([m for m in channel.bits if m is not None and m is not ''])
             for i in range(n):
                 try:
                     mask = flags['bitmask'][i].active
                 except TypeError:
                     continue
                 segs = flags['data'][i]
-                if segs.name == channel.bits[0]:
-                    ax.plot(segs.known, y=-nflags-i, facecolor=(1., .7, 0.),
-                            edgecolor='none', height=1., label=None,
-                            collection=False, zorder=-1001)
-                else:
-                    ax.plot(mask, y=-nflags-i, facecolor=maskcolor,
-                            edgecolor='none', height=1., label=None,
-                            collection=False, zorder=-1001)
+                # plot segments
                 ax.plot(segs, y=-nflags-i, label=segs.name, **plotargs)
+                # add hatch for bitmask
+                ax.plot(valid - mask, y=-nflags-i, hatch='x',
+                        height=.8, label=None, facecolor='none',
+                        collection=False)
             nflags += n
 
         # make custom legend
@@ -1668,8 +1664,7 @@ class ODCDataPlot(StateVectorDataPlot):
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-        m = ax.plot(seg, y=0, facecolor=maskcolor, edgecolor='none',
-                    collection=False)[0][0]
+        m = ax.plot(seg, y=0, facecolor='none', hatch='x', collection=False)[0][0]
         s = ax.plot(seg, y=0, facecolor=(1., .7, 0.), edgecolor='none',
                     collection=False)[0][0]
         v['collection'] = False
@@ -1679,11 +1674,11 @@ class ODCDataPlot(StateVectorDataPlot):
         if edgecolor not in [None, 'none']:
             t = ax.plot(seg, y=0, facecolor=edgecolor, collection=False)[0][0]
             ax.legend([s, m, v, a, t],
-                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON',
+                      ['Summary', 'Not in bitmask', 'Bit OFF', 'Bit ON',
                        'Transition'], **legendargs)
         else:
             ax.legend([s, m, v, a],
-                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON'],
+                      ['Summary', 'Not in bitmask', 'Bit OFF', 'Bit ON'],
                       **legendargs)
         ax.set_epoch(epoch)
         ax.set_xlim(*xlim)

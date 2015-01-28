@@ -418,6 +418,8 @@ register_tab(SEIWatchDogTab)
 class SeiWatchDogPlot(get_plot('data')):
     """Plot a specific SEI WatchDog trip
     """
+    name = 'watchdog'
+    data = 'watchdog'
 
     def __init__(self, gpstime, chamber, sensor, config, outfile, ifo=None,
                  duration=30, nds=False, multiprocess=False, datacache=None):

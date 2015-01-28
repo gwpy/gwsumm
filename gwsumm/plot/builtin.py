@@ -1645,7 +1645,7 @@ class ODCDataPlot(StateVectorDataPlot):
                     else:
                         for i, flag in enumerate(newflags):
                             flags[type_][i] += flag
-            n = len([m for m in channel.bits if m is not None])
+            n = len([m for m in channel.bits if m is not (None or '')])
             for i in range(n):
                 try:
                     mask = flags['bitmask'][i].active

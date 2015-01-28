@@ -82,7 +82,10 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                     # loop over time-series
                     for spec in speclist:
                         name = '%s,%s' % (spec.name, spec.epoch.gps)
-                        spec.write(group, name=name, format='hdf')
+                        try:
+                            spec.write(group, name=name, format='hdf')
+                        except ValueError:
+                            continue
 
             # record all segment data
             if segments:

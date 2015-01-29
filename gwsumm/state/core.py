@@ -21,6 +21,7 @@
 
 import datetime
 import re
+import operator
 
 from astropy.time import Time
 
@@ -32,6 +33,17 @@ from .. import globalv
 from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..utils import re_cchar
 from ..segments import get_segments
+from ..data import get_timeseries
+
+MATHOPS = {
+    '<': operator.lt,
+    '<=': operator.le,
+    '=': operator.eq,
+    '>=': operator.ge,
+    '>': operator.gt,
+    '==': operator.is_,
+    '!=': operator.is_not,
+}
 
 
 class SummaryState(DataQualityFlag):
@@ -230,19 +242,44 @@ class SummaryState(DataQualityFlag):
         else:
             return cls(name, known=[(start, end)], hours=hours, **params)
 
-    def fetch(self, config=GWSummConfigParser(), **kwargs):
+    def _fetch_segments(self, config=GWSummConfigParser(), **kwargs):
+        segs = get_segments(self.definition, self.known, config=config,
+                            **kwargs)
+        self.known = segs.known
+        self.active = segs.active
+        return self
+
+    def _fetch_data(self, channel, thresh, op, config=GWSummConfigParser(),
+                    **kwargs):
+        data = get_timeseries(channel, self.known, config=config, **kwargs)
+        for ts in data:
+            segs = MATHOPS[op](ts, thresh).to_dqflag()
+            try:
+                globalv.SEGMENTS[self.definition] += segs
+            except KeyError:
+                globalv.SEGMENTS[self.definition] = segs
+        return self._fetch_segments()
+
+    def fetch(self, config=GWSummConfigParser(), segdb_error='raise', **kwargs):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
         """
         # check we haven't done this before
         if self.ready:
             return self
-        # otherwise find out which flags we need
-        if self.definition:
-            segs = get_segments(self.definition, self.known, config=config,
-                                **kwargs)
-            self.known = segs.known
-            self.active = segs.active
+        # fetch data
+        match = re.search('(%s)' % '|'.join(MATHOPS.keys()), self.definition)
+        if match:
+            channel, thresh = self.definition.split(match.groups()[0])
+            channel = channel.rstrip()
+            thresh = float(thresh.strip())
+            self._fetch_data(channel, thresh, match.groups()[0], config=config,
+                             **kwargs)
+        # fetch segments
+        elif self.definition:
+            self._fetch_segments(config=config, segdb_error=segdb_error,
+                                 **kwargs)
+        # fetch null
         else:
             start = config.getfloat(DEFAULTSECT, 'gps-start-time')
             end = config.getfloat(DEFAULTSECT, 'gps-end-time')

@@ -326,23 +326,23 @@ class DataTab(DataTabBase):
         # finalize all-state
         get_state(ALLSTATE).fetch(config=config)
         # shortcut segment query for each state
-        alldefs = {}
-        for state in self.states:
-            if state.name == ALLSTATE or state.ready or not state.definition:
-                continue
-            try:
-                alldefs[state.url].append(state)
-            except KeyError:
-                alldefs[state.url] = [state]
-        for url,states_ in alldefs.iteritems():
-            allvalid = reduce(operator.or_,
-                              [state.known for state in states_])
-            defs = [s.definition for s in states_]
-            get_segments(defs, allvalid, config=config, url=url,
-                         segdb_error=segdb_error, return_=False, **kwargs)
+        #alldefs = {}
+        #for state in self.states:
+        #    if state.name == ALLSTATE or state.ready or not state.definition:
+        #        continue
+        #    try:
+        #        alldefs[state.url].append(state)
+        #    except KeyError:
+        #        alldefs[state.url] = [state]
+        #for url,states_ in alldefs.iteritems():
+        #    allvalid = reduce(operator.or_,
+        #                      [state.known for state in states_])
+        #    defs = [s.definition for s in states_]
+        #    get_segments(defs, allvalid, config=config, url=url#,
+        #                 segdb_error=segdb_error, return_=False, **kwargs)
         # individually double-check, set ready condition
         for state in self.states:
-            state.fetch(config=config, query=False)
+            state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
     def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
         """Process data for this `StateTab`.

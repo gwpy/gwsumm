@@ -257,11 +257,9 @@ class SEIWatchDogTab(base):
                 count[key] = 1
 
         page = html.markup.page()
-        page.div(class_='row')
-        page.div(class_='col-md-12')
 
         # build summary table
-        page.h1('Summary of watch-dog trips')
+        page.div(class_='well')
         page.table(class_='watchdog data')
         # add headers
         page.tr(class_='header')
@@ -308,6 +306,7 @@ class SEIWatchDogTab(base):
             page.th(t)
         page.tr.close()
         page.table.close()
+        page.div.close()
 
         # build trip groups
         self.trips.sort(key=lambda (x, y, z, p):
@@ -330,6 +329,8 @@ class SEIWatchDogTab(base):
 
         # build trip table
         page.h1('Trip list')
+        page.div(class_='well')
+
         page.p('In the following table, individual watchdog trips are '
                'considered \'associated\' if they fall within %s seconds '
                'of each other.' % self.window)
@@ -380,10 +381,6 @@ class SEIWatchDogTab(base):
         for idx in wdp[::-1]:
             self.plots.pop(idx)
 
-        # close tabs
-        page.div.close()
-        page.div.close()
-
         # write trips to data file
         tripfile = os.path.join(self.path, 'trips.dat')
         with open(tripfile, 'w') as f:
@@ -399,12 +396,13 @@ class SEIWatchDogTab(base):
                     stage = 'ISI2'
                 cause = cause.replace(' ', '_')
                 print(t, chamber, stage, cause, file=f)
-
         page.p()
         page.add('The list of trips can be downloaded ')
         page.a('here.', href=tripfile, alt=os.path.basename(tripfile),
                title='Trip data')
         page.p.close()
+
+        page.div.close()
 
         # write to file
         idx = self.states.index(state)

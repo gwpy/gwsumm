@@ -133,6 +133,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                     pass
                 else:
                     new.url = source.url
+                    new.unit = source.unit
             # determine sample rate for trends
             if type_ == 'm-trend':
                 new.sample_rate = 1/60.

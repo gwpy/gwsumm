@@ -303,9 +303,7 @@ def find_cache_segments(*caches):
 
 
 def find_frame_type(channel):
-    try:
-        return channel.frametype
-    except AttributeError:
+    if channel.frametype is None:
         try:
             ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
         except (AttributeError, KeyError):
@@ -321,7 +319,7 @@ def find_frame_type(channel):
         else:
             ftype = 'R'
         channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
-        return channel.frametype
+    return channel.frametype
 
 
 def find_types(site=None, match=None):

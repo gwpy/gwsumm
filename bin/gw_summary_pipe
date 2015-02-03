@@ -64,7 +64,10 @@ class GWSummaryJob(pipeline.CondorDAGJob):
                 logdir, '%s-%s.out' % (tag, self.logtag)))
         cmds.setdefault('getenv', 'True')
         for key, val in cmds.iteritems():
-            self.add_condor_cmd(key, val)
+            if hasattr(self, 'set_%s' % key.lower()):
+                getattr(self, 'set_%s' % key.lower())(val)
+            else:
+                self.add_condor_cmd(key, val)
         # add sub-command option
         self._command = None
 

@@ -268,7 +268,11 @@ class SummaryState(DataQualityFlag):
         if self.ready:
             return self
         # fetch data
-        match = re.search('(%s)' % '|'.join(MATHOPS.keys()), self.definition)
+        if self.definition:
+            match = re.search('(%s)' % '|'.join(MATHOPS.keys()),
+                              self.definition)
+        else:
+            match = None
         if match:
             channel, thresh = self.definition.split(match.groups()[0])
             channel = channel.rstrip()

@@ -663,7 +663,7 @@ class DataTab(DataTabBase):
             page.h1('Channel information')
             page.add("The following channels were used to generate the above "
                      "data")
-            headers = ['Channel', 'Type', 'Sample rate', 'Units']
+            headers = ['Channel', 'Type', 'Frametype', 'Sample rate', 'Units']
             data = []
             for channel in channels:
                 channel = get_channel(channel)
@@ -671,6 +671,7 @@ class DataTab(DataTabBase):
                 if len(re_channel.findall(channel.ndsname)) > 1:
                     continue
                 # format CIS url and type
+                ftype = channel.frametype or 'Unknown'
                 if re.search('.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
@@ -696,7 +697,7 @@ class DataTab(DataTabBase):
                     unit = str(channel.unit)
                 else:
                     unit = 'Unknown'
-                data.append([link, ctype, rate, unit])
+                data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.data_table(headers, data, table='data')))
 
         flags = self.get_flags('segments', unique=False)

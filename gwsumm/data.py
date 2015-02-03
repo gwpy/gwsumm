@@ -448,19 +448,19 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     ndsconnection = nds2.connection(host, port)
                 else:
                     raise
-            source = 'nds'
+            ftype = source = 'nds'
             ndstype = channels[0].type
         elif nds:
             ndsconnection = None
-            source = 'nds'
+            ftype = source = 'nds'
             ndstype = channels[0].type
         # or find frame type and check cache
         else:
             ifo = channels[0].ifo
             ftype = channels[0].frametype
-            if ftype.endswith('%s_M' % ifo):
+            if ftype is not None and ftype.endswith('%s_M' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 60.])
-            elif ftype.endswith('%s_T' % ifo):
+            elif ftype is not None and ftype.endswith('%s_T' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 1.])
             elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
                   ftype == '%s_R' % ifo and
@@ -479,6 +479,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             cachesegments = find_cache_segments(fcache)
             new &= cachesegments
             source = 'frames'
+        for channel in channels:
+            channel.frametype = ftype
 
         # check whether each channel exists for all new times already
         qchannels = []

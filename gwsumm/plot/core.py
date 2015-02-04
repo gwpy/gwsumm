@@ -372,7 +372,9 @@ class DataPlot(SummaryPlot):
         out = OrderedDict()
         for c in all_:
             name = c.texname.rsplit('.', 1)[0]
-            if name in out.keys():
+            if ' ' in c.texname:
+                out[c] = [c]
+            elif name in out.keys():
                 out[name].append(c)
             else:
                 out[name] = [c]

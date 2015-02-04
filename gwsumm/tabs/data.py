@@ -670,6 +670,9 @@ class DataTab(DataTabBase):
                 # don't write combination meta-channels
                 if len(re_channel.findall(channel.ndsname)) > 1:
                     continue
+                # don't write operated channels
+                if ' ' in str(channel):
+                    continue
                 # format CIS url and type
                 ftype = channel.frametype or 'Unknown'
                 if re.search('.[a-z]+\Z', channel.name):

@@ -352,11 +352,11 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
             else:
                 frametypes[id_] = [channel]
         for channellist in frametypes.itervalues():
-            data = _get_timeseries_dict(channellist, segments, config=config,
-                                        cache=cache, query=query, nds=nds,
-                                        multiprocess=multiprocess,
-                                        statevector=statevector, return_=False,
-                                        **ioargs)
+            _get_timeseries_dict(channellist, segments, config=config,
+                                 cache=cache, query=query, nds=nds,
+                                 multiprocess=multiprocess,
+                                 statevector=statevector, return_=False,
+                                 **ioargs)
     if not return_:
         return
     else:

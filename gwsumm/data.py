@@ -338,10 +338,10 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     # separate channels by type
     if query:
         frametypes = dict()
-        allchannels = [
+        allchannels = set([
             c for group in
                 map(lambda x: re_channel.findall(Channel(x).ndsname), channels)
-            for c in group]
+            for c in group])
         for channel in allchannels:
             channel = get_channel(channel)
             ifo = channel.ifo

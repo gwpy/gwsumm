@@ -94,7 +94,11 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     Channel : :class:`~gwpy.detector.channel.Channel`
         new channel.
     """
-    if ',' in str(channel):
+    if ' ' in str(channel):
+        name = str(channel)
+        found = globalv.CHANNELS.sieve(name=name.replace('*', '\*'),
+                                       exact_match=True)
+    elif ',' in str(channel):
         name, type_ = str(channel).rsplit(',', 1)
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
@@ -360,8 +364,42 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     if not return_:
         return
     else:
-        return _get_timeseries_dict(channels, segments, config=config,
-                                    query=False, statevector=statevector)
+        out = dict()
+        for channel in channels:
+            channel = Channel(channel)
+            chans = map(get_channel, re_channel.findall(channel.ndsname))
+            tsdict = _get_timeseries_dict(chans, segments, config=config,
+                                          query=False, statevector=statevector,
+                                          **ioargs)
+            tslist = [tsdict[Channel(c).ndsname] for c in chans]
+            # if only one channel, simply append
+            if len(chans) == 1 and not ' ' in channel.ndsname:
+                out[channel.ndsname] = tslist[0]
+            # if one channel and some operator, do calculation
+            elif len(chans) == 1:
+                opstr, value = channel.ndsname.split(' ', 2)[1:]
+                op = OPERATOR[opstr]
+                value = float(value)
+                out[channel.ndsname] = type(tslist[0])(*[op(ts, value)
+                                                         for ts in tslist[0]])
+            # if multiple channels
+            else:
+                # build meta-timeseries
+                out[channel.ndsname] = TimeSeriesList()
+                operators = [channel.name[m.span()[1]] for m in
+                             list(re_channel.finditer(channel.ndsname))[:-1]]
+                for i in range(len(tslist[0])):
+                    out[channel.ndsname].append(tslist[0][i].copy())
+                    out[channel.ndsname][-1].name = str(channel)
+                    for op, ts in zip(operators, tslist[1:]):
+                        try:
+                            op = OPERATOR[op]
+                        except KeyError as e:
+                            e.args = ('Cannot parse math operator %r' % op,)
+                            raise
+                        out[channel.ndsname][-1] = op(out[channel.ndsname][-1],
+                                                      ts[i])
+        return out
 
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),

@@ -87,10 +87,11 @@ class TimeSeriesDataPlot(DataPlot):
         sax.set_epoch(float(self.start))
         return sax
 
-    def init_plot(self, plot=TimeSeriesPlot, geometry=(1,1), figsize=[12, 6]):
+    def init_plot(self, plot=TimeSeriesPlot, geometry=(1,1)):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
+        figsize = self.pargs.pop('figsize', [12, 6])
         self.plot, axes = subplots(
             nrows=geometry[0], ncols=geometry[1], sharex=True,
             subplot_kw={'projection': plot._DefaultAxesClass.name},
@@ -691,7 +692,7 @@ class TimeSeriesHistogramPlot(DataPlot):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        self.plot = plot(figsize=[12, 6])
+        self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
         return self.plot, ax
 
@@ -1071,7 +1072,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        self.plot = plot(figsize=[12, 6])
+        self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
         return self.plot, ax
 

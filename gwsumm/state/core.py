@@ -243,8 +243,8 @@ class SummaryState(DataQualityFlag):
             return cls(name, known=[(start, end)], hours=hours, **params)
 
     def _fetch_segments(self, config=GWSummConfigParser(), **kwargs):
-        segs = get_segments(self.definition, self.known, config=config,
-                            **kwargs)
+        segs = get_segments([self.definition], self.known, config=config,
+                            **kwargs)[self.definition]
         self.known = segs.known
         self.active = segs.active
         return self
@@ -258,7 +258,7 @@ class SummaryState(DataQualityFlag):
                 globalv.SEGMENTS[self.definition] += segs
             except KeyError:
                 globalv.SEGMENTS[self.definition] = segs
-        return self._fetch_segments()
+        return self._fetch_segments(query=False)
 
     def fetch(self, config=GWSummConfigParser(), segdb_error='raise', **kwargs):
         """Finalise this state by fetching its defining segments,

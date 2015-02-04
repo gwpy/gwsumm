@@ -694,7 +694,14 @@ class DataTab(DataTabBase):
                     rate = str(channel.sample_rate)
                 # format unit
                 if channel.unit:
-                    unit = str(channel.unit)
+                    try:
+                        unit = channel.unit.to_string(
+                            'unicode').encode('ascii', 'xmlcharrefreplace')
+                    except ValueError:
+                        try:
+                            unit = channel.unit.long_names[0]
+                        except IndexError:
+                            unit = str(channel.unit)
                 else:
                     unit = 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])

@@ -22,6 +22,7 @@
 import tempfile
 import shutil
 import warnings
+import re
 
 from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
@@ -32,6 +33,8 @@ from .data import (get_channel, add_timeseries, add_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
+
+re_rate = re.compile('_RATE_[0-9]+(?:\.[0-9]+)?\Z')
 
 
 def write_data_archive(outfile, timeseries=True, spectrogram=True,
@@ -60,7 +63,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 # loop over channels
                 for c, tslist in globalv.DATA.iteritems():
                     # ignore trigger rate TimeSeries
-                    if ':RATE ' in str(c):
+                    if re_rate.search(str(c)):
                         continue
                     # loop over time-series
                     for ts in tslist:

@@ -69,10 +69,13 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                                                  ts.epoch.gps)
                         except AttributeError:
                             name = '%s,%s' % (ts.name, ts.epoch.gps)
-                        if isinstance(ts, StateVector):
-                            ts.write(sgroup, name=name, format='hdf')
-                        else:
-                            ts.write(tgroup, name=name, format='hdf')
+                        try:
+                            if isinstance(ts, StateVector):
+                                ts.write(sgroup, name=name, format='hdf')
+                            else:
+                                ts.write(tgroup, name=name, format='hdf')
+                        except ValueError:
+                            continue
 
             # record all spectrogram data
             if spectrogram:

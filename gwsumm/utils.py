@@ -30,9 +30,12 @@ from gwpy.io import nds as ndsio
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
-re_channel = re.compile(r'(?:[A-Z]\d:[A-Z1-9]+[-_]\w+)(?:\.[a-zA-Z0-9]+)?')
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
+re_channel = re.compile(r'[A-Z]\d:[A-Z0-9]+'  # core channel section L1:TEST
+                         '(?:-[A-Z0-9_]+)'  # underscore-delimiter parts
+                         '(?:\.[a-z]+)?'  # trend type
+                         '(?:,[a-z-]+)?')  # NDS channel type
 
 # define some colours
 WARNC = '\033[93m'

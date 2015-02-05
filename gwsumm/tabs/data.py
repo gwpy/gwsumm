@@ -668,10 +668,8 @@ class DataTab(DataTabBase):
             for channel in channels:
                 channel = get_channel(channel)
                 # don't write combination meta-channels
-                if len(re_channel.findall(channel.ndsname)) > 1:
-                    continue
-                # don't write operated channels
-                if ' ' in str(channel):
+                parts = re_channel.findall(channel.ndsname)
+                if len(parts) != 1 or len(parts[0]) != len(channel.ndsname):
                     continue
                 # format CIS url and type
                 ftype = channel.frametype or 'Unknown'

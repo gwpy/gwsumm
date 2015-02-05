@@ -367,19 +367,25 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
         out = dict()
         for channel in channels:
             channel = Channel(channel)
-            chans = map(get_channel, re_channel.findall(channel.ndsname))
+            chanstrs = re_channel.findall(channel.ndsname)
+            chans = map(get_channel, chanstrs)
             tsdict = _get_timeseries_dict(chans, segments, config=config,
                                           query=False, statevector=statevector,
                                           **ioargs)
             tslist = [tsdict[Channel(c).ndsname] for c in chans]
             # if only one channel, simply append
-            if len(chans) == 1 and not ' ' in channel.ndsname:
+            if len(chanstrs) == 1 and len(channel.ndsname) == len(chanstrs[0]):
                 out[channel.ndsname] = tslist[0]
             # if one channel and some operator, do calculation
-            elif len(chans) == 1:
-                opstr, value = channel.ndsname.split(' ', 2)[1:]
-                op = OPERATOR[opstr]
-                value = float(value)
+            elif len(chanstrs) == 1:
+                stub = channel.ndsname[len(chanstrs[0]):].strip(' ')
+                try:
+                   op = OPERATOR[stub[0]]
+                except KeyError as e:
+                   print(channel.ndsname, chanstrs, stub)
+                   e.args = ('Cannot parse math operator %r' % stub[0],)
+                   raise
+                value = float(stub[1:])
                 out[channel.ndsname] = type(tslist[0])(*[op(ts, value)
                                                          for ts in tslist[0]])
             # if multiple channels

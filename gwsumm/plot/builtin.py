@@ -1202,7 +1202,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             else:
                 rates = [event_rate(table_, stride, self.start, self.end)]
             for bin, rate in zip(bins, rates):
-                keys.append('%s:RATE %s %s' % (channel.ifo, str(channel), bin))
+                keys.append('%s:RATE_%s_%s' % (channel.ifo, str(channel), bin))
                 if keys[-1] not in globalv.DATA:
                     add_timeseries(rate, keys[-1])
 

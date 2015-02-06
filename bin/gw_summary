@@ -598,6 +598,18 @@ try:
 except (NoOptionError, NoSectionError):
     pass
 
+# find new ifo bases
+ifobases = {}
+try:
+    bases_ = config.nditems('html')
+except NoSectionError:
+    pass
+else:
+    for key, val in config.nditems('html'):
+        if re.search('-base\Z', key):
+            ifobases[key.rsplit('-', 1)[0].title()] = val
+ifobases.pop(ifo, None)
+
 # -----------------------------------------------------------------------------
 # Read tabs
 
@@ -639,7 +651,10 @@ tabs = tabs.values()
 about = get_tab('about')(span[0], span[1], parent=None, base=base)
 if not opts.no_html:
     mkdir(about.path)
-    about.write_html(css=css, js=javascript, tabs=tabs, config=config.files)
+    about.write_html(css=css, js=javascript, tabs=tabs, config=config.files,
+                     ifo=ifo, ifomap=ifobases, about=about.index,
+                     writedata=not opts.html_only,
+                     writehtml=not opts.no_html)
 
 
 # -----------------------------------------------------------------------------
@@ -694,18 +709,6 @@ if opts.bulk_read and not opts.html_only:
         get_timeseries_dict(allsv, allseg,
                             config=config, nds=opts.nds, statevector=True,
                             multiprocess=opts.multiprocess, return_=False)
-
-# find new ifo bases
-ifobases = {}
-try:
-    bases_ = config.nditems('html')
-except NoSectionError:
-    pass
-else:
-    for key, val in config.nditems('html'):
-        if re.search('-base\Z', key):
-            ifobases[key.rsplit('-', 1)[0].title()] = val
-ifobases.pop(ifo, None)
 
 # sort tabs by 'Summary', then lower case only, then everything else
 _sort_tabs = lambda tab: (

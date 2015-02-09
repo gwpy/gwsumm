@@ -80,13 +80,18 @@ class GuardianTab(Tab):
         # record node and states
         new.node = config.get(section, 'node')
         new.grdstates = OrderedDict()
+        plot = []
         for key, name in config.nditems(section):
             try:
                 key = int(key)
             except ValueError:
                 continue
             else:
-                new.grdstates[int(key)] = name
+                if name[0] == '*':
+                    plot.append(False)
+                else:
+                    plot.append(True)
+                new.grdstates[int(key)] = name.strip('*')
         try:
             new.transstates = map(
                 int, config.get(section, 'transitions').split(','))
@@ -95,7 +100,8 @@ class GuardianTab(Tab):
 
         # build plots
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
-        labels = new.grdstates.values()[::-1]
+        labels = [l for i, l in enumerate(new.grdstates.values()[::-1]) if
+                  plot[i]]
         flags = [new.segmenttag % name for name in labels]
         new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
@@ -148,11 +154,15 @@ class GuardianTab(Tab):
                 tag = self.segmenttag % name
                 instate = sdata == v
                 ssegs[tag] = instate.to_dqflag(name=name)
-                for trans in (
-                        numpy.diff(instate.astype(int)) == 1).nonzero()[0]:
-                    t = sdata.times[trans+1]
-                    from_ = sdata[trans].value
-                    self.transitions[v].append((t, from_))
+                transin = (numpy.diff(
+                    instate.astype(int)) == 1).nonzero()[0] + 1
+                transout = (numpy.diff(
+                    instate.astype(int)) == -1).nonzero()[0] + 1
+                for i, j in zip(transin, transout):
+                    t = sdata.times[i]
+                    from_ = sdata[i-1].value
+                    to_ = sdata[j].value
+                    self.transitions[v].append((t, from_, to_))
                 # get segments for request
                 tag = self.segmenttag % name + REQUESTSTUB
                 instate = rdata == v
@@ -206,7 +216,7 @@ class GuardianTab(Tab):
         page.tr.close()
         for i, bit in enumerate(self.transstates):
             page.tr()
-            name = self.grdstates[bit]
+            name = self.grdstates[bit].strip('*')
             page.th(name)
             for j, bit2 in enumerate(self.grdstates):
                 if i == j:
@@ -230,7 +240,7 @@ class GuardianTab(Tab):
         page.h2('State details')
         page.div(class_='panel-group', id='accordion')
         for i, bit in enumerate(self.grdstates):
-            name = self.grdstates[bit]
+            name = self.grdstates[bit].strip('*')
             page.div(class_='panel well panel-primary', id=str(bit))
             # heading
             page.div(class_='panel-heading')
@@ -245,9 +255,10 @@ class GuardianTab(Tab):
             page.div(class_='panel-body')
 
             # print transitions
-            page.p('This state was entered %d times as follows:'
+            page.p('This state was active %d times as follows:'
                    % len(self.transitions[bit]))
-            headers = ['GPS time', 'UTC time', 'Local time', 'Transition from']
+            headers = ['GPS time', 'UTC time', 'Local time',
+                       'Transition from', 'Exited to']
             data = []
             if self.ifo in ['H1', 'C1', 'P1']:
                 localzone = tz.gettz('America/Los_Angeles')
@@ -255,19 +266,27 @@ class GuardianTab(Tab):
                 localzone = tz.gettz('America/Chicago')
             else:
                 localzone = tz.gettz('Europe/Berlin')
-            for t, from_ in self.transitions[bit]:
+            for t, from_, to_ in self.transitions[bit]:
                 t2 = Time(t, format='gps', scale='utc')
                 tlocal = Time(
                     t2.datetime.replace(tzinfo=UTC).astimezone(localzone),
                     format='datetime', scale='utc')
-                data.append((t, t2.iso, tlocal.iso, '%s [%d]' % (
-                             self.grdstates.get(from_, 'Unknown'), from_)))
+                data.append((
+                    t, t2.iso, tlocal.iso,
+                    '%s [%d]' % (self.grdstates.get(from_, 'Unknown'), from_),
+                    '%s [%d]' % (self.grdstates.get(to_, 'Unknown'), to_)))
             page.add(str(html.data_table(headers, data, table='guardian data')))
 
             # print segments
-            page.p('This state was active during the following segments:')
             flag = get_segments(self.segmenttag % name, state.active,
                                 query=False).copy()
+            livetime = abs(flag.active)
+            try:
+                duty = abs(flag.active) / float(abs(flag.valid)) * 100.
+            except ZeroDivisionError:
+                duty = 0
+            page.p('This state was active for %.2f seconds (%.2f%%) during '
+                   'the following segments:' % (livetime, duty))
             page.add(str(self.print_segments(flag)))
             page.div.close()
             page.div.close()

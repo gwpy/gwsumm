@@ -37,6 +37,7 @@ from dateutil.relativedelta import relativedelta
 from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
+from gwpy.plotter.tex import label_to_latex
 from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
@@ -569,7 +570,8 @@ class SpectrumDataPlot(DataPlot):
         if self.state:
             self.pargs.setdefault(
                 'suptitle',
-                '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.99)
@@ -737,7 +739,8 @@ class TimeSeriesHistogramPlot(DataPlot):
         if self.state:
             self.pargs.setdefault(
                 'suptitle',
-                '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle)
@@ -1432,7 +1435,8 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         if self.state:
             self.pargs.setdefault(
                 'suptitle',
-                '[%s-%s, state: %s]' % (self.span[0], self.span[1], self.state))
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.99)

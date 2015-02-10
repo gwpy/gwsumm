@@ -53,6 +53,8 @@ Tab = get_tab('default')
 UTC = tz.gettz('UTC')
 REQUESTSTUB = '+request'
 NOMINALSTUB = '+nominal'
+MODE_COLORS = ['grey', 'magenta', 'red', 'saddlebrown']
+
 
 class GuardianTab(Tab):
     """Summarises the data recorded by an Advanced LIGO Guardian node.
@@ -129,12 +131,14 @@ class GuardianTab(Tab):
 
         state = sorted(self.states, key=lambda s: abs(s.active))[0]
         alldata = get_timeseries_dict(
-            [prefix % x for x in ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK']],
+            [prefix % x for x in ['STATE_N', 'REQUEST_N', 'NOMINAL_N',
+                                  'MODE', 'OK']],
             state, config=config, nds=nds, multiprocess=multiprocess,
             cache=datacache, dtype='int16')
         grddata = alldata[prefix % 'STATE_N']
         reqdata = alldata[prefix % 'REQUEST_N']
         nomdata = alldata[prefix % 'NOMINAL_N']
+        modedata = alldata[prefix % 'MODE']
         okdata = alldata[prefix % 'OK']
         vprint("    All time-series data loaded\n")
 
@@ -314,7 +318,16 @@ class GuardianStatePlot(get_plot('segments')):
         'legend_bbox_to_anchor': (1.01, 1),
         'legend_borderaxespad': 0.,
         'legend_fontsize': 12,
+        'legend_title': 'Node state',
     })
+
+    @property
+    def node(self):
+        return self.flags[0].split(' ', 1)[0][3:]
+
+    @property
+    def ifo(self):
+        return list(self.ifos)[0]
 
     def process(self):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
@@ -367,26 +380,22 @@ class GuardianStatePlot(get_plot('segments')):
                     height=.6, **actargs)
 
         # make custom legend
-        epoch = ax.get_epoch()
-        xlim = ax.get_xlim()
         seg = SegmentList([Segment(self.start - 10, self.start - 9)])
         v = plotargs.pop('valid', None)
         if v:
-            v['collection'] = False
-            v = ax.plot(seg, **v)[0][0]
-        n = ax.plot(seg, facecolor=nominalcolor,
-                    edgecolor=plotargs['edgecolor'], collection=False)[0][0]
-        a = ax.plot(seg, facecolor=requestcolor,
-                    edgecolor=plotargs['edgecolor'], collection=False)[0][0]
-        b = ax.plot(seg, facecolor=activecolor, edgecolor=actargs['edgecolor'],
-                    collection=False)[0][0]
+            v.pop('collection', None)
+            v = ax.build_segment(seg, 0, **v)
+        n = ax.build_segment(seg, 0, facecolor=nominalcolor,
+                             edgecolor=plotargs['edgecolor'])
+        a = ax.build_segment(seg, 0, facecolor=requestcolor,
+                             edgecolor=plotargs['edgecolor'])
+        b = ax.build_segment(seg, 0, facecolor=activecolor,
+                             edgecolor=actargs['edgecolor'])
         if v:
             ax.legend([v, n, a, b], ['Alive', 'Nominal', 'Request', 'Active'],
                       **legendargs)
         else:
             ax.legend([n, a, b], ['Nominal', 'Request', 'Active'], **legendargs)
-        ax.set_epoch(epoch)
-        ax.set_xlim(*xlim)
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -401,6 +410,36 @@ class GuardianStatePlot(get_plot('segments')):
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
 
+        # add node MODE along the bottom
+        ylim = ax.get_ylim()
+        sax = None
+        legentry = OrderedDict()
+        try:
+            grdmode = get_timeseries(
+               '%s:GRD-%s_MODE' % (self.ifo, self.node),
+               valid, query=False).join(gap='pad', pad=-1)
+        except KeyError:
+            pass
+        else:
+            nodemode = OrderedDict()
+            try:
+                from guardian.daemon import DAEMON_MODES
+            except ImportError:
+                DAEMON_MODES = ('STOP', 'PAUSE', 'EXEC', 'MANUAL')
+            # get modes
+            modes = OrderedDict()
+            for i, (m, c) in enumerate(zip(DAEMON_MODES, MODE_COLORS)):
+                modes[m] = (grdmode == i).to_dqflag()
+                if sax is None:
+                    sax = plot.add_state_segments(
+                        modes[m].active,
+                        plotargs={'y': 0, 'collection': False})
+                else:
+                    sax.plot_segmentlist(modes[m].active, facecolor=c, y=0,
+                                         edgecolor='none', collection=False)
+                legentry[m.title()] = ax.build_segment(seg, 0, facecolor=c,
+                                                       edgecolor='none')
+
         # add OK segments along the bottom
         try:
             ok = get_segments(flag.split(' ', 1)[0] + ' OK', validity=valid,
@@ -408,10 +447,30 @@ class GuardianStatePlot(get_plot('segments')):
         except NameError:
             pass
         else:
-            ok.name = 'Node `OK\''
-            sax = plot.add_state_segments(ok, ax, plotargs={
-                'facecolor': activecolor,
-                'valid': {'facecolor': 'red', 'edgecolor': 'black'}})
+            # just plot OK
+            if sax is not None:
+                sax.plot_segmentlist(ok.active, facecolor=activecolor, y=0,
+                                     edgecolor=actargs['edgecolor'],
+                                     collection=False, label='Node `OK\'')
+                # add gap in legend
+                legentry['$--$'] = ax.build_segment(
+                    seg, 0, facecolor='w', fill=False, edgecolor='none',
+                    linewidth=0)
+                # add OK to legend
+                legentry['Node `OK\''] = ax.build_segment(
+                    seg, 0, facecolor=activecolor,
+                    edgecolor=actargs['edgecolor'])
+            else:
+                sax = plot.add_state_segments(ok, ax, plotargs={
+                    'label': 'Node `OK\'', 'y': 0, 'facecolor': activecolor,
+                    'known': {'facecolor': 'red', 'edgecolor': 'black'}})
+
+        # make custom legend
+        if sax is not None:
+            if legentry:
+                sax.legend(legentry.values(), legentry.keys(), loc='lower left',
+                           bbox_to_anchor=(1.01, 0.), borderaxespad=0,
+                           fontsize=12, title='Node mode')
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.set_epoch(float(self.pargs.get('epoch', self.start)))
 

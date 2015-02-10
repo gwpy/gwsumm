@@ -425,7 +425,7 @@ class GuardianStatePlot(get_plot('segments')):
             try:
                 from guardian.daemon import DAEMON_MODES
             except ImportError:
-                DAEMON_MODES = ('STOP', 'PAUSE', 'EXEC', 'MANUAL')
+                DAEMON_MODES = ('STOP', 'PAUSE', 'EXEC', 'MANAGED')
             # get modes
             modes = OrderedDict()
             for i, (m, c) in enumerate(zip(DAEMON_MODES, MODE_COLORS)):

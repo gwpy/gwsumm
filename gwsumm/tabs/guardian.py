@@ -103,7 +103,7 @@ class GuardianTab(Tab):
         # build plots
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
         labels = [l for i, l in enumerate(new.grdstates.values()[::-1]) if
-                  plot[i]]
+                  plot[-i-1]]
         flags = [new.segmenttag % name for name in labels]
         new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,

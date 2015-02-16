@@ -222,6 +222,11 @@ class HvetoTab(base):
                  p.state = self.states[0]
                  self.plots.insert(0, p)
 
+        # delete data from archive
+        del globalv.SEGMENTS[self.states[0].definition]
+        for row in range(1, len(self.rounds) + 1):
+            del globalv.SEGMENTS['%s:hveto veto segs round %s' % (ifo, row)]
+
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `HvetoTab`.
         """

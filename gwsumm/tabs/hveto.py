@@ -228,9 +228,11 @@ class HvetoTab(base):
         page = html.markup.page()
 
         # run failed
+        url = html.markup.oneliner.a("This analysis", href=self.url,
+                                     class_='alert-link')
         if self.rounds == 'FAIL':
             page.div(class_='alert alert-warning')
-            page.p("This analysis seems to have failed")
+            page.p("%s seems to have failed." % url)
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the DetChar group',
@@ -240,7 +242,7 @@ class HvetoTab(base):
         # no segments
         elif self.rounds == 'NOSEGMENTS':
             page.div(class_='alert alert-info')
-            page.p("This analysis found no segments.")
+            page.p("%s found no segments." % url)
             page.p("If you believe some segments should have been found, "
                    "please contact %s."
                    % html.markup.oneliner.a('the DetChar group',

@@ -107,40 +107,59 @@ class HvetoTab(base):
 
     def process(self, config=GWSummConfigParser(), **kwargs):
 
+        # set params
+        self.rounds = None
+
         # get some basic info
         ifo = config.get('DEFAULT', 'ifo')
         start = int(self.span[0])
         duration = int(abs(self.span))
-
-        # find the results table
-        resultsfile = os.path.join(self.directory, 'summary_stats.txt')
-        if not os.path.isfile(resultsfile):
-            self.rounds = None
-            self.plots = None
-            return
 
         # read the configuration
         self.conf = dict()
         conffile = os.path.join(
             self.directory, '%s-HVETO_CONF-%d-%d.txt' % (ifo, start, duration))
         try:
-            self.conf = dict(loadtxt(conffile, skiprows=3, dtype=str))
+            with open(conffile) as f:
+                self.conf = dict()
+                lines = f.readlines()[3:]
+                for line in lines:
+                    try:
+                        key, val = line.split(': ', 1)
+                        self.conf[key.strip()] = eval(val)
+                    except (ValueError, SyntaxError, NameError):
+                        pass
         except IOError:
-            pass
+            self.rounds = 'FAIL'
+            return
         else:
-            if 'DEfnm:' in self.conf:
-                name = re_quote.sub('', self.conf['DEfnm:'])
+            etg = self.conf.pop('AUXtype', None)
+            if 'DEfnm' in self.conf:
+                name = re_quote.sub('', self.conf['DEfnm'])
                 self.primary = '%s:%s' % (ifo, name)
-                if 'DEtype:' in self.conf:
-                    etg = re_quote.sub('', self.conf['DEtype:'])
-                    if re.search('_%s\Z' % etg, self.primary, re.I):
-                        self.primary = self.primary[:-len(etg)-1]
+                if 'DEtype' in self.conf:
+                    hetg = re_quote.sub('', self.conf['DEtype'])
+                    if re.search('_%s\Z' % hetg, self.primary, re.I):
+                        self.primary = self.primary[:-len(hetg)-1]
             else:
                 self.primary = None
 
+        # find the segments
+        try:
+            statefile = self.conf['dqfnm']
+        except KeyError:
+            statefile = '%s-HVETO_DQ_SEGS-%d-%d.txt' % (ifo, start, duration)
+        if not os.path.isfile(os.path.join(self.directory, statefile)):
+            self.rounds = 'NOSEGMENTS'
+            return
+
+        # find the results table
+        resultsfile = os.path.join(self.directory, 'summary_stats.txt')
+        if not os.path.isfile(resultsfile):
+            self.rounds = 'FAIL'
+            return
+
         # determine the Hveto state
-        statefile = ('%s-HVETO_DQ_SEGS-%d-%d.txt'
-                     % (ifo, start, duration))
         cache = Cache([CacheEntry.from_T050017(
                            os.path.join(self.directory, statefile))])
         get_segments(self.states[0].definition, [self.span], cache=cache,
@@ -155,7 +174,7 @@ class HvetoTab(base):
                                             line.split(' ')[1:])))
                 # fix channel name
                 c = '%s:%s' % (ifo, self.rounds[-1]['Winning channel'])
-                if 'DEtype:' in self.conf and re.search('_%s\Z' % etg, c, re.I):
+                if etg and re.search('_%s\Z' % etg, c, re.I):
                      c = c.rsplit('_', 1)[0]
                 self.rounds[-1]['Winning channel'] = c
 
@@ -208,20 +227,30 @@ class HvetoTab(base):
         """
         page = html.markup.page()
 
-        if self.rounds is None:
+        # run failed
+        if self.rounds == 'FAIL':
             page.div(class_='alert alert-warning')
-            page.p("No data were found for this day, please try again later.")
+            page.p("This analysis seems to have failed")
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the DetChar group',
                                             class_='alert-link',
                                             href='mailto:detchar@ligo.org'))
             page.div.close()
-
+        # no segments
+        elif self.rounds == 'NOSEGMENTS':
+            page.div(class_='alert alert-info')
+            page.p("This analysis found no segments.")
+            page.p("If you believe some segments should have been found, "
+                   "please contact %s."
+                   % html.markup.oneliner.a('the DetChar group',
+                                            class_='alert-link',
+                                            href='mailto:detchar@ligo.org'))
+            page.div.close()
         # otherwise...
         else:
             # print results table
-            page.h1('Result summary')
+            page.div(class_='well')
             if self.primary:
                 channel = get_channel(self.primary)
                 page.p()
@@ -240,7 +269,6 @@ class HvetoTab(base):
                 channel = get_channel(data[-1][1])
                 # format CIS url and type
                 if re.search('\.[a-z]+\Z', channel.name):
-                    print channel.name
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
                     cype = ctype in ['rms'] and ctype.upper() or ctype.title()
@@ -255,6 +283,7 @@ class HvetoTab(base):
                     data[-1][1] = str(channel)
             page.add(str(html.data_table(['Round'] + headers, data,
                          table='data')))
+            page.div.close()
 
             # add plots
             page.hr(class_='row-divider')

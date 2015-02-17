@@ -115,6 +115,10 @@ class HvetoTab(base):
         start = int(self.span[0])
         duration = int(abs(self.span))
 
+        if not os.path.isdir(self.directory):
+            self.rounds = None
+            return
+
         # read the configuration
         self.conf = dict()
         conffile = os.path.join(
@@ -235,7 +239,16 @@ class HvetoTab(base):
         # run failed
         url = html.markup.oneliner.a("This analysis", href=self.url,
                                      class_='alert-link')
-        if self.rounds == 'FAIL':
+        if self.rounds is None:
+            page.div(class_='alert alert-info')
+            page.p("%s has not been performed." % url)
+            page.p("If you believe this represents a problem, please "
+                   "contact %s."
+                   % html.markup.oneliner.a('the DetChar group',
+                                            class_='alert-link',
+                                            href='mailto:detchar@ligo.org'))
+            page.div.close()
+        elif self.rounds == 'FAIL':
             page.div(class_='alert alert-warning')
             page.p("%s seems to have failed." % url)
             page.p("If you believe these data should have been found, please "

@@ -222,6 +222,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         (plot, axes) = self.init_plot()
         ax = axes[0]
         ax.grid(b=True, axis='y', which='major')
+        channel = self.channels[0]
 
         # parse data arguments
         sdform = self.pargs.pop('format')
@@ -236,7 +237,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             valid = self.state.active
         else:
             valid = SegmentList([self.span])
-        specgrams = get_spectrogram(self.channels[0], valid, query=False,
+        specgrams = get_spectrogram(channel, valid, query=False,
                                     format=sdform)
         # calculate ratio spectrum
         if ratio in ['median', 'mean'] or isinstance(ratio, int):
@@ -254,21 +255,22 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 ratio = allspec.percentile(ratio)
             else:
                 ratio = getattr(allspec, ratio)(axis=0)
+
+        # allow channel data to set parameters
+        if hasattr(channel, 'frequency_range'):
+            self.pargs.setdefault('ylim', channel.frequency_range)
+        if (ratio is None and sdform in ['amplitude', 'asd'] and
+                hasattr(channel, 'asd_range') and clim is None):
+            clim = channel.asd_range
+        elif (ratio is None and hasattr(channel, 'psd_range') and
+              clim is None):
+            clim = channel.psd_range
+
         # plot data
         for specgram in specgrams:
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
             ax.plot_spectrogram(specgram, cmap=cmap)
-
-            # allow channel data to set parameters
-            if hasattr(specgram.channel, 'frequency_range'):
-                self.pargs.setdefault('ylim', specgram.channel.frequency_range)
-            if (ratio is None and sdform in ['amplitude', 'asd'] and
-                    hasattr(specgram.channel, 'asd_range') and clim is None):
-                clim = specgram.channel.asd_range
-            elif (ratio is None and hasattr(specgram.channel, 'psd_range') and
-                  clim is None):
-                clim = specgram.channel.psd_range
 
         # add colorbar
         if len(specgrams) == 0:

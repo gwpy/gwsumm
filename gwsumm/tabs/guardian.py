@@ -433,7 +433,8 @@ class GuardianStatePlot(get_plot('segments')):
                 if sax is None:
                     sax = plot.add_state_segments(
                         modes[m].active,
-                        plotargs={'y': 0, 'collection': False})
+                        plotargs={'y': 0, 'facecolor': c, 'edgecolor': 'none',
+                                  'collection': False})
                 else:
                     sax.plot_segmentlist(modes[m].active, facecolor=c, y=0,
                                          edgecolor='none', collection=False)

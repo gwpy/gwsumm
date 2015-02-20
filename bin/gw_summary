@@ -71,6 +71,7 @@ except ImportError:
 else:
     HASLAL = True
 
+from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import psd
@@ -345,6 +346,7 @@ if opts.debug:
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose
+globalv.PROFILE = opts.verbose
 
 # find all config files
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
@@ -485,31 +487,39 @@ if not opts.html_only:
                         config.set(name, key, val)
 
     # read all channels
-    channelsections = []
+    raw = set()
+    trend = set()
     for section in config.sections():
-        if re_channel.match(section):
-            channelsections.append(section)
-    try:
-        newchannels = get_channels(channelsections)
-    except httplib.HTTPException:
-        newchannels = []
+        try:
+            m = Channel.MATCH.match(section).groupdict()
+        except AttributeError:
+            continue
+        if m['trend']:
+            trend.add(section)
+        else:
+            raw.add(section)
+    for group in [raw, trend]:
+        try:
+            newchannels = get_channels(group)
+        except httplib.HTTPException:
+            newchannels = []
 
-    # read custom channel definitions
-    for channel, section in zip(newchannels, channelsections):
-        for key, val in nat_sorted(config.nditems(section),
-                                   key=lambda x: x[0]):
-            key = re_cchar.sub('_', key.rstrip())
-            if key.isdigit():
-                if not hasattr(channel, 'bits'):
-                    channel.bits = []
-                while len(channel.bits) < int(key):
-                    channel.bits.append(None)
-                channel.bits.append(val)
-            else:
-                try:
-                    setattr(channel, key, eval(val.rstrip()))
-                except NameError:
-                    setattr(channel, key, val.rstrip())
+        # read custom channel definitions
+        for channel, section in zip(newchannels, group):
+            for key, val in nat_sorted(config.nditems(section),
+                                       key=lambda x: x[0]):
+                key = re_cchar.sub('_', key.rstrip())
+                if key.isdigit():
+                    if not hasattr(channel, 'bits'):
+                        channel.bits = []
+                    while len(channel.bits) < int(key):
+                        channel.bits.append(None)
+                    channel.bits.append(val)
+                else:
+                    try:
+                        setattr(channel, key, eval(val.rstrip()))
+                    except NameError:
+                        setattr(channel, key, val.rstrip())
 
 # read states
 try:

@@ -25,6 +25,7 @@ import time
 import re
 from multiprocessing import (cpu_count, active_children)
 
+from gwpy.detector import Channel
 from gwpy.io import nds as ndsio
 
 from . import globalv
@@ -124,28 +125,8 @@ def split_channels(channelstring):
     """Split a comma-separated list of channels that may, or may not
     contain NDS2 channel types as well
     """
-    out = []
-    channelstring = re_quote.sub('', channelstring)
-    while True:
-        channelstring = channelstring.strip('\' \n')
-        if ',' not in channelstring:
-            break
-        for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:
-            if nds2type and ',%s' % nds2type in channelstring:
-                try:
-                    channel, ctype, channelstring = channelstring.split(',', 2)
-                except ValueError:
-                    channel, ctype = channelstring.split(',')
-                    channelstring = ''
-                out.append('%s,%s' % (channel, ctype))
-                break
-            elif nds2type == '' and ',' in channelstring:
-                channel, channelstring = channelstring.split(',', 1)
-                out.append(channel)
-                break
-    if channelstring:
-        out.append(channelstring)
-    return out
+    return [channelstring[m.start():m.end()] for
+             m in Channel.MATCH.finditer(channelstring)]
 
 
 def count_free_cores(max=cpu_count()):

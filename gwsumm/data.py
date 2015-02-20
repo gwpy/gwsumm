@@ -110,13 +110,14 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
+        cstrings = ['%s [%s, %s]' % (c.ndsname, c.sample_rate, c.unit)
+                    for c in found]
         raise ValueError("Ambiguous channel request '%s', multiple existing "
                          "channels recovered:\n    %s"
-                         % (str(channel),
-                            '\n    '.join([c.ndsname for c in found])))
+                         % (str(channel), '\n    '.join(cstrings)))
     else:
         try:
-            if not re_channel.match(name):
+            if not Channel.MATCH.match(name):
                 raise ValueError()
             # trends are not stored in CIS, but try and get their raw source
             if re.search('.[a-z]+\Z', name):

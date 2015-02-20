@@ -346,7 +346,7 @@ if opts.debug:
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose
-globalv.PROFILE = opts.verbose
+#globalv.PROFILE = opts.verbose
 
 # find all config files
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for

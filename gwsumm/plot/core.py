@@ -187,6 +187,8 @@ class DataPlot(SummaryPlot):
                  tag=None, href=None, new=True, all_data=False,
                  read=True, **pargs):
         super(DataPlot, self).__init__(href=href, new=new)
+        if isinstance(channels, str):
+            channels = split_channels(channels)
         self.channels = channels
         self.span = (start, end)
         self.state = state

@@ -319,6 +319,8 @@ class SegmentDataPlot(TimeSeriesDataPlot):
 
     @flags.setter
     def flags(self, flist):
+        if isinstance(flist, str):
+            flist = [f.strip('\n ') for f in flist.split(',')]
         self._flags = flist
 
     @property
@@ -349,12 +351,11 @@ class SegmentDataPlot(TimeSeriesDataPlot):
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
                  **kwargs):
         new = super(SegmentDataPlot, cls).from_ini(config, section, start,
-                                                      end, state=state,
-                                                      **kwargs)
+                                                   end, state=state, **kwargs)
         # get flags
         if flags is None:
             flags = dict(config.items(section)).pop('flags', '')
-        new.flags.append(split_channels(flags))
+        new.flags.append(flags)
         return new
 
     def get_segment_color(self):

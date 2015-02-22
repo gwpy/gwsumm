@@ -259,7 +259,6 @@ class DataTab(DataTabBase):
                         sources = cp.get(sources, 'channels')
                     except NoOptionError:
                         pass
-                sources = split_channels(sources)
 
             # if pdef refers to another config section, it must have a type
             if cp.has_section(pdef):

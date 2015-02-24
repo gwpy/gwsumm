@@ -96,6 +96,10 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     """
     if ' ' in str(channel):
         name = str(channel)
+        try:
+            type_ = Channel.MATCH.match(name).groupdict()['type']
+        except AttributeError:
+            type_ = None
         found = globalv.CHANNELS.sieve(name=name.replace('*', '\*'),
                                        exact_match=True)
     elif ',' in str(channel):
@@ -139,6 +143,10 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                 else:
                     new.url = source.url
                     new.unit = source.unit
+                    try:
+                        new.bits = source.bits
+                    except AttributeError:
+                        pass
             # determine sample rate for trends
             if type_ == 'm-trend':
                 new.sample_rate = 1/60.

@@ -489,10 +489,11 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'valid': {'facecolor': validcolor}}
+        extraargs = self.parse_plot_kwargs(label=None)
 
         # plot segments
         nflags = 0
-        for channel in self.channels[::-1]:
+        for channel, pargs in zip(self.channels[::-1], extraargs[::-1]):
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
@@ -517,7 +518,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                         flags[i] += flag
             nflags += len([m for m in channel.bits if m is not None])
             if flags is not None:
-                ax.plot(*flags[::-1], **plotargs)
+                kwargs = pargs.copy()
+                kwargs.update(plotargs)
+                ax.plot(*flags[::-1], **kwargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():

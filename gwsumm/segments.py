@@ -66,9 +66,14 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     if validity is None:
         start = config.get(DEAFULTSECT, 'gps-start-time')
         end = config.get(DEFAULTSECT, 'gps-end-time')
-        validity = span = SegmentList([Segment(start, end)])
+        span = SegmentList([Segment(start, end)])
     elif isinstance(validity, DataQualityFlag):
         validity = validity.active
+        try:
+            span = SegmentList([validity.extent()])
+        except ValueError:
+            span = SegmentList()
+    else:
         try:
             span = SegmentList([validity.extent()])
         except ValueError:

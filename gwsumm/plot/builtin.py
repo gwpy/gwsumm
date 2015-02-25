@@ -477,6 +477,34 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         super(StateVectorDataPlot, self).__init__(*args, **kwargs)
         self.flags = []
 
+    def _parse_labels(self, defaults=None):
+        """Pop the labels for plotting from the `pargs` for this Plot
+
+        This method overrides from the `TimeSeriesDataPlot` in order
+        to set the bit names from the various channels as the defaults
+        in stead of the channel names
+        """
+        chans = self.get_channel_groups().keys()
+        if defaults is None:
+            try:
+                defaults = [b for c in chans for b in get_channel(c).bits if
+                            b is not None]
+            except AttributError as e:
+                defaults = []
+        labels = list(self.pargs.pop('labels', defaults))
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        for i, l in enumerate(labels):
+            if isinstance(l, (list, tuple)):
+                labels[i] = list(labels[i])
+                for j, l2 in enumerate(l):
+                    labels[i][j] = rUNDERSCORE.sub(r'\_', str(l2).strip('\n '))
+            elif isinstance(l, str):
+                labels[i] = rUNDERSCORE.sub(r'\_', str(l).strip('\n '))
+        while len(labels) < len(chans):
+            labels.append(None)
+        return labels
+
     def process(self):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
@@ -489,7 +517,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'valid': {'facecolor': validcolor}}
-        extraargs = self.parse_plot_kwargs(label=None)
+        extraargs = self.parse_plot_kwargs()
 
         # plot segments
         nflags = 0

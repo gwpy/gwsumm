@@ -75,7 +75,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             span = SegmentList()
     else:
         try:
-            span = SegmentList([validity.extent()])
+            span = SegmentList([SegmentList(validity).extent()])
         except ValueError:
             span = SegmentList()
     validity = SegmentList(validity)

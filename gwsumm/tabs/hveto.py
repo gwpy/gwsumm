@@ -187,11 +187,11 @@ class HvetoTab(base):
                    % (ifo, start, duration))
         cache = Cache([CacheEntry.from_T050017(
                            os.path.join(self.directory, rawfile))])
-        get_triggers('%s:hveto start' % ifo, 'hveto', [self.span],
+        get_triggers('%s:hveto_start' % ifo, 'hveto', [self.span],
                      config=config, cache=cache, tablename='sngl_burst',
                      return_=False)
 
-        get_triggers('%s:hveto vetoed all' % ifo, 'hveto', [self.span],
+        get_triggers('%s:hveto_vetoed_all' % ifo, 'hveto', [self.span],
                      config=config, cache=Cache(), tablename='sngl_burst')
         for r in range(1, len(self.rounds) + 1):
             # read round veto triggers
@@ -199,16 +199,16 @@ class HvetoTab(base):
                        % (ifo, r, start, duration))
             cache = Cache([CacheEntry.from_T050017(
                                os.path.join(self.directory, rawfile))])
-            trigs = get_triggers('%s:hveto vetoed round %d' % (ifo, r), 'hveto',
+            trigs = get_triggers('%s:hveto_vetoed_round %d' % (ifo, r), 'hveto',
                          [self.span], config=config, cache=cache,
                          tablename='sngl_burst')
-            globalv.TRIGGERS['%s:hveto vetoed all,hveto' % ifo].extend(trigs)
+            globalv.TRIGGERS['%s:hveto_vetoed_all,hveto' % ifo].extend(trigs)
             # read round veto segments
             segfile = ('%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt'
                        % (ifo, r, start, duration))
             cache = Cache([CacheEntry.from_T050017(
                                os.path.join(self.directory, segfile))])
-            get_segments('%s:hveto veto segs round %d' % (ifo, r), [self.span],
+            get_segments('%s:hveto_veto_segs_round_%d' % (ifo, r), [self.span],
                          config=config, cache=cache, return_=False)
 
         for plot in self.plots:
@@ -229,7 +229,7 @@ class HvetoTab(base):
         # delete data from archive
         del globalv.SEGMENTS[self.states[0].definition]
         for row in range(1, len(self.rounds) + 1):
-            del globalv.SEGMENTS['%s:hveto veto segs round %s' % (ifo, row)]
+            del globalv.SEGMENTS['%s:hveto_veto_segs_round_%s' % (ifo, row)]
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `HvetoTab`.
@@ -378,7 +378,7 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
     def find_flags(self):
         # work out flags on-the-fly
         if not self.flags:
-            tag = 'hveto veto segs round 1'
+            tag = 'hveto_veto_segs_round_1'
             flag = None
             for key in globalv.SEGMENTS:
                 if key.endswith(tag):
@@ -391,7 +391,7 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
                 else:
                     break
                 i += 1
-                flag = flag[:-1] + str(i)
+                flag = flag.rsplit('_', 1)[0] + str(i)
             self.pargs.setdefault('labels', ['Round %d' % (i+1) for
                                              i in range(len(self.flags))])
 

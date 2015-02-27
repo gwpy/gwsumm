@@ -124,7 +124,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             if not Channel.MATCH.match(name):
                 raise ValueError()
             # trends are not stored in CIS, but try and get their raw source
-            if re.search('.[a-z]+\Z', name):
+            if re.search('\.[a-z]+\Z', name):
                 raise TypeError()
             new = Channel.query(name, timeout=timeout)
         except TypeError:
@@ -137,7 +137,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             new = Channel(name)
             if find_trend_source:
                 try:
-                    source = get_channel(name.rsplit('.', 1)[0])
+                    source = get_channel(new.name)
                 except ValueError:
                     pass
                 else:

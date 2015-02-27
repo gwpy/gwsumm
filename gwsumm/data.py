@@ -598,7 +598,10 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         break
                 data.channel = channel
                 if channel.ndsname in filter_:
-                    data = data.filter(*filter_[channel.ndsname])
+                    if callable(filter_[channel.ndsname]):
+                        data = filter_[channel.ndsname](data)
+                    else:
+                        data = data.filter(*filter_[channel.ndsname])
                 if isinstance(data, StateVector):
                     data.unit = units.dimensionless_unscaled
                     if hasattr(channel, 'bits'):

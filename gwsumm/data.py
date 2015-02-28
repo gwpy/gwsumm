@@ -137,7 +137,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             new = Channel(name)
             if find_trend_source:
                 try:
-                    source = get_channel(new.name)
+                    source = get_channel(new.name.rsplit('.')[0])
                 except ValueError:
                     pass
                 else:

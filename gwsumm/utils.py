@@ -125,8 +125,28 @@ def split_channels(channelstring):
     """Split a comma-separated list of channels that may, or may not
     contain NDS2 channel types as well
     """
-    return [channelstring[m.start():m.end()] for
-             m in Channel.MATCH.finditer(channelstring)]
+    out = []
+    channelstring = re_quote.sub('', channelstring)
+    while True:
+        channelstring = channelstring.strip('\' \n')
+        if ',' not in channelstring:
+            break
+        for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:
+            if nds2type and ',%s' % nds2type in channelstring:
+                try:
+                    channel, ctype, channelstring = channelstring.split(',', 2)
+                except ValueError:
+                    channel, ctype = channelstring.split(',')
+                    channelstring = ''
+                out.append('%s,%s' % (channel, ctype))
+                break
+            elif nds2type == '' and ',' in channelstring:
+                channel, channelstring = channelstring.split(',', 1)
+                out.append(channel)
+                break
+    if channelstring:
+        out.append(channelstring)
+    return out
 
 
 def count_free_cores(max=cpu_count()):

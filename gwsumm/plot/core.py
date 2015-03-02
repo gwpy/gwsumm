@@ -266,7 +266,7 @@ class DataPlot(SummaryPlot):
     def ifos(self):
         """Interferometer set for this `TabSummaryPlot`
         """
-        return self.channels.ifos
+        return self.allchannels.ifos
 
     @property
     def tag(self):

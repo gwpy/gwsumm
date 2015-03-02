@@ -34,7 +34,7 @@ except ImportError:
     from astropy.utils import OrderedDict
 
 from gwpy.segments import Segment
-from gwpy.detector import ChannelList
+from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter.utils import rUNDERSCORE
 
 from .registry import register_plot
@@ -249,6 +249,18 @@ class DataPlot(SummaryPlot):
     @channels.setter
     def channels(self, channellist):
         self._channels = channellist
+
+    @property
+    def allchannels(self):
+        """List of all unique channels for this plot
+        """
+        out = type(self.channels)()
+        for c in self.channels:
+            for m in Channel.MATCH.finditer(c.ndsname):
+                c2 = get_channel(c.ndsname[m.start():m.end()])
+                if c2 not in out:
+                    out.append(c2)
+        return out
 
     @property
     def ifos(self):

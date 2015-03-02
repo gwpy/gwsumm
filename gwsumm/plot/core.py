@@ -387,7 +387,7 @@ class DataPlot(SummaryPlot):
         for c in all_:
             name = c.texname.rsplit('.', 1)[0]
             if ' ' in c.texname:
-                out[c] = [c]
+                out[c.texname] = [c]
             elif name in out.keys():
                 out[name].append(c)
             else:

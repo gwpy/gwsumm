@@ -485,12 +485,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         in stead of the channel names
         """
         chans = self.get_channel_groups().keys()
-        if defaults is None:
-            try:
-                defaults = [b for c in chans for b in get_channel(c).bits if
-                            b is not None]
-            except AttributError as e:
-                defaults = []
         labels = list(self.pargs.pop('labels', defaults))
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')

@@ -477,7 +477,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         super(StateVectorDataPlot, self).__init__(*args, **kwargs)
         self.flags = []
 
-    def _parse_labels(self, defaults=None):
+    def _parse_labels(self, defaults=[]):
         """Pop the labels for plotting from the `pargs` for this Plot
 
         This method overrides from the `TimeSeriesDataPlot` in order

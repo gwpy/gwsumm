@@ -305,7 +305,7 @@ class PlotTab(Tab):
             for l in layout:
                 if isinstance(l, (tuple, list)):
                     l = l[0]
-                if not l in [1, 2, 3, 4, 6, 12]:
+                if l > 12:
                     raise ValueError("Cannot print more than 12 plots in a "
                                      "single row. The chosen layout value for "
                                      "each row must be a divisor of 12 to fit "

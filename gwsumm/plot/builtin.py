@@ -1655,7 +1655,7 @@ class ODCDataPlot(StateVectorDataPlot):
             # read ODC and bitmask vector
             data = get_timeseries(str(channel), valid, query=False,
                                   statevector=True)
-            bitmaskchan = get_channel(get_odc_bitmask(odc))
+            bitmaskchan = get_channel(get_odc_bitmask(channel))
             bitmask = get_timeseries(bitmaskchan, valid, query=False,
                                      statevector=True)
             # plot bitmask

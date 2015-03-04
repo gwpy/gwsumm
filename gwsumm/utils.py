@@ -154,3 +154,9 @@ def count_free_cores(max=cpu_count()):
     """
     active = 1 #len(active_children()
     return max - (active + 1)
+
+
+_re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')
+
+def get_odc_bitmask(odcchannel):
+    return _re_odc.sub('BITMASK', str(odcchannel))

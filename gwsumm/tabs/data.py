@@ -51,7 +51,7 @@ from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
 from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, split_channels,
-                     count_free_cores)
+                     count_free_cores, get_odc_bitmask)
 
 from .registry import (get_tab, register_tab)
 
@@ -451,7 +451,7 @@ class DataTab(DataTabBase):
                                            read=True))
         odcchannels = self.get_channels('odc', all_data=all_data, read=True)
         for odc in odcchannels:
-            bitmask = get_channel(str(odc).replace('OUT_DQ', 'BITMASK'))
+            bitmask = get_channel(get_odc_bitmask(odc))
             svchannels.update([odc, bitmask])
         svchannels = list(svchannels)
         if len(svchannels):

@@ -44,7 +44,7 @@ from gwpy.table.utils import get_table_column
 from gwpy.time import (from_gps, to_gps)
 
 from .. import (globalv, mode, version)
-from ..utils import (re_quote, re_cchar, split_channels)
+from ..utils import (re_quote, re_cchar, split_channels, get_odc_bitmask)
 from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
                     add_timeseries)
 from ..segments import get_segments
@@ -1653,9 +1653,9 @@ class ODCDataPlot(StateVectorDataPlot):
             else:
                 valid = SegmentList([self.span])
             # read ODC and bitmask vector
-            bitmaskchan = get_channel(str(channel).replace('OUT_DQ', 'BITMASK'))
             data = get_timeseries(str(channel), valid, query=False,
                                   statevector=True)
+            bitmaskchan = get_channel(get_odc_bitmask(odc))
             bitmask = get_timeseries(bitmaskchan, valid, query=False,
                                      statevector=True)
             # plot bitmask

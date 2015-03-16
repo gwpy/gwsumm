@@ -82,7 +82,7 @@ class TimeSeriesDataPlot(DataPlot):
         """
         kwargs.setdefault('edgecolor', 'black')
         kwargs.setdefault('facecolor', GREEN)
-        kwargs.setdefault('valid', {'facecolor': 'red'})
+        kwargs.setdefault('known', {'facecolor': 'red'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
         sax.set_epoch(float(self.start))
@@ -400,7 +400,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         edgecolor = self.pargs.pop('edgecolor')
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
-                    'valid': {'facecolor': validcolor}}
+                    'known': {'facecolor': validcolor}}
         for key in plotargs:
             if key in self.pargs:
                 plotargs[key] = self.pargs.pop(key)
@@ -415,7 +415,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
             ax.plot(segs, label=label, **plotargs)
 
         # make custom legend
-        v = plotargs.pop('valid', None)
+        v = plotargs.pop('known', None)
         if v:
             epoch = ax.get_epoch()
             xlim = ax.get_xlim()
@@ -510,7 +510,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         edgecolor = self.pargs.pop('edgecolor')
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
-                    'valid': {'facecolor': validcolor}}
+                    'known': {'facecolor': validcolor}}
         extraargs = self.parse_plot_kwargs()
 
         # plot segments

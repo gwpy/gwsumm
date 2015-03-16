@@ -352,6 +352,7 @@ class GuardianStatePlot(get_plot('segments')):
         plotargs.update({
             'facecolor': nominalcolor,
             'edgecolor': 'none',
+            'known': {'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
         })
         reqargs = plotargs.copy()
         reqargs.update({

@@ -1643,7 +1643,7 @@ class ODCDataPlot(StateVectorDataPlot):
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
                     'height': .7,
-                    'valid': {'facecolor': validcolor, 'height': .7}}
+                    'known': {'facecolor': validcolor, 'height': .7}}
         legendargs = self.parse_legend_kwargs()
 
         # plot segments
@@ -1698,7 +1698,7 @@ class ODCDataPlot(StateVectorDataPlot):
             nflags += n
 
         # make custom legend
-        v = plotargs.pop('valid', None)
+        v = plotargs.pop('known', None)
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         seg = SegmentList([Segment(self.start - 10, self.start - 9)])

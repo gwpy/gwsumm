@@ -27,6 +27,7 @@ except ImportError:
 from glue.ligolw.table import StripTableName as strip_table_name
 
 from gwpy.table import lsctables
+from gwpy.table.io import trigfind
 
 from gwpy.table.utils import (get_table_column, get_row_value)
 from gwpy.segments import (DataQualityFlag, SegmentList)
@@ -93,7 +94,6 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                                           "implemented.")
             else:
                 if cache is None:
-                    from laldetchar.triggers import trigfind
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
                                                           segment[1])

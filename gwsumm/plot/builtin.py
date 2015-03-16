@@ -240,7 +240,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         specgrams = get_spectrogram(channel, valid, query=False,
                                     format=sdform)
         # calculate ratio spectrum
-        if ratio in ['median', 'mean'] or isinstance(ratio, int):
+        if len(specgrams) and (ratio in ['median', 'mean'] or
+                               isinstance(ratio, int)):
             try:
                 allspec = specgrams.join(gap='ignore')
             except ValueError as e:

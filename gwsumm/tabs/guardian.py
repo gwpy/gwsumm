@@ -107,7 +107,7 @@ class GuardianTab(Tab):
         flags = [new.segmenttag % name for name in labels]
         new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
-            valid={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
+            known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
             tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
             title='%s Guardian %s state' % (
                 new.ifo, new.node.replace('_', r'\_')), zorder=2))
@@ -356,11 +356,11 @@ class GuardianStatePlot(get_plot('segments')):
         reqargs = plotargs.copy()
         reqargs.update({
             'facecolor': requestcolor,
-            'valid': None,
+            'known': None,
             })
         actargs.update({
             'facecolor': activecolor,
-            'valid': None,
+            'known': None,
         })
 
         if self.state and not self.all_data:
@@ -381,7 +381,7 @@ class GuardianStatePlot(get_plot('segments')):
 
         # make custom legend
         seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-        v = plotargs.pop('valid', None)
+        v = plotargs.pop('known', None)
         if v:
             v.pop('collection', None)
             v = ax.build_segment(seg, 0, **v)

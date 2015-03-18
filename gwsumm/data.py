@@ -485,12 +485,12 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         nds = 'LIGO_DATAFIND_SERVER' not in os.environ
 
     # read new data
-    for channel in channels:
-        globalv.DATA.setdefault(channel.ndsname, ListClass())
     query &= (abs(new) > 0)
     if cache is not None:
         query &= len(cache) > 0
     if query:
+        for channel in channels:
+            globalv.DATA.setdefault(channel.ndsname, ListClass())
         # open NDS connection
         if nds and config.has_option('nds', 'host'):
             host = config.get('nds', 'host')

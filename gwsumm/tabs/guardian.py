@@ -432,7 +432,6 @@ class GuardianStatePlot(get_plot('segments')):
             colors = ('magenta', 'red', 'saddlebrown', 'orange')
         cidx = 0
         for i, (data, mstate) in enumerate(modes):
-            print(data, mstate)
             for j, m in enumerate(mstate):
                 if m is None:
                     continue

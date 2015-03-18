@@ -29,6 +29,10 @@ try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 import numpy
 import nds2
@@ -373,7 +377,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     if not return_:
         return
     else:
-        out = dict()
+        out = OrderedDict()
         for channel in channels:
             channel = Channel(channel)
             chanstrs = re_channel.findall(channel.ndsname)
@@ -625,7 +629,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         return
 
     # return correct data
-    out = dict()
+    out = OrderedDict()
     for channel in channels:
         data = ListClass()
         for ts in globalv.DATA[channel.ndsname]:

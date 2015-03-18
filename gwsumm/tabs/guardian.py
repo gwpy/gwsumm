@@ -128,18 +128,20 @@ class GuardianTab(Tab):
         # work out which channels are needed
 
         prefix = '%s:GRD-%s_%%s' % (self.ifo, self.node)
-
         state = sorted(self.states, key=lambda s: abs(s.active))[0]
+
+        version = get_timeseries(
+            prefix % 'VERSION', state, config=config, nds=nds,
+            multiprocess=multiprocess, cache=datacache,
+        ).join(gap='ignore').min().value
+
+        prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE']
+        if version >= 1200:
+            prefices.append('OP')
         alldata = get_timeseries_dict(
-            [prefix % x for x in ['STATE_N', 'REQUEST_N', 'NOMINAL_N',
-                                  'MODE', 'OK']],
+            [prefix % x for x in prefices],
             state, config=config, nds=nds, multiprocess=multiprocess,
-            cache=datacache, dtype='int16')
-        grddata = alldata[prefix % 'STATE_N']
-        reqdata = alldata[prefix % 'REQUEST_N']
-        nomdata = alldata[prefix % 'NOMINAL_N']
-        modedata = alldata[prefix % 'MODE']
-        okdata = alldata[prefix % 'OK']
+            cache=datacache, dtype='int16').values()
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------
@@ -147,8 +149,7 @@ class GuardianTab(Tab):
 
         self.transitions = dict((v, []) for v in self.grdstates)
 
-        for sdata, rdata, ndata, okdata in zip(
-                grddata, reqdata, nomdata, okdata):
+        for sdata, rdata, ndata, okdata in zip(*alldata[:4]):
             ssegs = DataQualityDict()
             rsegs = DataQualityDict()
             nsegs = DataQualityDict()
@@ -415,32 +416,44 @@ class GuardianStatePlot(get_plot('segments')):
         ylim = ax.get_ylim()
         sax = None
         legentry = OrderedDict()
+        grdmode = get_timeseries(
+           '%s:GRD-%s_MODE' % (self.ifo, self.node),
+           valid, query=False).join(gap='pad', pad=-1)
         try:
-            grdmode = get_timeseries(
-               '%s:GRD-%s_MODE' % (self.ifo, self.node),
-               valid, query=False).join(gap='pad', pad=-1)
+           grdop = get_timeseries(
+              '%s:GRD-%s_OP' % (self.ifo, self.node),
+              valid, query=False).join(gap='pad', pad=-1)
         except KeyError:
-            pass
+            modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
+            colors = ('magenta', 'red', 'saddlebrown')
         else:
-            nodemode = OrderedDict()
-            try:
-                from guardian.daemon import DAEMON_MODES
-            except ImportError:
-                DAEMON_MODES = ('STOP', 'PAUSE', 'EXEC', 'MANAGED')
-            # get modes
-            modes = OrderedDict()
-            for i, (m, c) in enumerate(zip(DAEMON_MODES, MODE_COLORS)):
-                modes[m] = (grdmode == i).to_dqflag()
-                if sax is None:
-                    sax = plot.add_state_segments(
-                        modes[m].active,
-                        plotargs={'y': 0, 'facecolor': c, 'edgecolor': 'none',
-                                  'collection': False})
+            modes = [(grdop, (None, 'PAUSE', None)),
+                     (grdmode, ('EXEC', 'MANAGAED', 'MANUAL'))]
+            colors = ('magenta', 'red', 'saddlebrown', 'orange')
+        cidx = 0
+        for i, (data, mstate) in enumerate(modes):
+            print(data, mstate)
+            for j, m in enumerate(mstate):
+                if m is None:
+                    continue
+                try:
+                    x = (data == j).to_dqflag()
+                except KeyError:
+                    pass
                 else:
-                    sax.plot_segmentlist(modes[m].active, facecolor=c, y=0,
-                                         edgecolor='none', collection=False)
-                legentry[m.title()] = ax.build_segment(seg, 0, facecolor=c,
-                                                       edgecolor='none')
+                    if sax is None:
+                        sax = plot.add_state_segments(
+                            x.active,
+                            plotargs={'y': 0, 'facecolor': colors[cidx],
+                                      'edgecolor': 'none',
+                                      'collection': False})
+                    else:
+                        sax.plot_segmentlist(
+                            x.active, facecolor=colors[cidx], y=0,
+                            edgecolor='none', collection=False)
+                legentry[m.title()] = ax.build_segment(
+                    seg, 0, facecolor=colors[cidx], edgecolor='none')
+                cidx += 1
 
         # add OK segments along the bottom
         try:

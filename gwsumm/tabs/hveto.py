@@ -386,9 +386,11 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
     """
     type = 'hveto-segments'
     defaults = SegmentPlot.defaults.copy()
-    defaults['on_is_bad'] = True
-    defaults['valid'] = None
-    #defaults['valid'] = {'edgecolor': 'face', 'facecolor': 'green'}
+    defaults.update({
+        'on_is_bad': True,
+        'valid': None,
+        'insetlabels': False,
+    })
 
     def find_flags(self):
         # work out flags on-the-fly
@@ -406,8 +408,14 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
                 else:
                     break
                 i += 1
-                flag = flag.rsplit('_', 1)[0] + str(i)
+                flag = '%s_%s' % (flag.rsplit('_', 1)[0], str(i))
             self.pargs.setdefault('labels', ['Round %d' % (i+1) for
                                              i in range(len(self.flags))])
+
+    def init_plot(self, **kwargs):
+        plot, axes = super(HvetoSegmentSummaryPlot, self).init_plot(**kwargs)
+        for ax in axes:
+            ax.tick_params(axis='y', labelsize=18)
+        return plot, axes
 
 register_plot(HvetoSegmentSummaryPlot)

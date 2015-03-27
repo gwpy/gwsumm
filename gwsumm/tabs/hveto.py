@@ -21,6 +21,7 @@
 
 import os
 import re
+from glob import glob
 
 from numpy import loadtxt
 
@@ -110,19 +111,21 @@ class HvetoTab(base):
         # set params
         self.rounds = None
 
-        # get some basic info
-        ifo = config.get('DEFAULT', 'ifo')
-        start = int(self.span[0])
-        duration = int(abs(self.span))
-
         if not os.path.isdir(self.directory):
             self.rounds = None
             return
 
+        # get some basic info
+        ifo = config.get('DEFAULT', 'ifo')
+
         # read the configuration
+        d = os.path.realpath(self.directory).rstrip('/')
         self.conf = dict()
-        conffile = os.path.join(
-            self.directory, '%s-HVETO_CONF-%d-%d.txt' % (ifo, start, duration))
+        confs = glob(os.path.join(d, '%s-HVETO_CONF-*-*.txt' % ifo))
+        if len(confs) != 1:
+            self.rounds = 'FAIL'
+            return
+        conffile = confs[0]
         try:
             with open(conffile) as f:
                 self.conf = dict()
@@ -149,6 +152,14 @@ class HvetoTab(base):
                 self.primary = None
 
         # find the segments
+        try:
+            ce = CacheEntry.from_T050017(conffile)
+        except (ValueError):
+            start = int(self.span[0])
+            duration = int(abs(self.span))
+        else:
+            start = int(ce.segment[0])
+            duration = int(abs(ce.segment))
         try:
             statefile = self.conf['dqfnm']
         except KeyError:

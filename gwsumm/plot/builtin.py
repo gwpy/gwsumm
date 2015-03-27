@@ -302,7 +302,11 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                 'color': None,
                 'on_is_bad': False,
                 'insetlabels': 'inset',
-                'edgecolor': 'black'}
+                'edgecolor': 'black',
+                'legend-bbox_to_anchor': (1.01, 1.),
+                'legend-loc': 'upper left',
+                'legend-borderaxespad': 0,
+                'legend-fontsize': 12}
 
     def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
                  **kwargs):

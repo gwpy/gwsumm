@@ -77,7 +77,7 @@ def data_table(headers, data, **class_):
     if 'table' in class_:
         page.table(class_=class_['table'])
     else:
-        page.table()
+        page.table(class_='table table-condensed table-hover')
 
     # get row class
     trargs = {}
@@ -85,6 +85,7 @@ def data_table(headers, data, **class_):
         trargs['class_'] = class_['tr']
 
     # write headers
+    page.thead()
     page.tr(**trargs)
     thargs = {}
     if 'th' in class_:
@@ -92,6 +93,7 @@ def data_table(headers, data, **class_):
     for th in headers:
         page.th(th, **thargs)
     page.tr.close()
+    page.thead.close()
 
     # write data
     tdargs = {}

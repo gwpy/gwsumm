@@ -705,7 +705,7 @@ class DataTab(DataTabBase):
                 else:
                     unit = 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
-            page.add(str(html.data_table(headers, data, table='data')))
+            page.add(str(html.data_table(headers, data)))
 
         flags = self.get_flags('segments', unique=False)
         if len(flags):
@@ -731,7 +731,7 @@ class DataTab(DataTabBase):
                     active = '%.2f (%.2f%%)' % (abs(flag.active),
                                                 abs(flag.active) / pc)
                 data.append([flag.ifo, flag.tag, v, valid, active])
-            page.add(str(html.data_table(headers, data, table='data')))
+            page.add(str(html.data_table(headers, data)))
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i, flag in enumerate(flags):

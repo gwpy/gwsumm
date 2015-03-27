@@ -281,7 +281,7 @@ class HvetoTab(base):
         # otherwise...
         else:
             # print results table
-            page.div(class_='well')
+            page.div(class_='scaffold well')
             if self.primary:
                 channel = get_channel(self.primary)
                 page.p()

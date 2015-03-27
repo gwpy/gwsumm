@@ -30,6 +30,7 @@ from astropy.io.registry import register_reader
 from glue.lal import (Cache, CacheEntry, LIGOTimeGPS)
 
 from gwpy.table import lsctables
+from gwpy.segments import (SegmentList, DataQualityFlag)
 
 from .registry import (get_tab, register_tab)
 
@@ -157,9 +158,11 @@ class HvetoTab(base):
         except (ValueError):
             start = int(self.span[0])
             duration = int(abs(self.span))
+            span = self.span
         else:
             start = int(ce.segment[0])
             duration = int(abs(ce.segment))
+            span = ce.segment
         try:
             statefile = self.conf['dqfnm']
         except KeyError:
@@ -177,8 +180,9 @@ class HvetoTab(base):
         # determine the Hveto state
         cache = Cache([CacheEntry.from_T050017(
                            os.path.join(self.directory, statefile))])
-        get_segments(self.states[0].definition, [self.span], cache=cache,
-                     return_=False)
+        segments = SegmentList.read(cache)
+        globalv.SEGMENTS[self.states[0].definition] = DataQualityFlag(
+            self.states[0].definition, known=[span], active=segments)
         self.finalize_states(config=config, query=False)
 
         # read results file

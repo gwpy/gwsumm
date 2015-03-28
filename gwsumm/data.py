@@ -322,21 +322,24 @@ def find_cache_segments(*caches):
 
 def find_frame_type(channel):
     if channel.frametype is None:
-        try:
-            ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
-        except (AttributeError, KeyError):
-            ndstype = channel.type = nds2.channel.CHANNEL_TYPE_RAW
-        if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
-            ftype = 'M'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
-            ftype = 'T'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
-            ftype = 'LDAS_C02_L2'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
-            ftype = 'lldetchar'
+        if channel.ifo == 'C1':
+            channel.frametype = 'M'
         else:
-            ftype = 'R'
-        channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
+            try:
+                ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
+            except (AttributeError, KeyError):
+                ndstype = channel.type = nds2.channel.CHANNEL_TYPE_RAW
+            if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
+                ftype = 'M'
+            elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
+                ftype = 'T'
+            elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
+                ftype = 'LDAS_C02_L2'
+            elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
+                ftype = 'lldetchar'
+            else:
+                ftype = 'R'
+            channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
     return channel.frametype
 
 

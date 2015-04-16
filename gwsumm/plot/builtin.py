@@ -140,7 +140,8 @@ class TimeSeriesDataPlot(DataPlot):
                     for c in channels]
             # double-check empty
             for ts in data:
-                if not 'x0' in ts.metadata:
+                if (hasattr(ts, 'metadata') and
+                        not 'x0' in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
             # double-check log scales
             if self.pargs['logy']:

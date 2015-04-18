@@ -606,8 +606,11 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         data = filter_[channel.ndsname](data)
                     else:
                         data = data.filter(*filter_[channel.ndsname])
-                if isinstance(data, StateVector):
-                    data.unit = units.dimensionless_unscaled
+                if isinstance(data, StateVector) or ':GRD-' in str(channel):
+                    try:
+                        data.unit = units.dimensionless_unscaled
+                    except AttributeError:
+                        data._unit = units.dimensionless_unscaled
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
                 # XXX: HACK for failing unit check

@@ -37,6 +37,7 @@ import calendar
 import getpass
 import warnings
 import httplib
+import importlib
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
@@ -457,6 +458,17 @@ Output directory: %s
 """ % (mode.MODE_NAME[mode.get_mode()], starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, base))))
+
+# -- Load plugins
+# loading the module containing a plugin should 'register' the relevant
+# Plot, or Tab, so they are accessible downstream
+try:
+    plugins = config.ndoptions('plugins')
+except NoSectionError:
+    pass
+else:
+    for plugin in plugins:
+        importlib.import_module(plugin)
 
 # Load custom units
 try:

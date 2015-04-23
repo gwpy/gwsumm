@@ -335,7 +335,7 @@ class DataPlot(SummaryPlot):
                       'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
                       'bins', 'range', 'normed', 'weights', 'cumulative',
                       'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'stacked', 'logbins', 'alpha', 'linecolor',
+                      'log', 'stacked', 'logbins', 'linecolor',
                       'facecolor']:
             try:
                 val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))

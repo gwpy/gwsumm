@@ -97,6 +97,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     newsegs = validity - old
     # load new segments
     query &= abs(newsegs) != 0
+    query &= len(allflags) > 0
     if query:
         if cache:
             try:

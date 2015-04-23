@@ -127,11 +127,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 except (NoSectionError, NoOptionError):
                     pass
             try:
-                if 'url' in kwargs and 'dqsegdb' in kwargs['url']:
-                    new = DataQualityDict.query_dqsegdb(
-                        allflags, qsegs, on_error=segdb_error, **kwargs)
-                else:
-                    new = DataQualityDict.query(allflags, qsegs, **kwargs)
+                new = DataQualityDict.query(
+                    allflags, qsegs, on_error=segdb_error, **kwargs)
             except Exception as e:
                 # ignore error from SegDB
                 if segdb_error in ['ignore', None]:

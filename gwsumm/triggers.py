@@ -121,6 +121,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
 
         # return correct triggers
         out = lsctables.New(TableClass, columns=columns)
+        out.channel = str(channel)
+        out.etg = str(etg)
         out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
                    times[i] in segments)
         return out

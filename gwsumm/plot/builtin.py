@@ -104,6 +104,7 @@ class TimeSeriesDataPlot(DataPlot):
                 ax.set_xscale('days')
                 ax.set_xlabel('_auto')
             ax.set_epoch(float(self.start))
+            ax.grid(True, which='both')
         return self.plot, axes
 
     def finalize(self, outputfile=None):
@@ -146,7 +147,7 @@ class TimeSeriesDataPlot(DataPlot):
             # double-check log scales
             if self.pargs['logy']:
                 for ts in data:
-                    ts[ts.data == 0] = 1e-100
+                    ts.data[ts.data == 0] = 1e-100
             # plot groups or single TimeSeries
             if len(channels) > 1:
                 ax.plot_timeseries_mmm(*data, **pargs)
@@ -418,7 +419,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
             else:
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False)
-            ax.plot(segs, label=label, **plotargs)
+            ax.plot(segs.coalesce(), label=label, **plotargs)
 
         # make custom legend
         v = plotargs.pop('known', None)
@@ -644,7 +645,7 @@ class SpectrumDataPlot(DataPlot):
                 data = [s[1:] for s in data]
             if self.pargs['logy']:
                 for sp in data:
-                    sp[sp.data == 0] = 1e-100
+                    sp.data[sp.data == 0] = 1e-100
 
             if use_percentiles:
                 ax.plot_spectrum_mmm(*data, **pargs)
@@ -722,6 +723,8 @@ class TimeSeriesHistogramPlot(DataPlot):
     type = 'histogram'
     data = 'timeseries'
     defaults = {'ylabel': 'Rate [Hz]',
+                'log': True,
+                'histtype': 'stepfilled',
                 'rwidth': 1}
 
     def init_plot(self, plot=HistogramPlot):
@@ -730,39 +733,22 @@ class TimeSeriesHistogramPlot(DataPlot):
         """
         self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
+        ax.grid(True, which='both')
         return self.plot, ax
 
-    def parse_histogram_kwargs(self):
-        """Extract the histogram arguments from everything else.
-        """
-        histargs = {}
-        for param in ['bins', 'range', 'normed', 'weights', 'cumulative',
-                      'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'color', 'label', 'stacked', 'logbins',
-                      'alpha', 'linecolor', 'edgecolor', 'facecolor']:
-            try:
-                histargs[param] = self.pargs.pop(param)
-            except KeyError:
-                if param == 'range':
-                    try:
-                        histargs[param] = self.pargs['xlim']
-                    except KeyError:
-                        pass
-                if param == 'log':
-                    histargs['log'] = self.pargs.pop('logy', False)
-            else:
-                if isinstance(histargs[param], (unicode, str)):
-                    try:
-                        histargs[param] = eval(histargs[param])
-                    except:
-                        pass
-        # remove logy if already requesting log histogram
-        if histargs.get('log', True) and self.pargs.get('logy', True):
-            self.pargs.pop('logy', None)
-        # set alpha
-        if len(self.channels) > 1:
-             histargs.setdefault('alpha', 0.7)
-        return histargs
+    def parse_plot_kwargs(self, **defaults):
+        kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
+            **defaults)
+        for histargs in kwargs:
+            histargs.setdefault('logbins', self.pargs.get('logx', False))
+            self.pargs.setdefault('logy', histargs['log'])
+            # set range as xlim
+            if 'range' not in histargs and 'xlim' in self.pargs:
+                histargs['range'] = self.pargs.get('xlim')
+            # set alpha
+            if len(self.channels) > 1:
+                 histargs.setdefault('alpha', 0.7)
+        return kwargs
 
     def process(self):
         """Get data and generate the figure.
@@ -779,14 +765,8 @@ class TimeSeriesHistogramPlot(DataPlot):
         if suptitle:
             plot.suptitle(suptitle)
 
-        # get spectrum format: 'amplitude' or 'power'
         # extract histogram arguments
-        range = self.pargs.pop('range', self.pargs.get('xlim'))
         histargs = self.parse_plot_kwargs()
-        for d in histargs:
-            d['range'] = range
-            d['log'] = self.pargs.pop('logy', False)
-            d['logbins'] = self.pargs.get('logx', False)
 
         # get data
         data = []
@@ -1104,6 +1084,17 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
     def __init__(self, *args, **kwargs):
         super(TriggerHistogramPlot, self).__init__(*args, **kwargs)
         self.etg = self.pargs.pop('etg')
+        self.column = self.pargs.pop('column')
+
+    @property
+    def tag(self):
+        try:
+            return self._tag
+        except AttributeError:
+            tag = super(TriggerHistogramPlot, self).tag
+            if self.column:
+                tag += '_%s' % re_cchar.sub('_', self.column).upper()
+            return tag
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -1111,6 +1102,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         """
         self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
+        ax.grid(True, which='both')
         return self.plot, ax
 
     def process(self):
@@ -1119,17 +1111,15 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         # get histogram parameters
         (plot, ax) = self.init_plot()
 
-        column = self.pargs.pop('column')
-
-        # extract histogram arguments
-        histargs = self.parse_histogram_kwargs()
-        legendargs = self.parse_legend_kwargs()
-
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
+
+        # extract histogram arguments
+        histargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
 
         # add data
         data = []
@@ -1140,19 +1130,21 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
             else:
                 valid = SegmentList([self.span])
             table_ = get_triggers(str(channel), self.etg, valid, query=False)
-            data.append(get_table_column(table_, column))
+            data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
                 self.pargs.setdefault('xlim', channel.amplitude_range)
 
         # get range
-        if not 'range' in histargs:
-            histargs['range'] = ax.common_limits(data)
+        if not 'range' in histargs[0]:
+            for kwset in histargs:
+                kwset['range'] = ax.common_limits(data)
 
         # plot
-        for label, arr in zip(labels, data):
+        for label, arr, kwargs in zip(labels, data, histargs):
+            kwargs.pop('label')
             if arr.size:
-                ax.hist(arr, label=label, **histargs)
+                ax.hist(arr, label=label, **kwargs)
             else:
                 ax.plot([], label=label)
 
@@ -1193,6 +1185,17 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                              "'column' is given.")
         super(TriggerRateDataPlot, self).__init__(*args, **kwargs)
         self.etg = self.pargs.pop('etg')
+        self.column = self.pargs.pop('column')
+
+    @property
+    def tag(self):
+        try:
+            return self._tag
+        except AttributeError:
+            tag = super(TriggerRateDataPlot, self).tag
+            if self.column:
+                tag += '_%s' % re_cchar.sub('_', self.column).upper()
+            return tag
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -1200,9 +1203,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
 
         # get rate arguments
         stride = self.pargs.pop('stride')
-        column = self.pargs.pop('column', None)
-        if column:
-            cname = get_column_string(column)
+        if self.column:
+            cname = get_column_string(self.column)
             bins = self.pargs.pop('bins')
             operator = self.pargs.pop('operator', '>=')
         else:
@@ -1212,12 +1214,12 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         labels = self.pargs.pop('labels', None)
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
-        elif labels is None and column and len(self.channels) > 1:
+        elif labels is None and self.column and len(self.channels) > 1:
             labels = []
             for channel, bin in [(c, b) for c in self.channels for b in bins]:
                 labels.append(r' '.join([channel, cname, '$%s$' % str(operator),
                                          str(b)]))
-        elif labels is None and column:
+        elif labels is None and self.column:
             labels = [r' '.join([cname,'$%s$' % str(operator), str(b)])
                       for b in bins]
         elif labels is None:
@@ -1232,14 +1234,15 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             else:
                 valid = SegmentList([self.span])
             table_ = get_triggers(str(channel), self.etg, valid, query=False)
-            if column:
+            if self.column:
                 rates = binned_event_rates(
-                    table_, stride, column, bins, operator, self.start,
+                    table_, stride, self.column, bins, operator, self.start,
                     self.end).values()
             else:
                 rates = [event_rate(table_, stride, self.start, self.end)]
             for bin, rate in zip(bins, rates):
-                keys.append('%s_RATE_%s' % (str(channel), bin))
+                keys.append('%s_RATE_%s_%s'
+                            % (str(channel), str(self.column), bin))
                 if keys[-1] not in globalv.DATA:
                     add_timeseries(rate, keys[-1])
 

@@ -473,11 +473,11 @@ def base_map_dropdown(this,class_='btn-group pull-left base-map', id_=None,
                  (key, val) in bases.iteritems()]
     # slam it all together
     page = markup.page()
-    page.div(class_=class_, **id_)
     if baselinks:
+        page.div(class_=class_, **id_)
         page.add(str(dropdown(this, baselinks,
                               class_='navbar-brand dropdown-toggle')))
         page.div.close()
     else:
-        page.add(str(this))
+        page.div(str(this), class_='navbar-brand')
     return page

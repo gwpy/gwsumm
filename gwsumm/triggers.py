@@ -36,6 +36,75 @@ from . import globalv
 from .utils import (re_cchar, vprint)
 from .data import find_cache_segments
 
+ETG_TABLE = {
+    # single-IFO burst
+    'omicron': lsctables.SnglBurstTable,
+    'omega': lsctables.SnglBurstTable,
+    'omegadq': lsctables.SnglBurstTable,
+    'kleinewelle': lsctables.SnglBurstTable,
+    'kw': lsctables.SnglBurstTable,
+    'dmtomega': lsctables.SnglBurstTable,
+    'dmt_wsearch': lsctables.SnglBurstTable,
+    # multi-IFO burst
+    'cwb': lsctables.MultiBurstTable,
+    # single-IFO inspiral
+    'daily_ihope': lsctables.SnglInspiralTable,
+    'daily_ahope': lsctables.SnglInspiralTable,
+}
+
+
+def get_etg_table(etg):
+    """Find which table should be used for the given etg
+
+    Parameters
+    ----------
+    etg : `str`
+        name of Event Trigger Generator for which to query
+
+    Returns
+    -------
+    table : `~gwpy.table.Table`
+        LIGO_LW table registered to the given ETG
+
+    Raises
+    ------
+    KeyError
+        if the ETG is not registered
+    """
+    try:
+        return ETG_TABLE[etg.lower()]
+    except KeyError as e:
+        e.args = ('No LIGO_LW table registered to etg %r' % etg,)
+        raise
+
+
+def register_etg_table(etg, table, force=False):
+    """Register a specific LIGO_LW table to an ETG
+
+    Parameters
+    ----------
+    etg : `str`
+        name of Event Trigger Generator to register
+    table : `~gwpy.table.Table`, `str`
+        `Table` class to register, or the ``tableName`` of the relevant class
+    force : `bool`, optional, default: `False`
+        overwrite an existing registration for the given ETG
+
+    Raises
+    ------
+    KeyError
+        if a `str` table cannot be resolved to a specific class
+    """
+    if isinstance(table, str):
+        try:
+            table = lsctables.TableByName[etg]
+        except KeyError as e:
+            e.args = ('Cannot parse table name %r' % table,)
+    if etg.lower() in ETG_TABLE and not force:
+        raise KeyError('LIGO_LW table already registered to etg %r' % etg,)
+    ETG_TABLE[etg.lower()] = table
+    return table
+
 
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                  query=True, multiprocess=False, tablename=None,
@@ -47,20 +116,11 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         segments = segments.active
     segments = SegmentList(segments)
 
-    if not tablename:
-        try:
-            from laldetchar.triggers import utils as trigutils
-            tablename = trigutils.which_table(etg)
-        except ValueError:
-            if etg.lower() in ['daily ihope', 'daily ahope']:
-                tablename = strip_table_name(
-                    lsctables.SnglInspiralTable.tableName)
-            elif key in globalv.TRIGGERS:
-                tablename = strip_table_name(globalv.TRIGGERS[key].tableName)
-            else:
-                raise
-    # get default table type for this generator
-    TableClass = lsctables.TableByName[tablename]
+    # get LIGO_LW table for this etg
+    if tablename:
+        TableClass = lsctables.TableByName[tablename]
+    else:
+        TableClass = get_etg_table(etg)
 
     # work out columns
     try:

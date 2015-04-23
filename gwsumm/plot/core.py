@@ -338,10 +338,17 @@ class DataPlot(SummaryPlot):
                       'log', 'stacked', 'logbins', 'linecolor',
                       'facecolor']:
             try:
-                val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))
+                val = self.pargs.pop(kwarg)
             except KeyError:
-                continue
-            else:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
                 plotargs[kwarg] = val
         chans = self.get_channel_groups().keys()
         for key, val in plotargs.iteritems():

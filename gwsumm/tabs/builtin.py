@@ -585,18 +585,17 @@ class StateTab(PlotTab):
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
-        # parse core Tab information
-        new = super(StateTab, cls).from_ini(cp, section, *args, **kwargs)
         # parse states and retrieve their definitions
         if cp.has_option(section, 'states'):
             # states listed individually
-            statenames = [re_quote.sub('', s).strip() for s in
-                          cp.get(section, 'states').split(',')]
+            kwargs.setdefault(
+                'states', [re_quote.sub('', s).strip() for s in
+                           cp.get(section, 'states').split(',')])
         else:
             # otherwise use 'all' state - full span with no gaps
-            statenames = ['All']
-        new.states = statenames
-        return new
+            kwargs.setdefault('states', ['All'])
+        # parse core Tab information
+        return super(StateTab, cls).from_ini(cp, section, *args, **kwargs)
 
     # ------------------------------------------------------------------------
     # HTML methods

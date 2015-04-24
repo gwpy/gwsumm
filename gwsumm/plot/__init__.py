@@ -55,6 +55,6 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 from .registry import *
+from .utils import *
 from .core import *
 from .builtin import *
-

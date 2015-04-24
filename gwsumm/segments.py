@@ -167,6 +167,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 diff1 = out[compound] - globalv.SEGMENTS[f]
                 diff2 = globalv.SEGMENTS[f] - out[compound]
                 out[compound] = (diff1 | diff2)
+            out[compound].known &= validity
+            out[compound].active &= validity
         if isinstance(flag, basestring):
             return out[flag]
         else:

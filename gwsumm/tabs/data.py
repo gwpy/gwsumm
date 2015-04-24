@@ -48,7 +48,7 @@ from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
                     get_spectrum)
 from ..plot import get_plot
 from ..segments import get_segments
-from ..state import (ALLSTATE, SummaryState, get_state)
+from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
 from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, split_channels,
                      count_free_cores, get_odc_bitmask)
@@ -323,7 +323,11 @@ class DataTab(DataTabBase):
         """Fetch the segments for each state for this `SummaryTab`
         """
         # finalize all-state
-        get_state(ALLSTATE).fetch(config=config)
+        try:
+            allstate = get_state(ALLSTATE)
+        except ValueError:
+            allstate = generate_all_state(self.start, self.end)
+        allstate.fetch(config=config)
         # shortcut segment query for each state
         #alldefs = {}
         #for state in self.states:

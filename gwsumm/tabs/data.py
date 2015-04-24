@@ -381,8 +381,13 @@ class DataTab(DataTabBase):
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
+            if state:
+                vprint("Processing '%s' state\n" % state.name)
+            else:
+                vprint("Pre-processing all-data requests\n")
             self.process_state(state, config=config, multiprocess=multiprocess,
                                plotqueue=queue, **stateargs)
+            vprint("    Done.\n")
 
         # consolidate child processes
         if queue is not None:
@@ -424,10 +429,8 @@ class DataTab(DataTabBase):
             otherwise ``'ignore'`` them completely and carry on.
         """
         if state:
-            vprint("Processing '%s' state\n" % state.name)
             all_data = False
         else:
-            vprint("Pre-processing all-data requests\n")
             all_data = True
             state = get_state(ALLSTATE)
 
@@ -559,7 +562,6 @@ class DataTab(DataTabBase):
                 vprint("        %s written\n" % plot.outputfile)
         if nproc:
             vprint("        %d plot processes executed.\n" % nproc)
-        vprint("    Done.\n")
 
     # -------------------------------------------------------------------------
     # HTML operations

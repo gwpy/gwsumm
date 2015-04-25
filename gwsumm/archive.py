@@ -124,7 +124,7 @@ def read_data_archive(sourcefile):
             try:
                 add_timeseries(ts, key=ts.channel.ndsname)
             except ValueError:
-                if mode.get_mode() == mode.MODE_ENUM['day']:
+                if mode.get_mode() == mode.SUMMARY_MODE_DAY:
                     raise
                 warnings.warn('Caught ValueError in combining daily archives')
                 # get end time

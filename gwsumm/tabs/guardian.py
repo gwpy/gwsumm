@@ -427,9 +427,9 @@ class GuardianStatePlot(get_plot('segments')):
             modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
             colors = ('magenta', 'red', 'saddlebrown')
         else:
-            modes = [(grdop, (None, 'PAUSE', None)),
-                     (grdmode, ('EXEC', 'MANAGAED', 'MANUAL'))]
-            colors = ('magenta', 'red', 'saddlebrown', 'orange')
+            modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
+                     (grdop, (None, 'PAUSE', None))]
+            colors = ('red', 'saddlebrown', 'orange', 'magenta')
         cidx = 0
         for i, (data, mstate) in enumerate(modes):
             for j, m in enumerate(mstate):

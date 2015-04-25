@@ -307,7 +307,7 @@ register_tab(GuardianTab)
 
 class GuardianStatePlot(get_plot('segments')):
     type = 'guardian'
-    defaults = get_plot('segments').defaults
+    defaults = get_plot('segments').defaults.copy()
     defaults.update({
         'color': None,
         'insetlabels': 'inset',

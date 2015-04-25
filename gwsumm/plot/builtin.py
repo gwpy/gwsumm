@@ -791,8 +791,9 @@ class TimeSeriesHistogramPlot(DataPlot):
         for arr, pargs in zip(data, histargs):
             if arr.size:
                 ax.hist(arr, **pargs)
-            else:
-                ax.hist([], **pargs)
+            elif len(self.channels) > 1:
+                ax.plot([], color=pargs.get('color', None),
+                        label=pargs.get('label', '_'))
 
         # customise plot
         legendargs = self.parse_legend_kwargs()

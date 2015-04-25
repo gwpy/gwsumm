@@ -34,7 +34,7 @@ from .data import (get_channel, add_timeseries, add_spectrogram)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-re_rate = re.compile('_RATE_[0-9]+(?:\.[0-9]+)?\Z')
+re_rate = re.compile('_EVENT_RATE_')
 
 
 def write_data_archive(outfile, timeseries=True, spectrogram=True,

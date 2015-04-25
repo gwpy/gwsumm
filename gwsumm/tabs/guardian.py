@@ -164,7 +164,7 @@ class GuardianTab(Tab):
                 transout = (numpy.diff(
                     instate.astype(int)) == -1).nonzero()[0] + 1
                 for i, j in zip(transin, transout):
-                    t = sdata.times[i]
+                    t = sdata.times[i].value
                     from_ = sdata[i-1].value
                     to_ = sdata[j].value
                     self.transitions[v].append((t, from_, to_))

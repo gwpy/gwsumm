@@ -804,7 +804,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     s = specgram.crop(*seg)
                     # XXX FIXME: this corrects the bias offset in Rayleigh
                     if format in ['rayleigh']:
-                        med = numpy.median(s.data)
+                        med = numpy.median(s.value)
                         s /= med
                 if s.shape[0]:
                     out.append(s)

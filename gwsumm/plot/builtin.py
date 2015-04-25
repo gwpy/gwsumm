@@ -147,7 +147,7 @@ class TimeSeriesDataPlot(DataPlot):
             # double-check log scales
             if self.pargs['logy']:
                 for ts in data:
-                    ts.data[ts.data == 0] = 1e-100
+                    ts.value[ts.value == 0] = 1e-100
             # plot groups or single TimeSeries
             if len(channels) > 1:
                 ax.plot_timeseries_mmm(*data, **pargs)
@@ -645,7 +645,7 @@ class SpectrumDataPlot(DataPlot):
                 data = [s[1:] for s in data]
             if self.pargs['logy']:
                 for sp in data:
-                    sp.data[sp.data == 0] = 1e-100
+                    sp.value[sp.value == 0] = 1e-100
 
             if use_percentiles:
                 ax.plot_spectrum_mmm(*data, **pargs)
@@ -1032,7 +1032,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
             for ts in data:
                 # double-check log scales
                 if self.pargs['logy']:
-                    ts[ts.data == 0] = 1e-100
+                    ts.value[ts.value == 0] = 1e-100
                 if color is None:
                     line = ax.plot_timeseries(ts, label=label)[0]
                     color = line.get_color()

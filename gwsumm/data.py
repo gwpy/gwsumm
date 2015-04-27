@@ -621,8 +621,12 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if not 'units do not match' in str(e):
                         raise
                     warnings.warn(str(e))
-                    globalv.DATA[channel.ndsname][-1].unit = (
-                        globalv.DATA[channel.ndsname][0].unit)
+                    try:
+                        globalv.DATA[channel.ndsname][-1].unit = (
+                            globalv.DATA[channel.ndsname][0].unit)
+                    except AttributeError:
+                        globalv.DATA[channel.ndsname][-1]._unit = (
+                            globalv.DATA[channel.ndsname][0].unit)
                     globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):

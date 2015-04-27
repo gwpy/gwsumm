@@ -779,9 +779,9 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             except ValueError as e:
                 if 'has no unit' in str(e):
                     unit = ts.unit
-                    ts.unit = 'count'
+                    ts._unit = units.Unit('count')
                     specgram = ts.spectrogram(stride, nproc=nproc, **fftparams)
-                    specgram.unit = unit ** 2 / units.Hertz
+                    specgram._unit = unit ** 2 / units.Hertz
                 else:
                     raise
             if filter_ and method not in ['rayleigh']:

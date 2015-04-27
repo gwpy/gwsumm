@@ -254,7 +254,7 @@ setup(name=PACKAGENAME,
           'numpy >= 1.5',
           'matplotlib >= 1.3.0',
           'astropy >= 0.3',
-          'gwpy >= 0.1b1',
+          'gwpy >= 0.1a5',
       ] + extra_install_requires,
       dependency_links=[
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'

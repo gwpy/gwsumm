@@ -526,6 +526,8 @@ if not opts.html_only:
                         channel.bits = []
                     while len(channel.bits) < int(key):
                         channel.bits.append(None)
+                    if val.startswith('r"') or val.startswith('r\''):
+                        val = eval(val)
                     channel.bits.append(val)
                 else:
                     try:

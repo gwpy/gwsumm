@@ -588,7 +588,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 else:
                     segcache = fcache.sieve(segment=segment)
                 # set minute trend times modulo 60 from GPS 0
-                if re.match('[A-Z]\d_M', ftype):
+                if re.match('(?:(.*)_)?[A-Z]\d_M', ftype):
                     segstart = int(segment[0]) // 60 * 60
                     segend = int(segment[1]) // 60 * 60
                     if segend >= segment[1]:

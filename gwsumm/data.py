@@ -587,9 +587,19 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                    segment=segment.protract(resamplepad))
                 else:
                     segcache = fcache.sieve(segment=segment)
+                # set minute trend times modulo 60 from GPS 0
+                if re.match('[A-Z]\d_M', ftype):
+                    segstart = int(segment[0]) // 60 * 60
+                    segend = int(segment[1]) // 60 * 60
+                    if segend >= segment[1]:
+                        segend -= 60
+                    # and ignore segments shorter than 1 full average
+                    if (segend - segstart) < 60:
+                        continue
+                else:
+                    segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
-                                     start=float(segment[0]),
-                                     end=float(segment[1]), type=ctype,
+                                     start=segstart, end=segend, type=ctype,
                                      nproc=nproc, resample=qresample,
                                      verbose=verbose, **ioargs)
             for (channel, data) in tsd.iteritems():

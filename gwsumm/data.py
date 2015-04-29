@@ -860,7 +860,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
             globalv.SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):
             globalv.SPECTRUM[name] = Spectrum([], channel=channel, f0=0, df=1,
-                                              unit='')
+                                              unit=units.Unit(''))
             globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
             globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
         else:

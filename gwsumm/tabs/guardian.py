@@ -425,11 +425,11 @@ class GuardianStatePlot(get_plot('segments')):
               valid, query=False).join(gap='pad', pad=-1)
         except KeyError:
             modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
-            colors = ('magenta', 'red', 'saddlebrown')
+            colors = ('yellow', (0., .4, 1.), (.5, .0, .75))
         else:
             modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
                      (grdop, (None, 'PAUSE', None))]
-            colors = ('red', 'saddlebrown', 'orange', 'magenta')
+            colors = ((0., .4, 1.), (.5, .0, .75), 'hotpink', 'yellow')
         cidx = 0
         for i, (data, mstate) in enumerate(modes):
             for j, m in enumerate(mstate):

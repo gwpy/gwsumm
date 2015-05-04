@@ -97,7 +97,7 @@ def register_etg_table(etg, table, force=False):
     """
     if isinstance(table, str):
         try:
-            table = lsctables.TableByName[etg]
+            table = lsctables.TableByName[table]
         except KeyError as e:
             e.args = ('Cannot parse table name %r' % table,)
     if etg.lower() in ETG_TABLE and not force:

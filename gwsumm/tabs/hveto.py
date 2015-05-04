@@ -40,7 +40,7 @@ from ..config import (GWSummConfigParser, NoOptionError)
 from ..data import get_channel
 from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState)
-from ..triggers import get_triggers
+from ..triggers import (register_etg_table, get_triggers)
 from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
@@ -338,6 +338,7 @@ class HvetoTab(base):
         return self.frames[idx]
 
 register_tab(HvetoTab)
+register_etg_table('hveto', 'sngl_burst')
 
 
 def read_hveto_triggers(f, columns=HVETO_COLUMNS, filt=None, nproc=1):

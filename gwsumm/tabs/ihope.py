@@ -36,7 +36,7 @@ from gwpy.plotter.table import (get_table_column, get_row_value)
 from .. import (version, html, globalv)
 from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..data import find_cache_segments
-from ..triggers import get_triggers
+from ..triggers import (get_triggers, register_etg_table)
 from ..utils import re_quote
 from ..state import SummaryState
 from ..mode import (get_mode, MODE_ENUM)
@@ -332,6 +332,8 @@ class DailyAhopeTab(base):
 
 register_tab(DailyAhopeTab)
 register_tab(DailyAhopeTab, name='archived-daily-ihope')
+register_etg_table('daily ahope', SnglInspiralTable)
+register_etg_table('daily ihope', SnglInspiralTable)
 
 register_reader('daily ihope', SnglInspiralTable,
                 get_reader('ligolw', SnglInspiralTable))

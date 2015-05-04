@@ -24,7 +24,9 @@ try:
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
-from glue.ligolw.table import StripTableName as strip_table_name
+from glue.ligolw.table import (StripTableName as strip_table_name,
+                               CompareTableNames as compare_table_names)
+from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.table import lsctables
 from gwpy.table.io import trigfind
@@ -106,9 +108,36 @@ def register_etg_table(etg, table, force=False):
     return table
 
 
+def get_partial_contenthandler(table):
+    """Build a `PartialLIGOLWContentHandler` for the given table
+
+    Parameters
+    ----------
+    table : `type`
+        the table class to be read
+
+    Returns
+    -------
+    contenthandler : `type`
+        a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
+        read only the given `table`
+    """
+    def _filter_func(name, attrs):
+        if name == table.tagName and attrs.has_key('Name'):
+            return compare_table_names(attrs.get('Name'), table.tableName) == 0
+        else:
+            return False
+
+    class _ContentHandler(PartialLIGOLWContentHandler):
+        def __init__(self, document):
+            super(_ContentHandler, self).__init__(document, _filter_func)
+
+    return _ContentHandler
+
+
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                  query=True, multiprocess=False, tablename=None,
-                 return_=True):
+                 contenthandler=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -146,6 +175,11 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # read new triggers
     query &= (abs(new) != 0)
     if query:
+        # set content handler
+        if contenthandler is None:
+            contenthandler = get_partial_contenthandler(TableClass)
+        lsctables.use_in(contenthandler)
+
         for segment in new:
             filter_ = lambda t: float(get_row_value(t, 'time')) in segment
             # find trigger files
@@ -163,8 +197,13 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     form = etg.lower()
                 # read triggers and store
                 segcache = segcache.checkfilesexist()[0]
-                table = TableClass.read(segcache, columns=columns,
-                                        format=form, filt=filter_)
+                if form == 'ligolw':
+                    table = TableClass.read(segcache, columns=columns,
+                                            format=form, filt=filter_,
+                                            contenthandler=contenthandler)
+                else:
+                    table = TableClass.read(segcache, columns=columns,
+                                            format=form, filt=filter_)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:

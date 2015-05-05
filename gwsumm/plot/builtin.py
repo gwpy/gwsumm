@@ -1683,29 +1683,31 @@ class ODCDataPlot(StateVectorDataPlot):
                     stateseries.bits = channel.bits
                     if not 'int' in str(stateseries.dtype):
                         stateseries = stateseries.astype('uint32')
-                    newflags = stateseries.to_dqflags().values()
+                    newflags = stateseries.to_dqflags()
                     if flags[type_] is None:
                         flags[type_] = newflags
                     else:
-                        for i, flag in enumerate(newflags):
+                        for i, flag in newflags.iteritems():
                             flags[type_][i] += flag
-            n = len([m for m in channel.bits if m is not None and m is not ''])
-            for i in range(n):
+            i = 0
+            for bit in channel.bits:
+                if bit is None or bit == '':
+                    continue
                 try:
-                    mask = flags['bitmask'][i].active
+                    mask = flags['bitmask'][bit].active
                 except TypeError:
                     continue
-                segs = flags['data'][i]
+                segs = flags['data'][bit]
                 if segs.name == channel.bits[0]:
-                    ax.plot(segs.known, y=-nflags-i, facecolor=(1., .7, 0.),
+                    ax.plot(segs.known, y=-nflags, facecolor=(1., .7, 0.),
                             edgecolor='none', height=1., label=None,
                             collection=False, zorder=-1001)
                 else:
-                    ax.plot(mask, y=-nflags-i, facecolor=maskcolor,
+                    ax.plot(mask, y=-nflags, facecolor=maskcolor,
                             edgecolor='none', height=1., label=None,
                             collection=False, zorder=-1001)
-                ax.plot(segs, y=-nflags-i, label=segs.name, **plotargs)
-            nflags += n
+                ax.plot(segs, y=-nflags, label=segs.name, **plotargs)
+                nflags += 1
 
         # make custom legend
         v = plotargs.pop('known', None)

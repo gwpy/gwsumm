@@ -1690,7 +1690,7 @@ class ODCDataPlot(StateVectorDataPlot):
                         for i, flag in newflags.iteritems():
                             flags[type_][i] += flag
             i = 0
-            for bit in channel.bits:
+            for i, bit in enumerate(channel.bits):
                 if bit is None or bit == '':
                     continue
                 try:
@@ -1706,7 +1706,8 @@ class ODCDataPlot(StateVectorDataPlot):
                     ax.plot(mask, y=-nflags, facecolor=maskcolor,
                             edgecolor='none', height=1., label=None,
                             collection=False, zorder=-1001)
-                ax.plot(segs, y=-nflags, label=segs.name, **plotargs)
+                label = '[%s] %s' % (i, segs.name)
+                ax.plot(segs, y=-nflags, label=label, **plotargs)
                 nflags += 1
 
         # make custom legend

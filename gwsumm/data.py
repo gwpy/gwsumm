@@ -571,6 +571,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             vprint("    Fetching data (from %s) for %d channels [%s]"
                    % (source, len(qchannels), nds and ndstype or ftype))
         for segment in new:
+            if abs(segment) < 1:
+                continue
             if nds:
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype,

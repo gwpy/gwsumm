@@ -185,7 +185,7 @@ class DataPlot(SummaryPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, href=None, new=True, all_data=False,
-                 read=True, **pargs):
+                 read=True, fileformat='png', **pargs):
         super(DataPlot, self).__init__(href=href, new=new)
         if isinstance(channels, str):
             channels = split_channels(channels)
@@ -200,6 +200,7 @@ class DataPlot(SummaryPlot):
         self.pargs.update(pargs)
         self.plot = None
         self.read = read
+        self.fileformat = fileformat
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot properties
@@ -297,8 +298,9 @@ class DataPlot(SummaryPlot):
         tag = self.tag
         gps = floor(self.start)
         dur = ceil(self.end - self.start)
-        return os.path.join(self._outdir,
-                            '%s-%s-%d-%d.png' % (ifos, tag, gps, dur))
+        return os.path.join(
+            self._outdir,
+            '%s-%s-%d-%d.%s' % (ifos, tag, gps, dur, self.fileformat))
 
     @property
     def href(self):

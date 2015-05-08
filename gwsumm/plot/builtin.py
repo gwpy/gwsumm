@@ -107,13 +107,13 @@ class TimeSeriesDataPlot(DataPlot):
             ax.grid(True, which='both')
         return self.plot, axes
 
-    def finalize(self, outputfile=None):
+    def finalize(self, outputfile=None, close=True):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
             ax.set_xlim(float(self.start), float(self.end))
         return super(TimeSeriesDataPlot, self).finalize(
-                   outputfile=outputfile)
+                   outputfile=outputfile, close=close)
 
     def process(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
@@ -863,13 +863,13 @@ class TriggerDataPlot(TimeSeriesDataPlot):
     def tag(self, filetag):
         self._tag = filetag or self.type.upper()
 
-    def finalize(self, outputfile=None):
+    def finalize(self, outputfile=None, close=True):
         if isinstance(self.plot, TimeSeriesPlot):
             return super(TriggerDataPlot, self).finalize(
-                       outputfile=outputfile)
+                       outputfile=outputfile, close=close)
         else:
             return super(TimeSeriesDataPlot, self).finalize(
-                       outputfile=outputfile)
+                       outputfile=outputfile, close=close)
 
     def process(self):
         # get columns
@@ -1272,6 +1272,7 @@ class DutyDataPlot(SegmentDataPlot):
 
     def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
                  bins=None, **kwargs):
+        kwargs.setdefault('fileformat', 'png')
         super(DutyDataPlot, self).__init__(flags, start, end, state=state,
                                            outdir=outdir, tag=tag, **kwargs)
         self.bins = bins

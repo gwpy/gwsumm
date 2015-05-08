@@ -46,8 +46,9 @@ rcParams.update({
     'figure.subplot.left': 0.1,
     'figure.subplot.right': 0.9,
     'figure.subplot.top': 0.90,
+    'axes.labelsize': 20,
+    'svg.fonttype': 'none',
 })
-rcParams['axes.labelsize'] = 20
 
 from gwsumm import version
 

@@ -639,6 +639,11 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     except AttributeError:
                         globalv.DATA[channel.ndsname][-1]._unit = (
                             globalv.DATA[channel.ndsname][0].unit)
+                    except TypeError:
+                        if globalv.DATA[channel.ndsname][0].unit is None:
+                            del globalv.DATA[channel.ndsname][-1]._unit
+                        else:
+                            raise
                     globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):

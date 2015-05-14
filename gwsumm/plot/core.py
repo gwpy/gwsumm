@@ -282,7 +282,7 @@ class DataPlot(SummaryPlot):
             filts = "".join(map(str,
                 [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                  for c in self.channels]))
-            hash = hashlib.md5(chans+filts).hexdigest()[:6]
+            hash = hashlib.md5(chans+filts+str(self.pargs)).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
             return '_'.join([state, hash, type_]).upper()
 

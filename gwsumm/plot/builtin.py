@@ -216,9 +216,13 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                     '_', str(self.ratio).upper())
             return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @pid.deleter
+    def pid(self):
+        del self._pid
 
     def process(self):
         # initialise

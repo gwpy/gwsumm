@@ -284,11 +284,16 @@ class DataPlot(SummaryPlot):
                  for c in self.channels]))
             hash = hashlib.md5(chans+filts+str(self.pargs)).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
-            return '_'.join([state, hash, type_]).upper()
+            self._tag = '_'.join([state, hash, type_]).upper()
+            return self.tag
 
     @tag.setter
     def tag(self, filetag):
         self._tag = filetag or self.type.upper()
+
+    @tag.deleter
+    def tag(self):
+        del self._tag
 
     @property
     def outputfile(self):

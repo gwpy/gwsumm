@@ -1476,7 +1476,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
-        ax.grid(b=True, axis='both', which='major')
 
         if self.state:
             self.pargs.setdefault(

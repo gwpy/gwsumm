@@ -184,7 +184,7 @@ class DataPlot(SummaryPlot):
     defaults = {}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, href=None, new=True, all_data=False,
+                 tag=None, pid=None, href=None, new=True, all_data=False,
                  read=True, fileformat='png', **pargs):
         super(DataPlot, self).__init__(href=href, new=new)
         if isinstance(channels, str):
@@ -195,6 +195,8 @@ class DataPlot(SummaryPlot):
         self._outdir = outdir
         if tag is not None:
             self.tag = tag
+        if pid is not None:
+            self.pid = pid
         self.all_data = all_data
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
@@ -278,13 +280,8 @@ class DataPlot(SummaryPlot):
         except AttributeError:
             state = re_cchar.sub('_', self.state is None and 'MULTI' or
                                       self.state.name).rstrip('_')
-            chans = "".join(map(str, self.channels))
-            filts = "".join(map(str,
-                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
-                 for c in self.channels]))
-            hash = hashlib.md5(chans+filts).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
-            self._tag = '_'.join([state, hash, type_]).upper()
+            self._tag = '_'.join([state, self.pid, type_]).upper()
             return self.tag
 
     @tag.setter
@@ -294,6 +291,26 @@ class DataPlot(SummaryPlot):
     @tag.deleter
     def tag(self):
         del self._tag
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+            return self.pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @pid.deleter
+    def pid(self):
+        del self._pid
 
     @property
     def outputfile(self):

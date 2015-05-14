@@ -206,14 +206,15 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         self.ratio = self.pargs.pop('ratio')
 
     @property
-    def tag(self):
+    def pid(self):
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(SpectrogramDataPlot, self).tag
+            pid = super(SpectrogramDataPlot, self).pid
             if self.ratio:
-                tag += '_%s_RATIO' % re_cchar.sub('_', str(self.ratio).upper())
-            return tag
+                self._pid += '_%s_RATIO' % re_cchar.sub(
+                    '_', str(self.ratio).upper())
+            return self.pid
 
     @tag.setter
     def tag(self, filetag):

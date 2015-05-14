@@ -315,11 +315,9 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
 
-    def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
-                 **kwargs):
+    def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
-                                                 outdir=outdir, tag=tag,
-                                                 **kwargs)
+                                                 outdir=outdir, **kwargs)
         self.flags = flags
 
     def get_channel_groups(self, *args, **kwargs):
@@ -343,21 +341,19 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         return set([f[:2] for f in allflags])
 
     @property
-    def tag(self):
-        """File tag for this `DataPlot`.
+    def pid(self):
+        """File pid for this `DataPlot`.
         """
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            state = re_cchar.sub('_',
-                                 self.state is None and 'MULTI' or
-                                 self.state.name)
-            hash_ = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
-            return '_'.join([state, hash_, self.type]).upper()
+            self._pid = hashlib.md5(
+                "".join(map(str, self.flags))).hexdigest()[:6]
+            return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
@@ -840,33 +836,34 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                 'size_range': None}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, etg=None, **kwargs):
+                 etg=None, **kwargs):
         super(TriggerDataPlot, self).__init__(channels, start, end,
-                                                 state=state, outdir=outdir,
-                                                 tag=tag, **kwargs)
+                                              state=state, outdir=outdir,
+                                              **kwargs)
         self.etg = etg
         self.columns = [self.pargs.pop(c) for c in ('x', 'y', 'color')]
 
     @property
-    def tag(self):
+    def pid(self):
         """Unique identifier for this `TriggerDataPlot`.
 
-        Extends the standard `TimeSeriesDataPlot` tag with the ETG
+        Extends the standard `TimeSeriesDataPlot` pid with the ETG
         and each of the column names.
         """
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(TriggerDataPlot, self).tag
-            tag += '_%s' % re_cchar.sub('_', self.etg)
+            pid = super(TriggerDataPlot, self).pid
+            self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
-                    tag += '_%s' % re_cchar.sub('_', column)
-            return tag.upper()
+                    self._pid += '_%s' % re_cchar.sub('_', column)
+            self._pid = self._pid.upper()
+            return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     def finalize(self, outputfile=None, close=True):
         if isinstance(self.plot, TimeSeriesPlot):
@@ -1093,14 +1090,14 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         self.column = self.pargs.pop('column')
 
     @property
-    def tag(self):
+    def pid(self):
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(TriggerHistogramPlot, self).tag
+            self._pid = super(TriggerHistogramPlot, self).pid
             if self.column:
-                tag += '_%s' % re_cchar.sub('_', self.column).upper()
-            return tag
+                self._pid += '_%s' % re_cchar.sub('_', self.column).upper()
+            return self.pid
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -1194,14 +1191,18 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         self.column = self.pargs.pop('column')
 
     @property
-    def tag(self):
+    def pid(self):
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(TriggerRateDataPlot, self).tag
+            pid = super(TriggerRateDataPlot, self).pid
             if self.column:
-                tag += '_%s' % re_cchar.sub('_', self.column).upper()
-            return tag
+                self.pid += '_%s' % re_cchar.sub('_', self.column).upper()
+            return pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -1275,11 +1276,11 @@ class DutyDataPlot(SegmentDataPlot):
                 'ylim': [0, 100],
                 'ylabel': r'Duty factor [\%]'}
 
-    def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
+    def __init__(self, flags, start, end, state=None, outdir='.',
                  bins=None, **kwargs):
         kwargs.setdefault('fileformat', 'png')
         super(DutyDataPlot, self).__init__(flags, start, end, state=state,
-                                           outdir=outdir, tag=tag, **kwargs)
+                                           outdir=outdir, **kwargs)
         self.bins = bins
 
     def get_bins(self):

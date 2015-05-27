@@ -151,6 +151,10 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                         new.bits = source.bits
                     except AttributeError:
                         pass
+                    try:
+                        new.filter = source.filter
+                    except AttributeError:
+                        pass
             # determine sample rate for trends
             if type_ == 'm-trend':
                 new.sample_rate = 1/60.

@@ -51,6 +51,7 @@ from ..segments import get_segments
 from ..triggers import get_triggers
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
+from .mixins import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -300,7 +301,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 register_plot(SpectrogramDataPlot)
 
 
-class SegmentDataPlot(TimeSeriesDataPlot):
+class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
     """
     type = 'segments'
@@ -319,6 +320,7 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                                  outdir=outdir, **kwargs)
         self.flags = flags
+        self.preview_labels = False
 
     def get_channel_groups(self, *args, **kwargs):
         return OrderedDict((f, [f]) for f in self.flags)
@@ -414,13 +416,18 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                 plotargs[key] = self.pargs.pop(key)
 
         # plot segments
-        for flag, label in zip(self.flags, labels)[::-1]:
+        for i, (flag, label) in enumerate(zip(self.flags, labels)[::-1]):
+            if (self.fileformat == 'svg' and not str(flag) in label and
+                    ax.get_insetlabels()):
+                label = '%s [%s]' % (label, str(flag))
+            elif self.fileformat == 'svg' and not str(flag) in label:
+                label = '[%s] %s' % (label, str(flag))
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            segs = get_segments(flag, validity=valid, query=False)
-            ax.plot(segs.coalesce(), label=label, **plotargs)
+            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            ax.plot(segs, y=i, label=label, **plotargs)
 
         # make custom legend
         v = plotargs.pop('known', None)
@@ -1628,7 +1635,7 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
 register_plot(RayleighSpectrumDataPlot)
 
 
-class ODCDataPlot(StateVectorDataPlot):
+class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     """Custom `StateVectorDataPlot` for ODCs with bitmasks
     """
     type = 'odc'

@@ -410,13 +410,13 @@ class PlotTab(Tab):
                 colwidth = 12 // int(layout[l][0])
                 page.div(class_='col-md-%d' % colwidth)
             if plot.src.endswith('svg'):
-                page.a(href='%s?iframe' % plot.href,
-                       class_='%s fancybox.iframe' % aclass, **fancyboxargs)
-                page.object('Your browser cannot display this SVG',
-                            type="image/svg+xml", data=plot.src, class_='svg')
+                fbkw = fancyboxargs.copy()
+                fbkw['data-fancybox-type'] = 'iframe'
+                page.a(href='%s?iframe' % plot.href.replace('.svg', '.html'),
+                       class_=aclass, **fbkw)
             else:
                 page.a(href=plot.href, class_=aclass, **fancyboxargs)
-                page.img(src=plot.src)
+            page.img(src=plot.src)
             page.a.close()
             page.div.close()
             # detect end of row

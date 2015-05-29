@@ -124,14 +124,17 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                          "channels recovered:\n    %s"
                          % (str(channel), '\n    '.join(cstrings)))
     else:
-        try:
-            if not Channel.MATCH.match(name):
-                raise ValueError()
-            # trends are not stored in CIS, but try and get their raw source
-            if re.search('\.[a-z]+\Z', name):
-                raise TypeError()
-            new = Channel.query(name, timeout=timeout)
-        except TypeError:
+        matches = list(Channel.MATCH.finditer(name))
+        # match single raw channel
+        if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
+            try:
+                new = Channel.query(name, timeout=timeout)
+            except (ValueError, urllib2.URLError):
+                new = Channel(str(channel))
+            else:
+                new.name = str(channel)
+        # match single trend
+        elif len(matches) == 1:
             # set default trend type based on mode
             if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
                 type_ = 's-trend'
@@ -160,10 +163,12 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                 new.sample_rate = 1/60.
             elif type_ == 's-trend':
                 new.sample_rate = 1
-        except (ValueError, urllib2.URLError):
-            new = Channel(str(channel))
+        # match composite channel
         else:
-            new.name = str(channel)
+            parts = get_channels([m.group() for m in matches])
+            new = Channel(name)
+            new.subchannels = parts
+            new._ifo = "".join(set(p.ifo for p in parts))
         globalv.CHANNELS.append(new)
         try:
             return get_channel(new)

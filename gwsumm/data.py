@@ -358,29 +358,34 @@ def find_types(site=None, match=None):
 
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=None, query=True, nds='guess', multiprocess=True,
-                        statevector=False, return_=True, **ioargs):
+                        frametype=None, statevector=False, return_=True,
+                        **ioargs):
     """Retrieve the data for a set of channels
     """
     # separate channels by type
     if query:
-        frametypes = dict()
-        allchannels = set([
-            c for group in
-                map(lambda x: re_channel.findall(Channel(x).ndsname), channels)
-            for c in group])
-        for channel in allchannels:
-            channel = get_channel(channel)
-            ifo = channel.ifo
-            ftype = find_frame_type(channel)
-            id_ = (ifo, ftype)
-            if id_ in frametypes:
-                frametypes[id_].append(channel)
-            else:
-                frametypes[id_] = [channel]
-        for channellist in frametypes.itervalues():
+        if frametype is not None:
+            frametypes = {frametype: channels}
+        else:
+            frametypes = dict()
+            allchannels = set([
+                c for group in
+                    map(lambda x: re_channel.findall(Channel(x).ndsname),
+                        channels)
+                for c in group])
+            for channel in allchannels:
+                channel = get_channel(channel)
+                ifo = channel.ifo
+                ftype = find_frame_type(channel)
+                id_ = (ifo, ftype)
+                if id_ in frametypes:
+                    frametypes[id_].append(channel)
+                else:
+                    frametypes[id_] = [channel]
+        for ftype, channellist in frametypes.iteritems():
             _get_timeseries_dict(channellist, segments, config=config,
                                  cache=cache, query=query, nds=nds,
-                                 multiprocess=multiprocess,
+                                 multiprocess=multiprocess, frametype=ftype[1],
                                  statevector=statevector, return_=False,
                                  **ioargs)
     if not return_:
@@ -431,7 +436,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
-                         cache=None, query=True, nds='guess',
+                         cache=None, query=True, nds='guess', frametype=None,
                          multiprocess=True, return_=True, statevector=False,
                          **ioargs):
     """Internal method to retrieve the data for a set of like-typed
@@ -513,39 +518,39 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     ndsconnection = nds2.connection(host, port)
                 else:
                     raise
-            ftype = source = 'nds'
+            frametype = source = 'nds'
             ndstype = channels[0].type
         elif nds:
             ndsconnection = None
-            ftype = source = 'nds'
+            frametype = source = 'nds'
             ndstype = channels[0].type
         # or find frame type and check cache
         else:
             ifo = channels[0].ifo
-            ftype = channels[0].frametype
-            if ftype is not None and ftype.endswith('%s_M' % ifo):
+            frametype = frametype or channels[0].frametype
+            if frametype is not None and frametype.endswith('%s_M' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 60.])
-            elif ftype is not None and ftype.endswith('%s_T' % ifo):
+            elif frametype is not None and frametype.endswith('%s_T' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 1.])
-            elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
-                  ftype == '%s_R' % ifo and
-                  find_types(site=ifo[0], match='_C\Z')):
-                ftype = '%s_C' % ifo
+            #elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
+            #      frametype == '%s_R' % ifo and
+            #      find_types(site=ifo[0], match='_C\Z')):
+            #    frametype = '%s_C' % ifo
             if cache is not None:
-                fcache = cache.sieve(ifos=ifo[0], description=ftype,
+                fcache = cache.sieve(ifos=ifo[0], description=frametype,
                                      exact_match=True)
             else:
                 fcache = Cache()
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent().protract(8)
-                fcache = find_frames(ifo, ftype, span[0], span[1],
+                fcache = find_frames(ifo, frametype, span[0], span[1],
                                      config=config, gaps='ignore')
             # parse discontiguous cache blocks and rebuild segment list
             cachesegments = find_cache_segments(fcache)
             new &= cachesegments
             source = 'frames'
         for channel in channels:
-            channel.frametype = ftype
+            channel.frametype = frametype
 
         # check whether each channel exists for all new times already
         qchannels = []
@@ -578,7 +583,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
         # loop through segments, recording data for each
         if len(new) and nproc > 1:
             vprint("    Fetching data (from %s) for %d channels [%s]"
-                   % (source, len(qchannels), nds and ndstype or ftype))
+                   % (source, len(qchannels), nds and ndstype or frametype))
         for segment in new:
             if abs(segment) < 1:
                 continue
@@ -603,7 +608,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 else:
                     segcache = fcache.sieve(segment=segment)
                 # set minute trend times modulo 60 from GPS 0
-                if re.match('(?:(.*)_)?[A-Z]\d_M', ftype):
+                if re.match('(?:(.*)_)?[A-Z]\d_M', frametype):
                     segstart = int(segment[0]) // 60 * 60
                     segend = int(segment[1]) // 60 * 60
                     if segend >= segment[1]:
@@ -686,13 +691,13 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                    query=True, nds='guess', multiprocess=True,
-                   statevector=False, return_=True):
+                   frametype=None, statevector=False, return_=True):
     """Retrieve the data (time-series) for a given channel
     """
     channel = get_channel(channel)
     out = get_timeseries_dict([channel.ndsname], segments, config=config,
                               cache=cache, query=query, nds=nds,
-                              multiprocess=multiprocess,
+                              multiprocess=multiprocess, frametype=frametype,
                               statevector=statevector, return_=return_)
     if return_:
         return out[channel.ndsname]
@@ -738,7 +743,8 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
-                     multiprocess=True, method='median-mean', **fftparams):
+                     frametype=None, multiprocess=True, method='median-mean',
+                     **fftparams):
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     channel = get_channel(channel)
@@ -786,7 +792,8 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             stride = None
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,
-                                        cache=cache, query=False, nds=nds)
+                                        cache=cache, frametype=frametype,
+                                        query=False, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))

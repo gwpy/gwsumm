@@ -53,6 +53,12 @@ class DailyAhopeTab(base):
     """
     type = 'archived-daily-ahope'
 
+    def __init__(self, *args, **kwargs):
+        super(DailyAhopeTab, self).__init__(*args, **kwargs)
+        register_etg_table(self.name.lower(), SnglInspiralTable)
+        register_reader(self.name.lower(), SnglInspiralTable,
+                        get_reader('ligolw', SnglInspiralTable))
+
     @classmethod
     def from_ini(cls, config, section, plotdir=os.curdir, base=''):
         """Define a new `DailyAhopeTab` from a `ConfigParser`.
@@ -80,6 +86,8 @@ class DailyAhopeTab(base):
         new = super(DailyAhopeTab, cls).from_ini(config, section,
                                                  plotdir=plotdir, base=base)
         new.channel = re_quote.sub('', config.get(section, 'channel'))
+        for p in new.plots + new.subplots:
+            p.etg = new.name.lower()
 
         # work out day directory and url
         utc = from_gps(new.span[0])
@@ -332,10 +340,6 @@ class DailyAhopeTab(base):
 
 register_tab(DailyAhopeTab)
 register_tab(DailyAhopeTab, name='archived-daily-ihope')
-register_etg_table('daily ahope', SnglInspiralTable)
-register_etg_table('daily ihope', SnglInspiralTable)
 
-register_reader('daily ihope', SnglInspiralTable,
-                get_reader('ligolw', SnglInspiralTable))
 register_reader('daily ahope', SnglInspiralTable,
                 get_reader('ligolw', SnglInspiralTable))

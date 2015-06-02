@@ -646,26 +646,14 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         data._unit = units.dimensionless_unscaled
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
+                elif data.unit is None:
+                    data._unit = channel.unit
                 # XXX: HACK for failing unit check
+                if len(globalv.DATA[channel.ndsname]):
+                    data._unit = globalv.DATA[channel.ndsname][-1].unit
+                # append and coalesce
                 globalv.DATA[channel.ndsname].append(data)
-                try:
-                    globalv.DATA[channel.ndsname].coalesce()
-                except ValueError as e:
-                    if not 'units do not match' in str(e):
-                        raise
-                    warnings.warn(str(e))
-                    try:
-                        globalv.DATA[channel.ndsname][-1].unit = (
-                            globalv.DATA[channel.ndsname][0].unit)
-                    except AttributeError:
-                        globalv.DATA[channel.ndsname][-1]._unit = (
-                            globalv.DATA[channel.ndsname][0].unit)
-                    except TypeError:
-                        if globalv.DATA[channel.ndsname][0].unit is None:
-                            del globalv.DATA[channel.ndsname][-1]._unit
-                        else:
-                            raise
-                    globalv.DATA[channel.ndsname].coalesce()
+                globalv.DATA[channel.ndsname].coalesce()
             vprint('.')
         if len(new):
             vprint("\n")

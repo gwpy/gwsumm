@@ -720,7 +720,9 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                                       return_=return_,
                                       multiprocess=multiprocess,
                                       **fftparams))
-    if return_:
+    if return_ and len(channels) == 1:
+        return specs[0]
+    elif return_:
         # get union of segments for all sub-channels
         datasegs = reduce(operator.and_, [sgl.segments for sgl in specs])
         # build meta-spectrogram for all interseceted segments

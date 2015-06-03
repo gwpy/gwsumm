@@ -417,21 +417,30 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                                                          for ts in tslist[0]])
             # if multiple channels
             else:
-                # build meta-timeseries
-                out[channel.ndsname] = TimeSeriesList()
+                # get union of segments for all sub-channels
+                datasegs = reduce(operator.and_,
+                                  [tsl.segments for tsl in tslist])
+                # build meta-timeseries for all interseceted segments
+                meta = TimeSeriesList()
                 operators = [channel.name[m.span()[1]] for m in
                              list(re_channel.finditer(channel.ndsname))[:-1]]
-                for i in range(len(tslist[0])):
-                    out[channel.ndsname].append(tslist[0][i].copy())
-                    out[channel.ndsname][-1].name = str(channel)
-                    for op, ts in zip(operators, tslist[1:]):
+                for seg in datasegs:
+                    ts = get_timeseries(
+                        chanstrs[0], SegmentList([seg]), config=config,
+                        query=False, return_=True)[0]
+                    ts.name = str(channel)
+                    for op, ch in zip(operators, chanstrs[1:]):
                         try:
                             op = OPERATOR[op]
                         except KeyError as e:
                             e.args = ('Cannot parse math operator %r' % op,)
                             raise
-                        out[channel.ndsname][-1] = op(out[channel.ndsname][-1],
-                                                      ts[i])
+                        data = get_timeseries(ch, SegmentList([seg]),
+                                              config=config, query=False,
+                                              return_=True)
+                        ts = op(ts, data[0])
+                    meta.append(ts)
+                out[channel.ndsname] = meta
         return out
 
 
@@ -702,7 +711,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         segments = segments.active
     channel = get_channel(channel)
 
-    # find meta-channels
+    # read data for all sub-channels
     specs = []
     channels = re_channel.findall(channel.ndsname)
     for c in channels:
@@ -711,21 +720,31 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                                       return_=return_,
                                       multiprocess=multiprocess,
                                       **fftparams))
-    if return_:
-        # build meta-spectrogram
+    if return_ and len(channels) == 1:
+        return specs[0]
+    elif return_:
+        # get union of segments for all sub-channels
+        datasegs = reduce(operator.and_, [sgl.segments for sgl in specs])
+        # build meta-spectrogram for all interseceted segments
         out = SpectrogramList()
         operators = [channel.name[m.span()[1]] for m in
                      list(re_channel.finditer(channel.ndsname))[:-1]]
-        for i in range(len(specs[0])):
-            out.append(specs[0][i].copy())
-            out[-1].name = str(channel)
-            for op, spec in zip(operators, specs[1:]):
+        for seg in datasegs:
+            sg = _get_spectrogram(channels[0], SegmentList([seg]),
+                                  config=config, query=False, format=format,
+                                  return_=True)[0]
+            sg.name = str(channel)
+            for op, ch in zip(operators, channels[1:]):
                 try:
                     op = OPERATOR[op]
                 except KeyError as e:
                     e.args = ('Cannot parse math operator %r' % op,)
                     raise
-                out[-1] = op(out[-1], spec[i])
+                data = _get_spectrogram(ch, SegmentList([seg]),
+                                        config=config, query=False,
+                                        format=format, return_=True)
+                sg = op(sg, data[0])
+            out.append(sg)
         return out
 
 

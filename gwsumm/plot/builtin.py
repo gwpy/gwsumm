@@ -60,7 +60,7 @@ DataPlot = get_plot('data')
 GREEN = (0.2, 0.8, 0.2)
 
 
-class TimeSeriesDataPlot(DataPlot):
+class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     """DataPlot of some `TimeSeries` data.
     """
     type = 'timeseries'
@@ -149,11 +149,17 @@ class TimeSeriesDataPlot(DataPlot):
             if self.pargs['logy']:
                 for ts in data:
                     ts.value[ts.value == 0] = 1e-100
+            # set label
+            label = pargs.pop('label', label_to_latex(data[0].name))
+            if self.fileformat == 'svg' and not label.startswith(
+                    label_to_latex(str(data[0].channel)).split('.')[0]):
+                label = '%s [%s]' % (label,
+                                     label_to_latex(str(data[0].channel)))
             # plot groups or single TimeSeries
             if len(channels) > 1:
-                ax.plot_timeseries_mmm(*data, **pargs)
+                ax.plot_timeseries_mmm(*data, label=label, **pargs)
             else:
-                ax.plot_timeseries(data[0], **pargs)
+                ax.plot_timeseries(data[0], label=label, **pargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):

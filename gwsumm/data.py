@@ -427,7 +427,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                 for seg in datasegs:
                     ts = get_timeseries(
                         chanstrs[0], SegmentList([seg]), config=config,
-                        query=False, format=format, return_=True)[0]
+                        query=False, return_=True)[0]
                     ts.name = str(channel)
                     for op, ch in zip(operators, chanstrs[1:]):
                         try:
@@ -437,9 +437,9 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                             raise
                         data = get_timeseries(ch, SegmentList([seg]),
                                               config=config, query=False,
-                                              format=format, return_=True)
+                                              return_=True)
                         ts = op(ts, data[0])
-                    meta.append(sg)
+                    meta.append(ts)
                 out[channel.ndsname] = meta
         return out
 

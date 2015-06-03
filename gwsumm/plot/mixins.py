@@ -79,7 +79,6 @@ class SvgMixin(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, *args, **kwargs):
-        kwargs.setdefault('fileformat', 'svg')
         super(SvgMixin, self).__init__(*args, **kwargs)
         self.preview_labels = False
 

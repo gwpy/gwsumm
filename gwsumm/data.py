@@ -417,21 +417,30 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                                                          for ts in tslist[0]])
             # if multiple channels
             else:
-                # build meta-timeseries
-                out[channel.ndsname] = TimeSeriesList()
+                # get union of segments for all sub-channels
+                datasegs = reduce(operator.and_,
+                                  [tsl.segments for tsl in tslist])
+                # build meta-timeseries for all interseceted segments
+                meta = TimeSeriesList()
                 operators = [channel.name[m.span()[1]] for m in
                              list(re_channel.finditer(channel.ndsname))[:-1]]
-                for i in range(len(tslist[0])):
-                    out[channel.ndsname].append(tslist[0][i].copy())
-                    out[channel.ndsname][-1].name = str(channel)
-                    for op, ts in zip(operators, tslist[1:]):
+                for seg in datasegs:
+                    ts = get_timeseries(
+                        chanstrs[0], SegmentList([seg]), config=config,
+                        query=False, format=format, return_=True)[0]
+                    ts.name = str(channel)
+                    for op, ch in zip(operators, chanstrs[1:]):
                         try:
                             op = OPERATOR[op]
                         except KeyError as e:
                             e.args = ('Cannot parse math operator %r' % op,)
                             raise
-                        out[channel.ndsname][-1] = op(out[channel.ndsname][-1],
-                                                      ts[i])
+                        data = get_timeseries(ch, SegmentList([seg]),
+                                              config=config, query=False,
+                                              format=format, return_=True)
+                        ts = op(ts, data[0])
+                    meta.append(sg)
+                out[channel.ndsname] = meta
         return out
 
 

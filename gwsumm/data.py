@@ -702,7 +702,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         segments = segments.active
     channel = get_channel(channel)
 
-    # find meta-channels
+    # read data for all sub-channels
     specs = []
     channels = re_channel.findall(channel.ndsname)
     for c in channels:
@@ -712,20 +712,28 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                                       multiprocess=multiprocess,
                                       **fftparams))
     if return_:
-        # build meta-spectrogram
+        # get union of segments for all sub-channels
+        datasegs = reduce(operator.and_, [sgl.segments for sgl in specs])
+        # build meta-spectrogram for all interseceted segments
         out = SpectrogramList()
         operators = [channel.name[m.span()[1]] for m in
                      list(re_channel.finditer(channel.ndsname))[:-1]]
-        for i in range(len(specs[0])):
-            out.append(specs[0][i].copy())
-            out[-1].name = str(channel)
-            for op, spec in zip(operators, specs[1:]):
+        for seg in datasegs:
+            sg = _get_spectrogram(channels[0], SegmentList([seg]),
+                                  config=config, query=False, format=format,
+                                  return_=True)[0]
+            sg.name = str(channel)
+            for op, ch in zip(operators, channels[1:]):
                 try:
                     op = OPERATOR[op]
                 except KeyError as e:
                     e.args = ('Cannot parse math operator %r' % op,)
                     raise
-                out[-1] = op(out[-1], spec[i])
+                data = _get_spectrogram(ch, SegmentList([seg]),
+                                        config=config, query=False,
+                                        format=format, return_=True)
+                sg = op(sg, data[0])
+            out.append(sg)
         return out
 
 

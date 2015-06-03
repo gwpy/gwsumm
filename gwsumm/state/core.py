@@ -254,6 +254,8 @@ class SummaryState(DataQualityFlag):
                     **kwargs):
         data = get_timeseries(channel, self.known, config=config, **kwargs)
         for ts in data:
+            if isinstance(thresh, (float, int)) and ts.unit is not None:
+                thresh *= ts.unit
             segs = MATHOPS[op](ts, thresh).to_dqflag()
             try:
                 globalv.SEGMENTS[self.definition] += segs

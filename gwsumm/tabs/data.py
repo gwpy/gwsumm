@@ -836,7 +836,7 @@ class DataTab(DataTabBase):
         uniq = kwargs.pop('unique', True)
         out = set()
         for plot in self.plots:
-            if not plot.type in types:
+            if not plot.data in types:
                 continue
             if isnew and not plot.new:
                 continue

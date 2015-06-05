@@ -82,7 +82,7 @@ class SvgMixin(object):
         super(SvgMixin, self).__init__(*args, **kwargs)
         self.preview_labels = False
 
-    def finalize(self, outputfile=None, close=True):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         if outputfile is None:
             outputfile = self.outputfile
         # make SVG
@@ -91,7 +91,7 @@ class SvgMixin(object):
         # or process as normal
         else:
             return super(SvgMixin, self).finalize(
-                outputfile=outputfile, close=close)
+                outputfile=outputfile, close=close, **savekwargs)
 
     @abc.abstractmethod
     def process_svg(self, outputfile):

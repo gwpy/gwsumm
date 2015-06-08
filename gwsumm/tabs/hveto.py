@@ -37,7 +37,7 @@ from .registry import (get_tab, register_tab)
 from .. import (html, version, globalv)
 from ..mode import SUMMARY_MODE_DAY
 from ..config import (GWSummConfigParser, NoOptionError)
-from ..data import get_channel
+from ..channels import get_channel
 from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState)
 from ..triggers import (register_etg_table, get_triggers)

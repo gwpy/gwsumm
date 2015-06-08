@@ -39,7 +39,7 @@ from gwpy.plotter.utils import rUNDERSCORE
 
 from .registry import register_plot
 from .. import globalv
-from ..data import get_channel
+from ..channels import get_channel
 from ..utils import split_channels
 
 __all__ = ['SummaryPlot', 'DataPlot']

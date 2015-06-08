@@ -107,12 +107,12 @@ class DataTab(DataTabBase):
     type = 'archived-data'
 
     def __init__(self, name, start, end, states=list([ALLSTATE]),
-                 ismeta=False, **kwargs):
+                 ismeta=False, noplots=False, **kwargs):
         """Initialise a new `DataTab`.
         """
-        ismeta = kwargs.pop('ismeta', False)
         super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
         self.ismeta = ismeta
+        self.noplots = noplots
         self.subplots = []
 
     @property
@@ -165,20 +165,29 @@ class DataTab(DataTabBase):
             a new `DataTab` defined from the configuration
         """
         kwargs.setdefault('plots', [])
-        job = super(DataTab, cls).from_ini(cp, section, **kwargs)
-        job._config = cp._sections[section]
 
-        # get meta tag
+        # get meta tags
         try:
             ismeta = cp.get(section, 'meta-tab')
         except NoOptionError:
-            ismeta = False
+            pass
         else:
             if ismeta is None:
-                ismeta = True
+                kwargs.setdefault('ismeta', True)
             else:
-                ismeta = bool(ismeta.title())
-        job.ismeta = ismeta
+                kwargs.setdefault('ismeta', bool(ismeta.title()))
+        try:
+            noplots = cp.get(section, 'no-plots')
+        except NoOptionError:
+            pass
+        else:
+            if noplots is None:
+                kwargs.setdefault('noplots', True)
+            else:
+                kwargs.setdefault('noplots', bool(noplots.title()))
+
+        job = super(DataTab, cls).from_ini(cp, section, **kwargs)
+        job._config = cp._sections[section]
 
         # -------------------
         # parse plot requests
@@ -532,7 +541,7 @@ class DataTab(DataTabBase):
         # --------------------------------------------------------------------
         # make plots
 
-        if all_data:
+        if all_data or self.noplots:
             vprint("    Done.\n")
             return
 

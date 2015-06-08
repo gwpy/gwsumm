@@ -688,14 +688,16 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 
 def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                    query=True, nds='guess', multiprocess=True,
-                   frametype=None, statevector=False, return_=True):
+                   frametype=None, statevector=False, return_=True,
+                   **ioargs):
     """Retrieve the data (time-series) for a given channel
     """
     channel = get_channel(channel)
     out = get_timeseries_dict([channel.ndsname], segments, config=config,
                               cache=cache, query=query, nds=nds,
                               multiprocess=multiprocess, frametype=frametype,
-                              statevector=statevector, return_=return_)
+                              statevector=statevector, return_=return_,
+                              **ioargs)
     if return_:
         return out[channel.ndsname]
     return

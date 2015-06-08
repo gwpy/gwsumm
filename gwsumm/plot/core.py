@@ -486,7 +486,7 @@ class DataPlot(SummaryPlot):
         raise NotImplementedError("This method should be provided by a "
                                   "sub-class")
 
-    def finalize(self, outputfile=None, close=True):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.
         """
         # quick fix for x-axis labels hitting the axis
@@ -496,7 +496,7 @@ class DataPlot(SummaryPlot):
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile
-        self.plot.save(outputfile)
+        self.plot.save(outputfile, **savekwargs)
         if close:
             self.plot.close()
         return outputfile

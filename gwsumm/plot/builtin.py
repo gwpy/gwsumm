@@ -108,13 +108,13 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             ax.grid(True, which='both')
         return self.plot, axes
 
-    def finalize(self, outputfile=None, close=True):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
             ax.set_xlim(float(self.start), float(self.end))
         return super(TimeSeriesDataPlot, self).finalize(
-                   outputfile=outputfile, close=close)
+                   outputfile=outputfile, close=close, **savekwargs)
 
     def process(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
@@ -876,13 +876,13 @@ class TriggerDataPlot(TimeSeriesDataPlot):
     def pid(self, id_):
         self._pid = str(id_)
 
-    def finalize(self, outputfile=None, close=True):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         if isinstance(self.plot, TimeSeriesPlot):
             return super(TriggerDataPlot, self).finalize(
-                       outputfile=outputfile, close=close)
+                       outputfile=outputfile, close=close, **savekwargs)
         else:
             return super(TimeSeriesDataPlot, self).finalize(
-                       outputfile=outputfile, close=close)
+                       outputfile=outputfile, close=close, **savekwargs)
 
     def process(self):
         # get columns
@@ -1771,3 +1771,114 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         return out
 
 register_plot(ODCDataPlot)
+
+
+class SegmentPiePlot(SegmentDataPlot):
+    type = 'segment-pie'
+    defaults = {
+        'legend-loc': 'center left',
+        'legend-bbox_to_anchor': (.8, .5),
+        'legend-frameon': False,
+    }
+
+    def init_plot(self, plot=Plot, geometry=(1,1)):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesDataPlot`.
+        """
+        figsize = self.pargs.pop('figsize', [12, 6])
+        self.plot = Plot(figsize=figsize)
+        axes = [self.plot.gca()]
+        return self.plot, axes
+
+    def parse_plot_kwargs(self, defaults=dict()):
+        """Parse pie() keyword arguments
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('labels', self._parse_labels())
+        for kwarg in ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
+                      'labeldistance', 'startangle', 'radius', 'counterclock',
+                      'wedgeprops', 'textprops']:
+            try:
+                val = self.pargs.pop(kwarg)
+            except KeyError:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
+                plotargs[kwarg] = val
+        return plotargs
+
+    def process(self):
+        (plot, axes) = self.init_plot(plot=Plot)
+        ax = axes[0]
+
+        # get labels
+        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
+        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+
+        # extract plotting arguments
+        legendargs = self.parse_legend_kwargs()
+        plotargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            data.append(float(abs(segs.active)))
+
+        # make pie
+        labels = plotargs.pop('labels')
+        patches = ax.pie(data, **plotargs)[0]
+        ax.axis('equal')
+
+        # make legend
+        legendargs['title'] = self.pargs.pop('title', None)
+        tot = float(sum(data))
+        pclabels = []
+        for d, label in zip(data, labels):
+            try:
+                pc = d/tot * 100
+            except ZeroDivisionError:
+                pc = 0.0
+            pclabels.append(label_to_latex(
+                '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+        leg = ax.legend(patches, pclabels, **legendargs)
+        legt = leg.get_title()
+        legt.set_fontsize('22')
+        legt.set_ha('left')
+
+        for wedge in patches:
+            wedge.set_edgecolor('white')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+        # copy title and move axes
+        if ax.get_title():
+            title = plot.suptitle(ax.get_title())
+            title.update_from(ax.title)
+            title.set_y(title._y + 0.05)
+            ax.set_title('')
+        axpos = ax.get_position()
+        offset = -.2
+        ax.set_position([axpos.x0+offset, .05, axpos.width, .9])
+
+        # add bit mask axes and finalise
+        self.pargs['xlim'] = None
+        return self.finalize(transparent="True", pad_inches=0)
+
+register_plot(SegmentPiePlot)

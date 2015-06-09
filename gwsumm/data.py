@@ -318,7 +318,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=None, query=True, nds='guess', frametype=None,
                          multiprocess=True, return_=True, statevector=False,
-                         **ioargs):
+                         archive=True, **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -543,14 +543,18 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     out = OrderedDict()
     for channel in channels:
         data = ListClass()
-        for ts in globalv.DATA[channel.ndsname]:
-            for seg in segments:
-                if abs(seg) == 0 or abs(seg) < ts.dt.value:
-                    continue
-                if ts.span.intersects(seg):
-                    cropped = ts.crop(float(seg[0]), float(seg[1]), copy=False)
-                    if cropped.size:
-                        data.append(cropped)
+        if channel.ndsname not in globalv.DATA:
+            out[channel.ndsname] = ListClass()
+        else:
+            for ts in globalv.DATA[channel.ndsname]:
+                for seg in segments:
+                    if abs(seg) == 0 or abs(seg) < ts.dt.value:
+                        continue
+                    if ts.span.intersects(seg):
+                        cropped = ts.crop(float(seg[0]), float(seg[1]),
+                                          copy=False)
+                        if cropped.size:
+                            data.append(cropped)
         out[channel.ndsname] = data.coalesce()
     return out
 
@@ -576,7 +580,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
 @use_segmentlist
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     query=True, nds='guess', format='power', return_=True,
-                    multiprocess=True, **fftparams):
+                    frametype=None, multiprocess=True, **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -668,9 +672,11 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         else:
             stride = None
         # get time-series data
+        if stride is not None:
+            new = type(new)([s for s in new if abs(s) >= stride])
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
-                                        query=False, nds=nds)
+                                        query=query, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
@@ -751,7 +757,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         vprint("    Calculating 5/50/95 percentile spectra for %s"
                % name.rsplit(',', 1)[0])
         speclist = get_spectrogram(channel, segments, config=config,
-                                   cache=cache, query=False, nds=nds,
+                                   cache=cache, query=query, nds=nds,
                                    format=format, **fftparams)
         try:
             specgram = speclist.join(gap='ignore')
@@ -806,3 +812,36 @@ def add_spectrogram(specgram, key=None, coalesce=True):
     if coalesce:
         globalv.SPECTROGRAMS[key].coalesce()
 
+
+@use_segmentlist
+def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
+                     query=True, nds='guess', format='power', return_=True,
+                     method='median-mean', frametype=None, multiprocess=True,
+                     **fftparams):
+    """Get spectrograms for multiple channels
+    """
+    channels = map(get_channel, channels)
+    # get timeseries data in bulk
+    if query:
+        if format in ['rayleigh']:
+            method_ = format
+        else:
+            method_ = method
+        keys = ['%s,%s' % (channel.ndsname, method_) for channel in channels]
+        havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
+            key, SpectrogramList()).segments for key in keys))
+        new = segments - havesegs
+        strides = set([getattr(c, 'stride', 0) for c in channels])
+        if len(strides) == 1:
+            stride = strides.pop()
+            new = type(new)([s for s in new if abs(s) >= stride])
+        get_timeseries_dict(channels, new, config=config, cache=cache,
+                            frametype=frametype, nds=nds, return_=False)
+    # loop over channels and generate spectrograms
+    out = OrderedDict()
+    for channel in channels:
+         out[channel] = get_spectrogram(
+             channel, segments, config=config, cache=cache, query=query,
+             nds=nds, format=format, multiprocess=multiprocess,
+             return_=return_, method=method, **fftparams)
+    return out

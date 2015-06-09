@@ -653,7 +653,7 @@ class SpectrumDataPlot(DataPlot):
         # add data
         for channel, pargs in zip(self.channels, plotargs):
             if self.state and not self.all_data:
-                valid = self.state.active
+                valid = self.state
             else:
                 valid = SegmentList([self.span])
             data = get_spectrum(str(channel), valid, query=False,

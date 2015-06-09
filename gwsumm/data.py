@@ -678,7 +678,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                 if abs(s) < stride:
                     continue
                 else:
-                    d = abs(s)
+                    d = float(abs(s))
                     tmp.append(type(s)(s[0], s[0] + d//stride * stride))
             new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,

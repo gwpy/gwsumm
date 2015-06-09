@@ -74,12 +74,26 @@ class AccountingTab(ParentTab):
         pstates = OrderedDict(
             (idx, name) for (idx, name) in new.modes.iteritems() if
             not name.startswith('*'))
+
+        # parse colors
+        colors = dict(
+            (int(key[6:]), eval(color)) for (key, color) in
+            config.nditems(section) if re.match('color-\d+', key))
+        for flag in pstates:
+            group = int(flag // 10 * 10)
+            if flag not in colors:
+                colors[flag] = colors.get(group, None)
+
         # plot segments
         for flags, ptag in zip([groups, pstates], ['overview', 'details']):
+            segcolors = [colors.get(flag, None) for flag in flags]
+            if not any(segcolors):
+                segcolors = None
             new.plots.append(get_plot('segments')(
                 [new.segmenttag % idx for idx in flags],
                 new.span[0], new.span[1], labels=flags.values(),
                 outdir=plotdir, tag='%s_SEGMENTS_%s' % (tag, ptag.upper()),
+                active=segcolors,
                 known={'alpha': 0.1, 'facecolor': 'lightgray'},
                 title='%s observatory mode %s' % (new.ifo, ptag)))
 
@@ -88,13 +102,6 @@ class AccountingTab(ParentTab):
             explode = map(float, config.get(section, 'pie-explode').split(','))
         except NoOptionError:
             explode = None
-        colors = dict(
-            (int(key[6:]), eval(color)) for (key, color) in
-            config.nditems(section) if re.match('color-\d+', key))
-        for flag in groups:
-            group = int(flag // 10 * 10)
-            if flag not in colors:
-                colors[flag] = colors.get(group, None)
         ptag = 'overview'
         piecolors = [colors.get(flag, None) for flag in groups]
         if not any(piecolors):

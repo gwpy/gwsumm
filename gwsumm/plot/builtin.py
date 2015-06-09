@@ -389,12 +389,12 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         if active is not None and known is not None:
             return active, known
         # only active defined by user
-        elif active is not None and active.lower() != 'red':
+        elif isinstance(active, str) and active.lower() != 'red':
             return active, 'red'
         elif active is not None:
             return active, 'blue'
         # only known defined by user
-        elif known is not None and known not in [GREEN, 'green', 'g']:
+        elif known not in [None, GREEN, 'green', 'g']:
             return GREEN, known
         elif known is not None:
             return 'blue', known
@@ -409,28 +409,35 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
 
-        # get labels
-        flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
-        labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        if isinstance(labels, (unicode, str)):
-            labels = labels.split(',')
-        labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+        ## get labels
+        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
+        #ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        #if isinstance(labels, (unicode, str)):
+            #labels = labels.split(',')
+        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
         mask = self.pargs.pop('mask')
         activecolor, validcolor = self.get_segment_color()
-        edgecolor = self.pargs.pop('edgecolor')
-        plotargs = {'facecolor': activecolor,
-                    'edgecolor': edgecolor,
-                    'known': {'facecolor': validcolor}}
-        for key in plotargs:
-            if key in self.pargs:
-                plotargs[key] = self.pargs.pop(key)
+        self.pargs.update({
+            'facecolor': activecolor,
+            'edgecolor': self.pargs.pop('edgecolor'),
+        })
+        plotargs = self.parse_plot_kwargs()
+        for i, kwdict in enumerate(plotargs):
+            if (isinstance(validcolor, str) or
+                    isinstance(validcolor[0] (float, int))):
+                kwdict['known'] = {'facecolor': validcolor}
+            else:
+                kwdict['known'] = {'facecolor': validcolor[i]}
+        legcolors = plotargs[0].copy()
 
         # plot segments
-        for i, (flag, label) in enumerate(zip(self.flags, labels)[::-1]):
+        for i, (flag, pargs) in enumerate(
+                zip(self.flags, plotargs)[::-1]):
+            label = re_quote.sub('', pargs.pop('label', str(flag)))
             if (self.fileformat == 'svg' and not str(flag) in label and
                     ax.get_insetlabels()):
                 label = '%s [%s]' % (label, str(flag))
@@ -441,17 +448,19 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             else:
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False).coalesce()
-            ax.plot(segs, y=i, label=label, **plotargs)
+            ax.plot(segs, y=i, label=label, **pargs)
 
         # make custom legend
-        v = plotargs.pop('known', None)
-        if v:
+        known = legcolors.pop('known', None)
+        if known:
+            active = legcolors.pop('facecolor')
+            edgecolor = legcolors.pop('edgecolor')
             epoch = ax.get_epoch()
             xlim = ax.get_xlim()
             seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            v['collection'] = False
-            v = ax.plot(seg, **v)[0][0]
-            a = ax.plot(seg, facecolor=activecolor, edgecolor=edgecolor,
+            v = ax.plot(seg, facecolor=known['facecolor'],
+                        collection=False)[0][0]
+            a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
                         collection=False)[0][0]
             if edgecolor not in [None, 'none']:
                 t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]

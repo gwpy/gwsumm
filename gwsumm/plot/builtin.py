@@ -68,6 +68,11 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     defaults = {'logy': False,
                 'hline': list()}
 
+    def __init__(self, *args, **kwargs):
+        super(TimeSeriesDataPlot, self).__init__(*args, **kwargs)
+        for c in self.channels:
+            c._timeseries = True
+
     def add_state_segments(self, ax, **kwargs):
         """Add an `Axes` below the given ``ax`` displaying the `SummaryState`
         for this `TimeSeriesDataPlot`.

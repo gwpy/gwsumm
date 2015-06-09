@@ -65,6 +65,9 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                     # ignore trigger rate TimeSeries
                     if re_rate.search(str(c)):
                         continue
+                    # ignore channels who weren't used for a timeseries:
+                    if not hasattr(c, '_timeseries') or not c._timeseries:
+                        continue
                     # loop over time-series
                     for ts in tslist:
                         try:

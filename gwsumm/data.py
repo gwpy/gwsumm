@@ -463,6 +463,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             vprint("    Fetching data (from %s) for %d channels [%s]"
                    % (source, len(qchannels), nds and ndstype or frametype))
         for segment in new:
+            # force reading integer-precision segments
+            segment = type(segment)(int(segment[0]), int(segment[1]))
             if abs(segment) < 1:
                 continue
             if nds:

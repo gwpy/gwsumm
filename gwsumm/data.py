@@ -761,6 +761,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         segments = segments.active
     else:
         name = channel.ndsname
+    name += ',%s' % format
     cmin = '%s.min' % name
     cmax = '%s.max' % name
 

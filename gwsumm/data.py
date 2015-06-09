@@ -673,7 +673,14 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             stride = None
         # get time-series data
         if stride is not None:
-            new = type(new)([s for s in new if abs(s) >= stride])
+            tmp = type(new)()
+            for s in new:
+                if abs(s) < stride:
+                    continue
+                else:
+                    d = abs(s)
+                    tmp.append(type(s)(s[0], s[0] + d//stride * stride))
+            new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
                                         query=query, nds=nds)

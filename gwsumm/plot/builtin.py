@@ -383,24 +383,27 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         """Parse the configured ``pargs`` and determine the colors for
         active and valid segments.
         """
-        color = self.pargs.pop('color')
-        onisbad = self.pargs.pop('on_is_bad')
-        # allow lazy configuration
-        if onisbad is None:
-            onisbad = True
+        active = self.pargs.pop('active', None)
+        known = self.pargs.pop('known', None)
+        # both defined by user
+        if active is not None and known is not None:
+            return active, known
+        # only active defined by user
+        elif active is not None and active.lower() != 'red':
+            return active, 'red'
+        elif active is not None:
+            return active, 'blue'
+        # only known defined by user
+        elif known is not None and known not in [GREEN, 'green', 'g']:
+            return GREEN, known
+        elif known is not None:
+            return 'blue', known
         else:
-            onisbad = bool(onisbad)
-
-        # choose colors
-        good = color or GREEN
-        if color is None or color.lower() != 'red':
-            bad = 'red'
-        else:
-            bad = 'blue'
-        if onisbad is False:
-            return good, bad
-        else:
-            return bad, good
+            onisbad = bool(self.pargs.pop('on_is_bad', True))
+            if onisbad:
+                return 'red', GREEN
+            else:
+                return GREEN, 'red'
 
     def process(self):
         (plot, axes) = self.init_plot(plot=SegmentPlot)

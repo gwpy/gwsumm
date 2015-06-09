@@ -44,7 +44,7 @@ from gwpy.segments import DataQualityFlag
 from .. import (version, globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
-from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
+from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_spectrum)
 from ..plot import get_plot
 from ..segments import get_segments
@@ -443,7 +443,7 @@ class DataTab(DataTabBase):
         # process time-series
 
         # find channels that need a TimeSeries
-        tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
+        tschannels = self.get_channels('timeseries',
                                        all_data=all_data, read=True)
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
@@ -483,18 +483,22 @@ class DataTab(DataTabBase):
             except (NameError, SyntaxError):
                 pass
 
-        for channel in self.get_channels('spectrogram', 'spectrum',
-                                         all_data=all_data, read=True):
-            get_spectrogram(channel, state, config=config, return_=False,
-                            multiprocess=multiprocess, **fftparams)
-
-        for channel in self.get_channels(
-                'rayleigh-spectrogram', 'rayleigh-spectrum',
-                all_data=all_data, read=True):
+        sgchannels = self.get_channels('spectrogram', 'spectrum',
+                                       all_data=all_data, read=True)
+        raychannels = self.get_channels('rayleigh-spectrogram',
+                                        'rayleigh-spectrum',
+                                        all_data=all_data, read=True)
+        if len(sgchannels):
+            vprint("    %d channels identified for Spectrogram\n"
+                   % len(sgchannels))
+            get_spectrograms(sgchannels, state, config=config, nds=nds,
+                             multiprocess=multiprocess, return_=False,
+                             cache=datacache, **fftparams)
+        if len(raychannels):
             fp2 = fftparams.copy()
             fp2['method'] = 'rayleigh'
-            get_spectrogram(channel, state, config=config, return_=False,
-                            multiprocess=multiprocess, **fp2)
+            get_spectrograms(raychannels, state, config=config, return_=False,
+                             multiprocess=multiprocess, **fp2)
 
         # --------------------------------------------------------------------
         # process spectra
@@ -502,7 +506,7 @@ class DataTab(DataTabBase):
         for channel in self.get_channels('spectrum', all_data=all_data,
                                          read=True):
             get_spectrum(channel, state, config=config, return_=False,
-                         **fftparams)
+                         query=False, **fftparams)
 
         for channel in self.get_channels(
                 'rayleigh-spectrum', all_data=all_data, read=True):

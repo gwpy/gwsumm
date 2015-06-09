@@ -23,8 +23,6 @@ import operator
 import os
 import urllib2
 from math import (floor, ceil, pi, sqrt)
-from Queue import Queue
-import threading
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -34,6 +32,7 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+import decorator
 import numpy
 import nds2
 import warnings
@@ -43,9 +42,10 @@ from astropy import units
 
 from glue import datafind
 from glue.lal import Cache
+from glue.segments import segmentlist
 
 from gwpy.detector import Channel
-from gwpy.segments import (DataQualityFlag, SegmentList)
+from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorDict)
 from gwpy.spectrum import Spectrum
@@ -55,6 +55,7 @@ from gwpy.io import nds as ndsio
 from . import (globalv, version)
 from .mode import *
 from .utils import *
+from .channels import get_channel
 
 OPERATOR = {
     '*': operator.mul,
@@ -67,150 +68,18 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
 
-class ThreadChannelQuery(threading.Thread):
-    """Threaded CIS `Channel` query.
+# -----------------------------------------------------------------------------
+# data access
+
+@decorator.decorator
+def use_segmentlist(f, arg1, segments, *args, **kwargs):
+    """Decorator a method to convert incoming segments into a `SegmentList`
     """
-    def __init__(self, inqueue, outqueue):
-        threading.Thread.__init__(self)
-        self.in_ = inqueue
-        self.out = outqueue
-
-    def run(self):
-        i, channel = self.in_.get()
-        self.in_.task_done()
-        try:
-            self.out.put((i, get_channel(channel, False)))
-        except Exception as e:
-            self.out.put(e)
-        self.out.task_done()
-
-
-def get_channel(channel, find_trend_source=True, timeout=5):
-    """Define a new :class:`~gwpy.detector.channel.Channel`
-
-    Parameters
-    ----------
-    channel : `str`
-        name of new channel
-
-    Returns
-    -------
-    Channel : :class:`~gwpy.detector.channel.Channel`
-        new channel.
-    """
-    if ' ' in str(channel):
-        name = str(channel)
-        try:
-            type_ = Channel.MATCH.match(name).groupdict()['type']
-        except AttributeError:
-            type_ = None
-        found = globalv.CHANNELS.sieve(name=name.replace('*', '\*'),
-                                       exact_match=True)
-    elif ',' in str(channel):
-        name, type_ = str(channel).rsplit(',', 1)
-        found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
-    else:
-        type_ = isinstance(channel, Channel) and channel.type or None
-        sr = isinstance(channel, Channel) and channel.sample_rate or None
-        name = str(channel)
-        found = globalv.CHANNELS.sieve(name=str(channel), type=type_,
-                                       sample_rate=sr, exact_match=True)
-    if len(found) == 1:
-        return found[0]
-    elif len(found) > 1:
-        cstrings = ['%s [%s, %s]' % (c.ndsname, c.sample_rate, c.unit)
-                    for c in found]
-        raise ValueError("Ambiguous channel request '%s', multiple existing "
-                         "channels recovered:\n    %s"
-                         % (str(channel), '\n    '.join(cstrings)))
-    else:
-        matches = list(Channel.MATCH.finditer(name))
-        # match single raw channel
-        if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-            try:
-                new = Channel.query(name, timeout=timeout)
-            except (ValueError, urllib2.URLError):
-                new = Channel(str(channel))
-            else:
-                new.name = str(channel)
-        # match single trend
-        elif len(matches) == 1:
-            # set default trend type based on mode
-            if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
-                type_ = 's-trend'
-            elif type_ is None:
-                type_ = 'm-trend'
-            name += ',%s' % type_
-            new = Channel(name)
-            if find_trend_source:
-                try:
-                    source = get_channel(new.name.rsplit('.')[0])
-                except ValueError:
-                    pass
-                else:
-                    new.url = source.url
-                    new.unit = source.unit
-                    try:
-                        new.bits = source.bits
-                    except AttributeError:
-                        pass
-                    try:
-                        new.filter = source.filter
-                    except AttributeError:
-                        pass
-            # determine sample rate for trends
-            if type_ == 'm-trend':
-                new.sample_rate = 1/60.
-            elif type_ == 's-trend':
-                new.sample_rate = 1
-        # match composite channel
-        else:
-            parts = get_channels([m.group() for m in matches])
-            new = Channel(name)
-            new.subchannels = parts
-            new._ifo = "".join(set(p.ifo for p in parts))
-        globalv.CHANNELS.append(new)
-        try:
-            return get_channel(new)
-        except RuntimeError as e:
-            if 'maximum recursion depth' in str(e):
-                raise RuntimeError("Recursion error while access channel "
-                                   "information for %s" % str(channel))
-            else:
-                raise
-
-
-def get_channels(channels):
-    """Multi-threaded channel query
-    """
-    if len(channels) == 0:
-        return []
-
-    # set up Queues
-    inqueue = Queue()
-    outqueue = Queue()
-
-    # open threads
-    for i in range(len(channels)):
-        t = ThreadChannelQuery(inqueue, outqueue)
-        t.setDaemon(True)
-        t.start()
-
-    # populate input queue
-    for i, c in enumerate(channels):
-        inqueue.put((i, c))
-
-    # block
-    inqueue.join()
-    outqueue.join()
-    result = []
-    for i in range(len(channels)):
-        c = outqueue.get()
-        if isinstance(c, Exception):
-            raise c
-        else:
-            result.append(c)
-    return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
+    if isinstance(segments, DataQualityFlag):
+        segments = segments.active
+    elif not isinstance(segments, segmentlist):
+        segments = SegmentList([Segment(*x) for x in segments])
+    return f(arg1, segments, *args, **kwargs)
 
 
 def override_sample_rate(channel, rate):
@@ -356,6 +225,7 @@ def find_types(site=None, match=None):
     return conn.find_types(site=site, match=match)
 
 
+@use_segmentlist
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=None, query=True, nds='guess', multiprocess=True,
                         frametype=None, statevector=False, return_=True,
@@ -444,15 +314,14 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
         return out
 
 
+@use_segmentlist
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=None, query=True, nds='guess', frametype=None,
                          multiprocess=True, return_=True, statevector=False,
-                         **ioargs):
+                         archive=True, **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
-    if isinstance(segments, DataQualityFlag):
-        segments = segments.active
     channels = map(get_channel, channels)
 
     # set classes
@@ -674,18 +543,23 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     out = OrderedDict()
     for channel in channels:
         data = ListClass()
-        for ts in globalv.DATA[channel.ndsname]:
-            for seg in segments:
-                if abs(seg) == 0 or abs(seg) < ts.dt.value:
-                    continue
-                if ts.span.intersects(seg):
-                    cropped = ts.crop(float(seg[0]), float(seg[1]), copy=False)
-                    if cropped.size:
-                        data.append(cropped)
+        if channel.ndsname not in globalv.DATA:
+            out[channel.ndsname] = ListClass()
+        else:
+            for ts in globalv.DATA[channel.ndsname]:
+                for seg in segments:
+                    if abs(seg) == 0 or abs(seg) < ts.dt.value:
+                        continue
+                    if ts.span.intersects(seg):
+                        cropped = ts.crop(float(seg[0]), float(seg[1]),
+                                          copy=False)
+                        if cropped.size:
+                            data.append(cropped)
         out[channel.ndsname] = data.coalesce()
     return out
 
 
+@use_segmentlist
 def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                    query=True, nds='guess', multiprocess=True,
                    frametype=None, statevector=False, return_=True,
@@ -703,14 +577,13 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
     return
 
 
+@use_segmentlist
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     query=True, nds='guess', format='power', return_=True,
-                    multiprocess=True, **fftparams):
+                    frametype=None, multiprocess=True, **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
-    if isinstance(segments, DataQualityFlag):
-        segments = segments.active
     channel = get_channel(channel)
 
     # read data for all sub-channels
@@ -750,12 +623,11 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         return out
 
 
+@use_segmentlist
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
                      frametype=None, multiprocess=True, method='median-mean',
                      **fftparams):
-    if isinstance(segments, DataQualityFlag):
-        segments = segments.active
     channel = get_channel(channel)
     if format in ['rayleigh']:
         method = format
@@ -800,9 +672,18 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         else:
             stride = None
         # get time-series data
+        if stride is not None:
+            tmp = type(new)()
+            for s in new:
+                if abs(s) < stride:
+                    continue
+                else:
+                    d = abs(s)
+                    tmp.append(type(s)(s[0], s[0] + d//stride * stride))
+            new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
-                                        query=False, nds=nds)
+                                        query=query, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
@@ -883,7 +764,7 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         vprint("    Calculating 5/50/95 percentile spectra for %s"
                % name.rsplit(',', 1)[0])
         speclist = get_spectrogram(channel, segments, config=config,
-                                   cache=cache, query=False, nds=nds,
+                                   cache=cache, query=query, nds=nds,
                                    format=format, **fftparams)
         try:
             specgram = speclist.join(gap='ignore')
@@ -938,3 +819,36 @@ def add_spectrogram(specgram, key=None, coalesce=True):
     if coalesce:
         globalv.SPECTROGRAMS[key].coalesce()
 
+
+@use_segmentlist
+def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
+                     query=True, nds='guess', format='power', return_=True,
+                     method='median-mean', frametype=None, multiprocess=True,
+                     **fftparams):
+    """Get spectrograms for multiple channels
+    """
+    channels = map(get_channel, channels)
+    # get timeseries data in bulk
+    if query:
+        if format in ['rayleigh']:
+            method_ = format
+        else:
+            method_ = method
+        keys = ['%s,%s' % (channel.ndsname, method_) for channel in channels]
+        havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
+            key, SpectrogramList()).segments for key in keys))
+        new = segments - havesegs
+        strides = set([getattr(c, 'stride', 0) for c in channels])
+        if len(strides) == 1:
+            stride = strides.pop()
+            new = type(new)([s for s in new if abs(s) >= stride])
+        get_timeseries_dict(channels, new, config=config, cache=cache,
+                            frametype=frametype, nds=nds, return_=False)
+    # loop over channels and generate spectrograms
+    out = OrderedDict()
+    for channel in channels:
+         out[channel] = get_spectrogram(
+             channel, segments, config=config, cache=cache, query=query,
+             nds=nds, format=format, multiprocess=multiprocess,
+             return_=return_, method=method, **fftparams)
+    return out

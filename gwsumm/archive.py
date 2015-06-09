@@ -65,6 +65,9 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                     # ignore trigger rate TimeSeries
                     if re_rate.search(str(c)):
                         continue
+                    # ignore channels who weren't used for a timeseries:
+                    if not hasattr(c, '_timeseries') or not c._timeseries:
+                        continue
                     # loop over time-series
                     for ts in tslist:
                         try:
@@ -81,10 +84,10 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
             if spectrogram:
                 group = h5file.create_group('spectrogram')
                 # loop over channels
-                for speclist in globalv.SPECTROGRAMS.itervalues():
+                for key, speclist in globalv.SPECTROGRAMS.iteritems():
                     # loop over time-series
                     for spec in speclist:
-                        name = '%s,%s' % (spec.name, spec.epoch.gps)
+                        name = '%s,%s' % (key, spec.epoch.gps)
                         try:
                             spec.write(group, name=name, format='hdf')
                         except ValueError:
@@ -147,10 +150,11 @@ def read_data_archive(sourcefile):
             group = h5file['spectrogram']
         except KeyError:
             group = dict()
-        for dataset in group.itervalues():
+        for key, dataset in group.iteritems():
+            key = key.rsplit(',', 1)[0]
             spec = Spectrogram.read(dataset, format='hdf')
             spec.channel = get_channel(spec.channel)
-            add_spectrogram(spec)
+            add_spectrogram(spec, key=key)
 
         try:
             group = h5file['segments']

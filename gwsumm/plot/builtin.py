@@ -427,8 +427,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         })
         plotargs = self.parse_plot_kwargs()
         for i, kwdict in enumerate(plotargs):
-            if (isinstance(validcolor, str) or
-                    isinstance(validcolor[0] (float, int))):
+            if isinstance(validcolor, dict):
+                kwdict['known'] = validcolor
+            elif (validcolor is None or isinstance(validcolor, str) or
+                    isinstance(validcolor[0], (float, int))):
                 kwdict['known'] = {'facecolor': validcolor}
             else:
                 kwdict['known'] = {'facecolor': validcolor[i]}

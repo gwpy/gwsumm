@@ -409,14 +409,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
 
-        ## get labels
-        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
-        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
-        #ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        #if isinstance(labels, (unicode, str)):
-            #labels = labels.split(',')
-        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
-
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
         mask = self.pargs.pop('mask')

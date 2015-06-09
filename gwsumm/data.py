@@ -716,6 +716,10 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     raise
             if filter_ and method not in ['rayleigh']:
                 specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
+            if specgram.unit is None:
+                specgram._unit = channel.unit
+            elif len(globalv.SPECTROGRAMS[key]):
+                specgram._unit = globalv.SPECTROGRAMS[key][-1].unit
             globalv.SPECTROGRAMS[key].append(specgram)
             globalv.SPECTROGRAMS[key].coalesce()
             vprint('.')

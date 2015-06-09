@@ -1365,7 +1365,6 @@ class DutyDataPlot(SegmentDataPlot):
         if sep:
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
-            legendargs.setdefault('ncol', 2)
             legendargs.setdefault('borderaxespad', 0)
 
         # work out times and plot mean for legend
@@ -1391,10 +1390,10 @@ class DutyDataPlot(SegmentDataPlot):
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
             elif 'label' in pargs:
-                if legendargs.get('ncol', 1) > 1:
-                   pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
+                if legendargs.get('loc', None) in ['upper left', 2]:
+                    pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
-                   pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+                    pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
             if sidebyside:
                 t = times + self.bins * (0.1 + .8 * i/len(self.flags))
@@ -1431,14 +1430,14 @@ class DutyDataPlot(SegmentDataPlot):
                 if i < len(axes) - 1:
                     ax.set_xlabel('')
 
-            # add custom legend for mean
-            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
-            lkwargs = legendargs.copy()
-            lkwargs['loc'] = 'lower right'
-            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
-            lkwargs['fontsize'] = 12
-            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
-            axes[0].lines[0].set_label('_')
+        # add custom legend for mean
+        yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+        lkwargs = legendargs.copy()
+        lkwargs['loc'] = 'lower right'
+        lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
+        lkwargs['fontsize'] = 12
+        axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+        axes[0].lines[0].set_label('_')
 
         for ax in axes:
             try:

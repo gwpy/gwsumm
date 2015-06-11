@@ -68,7 +68,7 @@ class SummaryState(DataQualityFlag):
     """
     def __init__(self, name, known=SegmentList(), active=SegmentList(),
                  description=None, definition=None, hours=None, key=None,
-                 url=None):
+                 filename=None, url=None):
         """Initialise a new `SummaryState`
         """
         # allow users to specify known as (start, end)
@@ -90,6 +90,7 @@ class SummaryState(DataQualityFlag):
             self.ready = True
         else:
             self.ready = False
+        self.filename = filename
 
     @property
     def name(self):
@@ -263,6 +264,12 @@ class SummaryState(DataQualityFlag):
                 globalv.SEGMENTS[self.definition] = segs
         return self._fetch_segments(query=False)
 
+    def _read_segments(self, filename):
+        segs = DataQualityFlag.read(filename)
+        self.known = segs.known
+        self.active = segs.active
+        return self
+
     def fetch(self, config=GWSummConfigParser(), segdb_error='raise', **kwargs):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
@@ -276,7 +283,9 @@ class SummaryState(DataQualityFlag):
                               self.definition)
         else:
             match = None
-        if match:
+        if self.filename:
+            self._read_segments(self.filename)
+        elif match:
             channel, thresh = self.definition.split(match.groups()[0])
             channel = channel.rstrip()
             thresh = float(thresh.strip())

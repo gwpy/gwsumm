@@ -38,7 +38,8 @@ from . import globalv
 from .utils import (re_cchar, vprint)
 from .data import find_cache_segments
 
-ETG_TABLE = {
+ETG_TABLE = lsctables.TableByName.copy()
+ETG_TABLE.update({
     # single-IFO burst
     'omicron': lsctables.SnglBurstTable,
     'omega': lsctables.SnglBurstTable,
@@ -52,7 +53,7 @@ ETG_TABLE = {
     # single-IFO inspiral
     'daily_ihope': lsctables.SnglInspiralTable,
     'daily_ahope': lsctables.SnglInspiralTable,
-}
+})
 
 
 def get_etg_table(etg):

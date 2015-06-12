@@ -747,6 +747,9 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                         med = numpy.median(s.value)
                         s /= med
                 if s.shape[0]:
+                    # hack to fix potential issues in crop for spectrograms:
+                    while s.span[0] < seg[0]:
+                        s = s[1:]
                     out.append(s)
     return out.coalesce()
 

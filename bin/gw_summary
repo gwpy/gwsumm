@@ -335,6 +335,17 @@ subparser['gps'].add_argument('gpsstart', action=GPSAction, type=str,
                               metavar='GPSSTART', help='GPS start time.')
 subparser['gps'].add_argument('gpsend', action=GPSAction, type=str,
                               metavar='GPSEND', help='GPS end time.')
+garchopts = subparser['gps'].add_argument_group('Archive options',
+                                                'Choose if, and how, to '
+                                                'archive data from this run')
+garchopts.add_argument('-a', '--archive', metavar='FILE_TAG',
+                       default=False, const='GW_SUMMARY_ARCHIVE', nargs='?',
+                       help="Read archived data from, and write processed data "
+                            "to, an HDF archive file written with the "
+                            "FILE_TAG. If not given, no archive will be used, "
+                            "if given with no file tag, a default of "
+                            "'%(const)s' will be used.")
+
 add_output_options(subparser['gps'])
 
 # ----------------------------------------------------------------------------

@@ -204,7 +204,7 @@ class PlotTab(Tab):
     group : `str`, optional
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    path : `str`, optiona,
+    path : `str`, optional,
         base output directory for this tab (should be the same directory
         for all tabs in this run).
     """

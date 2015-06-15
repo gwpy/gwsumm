@@ -720,7 +720,7 @@ if not opts.no_html and urlbase:
     four0four = get_tab('404')(span[0], span[1], parent=None, path=path,
                                index=os.path.join(path, '404.html'))
     four0four.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
-                         ifomap=ifobases, top=top,
+                         ifomap=ifobases, top=top, base=base,
                          writedata=not opts.html_only,
                          writehtml=not opts.no_html)
     url404 = os.path.join(urlbase, four0four.index)

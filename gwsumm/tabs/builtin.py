@@ -60,8 +60,9 @@ class ExternalTab(Tab):
     group : `str`
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    base : `str`
-        path for HTML base attribute for this tab.
+    path : `str`
+        base output directory for this tab (should be the same directory
+        for all tabs in this run).
 
     Configuration
     -------------
@@ -203,8 +204,9 @@ class PlotTab(Tab):
     group : `str`, optional
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    base : `str`, optiona,
-        path for HTML base attribute for this tab.
+    path : `str`, optiona,
+        base output directory for this tab (should be the same directory
+        for all tabs in this run).
     """
     type = 'plots'
 
@@ -290,7 +292,7 @@ class PlotTab(Tab):
         """
         cp = GWSummConfigParser.from_configparser(cp)
 
-        kwargs.setdefault('base', '')
+        kwargs.setdefault('path', '')
 
         # get layout
         if cp.has_option(section, 'layout'):
@@ -532,8 +534,9 @@ class StateTab(PlotTab):
     group : `str`
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    base : `str`
-        path for HTML base attribute for this tab.
+    path : `str`
+        base output directory for this tab (should be the same directory
+        for all tabs in this run).
     """
     type = 'state'
 
@@ -581,9 +584,10 @@ class StateTab(PlotTab):
     def frames(self):
         # write page for each state
         statelinks = []
+        outdir = os.path.split(self.index)[0]
         for i, state in enumerate(self.states):
             statelinks.append(os.path.join(
-                self.path, '%s.html' % re_cchar.sub('_', str(state).lower())))
+                outdir, '%s.html' % re_cchar.sub('_', str(state).lower())))
         return statelinks
 
     # -------------------------------------------

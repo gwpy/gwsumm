@@ -68,11 +68,10 @@ class GuardianTab(Tab):
     type = 'archived-guardian'
 
     @classmethod
-    def from_ini(cls, config, section, plotdir='plots', base=''):
+    def from_ini(cls, config, section, plotdir='plots', **kwargs):
         """Define a new `GuardianTab`.
         """
-        new = super(Tab, cls).from_ini(
-                  config, section, base=base)
+        new = super(Tab, cls).from_ini(config, section, **kwargs)
         if len(new.states) > 1 or new.states[0].name != ALLSTATE:
             raise ValueError("GuardianTab does not accept state selection")
         new.plots = []

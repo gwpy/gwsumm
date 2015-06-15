@@ -69,7 +69,7 @@ class HvetoTab(base):
         super(HvetoTab, self).__init__(*args, **kwargs)
 
     @classmethod
-    def from_ini(cls, config, section, plotdir=os.curdir, base=''):
+    def from_ini(cls, config, section, **kwargs):
         """Define a new `HvetoTab` from a `ConfigParser`.
         """
         # set state information
@@ -93,8 +93,7 @@ class HvetoTab(base):
         config.set(section, 'states', state)
 
         # parse generic configuration
-        new = super(HvetoTab, cls).from_ini(config, section, plotdir=plotdir,
-                                            base=base)
+        new = super(HvetoTab, cls).from_ini(config, section, **kwargs)
 
         # work out day directory and url
         gps = int(new.span[0])

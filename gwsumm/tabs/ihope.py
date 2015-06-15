@@ -60,7 +60,7 @@ class DailyAhopeTab(base):
                         get_reader('ligolw', SnglInspiralTable))
 
     @classmethod
-    def from_ini(cls, config, section, plotdir=os.curdir, base=''):
+    def from_ini(cls, config, section, **kwargs):
         """Define a new `DailyAhopeTab` from a `ConfigParser`.
         """
         # parse states
@@ -83,8 +83,7 @@ class DailyAhopeTab(base):
         config.set(section, 'states', state)
 
         # parse generic configuration
-        new = super(DailyAhopeTab, cls).from_ini(config, section,
-                                                 plotdir=plotdir, base=base)
+        new = super(DailyAhopeTab, cls).from_ini(config, section, **kwargs)
         new.channel = re_quote.sub('', config.get(section, 'channel'))
         for p in new.plots + new.subplots:
             p.etg = new.name.lower()

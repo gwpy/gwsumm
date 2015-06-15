@@ -685,6 +685,18 @@ for tab in filter(lambda tab: tab.parent is not None, alltabs):
 
 tabs = tabs.values()
 
+# sort tabs by 'Summary', then lower case only, then everything else
+_sort_tabs = lambda tab: (
+    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
+    tab.shortname == 'Summary' and 2 or
+    'ODC' in tab.shortname and 3 or
+    tab.shortname.islower() and tab.shortname.upper() or
+    tab.shortname.lower())
+tabs.sort(key=_sort_tabs)
+for tab in tabs:
+    tab.children.sort(key=_sort_tabs)
+alltabs.sort(key=_sort_tabs, reverse=True)
+
 # write config page
 about = get_tab('about')(span[0], span[1], parent=None, base=base)
 if not opts.no_html:
@@ -748,19 +760,6 @@ if opts.bulk_read and not opts.html_only:
                             config=config, nds=opts.nds, statevector=True,
                             multiprocess=opts.multiprocess, return_=False)
 
-# sort tabs by 'Summary', then lower case only, then everything else
-_sort_tabs = lambda tab: (
-    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
-    tab.shortname == 'Summary' and 2 or
-    'ODC' in tab.shortname and 3 or
-    tab.shortname.islower() and tab.shortname.upper() or
-    tab.shortname.lower())
-
-tabs.sort(key=_sort_tabs)
-for tab in tabs:
-    tab.children.sort(key=_sort_tabs)
-
-alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
     vprint("\n-------------------------------------------------\n")
     if tab.parent:

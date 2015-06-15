@@ -454,6 +454,10 @@ else:
 if opts.multiprocess == 1:
     opts.multiprocess = False
 
+# set global html only flag
+if opts.html_only:
+    globalv.HTMLONLY = True
+
 # -----------------------------------------------------------------------------
 # Setup
 

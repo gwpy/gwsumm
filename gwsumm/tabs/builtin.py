@@ -479,7 +479,7 @@ register_tab(PlotTab)
 
 class ArchivedPlotTab(SummaryArchiveMixin, PlotTab):
 
-    """An archivable externally-linked tab.
+    """An archivable tab with multiple plots to be laid ouut in a scaffold.
     """
     type = 'archived-plots'
 
@@ -736,7 +736,7 @@ register_tab(StateTab)
 
 
 class ArchivedStateTab(SummaryArchiveMixin, StateTab):
-    """An archivable externally-linked tab.
+    """An archivable tab with data in multiple states
     """
     type = 'archived-state'
 

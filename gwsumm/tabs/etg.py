@@ -25,36 +25,69 @@ from warnings import warn
 from astropy.io.registry import (register_reader, get_reader)
 
 from glue.lal import Cache
-from glue.ligolw import (utils as llwutils)
-from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
 
-from gwpy.segments import DataQualityFlag
 from gwpy.time import from_gps
-from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
-from .. import (version, html, globalv)
-from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
+from .. import (version, html)
+from ..config import NoOptionError
 from ..data import get_channel
 from ..triggers import (get_etg_table, get_triggers, register_etg_table)
 from ..utils import re_quote
-from ..state import SummaryState
 from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-base = get_tab('default')
 
+class EventTriggerTab(get_tab('default')):
+    """Custom `DataTab` displaying a summary of event trigger generation
 
-class EventTriggerTab(base):
-    """Custom tab displaying a summary of event trigger generation results.
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    start : `LIGOTimeGPS`, `str`
+        start time of this `DataTab`, anything that can be parsed by
+        `~gwpy.time.to_gps` is fine
+    end : `LIGOTimeGPS`, `str`
+        end time of this `DataTab`, format as for `start`
+    channel : `str`
+        name of the channel of interest
+    etg : `str`, optional
+        name of this event trigger generator (ETG), defaults to the name
+        of this `EventTriggerTab`
+    states : `list` of `states <gwsumm.state.SummaryState>`
+        the `list` of states (`~gwsumm.state.SummaryState`) over which
+        this `DataTab` should be processed. More states can be added
+        later (but before running :meth:`~DataTab.process`) via
+        :meth:`~DataTab.add_state`.
+    table : `type`, `str`, optional
+        LIGO_LW `~glue.ligolw.table.Table` class to use for this ETG,
+        e.g. use `~glue.ligolw.lsctables.SnglBurstTable` for Omicron, or
+        `~glue.ligolw.lsctables.SnglInspiralTable` for CBC
+    cachefile : `str`, optional
+        path to a LAL-format cache file on disk from which to read the event
+        triggers. If no cache is given, the ~gwpy.table.io.trigfind` module
+        will be used to automatically locate the trigger files.
+    url : `str`, optional
+        URL for linking to more details results for this tab.
+    **kwargs
+        all other keyword arguments accepted by the `DataTab`
+
+    See Also
+    --------
+    gwsumm.tabs.DataTab
+        for details on the other keyword arguments (``**kwargs``)
+        accepted by the constructor for this `EventTriggerTab`.
     """
     type = 'archived-triggers'
 
     def __init__(self, name, start, end, channel=None, etg=None, table=None,
                  cachefile=None, url=None, **kwargs):
+        """Create a new `EventTriggerTab`
+        """
         super(EventTriggerTab, self).__init__(name, start, end, **kwargs)
         self.channel = channel and get_channel(channel) or None
         self.cachefile = cachefile
@@ -89,6 +122,47 @@ class EventTriggerTab(base):
     @classmethod
     def from_ini(cls, config, section, **kwargs):
         """Define a new `EventTriggerTab` from a `ConfigParser`.
+
+        Parameters
+        ----------
+        cp : :class:`~gwsumm.config.GWConfigParser`
+            customised configuration parser containing given section
+        section : `str`
+            name of section to parse
+        *args, **kwargs
+            other positional and keyword arguments to pass to the class
+            constructor (`__init__`)
+
+        Notes
+        -----
+        In addition to those attributes parsed by the parent
+        `DataTab.from_ini` method, this method will parse the following
+        attributes from a `ConfigParser`::
+
+        .. autosummary::
+
+           ~EventTriggerTab.channel
+           ~EventTriggerTab.etg
+           ~EventTriggerTab.url
+           ~EventTriggerTab.cachefile
+           ~EventTriggerTab.table
+
+        Additionally, the loudest events table is configured by giving the
+        following options
+
+        -----------------  ---------------------------------------------
+        `loudest`          the number of events to include in the table
+        `loudest-rank`     the statistic to use in sorting the table
+        `loudest-dt`       the minimum time separation for unique events
+        `loudest-columns`  the columns to print in the table
+        `loudest-labels`   the labels for each of the given columns
+        -----------------  ---------------------------------------------
+
+        See Also
+        --------
+        DataTab.from_ini
+            the parent parsing method that handles parsing plot defintions,
+            amongst other things
         """
         for key in ['channel', 'etg', 'url', 'cachefile', 'table']:
             try:

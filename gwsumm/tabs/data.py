@@ -22,15 +22,11 @@
 from __future__ import print_function
 
 import abc
-import operator
-import re
 import os.path
-import sys
 import getpass
 
 from copy import copy
 from multiprocessing import (Process, JoinableQueue)
-from Queue import Empty
 from time import sleep
 from StringIO import StringIO
 from datetime import timedelta
@@ -50,7 +46,7 @@ from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, split_channels,
+from ..utils import (re_cchar, re_channel, re_flagdiv, vprint,
                      count_free_cores, get_odc_bitmask)
 
 from .registry import (get_tab, register_tab)
@@ -58,11 +54,8 @@ from .registry import (get_tab, register_tab)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-Tab = get_tab('basic')
-BaseTab = get_tab('archived-state')
 
-
-class DataTabBase(BaseTab):
+class DataTabBase(get_tab('archived-state')):
     """Abstract base class to detect necessity to run Tab.process()
     """
     __metaclass__ = abc.ABCMeta
@@ -87,6 +80,11 @@ class DataTab(DataTabBase):
     ----------
     name : `str`
         name of this tab (required)
+    start : `LIGOTimeGPS`, `str`
+        start time of this `DataTab`, anything that can be parsed by
+        `~gwpy.time.to_gps` is fine
+    end : `LIGOTimeGPS`, `str`
+        end time of this `DataTab`, format as for `start`
     states : `list` of `states <gwsumm.state.SummaryState>`
         the `list` of states (`~gwsumm.state.SummaryState`) over which
         this `DataTab` should be processed. More states can be added
@@ -95,6 +93,9 @@ class DataTab(DataTabBase):
     ismeta : `bool`, optional, default: `False`
         indicates that this tab only contains data already by others
         and so doesn't need to be processed.
+    noplots : `bool`, optional, default: `False`
+        indicates that this tab only exists to trigger data access, and
+        shouldn't actually generate any figures
     **kwargs
         other keyword arguments
 
@@ -793,7 +794,6 @@ class DataTab(DataTabBase):
         segwizard = StringIO()
         flag.write(segwizard, format='segwizard', coltype=dtype)
         return html.markup.oneliner.pre(segwizard.getvalue())
-
 
     # -------------------------------------------------------------------------
     # methods

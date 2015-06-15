@@ -29,7 +29,7 @@ Run 'gw_summary <mode> --help' for details of the specific arguments and
 options acceptable for each mode.
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import datetime
 import argparse
@@ -709,10 +709,25 @@ if 'public_html' in os.getcwd():
 elif ifo in ifobases:
     urlbase = urlparse(ifobases['ifo']).path
     base = urlbase
-# otherwise cannot process
+# otherwise let the write_html processor work it out on-the-fly
 else:
     urlbase = None
     base = None
+
+# write 404 error page
+if not opts.no_html and urlbase:
+    top = os.path.join(urlbase, path)
+    four0four = get_tab('404')(span[0], span[1], parent=None, path=path,
+                               index=os.path.join(path, '404.html'))
+    four0four.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
+                         ifomap=ifobases, top=top,
+                         writedata=not opts.html_only,
+                         writehtml=not opts.no_html)
+    url404 = os.path.join(urlbase, four0four.index)
+    with open(os.path.join(path, '.htaccess'), 'w') as htaccess:
+        print('Options -Indexes', file=htaccess)
+        print('ErrorDocument 404 %s' % url404, file=htaccess)
+        print('ErrorDocument 403 %s' % url404, file=htaccess)
 
 # write config page
 about = get_tab('about')(span[0], span[1], parent=None, path=path)

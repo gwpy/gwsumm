@@ -647,7 +647,6 @@ else:
     for key, val in config.nditems('html'):
         if re.search('-base\Z', key):
             ifobases[key.rsplit('-', 1)[0].title()] = val
-ifobases.pop(ifo, None)
 
 # -----------------------------------------------------------------------------
 # Read tabs

@@ -109,9 +109,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     f = list(allflags)[0]
                     new = DataQualityDict()
                     new[f] = DataQualityFlag.read(cache, f, coalesce=True)
-            for flag in new:
-                new[flag].known &= newsegs
-                new[flag].active &= newsegs
+            for f in new:
+                new[f].known &= newsegs
+                new[f].active &= newsegs
         else:
             if len(newsegs) >= 10:
                 qsegs = span

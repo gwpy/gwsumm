@@ -166,7 +166,8 @@ class EventTriggerTab(get_tab('default')):
         """
         for key in ['channel', 'etg', 'url', 'cachefile', 'table']:
             try:
-                kwargs.setdefault(key, config.get(section, key))
+                kwargs.setdefault(
+                    key, re_quote.sub('', config.get(section, key)))
             except NoOptionError:
                 pass
         new = super(EventTriggerTab, cls).from_ini(config, section, **kwargs)

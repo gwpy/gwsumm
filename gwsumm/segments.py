@@ -151,12 +151,16 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                           float(abs(new[f].known))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
+        for flag in new:
+            globalv.SEGMENTS[flag].description = str(new[flag].description)
 
     # return what was asked for
     if return_:
         for compound in flags:
             union, intersection, exclude, notequal = split_compound_flag(
                 compound)
+            if len(union + intersection) == 1:
+                out[compound].description = globalv.SEGMENTS[f].description
             for f in exclude:
                 out[compound] -= globalv.SEGMENTS[f]
             for f in intersection:

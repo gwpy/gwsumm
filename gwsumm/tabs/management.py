@@ -49,8 +49,8 @@ class AccountingTab(ParentTab):
     type = 'archived-accounting'
 
     @classmethod
-    def from_ini(cls, config, section, plotdir='plots', base=''):
-        new = super(ParentTab, cls).from_ini(config, section, base=base)
+    def from_ini(cls, config, section, plotdir='plots', **kwargs):
+        new = super(ParentTab, cls).from_ini(config, section, **kwargs)
         if len(new.states) > 1 or new.states[0].name != ALLSTATE:
             raise ValueError("AccountingTab does not accept state selection")
 

@@ -76,12 +76,12 @@ class SEIWatchDogTab(base):
     window = 5
 
     @classmethod
-    def from_ini(cls, config, section, plotdir='plots', base=''):
+    def from_ini(cls, config, section, plotdir='plots', **kwargs):
         """Define a new `SEIWatchDogTab`.
         """
         chambers = config.get(section, 'chamber-type')
-        new = super(SEIWatchDogTab, cls).from_ini(
-                  config, section, plotdir=plotdir, base=base)
+        new = super(SEIWatchDogTab, cls).from_ini(config, section,
+                                                  plotdir=plotdir, **kwargs)
         new.ifo = config.get('DEFAULT', 'ifo')
         new.plotdir = plotdir
         chamber = str(chambers).upper()

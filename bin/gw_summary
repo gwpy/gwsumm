@@ -29,7 +29,7 @@ Run 'gw_summary <mode> --help' for details of the specific arguments and
 options acceptable for each mode.
 """
 
-from __future__ import division
+from __future__ import (division, print_function)
 
 import datetime
 import argparse
@@ -38,6 +38,8 @@ import getpass
 import warnings
 import httplib
 import importlib
+
+from urlparse import urlparse
 
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
 warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
@@ -437,9 +439,9 @@ endtime = Time(float(opts.gpsend), format='gps')
 # set mode and output directory
 mode.set_mode(mode.MODE_ENUM[opts.mode.upper()])
 try:
-    base = mode.get_base(utc)
+    path = mode.get_base(utc)
 except ValueError:
-    base = os.path.join('%d-%d' % (opts.gpsstart, opts.gpsend))
+    path = os.path.join('%d-%d' % (opts.gpsstart, opts.gpsend))
 
 # set LAL FFT plan wisdom level
 duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
@@ -453,6 +455,10 @@ else:
 # set processing options
 if opts.multiprocess == 1:
     opts.multiprocess = False
+
+# set global html only flag
+if opts.html_only:
+    globalv.HTMLONLY = True
 
 # -----------------------------------------------------------------------------
 # Setup
@@ -468,7 +474,7 @@ End time: %s (%s)
 Output directory: %s
 """ % (mode.MODE_NAME[mode.get_mode()], starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps,
-       os.path.abspath(os.path.join(opts.output_dir, base))))
+       os.path.abspath(os.path.join(opts.output_dir, path))))
 
 # -- Load plugins
 # loading the module containing a plugin should 'register' the relevant
@@ -555,7 +561,7 @@ except NoSectionError:
 # build directories
 mkdir(opts.output_dir)
 os.chdir(opts.output_dir)
-plotdir = os.path.join(base, 'plots')
+plotdir = os.path.join(path, 'plots')
 mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
@@ -574,7 +580,7 @@ archives = []
 
 if opts.archive:
     from gwsumm import archive
-    archivedir = os.path.join(base, 'archive')
+    archivedir = os.path.join(path, 'archive')
     mkdir(archivedir)
     opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
                                 % (ifo, opts.archive, opts.gpsstart,
@@ -643,7 +649,6 @@ else:
     for key, val in config.nditems('html'):
         if re.search('-base\Z', key):
             ifobases[key.rsplit('-', 1)[0].title()] = val
-ifobases.pop(ifo, None)
 
 # -----------------------------------------------------------------------------
 # Read tabs
@@ -663,9 +668,9 @@ for section in filter(lambda n: re.match('tab[-\s]', n),
         DataTab = get_tab('archived-data')
         Tab = get_tab(type_)
         if issubclass(Tab, DataTab):
-            tab = Tab.from_ini(config, section, plotdir=plotdir, base=base)
+            tab = Tab.from_ini(config, section, plotdir=plotdir, path=path)
         else:
-            tab = Tab.from_ini(config, section, base=base)
+            tab = Tab.from_ini(config, section, path=path)
         alltabs.append(tab)
 
 # sort tabs into hierarchical list
@@ -682,15 +687,56 @@ for tab in filter(lambda tab: tab.parent is not None, alltabs):
 
 tabs = tabs.values()
 
+# sort tabs by 'Summary', then lower case only, then everything else
+_sort_tabs = lambda tab: (
+    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
+    tab.shortname == 'Summary' and 2 or
+    'ODC' in tab.shortname and 3 or
+    tab.shortname.islower() and tab.shortname.upper() or
+    tab.shortname.lower())
+tabs.sort(key=_sort_tabs)
+for tab in tabs:
+    tab.children.sort(key=_sort_tabs)
+alltabs.sort(key=_sort_tabs, reverse=True)
+
+# get URL from output directory
+if 'public_html' in os.getcwd():
+    urlbase = os.path.sep + os.path.join(
+                  '~%s' % config.get(DEFAULTSECT, 'user'),
+                  os.getcwd().split('public_html', 1)[1][1:])
+    base = urlbase
+# otherwise get URL from html config
+elif ifo in ifobases:
+    urlbase = urlparse(ifobases['ifo']).path
+    base = urlbase
+# otherwise let the write_html processor work it out on-the-fly
+else:
+    urlbase = None
+    base = None
+
+# write 404 error page
+if not opts.no_html and urlbase:
+    top = os.path.join(urlbase, path)
+    four0four = get_tab('404')(span[0], span[1], parent=None, path=path,
+                               index=os.path.join(path, '404.html'))
+    four0four.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
+                         ifomap=ifobases, top=top, base=base,
+                         writedata=not opts.html_only,
+                         writehtml=not opts.no_html)
+    url404 = os.path.join(urlbase, four0four.index)
+    with open(os.path.join(path, '.htaccess'), 'w') as htaccess:
+        print('Options -Indexes', file=htaccess)
+        print('ErrorDocument 404 %s' % url404, file=htaccess)
+        print('ErrorDocument 403 %s' % url404, file=htaccess)
+
 # write config page
-about = get_tab('about')(span[0], span[1], parent=None, base=base)
+about = get_tab('about')(span[0], span[1], parent=None, path=path)
 if not opts.no_html:
     mkdir(about.path)
     about.write_html(css=css, js=javascript, tabs=tabs, config=config.files,
-                     ifo=ifo, ifomap=ifobases, about=about.index,
+                     ifo=ifo, ifomap=ifobases, about=about.index, base=base,
                      writedata=not opts.html_only,
                      writehtml=not opts.no_html)
-
 
 # -----------------------------------------------------------------------------
 # Process all tabs
@@ -745,19 +791,6 @@ if opts.bulk_read and not opts.html_only:
                             config=config, nds=opts.nds, statevector=True,
                             multiprocess=opts.multiprocess, return_=False)
 
-# sort tabs by 'Summary', then lower case only, then everything else
-_sort_tabs = lambda tab: (
-    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
-    tab.shortname == 'Summary' and 2 or
-    'ODC' in tab.shortname and 3 or
-    tab.shortname.islower() and tab.shortname.upper() or
-    tab.shortname.lower())
-
-tabs.sort(key=_sort_tabs)
-for tab in tabs:
-    tab.children.sort(key=_sort_tabs)
-
-alltabs.sort(key=_sort_tabs, reverse=True)
 for tab in alltabs:
     vprint("\n-------------------------------------------------\n")
     if tab.parent:
@@ -771,8 +804,8 @@ for tab in alltabs:
                     segdb_error=opts.on_segdb_error)
     if not tab.hidden:
         mkdir(tab.href)
-        page = tab.write_html(css=css, js=javascript, tabs=tabs,
-                              ifo=ifo, ifomap=ifobases, about=about.index,
+        page = tab.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
+                              ifomap=ifobases, about=about.index, base=base,
                               writedata=not opts.html_only,
                               writehtml=not opts.no_html)
     vprint("%s complete!\n" % (name))

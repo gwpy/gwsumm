@@ -151,8 +151,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                           float(abs(new[f].known))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
-        for flag in new:
-            globalv.SEGMENTS[flag].description = str(new[flag].description)
+        for f in new:
+            globalv.SEGMENTS[f].description = str(new[f].description)
 
     # return what was asked for
     if return_:

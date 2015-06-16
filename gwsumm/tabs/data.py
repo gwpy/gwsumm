@@ -736,7 +736,7 @@ class DataTab(DataTabBase):
                      "information")
             # make summary table
             headers = ['IFO', 'Name', 'Version', 'Defined duration',
-                       'Active duration']
+                       'Active duration', 'Description']
             data = []
             pc = float(abs(state.active) / 100.)
             for flag in flags:
@@ -751,7 +751,8 @@ class DataTab(DataTabBase):
                 else:
                     active = '%.2f (%.2f%%)' % (abs(flag.active),
                                                 abs(flag.active) / pc)
-                data.append([flag.ifo, flag.tag, v, valid, active])
+                data.append([flag.ifo, flag.tag, v, valid, active,
+                             flag.description or ''])
             page.add(str(html.data_table(headers, data)))
             # print segment lists
             page.div(class_='panel-group', id="accordion")

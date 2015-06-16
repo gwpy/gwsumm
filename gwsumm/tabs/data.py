@@ -24,6 +24,7 @@ from __future__ import print_function
 import abc
 import os.path
 import getpass
+import re
 
 from copy import copy
 from multiprocessing import (Process, JoinableQueue)

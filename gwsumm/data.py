@@ -19,6 +19,8 @@
 """Utilities for data handling and display
 """
 
+from __future__ import division
+
 import operator
 import os
 import urllib2
@@ -670,7 +672,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         if hasattr(channel, 'stride'):
             stride = float(channel.stride)
         elif 'stride' in fftparams:
-            stride = float(fftparams.pop('stride', 0))
+            stride = float(fftparams.pop('stride'))
         else:
             stride = None
         # get time-series data
@@ -690,10 +692,10 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
-            fftparams.setdefault('fftlength', int(4096 * ts.dx.value))
-            fftparams.setdefault('overlap', fftparams['fftlength'] / 2)
-            if not stride and fftparams['overlap'] != fftparams['fftlength']:
-                stride = fftparams['fftlength'] * 1.5
+            fftparams.setdefault('fftlength', 1)
+            fftparams.setdefault('overlap', 0.5)
+            if not stride and fftparams['overlap'] != 0:
+                stride = ceil(fftparams['fftlength'] * 1.5)
             elif not stride:
                 stride = fftparams['fftlength']
             if abs(ts.span) < stride:

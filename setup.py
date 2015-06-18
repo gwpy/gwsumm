@@ -218,11 +218,11 @@ else:
     configs = []
 
 # get all HTML files
-if os.path.isdir('share'):
-    htmlfiles = (glob.glob(os.path.join('share', '*.css')) +
-                 glob.glob(os.path.join('share', '*.js')))
-else:
-    htmlfiles = []
+htmlfiles = []
+if os.path.isdir(os.path.join('share', 'css')):
+    htmlfiles.extend(glob.glob(os.path.join('share', 'css', '*.css')))
+if os.path.isdir(os.path.join('share', 'js')):
+    htmlfiles.extend(glob.glob(os.path.join('share', 'js', '*.js')))
 
 # -----------------------------------------------------------------------------
 # run setup

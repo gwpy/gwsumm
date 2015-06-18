@@ -34,8 +34,10 @@ from ...mode import *
 from ...utils import re_cchar
 
 # set resources
-CSS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
-JS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
+BOOTSTRAPCSS = [
+    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
+BOOTSTRAPJS = [
+    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
 
 
 # set <meta> for bootstrap

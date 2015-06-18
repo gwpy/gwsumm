@@ -67,10 +67,11 @@ class EventTriggerTab(get_tab('default')):
         LIGO_LW `~glue.ligolw.table.Table` class to use for this ETG,
         e.g. use `~glue.ligolw.lsctables.SnglBurstTable` for Omicron, or
         `~glue.ligolw.lsctables.SnglInspiralTable` for CBC
-    cachefile : `str`, optional
-        path to a LAL-format cache file on disk from which to read the event
-        triggers. If no cache is given, the ~gwpy.table.io.trigfind` module
-        will be used to automatically locate the trigger files.
+    cache : `~glue.lal.Cache`, `str`, optional
+        `Cache` object, or path to a LAL-format cache file on disk,
+        from which to read the event triggers. If no cache is given,
+        the ~gwpy.table.io.trigfind` module will be used to automatically
+        locate the trigger files.
     url : `str`, optional
         URL for linking to more details results for this tab.
     **kwargs
@@ -85,12 +86,12 @@ class EventTriggerTab(get_tab('default')):
     type = 'archived-triggers'
 
     def __init__(self, name, start, end, channel=None, etg=None, table=None,
-                 cachefile=None, url=None, **kwargs):
+                 cache=None, url=None, **kwargs):
         """Create a new `EventTriggerTab`
         """
         super(EventTriggerTab, self).__init__(name, start, end, **kwargs)
         self.channel = channel and get_channel(channel) or None
-        self.cachefile = cachefile
+        self.cache = cache
         self.url = url
         # parse ETG and LIGO_LW table class
         if etg is None:
@@ -144,7 +145,7 @@ class EventTriggerTab(get_tab('default')):
            ~EventTriggerTab.channel
            ~EventTriggerTab.etg
            ~EventTriggerTab.url
-           ~EventTriggerTab.cachefile
+           ~EventTriggerTab.cache
            ~EventTriggerTab.table
 
         Additionally, the loudest events table is configured by giving the
@@ -164,7 +165,7 @@ class EventTriggerTab(get_tab('default')):
             the parent parsing method that handles parsing plot defintions,
             amongst other things
         """
-        for key in ['channel', 'etg', 'url', 'cachefile', 'table']:
+        for key in ['channel', 'etg', 'url', 'cache', 'table']:
             try:
                 kwargs.setdefault(
                     key, re_quote.sub('', config.get(section, key)))
@@ -219,10 +220,8 @@ class EventTriggerTab(get_tab('default')):
 
     def process(self, *args, **kwargs):
         # read the cache files
-        if self.cachefile is None:
-            self.cache = None
-        elif os.path.isfile(self.cachefile):
-            with open(self.cachefile, 'r') as fobj:
+        if isinstance(self.cache, str) and os.path.isfile(self.cache):
+            with open(self.cache, 'r') as fobj:
                 try:
                     self.cache = Cache.fromfile(fobj).sieve(
                                              segment=self.span)
@@ -231,9 +230,12 @@ class EventTriggerTab(get_tab('default')):
                         self.cache = Cache()
                     else:
                         raise
-        else:
-            warn("Cache file %s not found." % self.cachefile)
+        elif isinstance(self.cache, str):
+            warn("Cache file %s not found." % self.cache)
             return
+        elif self.cache is not None and not isinstance(self.cache, Cache):
+            raise ValueError("Cannot parse EventTriggerTab.cache of type %r"
+                             % type(self.cache))
 
         # only process if the cachfile was found
         if kwargs.get('trigcache', None) is None:
@@ -244,7 +246,7 @@ class EventTriggerTab(get_tab('default')):
         """Write the '#main' HTML content for this `EventTriggerTab`.
         """
         # did it run
-        if self.cachefile and not os.path.isfile(self.cachefile):
+        if not self.cache:
             page = html.markup.page()
             page.div(class_='alert alert-danger')
             page.p("This analysis seems to have failed.")

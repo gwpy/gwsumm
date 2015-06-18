@@ -26,6 +26,11 @@ formatted to fit the
 
 import os.path
 
+try:
+    from collections import OrderedDict
+except:
+    from ordereddict import OrderedDict
+
 from .. import version
 from .html5 import *
 from .bootstrap import *
@@ -40,33 +45,49 @@ __version__ = version.version
 sharedir = os.path.join(os.path.split(__file__)[0], os.path.pardir,
                         os.path.pardir, 'share', 'gwsumm', 'html')
 
-JQUERYJS = ['//code.jquery.com/jquery-1.11.0.min.js',
-            '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.4.0/moment.min.js']
+JS = OrderedDict([
+    ('jquery', [
+        '//code.jquery.com/jquery-1.11.0.min.js',
+        '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.4.0/moment.min.js']),
+    ('bootstrap', BOOTSTRAPJS),
+    ('fancybox', ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
+              'jquery.fancybox.pack.js']),
+    ('datepicker', [
+        os.path.normpath(os.path.join(sharedir, 'datepicker.js'))]),
+    ('gwsumm', [os.path.normpath(os.path.join(sharedir, 'gwsummary.js'))]),
+])
 
-BOOTSTRAPCSS = CSS
-BOOTSTRAPJS = JS
-
-FANCYBOXCSS = ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
-               'jquery.fancybox.css']
-FANCYBOXJS = ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
-              'jquery.fancybox.pack.js']
-
-GWSUMMCSS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
-                     ['datepicker.css', 'ligo-boostrap.css', 'gwsummary.css']))
-GWSUMMJS = list(map(lambda p: os.path.normpath(os.path.join(sharedir, p)),
-                    ['datepicker.js', 'gwsummary.js']))
-
-CSS = BOOTSTRAPCSS + FANCYBOXCSS + GWSUMMCSS
-JS = JQUERYJS + BOOTSTRAPJS + FANCYBOXJS + GWSUMMJS
+CSS = OrderedDict([
+    ('bootstrap', BOOTSTRAPCSS),
+    ('fancybox', ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
+              'jquery.fancybox.css']),
+    ('datepicker',
+        [os.path.normpath(os.path.join(sharedir, 'datepicker.css'))]),
+])
 
 
-def ifo_css(ifo):
-    return os.path.normpath(os.path.join(
-        sharedir, 'gwsummary_%s.css' % str(ifo).lower()))
+def get_css(ifo='All'):
+    """Return a list of CSS files to link in the HTML <head>
+    """
+    ifocss = get_ifo_css(ifo)
+    return [cssf for csslist in CSS.values() + [ifocss] for cssf in csslist]
+
+
+def get_js():
+    """Return a list of javascript files to link in the HTML <head>
+    """
+    return [jsf for jslist in JS.values() for jsf in jslist]
+
+
+def get_ifo_css(ifo):
+    """Return the path to the specific CSS file for an interferometer
+    """
+    return [os.path.normpath(os.path.join(
+        sharedir, 'bootstrap-ligo-%s.css' % str(ifo).lower()))]
+
 
 # ----------------------------------------------------------------------------
 # Write HTML table
-
 
 def data_table(headers, data, **class_):
     """Write a <table> with a single row of headers, followed by multiple

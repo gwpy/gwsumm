@@ -54,7 +54,7 @@ JS = OrderedDict([
               'jquery.fancybox.pack.js']),
     ('datepicker', [
         os.path.normpath(os.path.join(sharedir, 'datepicker.js'))]),
-    ('gwsumm', [os.path.normpath(os.path.join(sharedir, 'gwsummary.js'))]),
+    ('gwsumm', [os.path.normpath(os.path.join(sharedir, 'gwsumm.js'))]),
 ])
 
 CSS = OrderedDict([
@@ -83,7 +83,7 @@ def get_ifo_css(ifo):
     """Return the path to the specific CSS file for an interferometer
     """
     return [os.path.normpath(os.path.join(
-        sharedir, 'bootstrap-ligo-%s.css' % str(ifo).lower()))]
+        sharedir, 'gwsumm-%s.css' % str(ifo).lower()))]
 
 
 # ----------------------------------------------------------------------------

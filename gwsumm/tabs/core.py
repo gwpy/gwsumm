@@ -432,11 +432,14 @@ class Tab(object):
 
         # move css and js files if needed
         if copy:
+            staticdir = os.path.join(self.path, 'static')
             for i, script in enumerate(css + js):
                 pr = urlparse(script)
                 if not pr.netloc and os.path.isfile(script):
-                    localscript = os.path.join(self.path,
+                    localscript = os.path.join(staticdir,
                                                os.path.basename(script))
+                    if not os.path.isdir(staticdir):
+                        os.makedirs(staticdir)
                     if (not os.path.isfile(localscript) or not
                             os.path.samefile(script, localscript)):
                         copyfile(script, localscript)

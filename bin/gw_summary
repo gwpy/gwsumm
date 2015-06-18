@@ -94,8 +94,13 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 GWSummConfigParser.OPTCRE = re.compile(
     r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
 
+# set defaults
 VERBOSE = False
 PROFILE = False
+try:
+    DEFAULT_IFO = get_default_ifo()
+except ValueError:
+    DEFAULT_IFO = None
 
 # ----------------------------------------------------------------------------
 # Argparse customisations
@@ -199,10 +204,10 @@ sharedopts.add_argument('-D', '--debug', action='store_true',
 copts = sharedopts.add_argument_group("Configuration options",
                                       "Provide a number of INI-format "
                                       "configuration files")
-copts.add_argument('-i', '--ifo', action='store', type=str, metavar='IFO',
-                   help="Instrument to process. If this option is set in "
-                        "the [DEFAULT] of any of the INI files, giving "
-                        "it here is redundant.")
+copts.add_argument('-i', '--ifo', default=DEFAULT_IFO, metavar='IFO',
+                   help="IFO prefix for interferometer to process. "
+                        "If this option is set in the [DEFAULT] of any of "
+                        "the INI files, giving it here is redundant.")
 copts.add_argument('-f', '--config-file', action='append', type=str,
                    metavar='FILE', default=[],
                    help="INI file for analysis, may be given multiple times")

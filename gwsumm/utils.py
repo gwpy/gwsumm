@@ -24,6 +24,7 @@ import sys
 import time
 import re
 from multiprocessing import (cpu_count, active_children)
+from socket import getfqdn
 
 from gwpy.detector import Channel
 from gwpy.io import nds as ndsio
@@ -160,3 +161,33 @@ _re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')
 
 def get_odc_bitmask(odcchannel):
     return _re_odc.sub('BITMASK', str(odcchannel))
+
+
+def get_default_ifo(fqdn=getfqdn()):
+    """Find the default interferometer prefix (IFO) for the given host
+
+    Parameters
+    ----------
+    fqdn : `str`
+        the fully-qualified domain name (FQDN) of the host on which you
+        wish to find the default IFO
+
+    Returns
+    -------
+    IFO : `str`
+        the upper-case X1-style prefix for the default IFO, if found, e.g. `L1`
+
+    Raises
+    ------
+    ValueError
+        if not default interferometer prefix can be parsed
+    """
+    if '.uni-hannover.' in fqdn:
+        return 'G1'
+    elif '.ligo-wa.' in fqdn:
+        return 'H1'
+    elif '.ligo-la.' in fqdn:
+        return 'L1'
+    elif '.virgo.' in fqdn or '.ego-gw.' in fqdn:
+        return 'V1'
+    raise ValueError("Cannot determine default IFO for host %r" % fqdn)

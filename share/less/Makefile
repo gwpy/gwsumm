@@ -1,4 +1,4 @@
-all: gwsumm-l1.css gwsumm-h1.css gwsumm-v1.css gwsumm-all.css
+all: gwsumm-l1.css gwsumm-h1.css gwsumm-v1.css gwsumm-c1.css gwsumm-all.css
 
 gwsumm-l1.css: gwsumm-l1.less gwsumm.less
 	lessc --global-var="ifo=l1" gwsumm.less -x > ../css/$@;
@@ -8,6 +8,9 @@ gwsumm-h1.css: gwsumm-h1.less gwsumm.less
 
 gwsumm-v1.css: gwsumm-v1.less gwsumm.less
 	lessc --global-var="ifo=v1" gwsumm.less -x > ../css/$@;
+
+gwsumm-c1.css: gwsumm-c1.less gwsumm.less
+	lessc --global-var="ifo=c1" gwsumm.less -x > ../css/$@;
 
 gwsumm-all.css: gwsumm-all.less gwsumm.less
 	lessc --global-var="ifo=all" gwsumm.less -x > ../css/$@;

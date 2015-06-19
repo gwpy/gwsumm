@@ -481,7 +481,7 @@ register_tab(PlotTab)
 
 class ArchivedPlotTab(SummaryArchiveMixin, PlotTab):
 
-    """An archivable tab with multiple plots to be laid ouut in a scaffold.
+    """An archivable tab with multiple plots to be laid out in a scaffold.
     """
     type = 'archived-plots'
 

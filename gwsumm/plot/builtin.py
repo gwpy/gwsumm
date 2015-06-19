@@ -732,7 +732,7 @@ class SpectrumDataPlot(DataPlot):
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
 
-        if len(self.channels) > 1:
+        if len(self.channels) > 1 or ax.legend_ is not None:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)

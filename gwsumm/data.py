@@ -349,7 +349,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     elif multiprocess is False:
         nproc = 1
     else:
-        nproc = count_free_cores(multiprocess)
+        nproc = multiprocess
 
     if globalv.VERBOSE and not multiprocess:
         verbose = '    '
@@ -647,7 +647,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     elif multiprocess is False:
         nproc = 1
     else:
-        nproc = count_free_cores(multiprocess)
+        nproc = multiprocess
 
     globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
@@ -687,7 +687,8 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
-                                        query=query, nds=nds)
+                                        multiprocess=nproc, query=query,
+                                        nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
@@ -855,7 +856,8 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
             stride = strides.pop()
             new = type(new)([s for s in new if abs(s) >= stride])
         get_timeseries_dict(channels, new, config=config, cache=cache,
-                            frametype=frametype, nds=nds, return_=False)
+                            multiprocess=multiprocess, frametype=frametype,
+                            nds=nds, return_=False)
     # loop over channels and generate spectrograms
     out = OrderedDict()
     for channel in channels:

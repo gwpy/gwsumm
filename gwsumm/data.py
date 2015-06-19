@@ -216,7 +216,10 @@ def find_frame_type(channel):
             ftype = 'lldetchar'
         else:
             ftype = 'R'
-        channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
+        if channel.ifo == 'C1':
+            channel.frametype = ftype
+        else:
+            channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
     return channel.frametype
 
 

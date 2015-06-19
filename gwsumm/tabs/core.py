@@ -71,8 +71,9 @@ class Tab(object):
     group : `str`
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
-    base : `str`
-        path for HTML base attribute for this tab.
+    path : `str`
+        base output directory for this tab (should be the same directory
+        for all tabs in this run)
 
     Notes
     -----
@@ -86,7 +87,7 @@ class Tab(object):
     """Type identifier for this `Tab`"""
 
     def __init__(self, name, index=None, shortname=None, parent=None,
-                 children=list(), group=None, base='', hidden=False):
+                 children=list(), group=None, path=os.curdir, hidden=False):
         """Initialise a new `Tab`.
         """
         # names
@@ -98,7 +99,7 @@ class Tab(object):
         self.children = children
         self.group = group
         # HTML format
-        self.base = base
+        self.path = path
         self.index = index
         self.page = None
         self.hidden = hidden
@@ -173,10 +174,20 @@ class Tab(object):
 
     @property
     def index(self):
-        """The HTML path (relative to the :attr:`~Tab.base`) for this tab
+        """The HTML path (relative to the :attr:`~Tab.path`) for this tab
         """
         if not self._index:
-            self._index = os.path.join(self.path, 'index.html')
+            if self.shortname.lower() == 'summary':
+                p = ''
+            else:
+                p = re_cchar.sub('_', self.shortname.strip('_')).lower()
+            tab_ = self
+            while tab_.parent:
+                p = os.path.join(re_cchar.sub(
+                        '_', tab_.parent.shortname.strip('_')).lower(), p)
+                tab_ = tab_.parent
+            self._index = os.path.normpath(os.path.join(
+                self.path, p, 'index.html'))
         return self._index
 
     @index.setter
@@ -185,7 +196,7 @@ class Tab(object):
 
     @property
     def href(self):
-        """HTML href (relative to the :attr:`~Tab.base`) for this tab
+        """HTML href (relative to the :attr:`~Tab.path`) for this tab
 
         This attribute is just a convenience to clean-up the
         :attr:`~Tab.index` for a given tab, by removing index.htmls.
@@ -199,27 +210,6 @@ class Tab(object):
             return self.index
         else:
             return ''
-
-    @property
-    def path(self):
-        """Path of this tab's directory relative to the --output-dir
-        """
-        if self._index:
-            return os.path.split(self._index)[0]
-        else:
-            if self.shortname.lower() == 'summary':
-                p = ''
-            else:
-                p = re_cchar.sub('_', self.shortname.strip('_')).lower()
-            tab_ = self
-            while tab_.parent:
-                p = os.path.join(re_cchar.sub(
-                        '_', tab_.parent.shortname.strip('_')).lower(), p)
-                tab_ = tab_.parent
-            if self.base:
-                return os.path.normpath(os.path.join(self.base, p))
-            else:
-                return os.path.normpath(p)
 
     @property
     def title(self):
@@ -263,18 +253,6 @@ class Tab(object):
             self._group = None
         else:
             self._group = str(gp)
-
-    @property
-    def base(self):
-        """HTML <base> URL for this `Tab`
-
-        :type: `str`
-        """
-        return self._base
-
-    @base.setter
-    def base(self, url):
-        self._base = str(url)
 
     # -------------------------------------------
     # Tab instance methods
@@ -445,16 +423,23 @@ class Tab(object):
         you should preserve the same tag structure, or subclass both.
         """
         # find relative base path
-        n = len(self.index.split(os.path.sep)) - 1
-        base = os.sep.join([os.pardir] * n)
+        base = initargs.pop('base', None)
+        if base is None:
+            n = len(self.index.split(os.path.sep)) - 1
+            base = os.sep.join([os.pardir] * n)
+        if not base.endswith('/'):
+            base += '/'
 
         # move css and js files if needed
         if copy:
+            staticdir = os.path.join(self.path, 'static')
             for i, script in enumerate(css + js):
                 pr = urlparse(script)
                 if not pr.netloc and os.path.isfile(script):
-                    localscript = os.path.join(self.path,
+                    localscript = os.path.join(staticdir,
                                                os.path.basename(script))
+                    if not os.path.isdir(staticdir):
+                        os.makedirs(staticdir)
                     if (not os.path.isfile(localscript) or not
                             os.path.samefile(script, localscript)):
                         copyfile(script, localscript)
@@ -668,8 +653,8 @@ class Tab(object):
         page.div.close()
         return page
 
-    def write_html(self, maincontent, title=None, subtitle=None,
-                   tabs=list(), ifo=None, ifomap=dict(), brand=None,
+    def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
+                   ifo=None, ifomap=dict(), brand=None, base=None,
                    css=html.CSS, js=html.JS, about=None, footer=None, **inargs):
         """Write the HTML page for this `Tab`.
 
@@ -712,7 +697,7 @@ class Tab(object):
 
         # initialise HTML page
         self.initialise_html_page(title=title, subtitle=subtitle, css=css,
-                                  js=js)
+                                  base=base, js=js)
 
         # add navigation
         self.page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
@@ -819,16 +804,16 @@ class SummaryArchiveMixin(object):
         :attr:`~StateTab.span`.
         """
         date = from_gps(self.start)
-        # double-check base matches what is required from custom datepicker
+        # double-check path matches what is required from custom datepicker
         try:
-            requiredbase = mode.get_base(date, mode=self.mode)
+            requiredpath = mode.get_base(date, mode=self.mode)
         except ValueError:
             return html.markup.oneliner.div('%d-%d' % (self.start, self.end),
                                             class_='navbar-brand')
-        if not requiredbase in self.base:
-            raise RuntimeError("Tab base %r inconsistent with required "
+        if not requiredpath in self.path:
+            raise RuntimeError("Tab path %r inconsistent with required "
                                "format including %r for archive calendar"
-                               % (self.base, requiredbase))
+                               % (self.path, requiredpath))
         # format calendar
         return html.calendar(date, mode=self.mode % 3)
 

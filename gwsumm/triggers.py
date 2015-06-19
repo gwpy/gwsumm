@@ -24,7 +24,9 @@ try:
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
-from glue.ligolw.table import StripTableName as strip_table_name
+from glue.ligolw.table import (StripTableName as strip_table_name,
+                               CompareTableNames as compare_table_names)
+from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.table import lsctables
 from gwpy.table.io import trigfind
@@ -36,10 +38,107 @@ from . import globalv
 from .utils import (re_cchar, vprint)
 from .data import find_cache_segments
 
+ETG_TABLE = lsctables.TableByName.copy()
+ETG_TABLE.update({
+    # single-IFO burst
+    'omicron': lsctables.SnglBurstTable,
+    'omega': lsctables.SnglBurstTable,
+    'omegadq': lsctables.SnglBurstTable,
+    'kleinewelle': lsctables.SnglBurstTable,
+    'kw': lsctables.SnglBurstTable,
+    'dmtomega': lsctables.SnglBurstTable,
+    'dmt_wsearch': lsctables.SnglBurstTable,
+    # multi-IFO burst
+    'cwb': lsctables.MultiBurstTable,
+    # single-IFO inspiral
+    'daily_ihope': lsctables.SnglInspiralTable,
+    'daily_ahope': lsctables.SnglInspiralTable,
+})
+
+
+def get_etg_table(etg):
+    """Find which table should be used for the given etg
+
+    Parameters
+    ----------
+    etg : `str`
+        name of Event Trigger Generator for which to query
+
+    Returns
+    -------
+    table : `~gwpy.table.Table`
+        LIGO_LW table registered to the given ETG
+
+    Raises
+    ------
+    KeyError
+        if the ETG is not registered
+    """
+    try:
+        return ETG_TABLE[etg.lower()]
+    except KeyError as e:
+        e.args = ('No LIGO_LW table registered to etg %r' % etg,)
+        raise
+
+
+def register_etg_table(etg, table, force=False):
+    """Register a specific LIGO_LW table to an ETG
+
+    Parameters
+    ----------
+    etg : `str`
+        name of Event Trigger Generator to register
+    table : `~gwpy.table.Table`, `str`
+        `Table` class to register, or the ``tableName`` of the relevant class
+    force : `bool`, optional, default: `False`
+        overwrite an existing registration for the given ETG
+
+    Raises
+    ------
+    KeyError
+        if a `str` table cannot be resolved to a specific class
+    """
+    if isinstance(table, str):
+        try:
+            table = lsctables.TableByName[table]
+        except KeyError as e:
+            e.args = ('Cannot parse table name %r' % table,)
+    if etg.lower() in ETG_TABLE and not force:
+        raise KeyError('LIGO_LW table already registered to etg %r' % etg,)
+    ETG_TABLE[etg.lower()] = table
+    return table
+
+
+def get_partial_contenthandler(table):
+    """Build a `PartialLIGOLWContentHandler` for the given table
+
+    Parameters
+    ----------
+    table : `type`
+        the table class to be read
+
+    Returns
+    -------
+    contenthandler : `type`
+        a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
+        read only the given `table`
+    """
+    def _filter_func(name, attrs):
+        if name == table.tagName and attrs.has_key('Name'):
+            return compare_table_names(attrs.get('Name'), table.tableName) == 0
+        else:
+            return False
+
+    class _ContentHandler(PartialLIGOLWContentHandler):
+        def __init__(self, document):
+            super(_ContentHandler, self).__init__(document, _filter_func)
+
+    return _ContentHandler
+
 
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                  query=True, multiprocess=False, tablename=None,
-                 return_=True):
+                 contenthandler=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -47,20 +146,11 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         segments = segments.active
     segments = SegmentList(segments)
 
-    if not tablename:
-        try:
-            from laldetchar.triggers import utils as trigutils
-            tablename = trigutils.which_table(etg)
-        except ValueError:
-            if etg.lower() in ['daily ihope', 'daily ahope']:
-                tablename = strip_table_name(
-                    lsctables.SnglInspiralTable.tableName)
-            elif key in globalv.TRIGGERS:
-                tablename = strip_table_name(globalv.TRIGGERS[key].tableName)
-            else:
-                raise
-    # get default table type for this generator
-    TableClass = lsctables.TableByName[tablename]
+    # get LIGO_LW table for this etg
+    if tablename:
+        TableClass = lsctables.TableByName[tablename]
+    else:
+        TableClass = get_etg_table(etg)
 
     # work out columns
     try:
@@ -86,6 +176,11 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # read new triggers
     query &= (abs(new) != 0)
     if query:
+        # set content handler
+        if contenthandler is None:
+            contenthandler = get_partial_contenthandler(TableClass)
+        lsctables.use_in(contenthandler)
+
         for segment in new:
             filter_ = lambda t: float(get_row_value(t, 'time')) in segment
             # find trigger files
@@ -103,8 +198,13 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     form = etg.lower()
                 # read triggers and store
                 segcache = segcache.checkfilesexist()[0]
-                table = TableClass.read(segcache, columns=columns,
-                                        format=form, filt=filter_)
+                if form == 'ligolw':
+                    table = TableClass.read(segcache, columns=columns,
+                                            format=form, filt=filter_,
+                                            contenthandler=contenthandler)
+                else:
+                    table = TableClass.read(segcache, columns=columns,
+                                            format=form, filt=filter_)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:
@@ -121,6 +221,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
 
         # return correct triggers
         out = lsctables.New(TableClass, columns=columns)
+        out.channel = str(channel)
+        out.etg = str(etg)
         out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
                    times[i] in segments)
         return out

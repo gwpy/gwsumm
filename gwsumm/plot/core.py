@@ -39,7 +39,7 @@ from gwpy.plotter.utils import rUNDERSCORE
 
 from .registry import register_plot
 from .. import globalv
-from ..data import get_channel
+from ..channels import get_channel
 from ..utils import split_channels
 
 __all__ = ['SummaryPlot', 'DataPlot']
@@ -184,8 +184,8 @@ class DataPlot(SummaryPlot):
     defaults = {}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, href=None, new=True, all_data=False,
-                 read=True, **pargs):
+                 tag=None, pid=None, href=None, new=True, all_data=False,
+                 read=True, fileformat='png', **pargs):
         super(DataPlot, self).__init__(href=href, new=new)
         if isinstance(channels, str):
             channels = split_channels(channels)
@@ -195,11 +195,14 @@ class DataPlot(SummaryPlot):
         self._outdir = outdir
         if tag is not None:
             self.tag = tag
+        if pid is not None:
+            self.pid = pid
         self.all_data = all_data
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
         self.plot = None
         self.read = read
+        self.fileformat = fileformat
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot properties
@@ -266,7 +269,7 @@ class DataPlot(SummaryPlot):
     def ifos(self):
         """Interferometer set for this `TabSummaryPlot`
         """
-        return self.allchannels.ifos
+        return set([c.ifo for c in self.allchannels if c.ifo])
 
     @property
     def tag(self):
@@ -277,17 +280,37 @@ class DataPlot(SummaryPlot):
         except AttributeError:
             state = re_cchar.sub('_', self.state is None and 'MULTI' or
                                       self.state.name).rstrip('_')
-            chans = "".join(map(str, self.channels))
-            filts = "".join(map(str,
-                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
-                 for c in self.channels]))
-            hash = hashlib.md5(chans+filts).hexdigest()[:6]
             type_ = re_cchar.sub('_', self.type)
-            return '_'.join([state, hash, type_]).upper()
+            self._tag = '_'.join([state, self.pid, type_]).upper()
+            return self.tag
 
     @tag.setter
     def tag(self, filetag):
         self._tag = filetag or self.type.upper()
+
+    @tag.deleter
+    def tag(self):
+        del self._tag
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+            return self.pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @pid.deleter
+    def pid(self):
+        del self._pid
 
     @property
     def outputfile(self):
@@ -297,8 +320,9 @@ class DataPlot(SummaryPlot):
         tag = self.tag
         gps = floor(self.start)
         dur = ceil(self.end - self.start)
-        return os.path.join(self._outdir,
-                            '%s-%s-%d-%d.png' % (ifos, tag, gps, dur))
+        return os.path.join(
+            self._outdir,
+            '%s-%s-%d-%d.%s' % (ifos, tag, gps, dur, self.fileformat))
 
     @property
     def href(self):
@@ -335,13 +359,20 @@ class DataPlot(SummaryPlot):
                       'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
                       'bins', 'range', 'normed', 'weights', 'cumulative',
                       'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'stacked', 'logbins', 'alpha', 'linecolor',
+                      'log', 'stacked', 'logbins', 'linecolor',
                       'facecolor']:
             try:
-                val = self.pargs.get(kwarg, self.pargs.get('%ss' % kwarg))
+                val = self.pargs.pop(kwarg)
             except KeyError:
-                continue
-            else:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
                 plotargs[kwarg] = val
         chans = self.get_channel_groups().keys()
         for key, val in plotargs.iteritems():
@@ -455,7 +486,7 @@ class DataPlot(SummaryPlot):
         raise NotImplementedError("This method should be provided by a "
                                   "sub-class")
 
-    def finalize(self, outputfile=None):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.
         """
         # quick fix for x-axis labels hitting the axis
@@ -465,8 +496,9 @@ class DataPlot(SummaryPlot):
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile
-        self.plot.save(outputfile)
-        self.plot.close()
+        self.plot.save(outputfile, **savekwargs)
+        if close:
+            self.plot.close()
         return outputfile
 
 register_plot(DataPlot)

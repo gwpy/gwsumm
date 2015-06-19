@@ -34,8 +34,10 @@ from ...mode import *
 from ...utils import re_cchar
 
 # set resources
-CSS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
-JS = ['//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
+BOOTSTRAPCSS = [
+    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
+BOOTSTRAPJS = [
+    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
 
 
 # set <meta> for bootstrap
@@ -470,14 +472,14 @@ def base_map_dropdown(this,class_='btn-group pull-left base-map', id_=None,
         id_ = dict()
     # format links
     baselinks = [markup.oneliner.a(key, **{'data-new-base': val}) for
-                 (key, val) in bases.iteritems()]
+                 (key, val) in bases.iteritems() if key != this]
     # slam it all together
     page = markup.page()
-    page.div(class_=class_, **id_)
     if baselinks:
+        page.div(class_=class_, **id_)
         page.add(str(dropdown(this, baselinks,
                               class_='navbar-brand dropdown-toggle')))
         page.div.close()
     else:
-        page.add(str(this))
+        page.div(str(this), class_='navbar-brand')
     return page

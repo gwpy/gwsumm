@@ -97,6 +97,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     newsegs = validity - old
     # load new segments
     query &= abs(newsegs) != 0
+    query &= len(allflags) > 0
     if query:
         if cache:
             try:
@@ -108,9 +109,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     f = list(allflags)[0]
                     new = DataQualityDict()
                     new[f] = DataQualityFlag.read(cache, f, coalesce=True)
-            for flag in new:
-                new[flag].known &= newsegs
-                new[flag].active &= newsegs
+            for f in new:
+                new[f].known &= newsegs
+                new[f].active &= newsegs
         else:
             if len(newsegs) >= 10:
                 qsegs = span
@@ -126,11 +127,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 except (NoSectionError, NoOptionError):
                     pass
             try:
-                if 'url' in kwargs and 'dqsegdb' in kwargs['url']:
-                    new = DataQualityDict.query_dqsegdb(
-                        allflags, qsegs, on_error=segdb_error, **kwargs)
-                else:
-                    new = DataQualityDict.query(allflags, qsegs, **kwargs)
+                new = DataQualityDict.query(
+                    allflags, qsegs, on_error=segdb_error, **kwargs)
             except Exception as e:
                 # ignore error from SegDB
                 if segdb_error in ['ignore', None]:
@@ -153,12 +151,16 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                           float(abs(new[f].known))/float(abs(newsegs))*100))
         # record new segments
         globalv.SEGMENTS += new
+        for f in new:
+            globalv.SEGMENTS[f].description = str(new[f].description)
 
     # return what was asked for
     if return_:
         for compound in flags:
             union, intersection, exclude, notequal = split_compound_flag(
                 compound)
+            if len(union + intersection) == 1:
+                out[compound].description = globalv.SEGMENTS[f].description
             for f in exclude:
                 out[compound] -= globalv.SEGMENTS[f]
             for f in intersection:
@@ -169,6 +171,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 diff1 = out[compound] - globalv.SEGMENTS[f]
                 diff2 = globalv.SEGMENTS[f] - out[compound]
                 out[compound] = (diff1 | diff2)
+            out[compound].known &= validity
+            out[compound].active &= validity
         if isinstance(flag, basestring):
             return out[flag]
         else:

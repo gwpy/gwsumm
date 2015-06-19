@@ -22,15 +22,12 @@
 from __future__ import print_function
 
 import abc
-import operator
-import re
 import os.path
-import sys
 import getpass
+import re
 
 from copy import copy
 from multiprocessing import (Process, JoinableQueue)
-from Queue import Empty
 from time import sleep
 from StringIO import StringIO
 from datetime import timedelta
@@ -44,13 +41,13 @@ from gwpy.segments import DataQualityFlag
 from .. import (version, globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
-from ..data import (get_channel, get_timeseries_dict, get_spectrogram,
+from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_spectrum)
 from ..plot import get_plot
 from ..segments import get_segments
-from ..state import (ALLSTATE, SummaryState, get_state)
+from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, split_channels,
+from ..utils import (re_cchar, re_channel, re_flagdiv, vprint,
                      count_free_cores, get_odc_bitmask)
 
 from .registry import (get_tab, register_tab)
@@ -58,11 +55,8 @@ from .registry import (get_tab, register_tab)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-Tab = get_tab('basic')
-BaseTab = get_tab('archived-state')
 
-
-class DataTabBase(BaseTab):
+class DataTabBase(get_tab('archived-state')):
     """Abstract base class to detect necessity to run Tab.process()
     """
     __metaclass__ = abc.ABCMeta
@@ -87,6 +81,11 @@ class DataTab(DataTabBase):
     ----------
     name : `str`
         name of this tab (required)
+    start : `LIGOTimeGPS`, `str`
+        start time of this `DataTab`, anything that can be parsed by
+        `~gwpy.time.to_gps` is fine
+    end : `LIGOTimeGPS`, `str`
+        end time of this `DataTab`, format as for `start`
     states : `list` of `states <gwsumm.state.SummaryState>`
         the `list` of states (`~gwsumm.state.SummaryState`) over which
         this `DataTab` should be processed. More states can be added
@@ -95,6 +94,9 @@ class DataTab(DataTabBase):
     ismeta : `bool`, optional, default: `False`
         indicates that this tab only contains data already by others
         and so doesn't need to be processed.
+    noplots : `bool`, optional, default: `False`
+        indicates that this tab only exists to trigger data access, and
+        shouldn't actually generate any figures
     **kwargs
         other keyword arguments
 
@@ -107,12 +109,12 @@ class DataTab(DataTabBase):
     type = 'archived-data'
 
     def __init__(self, name, start, end, states=list([ALLSTATE]),
-                 ismeta=False, **kwargs):
+                 ismeta=False, noplots=False, **kwargs):
         """Initialise a new `DataTab`.
         """
-        ismeta = kwargs.pop('ismeta', False)
         super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
         self.ismeta = ismeta
+        self.noplots = noplots
         self.subplots = []
 
     @property
@@ -165,20 +167,29 @@ class DataTab(DataTabBase):
             a new `DataTab` defined from the configuration
         """
         kwargs.setdefault('plots', [])
-        job = super(DataTab, cls).from_ini(cp, section, **kwargs)
-        job._config = cp._sections[section]
 
-        # get meta tag
+        # get meta tags
         try:
             ismeta = cp.get(section, 'meta-tab')
         except NoOptionError:
-            ismeta = False
+            pass
         else:
             if ismeta is None:
-                ismeta = True
+                kwargs.setdefault('ismeta', True)
             else:
-                ismeta = bool(ismeta.title())
-        job.ismeta = ismeta
+                kwargs.setdefault('ismeta', bool(ismeta.title()))
+        try:
+            noplots = cp.get(section, 'no-plots')
+        except NoOptionError:
+            pass
+        else:
+            if noplots is None:
+                kwargs.setdefault('noplots', True)
+            else:
+                kwargs.setdefault('noplots', bool(noplots.title()))
+
+        job = super(DataTab, cls).from_ini(cp, section, **kwargs)
+        job._config = cp._sections[section]
 
         # -------------------
         # parse plot requests
@@ -323,7 +334,11 @@ class DataTab(DataTabBase):
         """Fetch the segments for each state for this `SummaryTab`
         """
         # finalize all-state
-        get_state(ALLSTATE).fetch(config=config)
+        try:
+            allstate = get_state(ALLSTATE)
+        except ValueError:
+            allstate = generate_all_state(self.start, self.end)
+        allstate.fetch(config=config)
         # shortcut segment query for each state
         #alldefs = {}
         #for state in self.states:
@@ -377,8 +392,13 @@ class DataTab(DataTabBase):
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
+            if state:
+                vprint("Processing '%s' state\n" % state.name)
+            else:
+                vprint("Pre-processing all-data requests\n")
             self.process_state(state, config=config, multiprocess=multiprocess,
                                plotqueue=queue, **stateargs)
+            vprint("    Done.\n")
 
         # consolidate child processes
         if queue is not None:
@@ -420,10 +440,8 @@ class DataTab(DataTabBase):
             otherwise ``'ignore'`` them completely and carry on.
         """
         if state:
-            vprint("Processing '%s' state\n" % state.name)
             all_data = False
         else:
-            vprint("Pre-processing all-data requests\n")
             all_data = True
             state = get_state(ALLSTATE)
 
@@ -436,7 +454,7 @@ class DataTab(DataTabBase):
         # process time-series
 
         # find channels that need a TimeSeries
-        tschannels = self.get_channels('timeseries', 'spectrogram', 'spectrum',
+        tschannels = self.get_channels('timeseries',
                                        all_data=all_data, read=True)
         if len(tschannels):
             vprint("    %d channels identified for TimeSeries\n"
@@ -476,18 +494,22 @@ class DataTab(DataTabBase):
             except (NameError, SyntaxError):
                 pass
 
-        for channel in self.get_channels('spectrogram', 'spectrum',
-                                         all_data=all_data, read=True):
-            get_spectrogram(channel, state, config=config, return_=False,
-                            multiprocess=multiprocess, **fftparams)
-
-        for channel in self.get_channels(
-                'rayleigh-spectrogram', 'rayleigh-spectrum',
-                all_data=all_data, read=True):
+        sgchannels = self.get_channels('spectrogram', 'spectrum',
+                                       all_data=all_data, read=True)
+        raychannels = self.get_channels('rayleigh-spectrogram',
+                                        'rayleigh-spectrum',
+                                        all_data=all_data, read=True)
+        if len(sgchannels):
+            vprint("    %d channels identified for Spectrogram\n"
+                   % len(sgchannels))
+            get_spectrograms(sgchannels, state, config=config, nds=nds,
+                             multiprocess=multiprocess, return_=False,
+                             cache=datacache, **fftparams)
+        if len(raychannels):
             fp2 = fftparams.copy()
             fp2['method'] = 'rayleigh'
-            get_spectrogram(channel, state, config=config, return_=False,
-                            multiprocess=multiprocess, **fp2)
+            get_spectrograms(raychannels, state, config=config, return_=False,
+                             multiprocess=multiprocess, **fp2)
 
         # --------------------------------------------------------------------
         # process spectra
@@ -495,7 +517,7 @@ class DataTab(DataTabBase):
         for channel in self.get_channels('spectrum', all_data=all_data,
                                          read=True):
             get_spectrum(channel, state, config=config, return_=False,
-                         **fftparams)
+                         query=False, **fftparams)
 
         for channel in self.get_channels(
                 'rayleigh-spectrum', all_data=all_data, read=True):
@@ -525,7 +547,7 @@ class DataTab(DataTabBase):
         # --------------------------------------------------------------------
         # make plots
 
-        if all_data:
+        if all_data or self.noplots:
             vprint("    Done.\n")
             return
 
@@ -555,7 +577,6 @@ class DataTab(DataTabBase):
                 vprint("        %s written\n" % plot.outputfile)
         if nproc:
             vprint("        %d plot processes executed.\n" % nproc)
-        vprint("    Done.\n")
 
     # -------------------------------------------------------------------------
     # HTML operations
@@ -715,7 +736,7 @@ class DataTab(DataTabBase):
                      "information")
             # make summary table
             headers = ['IFO', 'Name', 'Version', 'Defined duration',
-                       'Active duration']
+                       'Active duration', 'Description']
             data = []
             pc = float(abs(state.active) / 100.)
             for flag in flags:
@@ -730,7 +751,8 @@ class DataTab(DataTabBase):
                 else:
                     active = '%.2f (%.2f%%)' % (abs(flag.active),
                                                 abs(flag.active) / pc)
-                data.append([flag.ifo, flag.tag, v, valid, active])
+                data.append([flag.ifo, flag.tag, v, valid, active,
+                             flag.description or ''])
             page.add(str(html.data_table(headers, data)))
             # print segment lists
             page.div(class_='panel-group', id="accordion")
@@ -774,7 +796,6 @@ class DataTab(DataTabBase):
         segwizard = StringIO()
         flag.write(segwizard, format='segwizard', coltype=dtype)
         return html.markup.oneliner.pre(segwizard.getvalue())
-
 
     # -------------------------------------------------------------------------
     # methods
@@ -830,7 +851,7 @@ class DataTab(DataTabBase):
         uniq = kwargs.pop('unique', True)
         out = set()
         for plot in self.plots:
-            if not plot.type in types:
+            if not plot.data in types:
                 continue
             if isnew and not plot.new:
                 continue

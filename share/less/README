@@ -1,0 +1,16 @@
+.. vim: set filetype=rst:
+
+How to update the gwsumm-*.css files for gwsumm
+=======================================================
+
+To update the CSS files on the master branch:
+
+- DO NOT EDIT the `/share/css/gwsumm*css` files directly!
+- make changes to the core `/share/less/gwsumm.less` CSS file and commit
+- run the make file::
+
+    $ cd /share/less && make && cd ../css/
+
+- and commit::
+
+    $ git commit gwsumm*.css

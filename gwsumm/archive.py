@@ -34,7 +34,7 @@ from .data import (get_channel, add_timeseries, add_spectrogram)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-re_rate = re.compile('_RATE_[0-9]+(?:\.[0-9]+)?\Z')
+re_rate = re.compile('_EVENT_RATE_')
 
 
 def write_data_archive(outfile, timeseries=True, spectrogram=True,
@@ -67,6 +67,13 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         continue
                     # loop over time-series
                     for ts in tslist:
+                        # ignore fast channels who weren't used
+                        # for a timeseries:
+                        if (not isinstance(ts, StateVector) and
+                                ts.sample_rate.value > 16.01 and
+                               (not hasattr(c, '_timeseries') or
+                                not c._timeseries)):
+                            continue
                         try:
                             name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
                                                  ts.epoch.gps)
@@ -81,10 +88,10 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
             if spectrogram:
                 group = h5file.create_group('spectrogram')
                 # loop over channels
-                for speclist in globalv.SPECTROGRAMS.itervalues():
+                for key, speclist in globalv.SPECTROGRAMS.iteritems():
                     # loop over time-series
                     for spec in speclist:
-                        name = '%s,%s' % (spec.name, spec.epoch.gps)
+                        name = '%s,%s' % (key, spec.epoch.gps)
                         try:
                             spec.write(group, name=name, format='hdf')
                         except ValueError:
@@ -124,7 +131,7 @@ def read_data_archive(sourcefile):
             try:
                 add_timeseries(ts, key=ts.channel.ndsname)
             except ValueError:
-                if mode.get_mode() == mode.MODE_ENUM['day']:
+                if mode.get_mode() == mode.SUMMARY_MODE_DAY:
                     raise
                 warnings.warn('Caught ValueError in combining daily archives')
                 # get end time
@@ -147,10 +154,11 @@ def read_data_archive(sourcefile):
             group = h5file['spectrogram']
         except KeyError:
             group = dict()
-        for dataset in group.itervalues():
+        for key, dataset in group.iteritems():
+            key = key.rsplit(',', 1)[0]
             spec = Spectrogram.read(dataset, format='hdf')
             spec.channel = get_channel(spec.channel)
-            add_spectrogram(spec)
+            add_spectrogram(spec, key=key)
 
         try:
             group = h5file['segments']

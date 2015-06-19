@@ -76,12 +76,12 @@ class SEIWatchDogTab(base):
     window = 5
 
     @classmethod
-    def from_ini(cls, config, section, plotdir='plots', base=''):
+    def from_ini(cls, config, section, plotdir='plots', **kwargs):
         """Define a new `SEIWatchDogTab`.
         """
         chambers = config.get(section, 'chamber-type')
-        new = super(SEIWatchDogTab, cls).from_ini(
-                  config, section, plotdir=plotdir, base=base)
+        new = super(SEIWatchDogTab, cls).from_ini(config, section,
+                                                  plotdir=plotdir, **kwargs)
         new.ifo = config.get('DEFAULT', 'ifo')
         new.plotdir = plotdir
         chamber = str(chambers).upper()
@@ -163,9 +163,9 @@ class SEIWatchDogTab(base):
             # find times of a trip
             trips = []
             for i, ts in enumerate(tripdata[gpschannel.name]):
-                alltrips = ts.times[((numpy.diff(ts.data) > 0) &
-                                     (ts.data[1:] > 1e8)).nonzero()[0] + 1]
-                for j, gpstime in enumerate(alltrips.data):
+                alltrips = ts.times[((numpy.diff(ts.value) > 0) &
+                                     (ts.value[1:] > 1e8)).nonzero()[0] + 1]
+                for j, gpstime in enumerate(alltrips.value):
                     trips.append((i, gpstime))
 
             vprint("        Found %d WD trips.\n" % len(trips))
@@ -176,7 +176,7 @@ class SEIWatchDogTab(base):
                 gpstime = int(t)
                 # extract 1 second of LATCH data
                 ldata = latchdata[latch.name][tsid].crop(gpstime,
-                                                         gpstime + 1).data
+                                                         gpstime + 1).value
                 # find transition value
                 try:
                     bits = ldata[sorted(numpy.unique(ldata,

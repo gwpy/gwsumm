@@ -68,11 +68,10 @@ class GuardianTab(Tab):
     type = 'archived-guardian'
 
     @classmethod
-    def from_ini(cls, config, section, plotdir='plots', base=''):
+    def from_ini(cls, config, section, plotdir='plots', **kwargs):
         """Define a new `GuardianTab`.
         """
-        new = super(Tab, cls).from_ini(
-                  config, section, base=base)
+        new = super(Tab, cls).from_ini(config, section, **kwargs)
         if len(new.states) > 1 or new.states[0].name != ALLSTATE:
             raise ValueError("GuardianTab does not accept state selection")
         new.plots = []
@@ -101,10 +100,13 @@ class GuardianTab(Tab):
             new.transstates = new.grdstates.keys()
 
         # build plots
+        grdidxs = dict((state, idx) for idx, state in
+                       new.grdstates.iteritems())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
-        labels = [l for i, l in enumerate(new.grdstates.values()[::-1]) if
-                  plot[-i-1]]
-        flags = [new.segmenttag % name for name in labels]
+        pstates = [l for i, l in enumerate(new.grdstates.values()[::-1])
+                  if plot[-i-1]]
+        flags = [new.segmenttag % name for name in pstates]
+        labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]
         new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
             known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
@@ -164,7 +166,7 @@ class GuardianTab(Tab):
                 transout = (numpy.diff(
                     instate.astype(int)) == -1).nonzero()[0] + 1
                 for i, j in zip(transin, transout):
-                    t = sdata.times[i]
+                    t = sdata.times[i].value
                     from_ = sdata[i-1].value
                     to_ = sdata[j].value
                     self.transitions[v].append((t, from_, to_))
@@ -307,7 +309,7 @@ register_tab(GuardianTab)
 
 class GuardianStatePlot(get_plot('segments')):
     type = 'guardian'
-    defaults = get_plot('segments').defaults
+    defaults = get_plot('segments').defaults.copy()
     defaults.update({
         'color': None,
         'insetlabels': 'inset',
@@ -321,6 +323,10 @@ class GuardianStatePlot(get_plot('segments')):
         'legend_fontsize': 12,
         'legend_title': 'Node state',
     })
+
+    def __init__(self, *args, **kwargs):
+        super(GuardianStatePlot, self).__init__(*args, **kwargs)
+        self.preview_labels = True
 
     @property
     def node(self):
@@ -353,7 +359,7 @@ class GuardianStatePlot(get_plot('segments')):
         plotargs.update({
             'facecolor': nominalcolor,
             'edgecolor': 'none',
-            'known': {'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
+            'known': {'alpha': 0.1, 'facecolor': 'lightgray'},
         })
         reqargs = plotargs.copy()
         reqargs.update({
@@ -377,8 +383,9 @@ class GuardianStatePlot(get_plot('segments')):
             segs = get_segments([flag, inreq, nominal], validity=valid,
                                 query=False)
             ax.plot(segs[nominal], label=label, y=y, height=1., **plotargs)
-            ax.plot(segs[inreq], label=None, y=y, collection=False, **reqargs)
-            ax.plot(segs[flag], label=None, y=y, collection=False,
+            ax.plot(segs[inreq], label=label, y=y, collection='ignore',
+                    **reqargs)
+            ax.plot(segs[flag], label=label, y=y, collection='ignore',
                     height=.6, **actargs)
 
         # make custom legend
@@ -425,11 +432,11 @@ class GuardianStatePlot(get_plot('segments')):
               valid, query=False).join(gap='pad', pad=-1)
         except KeyError:
             modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
-            colors = ('magenta', 'red', 'saddlebrown')
+            colors = ('yellow', (0., .4, 1.), (.5, .0, .75))
         else:
-            modes = [(grdop, (None, 'PAUSE', None)),
-                     (grdmode, ('EXEC', 'MANAGAED', 'MANUAL'))]
-            colors = ('magenta', 'red', 'saddlebrown', 'orange')
+            modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
+                     (grdop, (None, 'PAUSE', None))]
+            colors = ((0., .4, 1.), (.5, .0, .75), 'hotpink', 'yellow')
         cidx = 0
         for i, (data, mstate) in enumerate(modes):
             for j, m in enumerate(mstate):
@@ -445,11 +452,11 @@ class GuardianStatePlot(get_plot('segments')):
                             x.active,
                             plotargs={'y': 0, 'facecolor': colors[cidx],
                                       'edgecolor': 'none',
-                                      'collection': False})
+                                      'collection': 'ignore'})
                     else:
                         sax.plot_segmentlist(
                             x.active, facecolor=colors[cidx], y=0,
-                            edgecolor='none', collection=False)
+                            edgecolor='none', collection='ignore')
                 legentry[m.title()] = ax.build_segment(
                     seg, 0, facecolor=colors[cidx], edgecolor='none')
                 cidx += 1
@@ -465,7 +472,7 @@ class GuardianStatePlot(get_plot('segments')):
             if sax is not None:
                 sax.plot_segmentlist(ok.active, facecolor=activecolor, y=0,
                                      edgecolor=actargs['edgecolor'],
-                                     collection=False, label='Node `OK\'')
+                                     collection='ignore', label='Node `OK\'')
                 # add gap in legend
                 legentry['$--$'] = ax.build_segment(
                     seg, 0, facecolor='w', fill=False, edgecolor='none',

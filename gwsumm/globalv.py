@@ -43,6 +43,7 @@ START = time.time()
 MODE = 4
 WRITTEN_PLOTS = []
 NOW = tconvert('now').seconds
+HTMLONLY = False
 
 # comments
 IFO = None

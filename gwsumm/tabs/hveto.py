@@ -37,10 +37,10 @@ from .registry import (get_tab, register_tab)
 from .. import (html, version, globalv)
 from ..mode import SUMMARY_MODE_DAY
 from ..config import (GWSummConfigParser, NoOptionError)
-from ..data import get_channel
+from ..channels import get_channel
 from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState)
-from ..triggers import get_triggers
+from ..triggers import (register_etg_table, get_triggers)
 from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
@@ -69,7 +69,7 @@ class HvetoTab(base):
         super(HvetoTab, self).__init__(*args, **kwargs)
 
     @classmethod
-    def from_ini(cls, config, section, plotdir=os.curdir, base=''):
+    def from_ini(cls, config, section, **kwargs):
         """Define a new `HvetoTab` from a `ConfigParser`.
         """
         # set state information
@@ -93,8 +93,7 @@ class HvetoTab(base):
         config.set(section, 'states', state)
 
         # parse generic configuration
-        new = super(HvetoTab, cls).from_ini(config, section, plotdir=plotdir,
-                                            base=base)
+        new = super(HvetoTab, cls).from_ini(config, section, **kwargs)
 
         # work out day directory and url
         gps = int(new.span[0])
@@ -338,6 +337,7 @@ class HvetoTab(base):
         return self.frames[idx]
 
 register_tab(HvetoTab)
+register_etg_table('hveto', 'sngl_burst')
 
 
 def read_hveto_triggers(f, columns=HVETO_COLUMNS, filt=None, nproc=1):

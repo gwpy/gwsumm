@@ -36,7 +36,7 @@ from gwpy.plotter.table import (get_table_column, get_row_value)
 from .. import (version, html, globalv)
 from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..data import find_cache_segments
-from ..triggers import get_triggers
+from ..triggers import (get_triggers, register_etg_table)
 from ..utils import re_quote
 from ..state import SummaryState
 from ..mode import (get_mode, MODE_ENUM)
@@ -53,8 +53,14 @@ class DailyAhopeTab(base):
     """
     type = 'archived-daily-ahope'
 
+    def __init__(self, *args, **kwargs):
+        super(DailyAhopeTab, self).__init__(*args, **kwargs)
+        register_etg_table(self.name.lower(), SnglInspiralTable)
+        register_reader(self.name.lower(), SnglInspiralTable,
+                        get_reader('ligolw', SnglInspiralTable))
+
     @classmethod
-    def from_ini(cls, config, section, plotdir=os.curdir, base=''):
+    def from_ini(cls, config, section, **kwargs):
         """Define a new `DailyAhopeTab` from a `ConfigParser`.
         """
         # parse states
@@ -77,9 +83,10 @@ class DailyAhopeTab(base):
         config.set(section, 'states', state)
 
         # parse generic configuration
-        new = super(DailyAhopeTab, cls).from_ini(config, section,
-                                                 plotdir=plotdir, base=base)
+        new = super(DailyAhopeTab, cls).from_ini(config, section, **kwargs)
         new.channel = re_quote.sub('', config.get(section, 'channel'))
+        for p in new.plots + new.subplots:
+            p.etg = new.name.lower()
 
         # work out day directory and url
         utc = from_gps(new.span[0])
@@ -333,7 +340,5 @@ class DailyAhopeTab(base):
 register_tab(DailyAhopeTab)
 register_tab(DailyAhopeTab, name='archived-daily-ihope')
 
-register_reader('daily ihope', SnglInspiralTable,
-                get_reader('ligolw', SnglInspiralTable))
 register_reader('daily ahope', SnglInspiralTable,
                 get_reader('ligolw', SnglInspiralTable))

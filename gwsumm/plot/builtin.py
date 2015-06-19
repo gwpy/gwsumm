@@ -51,6 +51,7 @@ from ..segments import get_segments
 from ..triggers import get_triggers
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
+from .mixins import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -59,13 +60,18 @@ DataPlot = get_plot('data')
 GREEN = (0.2, 0.8, 0.2)
 
 
-class TimeSeriesDataPlot(DataPlot):
+class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     """DataPlot of some `TimeSeries` data.
     """
     type = 'timeseries'
     data = 'timeseries'
     defaults = {'logy': False,
                 'hline': list()}
+
+    def __init__(self, *args, **kwargs):
+        super(TimeSeriesDataPlot, self).__init__(*args, **kwargs)
+        for c in self.channels:
+            c._timeseries = True
 
     def add_state_segments(self, ax, **kwargs):
         """Add an `Axes` below the given ``ax`` displaying the `SummaryState`
@@ -104,15 +110,16 @@ class TimeSeriesDataPlot(DataPlot):
                 ax.set_xscale('days')
                 ax.set_xlabel('_auto')
             ax.set_epoch(float(self.start))
+            ax.grid(True, which='both')
         return self.plot, axes
 
-    def finalize(self, outputfile=None):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
             ax.set_xlim(float(self.start), float(self.end))
         return super(TimeSeriesDataPlot, self).finalize(
-                   outputfile=outputfile)
+                   outputfile=outputfile, close=close, **savekwargs)
 
     def process(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
@@ -140,17 +147,24 @@ class TimeSeriesDataPlot(DataPlot):
                     for c in channels]
             # double-check empty
             for ts in data:
-                if not 'x0' in ts.metadata:
+                if (hasattr(ts, 'metadata') and
+                        not 'x0' in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
             # double-check log scales
             if self.pargs['logy']:
                 for ts in data:
-                    ts[ts.data == 0] = 1e-100
+                    ts.value[ts.value == 0] = 1e-100
+            # set label
+            label = pargs.pop('label', label_to_latex(data[0].name))
+            if self.fileformat == 'svg' and not label.startswith(
+                    label_to_latex(str(data[0].channel)).split('.')[0]):
+                label = '%s [%s]' % (label,
+                                     label_to_latex(str(data[0].channel)))
             # plot groups or single TimeSeries
             if len(channels) > 1:
-                ax.plot_timeseries_mmm(*data, **pargs)
+                ax.plot_timeseries_mmm(*data, label=label, **pargs)
             else:
-                ax.plot_timeseries(data[0], **pargs)
+                ax.plot_timeseries(data[0], label=label, **pargs)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):
@@ -204,18 +218,23 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         self.ratio = self.pargs.pop('ratio')
 
     @property
-    def tag(self):
+    def pid(self):
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(SpectrogramDataPlot, self).tag
+            pid = super(SpectrogramDataPlot, self).pid
             if self.ratio:
-                tag += '_%s_RATIO' % re_cchar.sub('_', str(self.ratio).upper())
-            return tag
+                self._pid += '_%s_RATIO' % re_cchar.sub(
+                    '_', str(self.ratio).upper())
+            return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @pid.deleter
+    def pid(self):
+        del self._pid
 
     def process(self):
         # initialise
@@ -293,7 +312,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 register_plot(SpectrogramDataPlot)
 
 
-class SegmentDataPlot(TimeSeriesDataPlot):
+class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
     """
     type = 'segments'
@@ -308,12 +327,11 @@ class SegmentDataPlot(TimeSeriesDataPlot):
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
 
-    def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
-                 **kwargs):
+    def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
-                                                 outdir=outdir, tag=tag,
-                                                 **kwargs)
+                                                 outdir=outdir, **kwargs)
         self.flags = flags
+        self.preview_labels = False
 
     def get_channel_groups(self, *args, **kwargs):
         return OrderedDict((f, [f]) for f in self.flags)
@@ -336,21 +354,19 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         return set([f[:2] for f in allflags])
 
     @property
-    def tag(self):
-        """File tag for this `DataPlot`.
+    def pid(self):
+        """File pid for this `DataPlot`.
         """
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            state = re_cchar.sub('_',
-                                 self.state is None and 'MULTI' or
-                                 self.state.name)
-            hash_ = hashlib.md5("".join(map(str, self.flags))).hexdigest()[:6]
-            return '_'.join([state, hash_, self.type]).upper()
+            self._pid = hashlib.md5(
+                "".join(map(str, self.flags))).hexdigest()[:6]
+            return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
@@ -367,67 +383,78 @@ class SegmentDataPlot(TimeSeriesDataPlot):
         """Parse the configured ``pargs`` and determine the colors for
         active and valid segments.
         """
-        color = self.pargs.pop('color')
-        onisbad = self.pargs.pop('on_is_bad')
-        # allow lazy configuration
-        if onisbad is None:
-            onisbad = True
+        active = self.pargs.pop('active', None)
+        known = self.pargs.pop('known', None)
+        # both defined by user
+        if active is not None and known is not None:
+            return active, known
+        # only active defined by user
+        elif isinstance(active, str) and active.lower() != 'red':
+            return active, 'red'
+        elif active is not None:
+            return active, 'blue'
+        # only known defined by user
+        elif known not in [None, GREEN, 'green', 'g']:
+            return GREEN, known
+        elif known is not None:
+            return 'blue', known
         else:
-            onisbad = bool(onisbad)
-
-        # choose colors
-        good = color or GREEN
-        if color is None or color.lower() != 'red':
-            bad = 'red'
-        else:
-            bad = 'blue'
-        if onisbad is False:
-            return good, bad
-        else:
-            return bad, good
+            onisbad = bool(self.pargs.pop('on_is_bad', True))
+            if onisbad:
+                return 'red', GREEN
+            else:
+                return GREEN, 'red'
 
     def process(self):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
 
-        # get labels
-        flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
-        labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        if isinstance(labels, (unicode, str)):
-            labels = labels.split(',')
-        labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
-
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
         mask = self.pargs.pop('mask')
         activecolor, validcolor = self.get_segment_color()
-        edgecolor = self.pargs.pop('edgecolor')
-        plotargs = {'facecolor': activecolor,
-                    'edgecolor': edgecolor,
-                    'known': {'facecolor': validcolor}}
-        for key in plotargs:
-            if key in self.pargs:
-                plotargs[key] = self.pargs.pop(key)
+        self.pargs.update({
+            'facecolor': activecolor,
+            'edgecolor': self.pargs.pop('edgecolor'),
+        })
+        plotargs = self.parse_plot_kwargs()
+        for i, kwdict in enumerate(plotargs):
+            if isinstance(validcolor, dict):
+                kwdict['known'] = validcolor
+            elif (validcolor is None or isinstance(validcolor, str) or
+                    isinstance(validcolor[0], (float, int))):
+                kwdict['known'] = {'facecolor': validcolor}
+            else:
+                kwdict['known'] = {'facecolor': validcolor[i]}
+        legcolors = plotargs[0].copy()
 
         # plot segments
-        for flag, label in zip(self.flags, labels)[::-1]:
+        for i, (flag, pargs) in enumerate(
+                zip(self.flags, plotargs)[::-1]):
+            label = re_quote.sub('', pargs.pop('label', str(flag)))
+            if (self.fileformat == 'svg' and not str(flag) in label and
+                    ax.get_insetlabels()):
+                label = '%s [%s]' % (label, str(flag))
+            elif self.fileformat == 'svg' and not str(flag) in label:
+                label = '[%s] %s' % (label, str(flag))
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            segs = get_segments(flag, validity=valid, query=False)
-            ax.plot(segs, label=label, **plotargs)
+            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            ax.plot(segs, y=i, label=label, **pargs)
 
         # make custom legend
-        v = plotargs.pop('known', None)
-        if v:
+        known = legcolors.pop('known', None)
+        if known:
+            active = legcolors.pop('facecolor')
+            edgecolor = legcolors.pop('edgecolor')
             epoch = ax.get_epoch()
             xlim = ax.get_xlim()
             seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            v['collection'] = False
-            v = ax.plot(seg, **v)[0][0]
-            a = ax.plot(seg, facecolor=activecolor, edgecolor=edgecolor,
+            v = ax.plot(seg, facecolor=known['facecolor'],
+                        collection=False)[0][0]
+            a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
                         collection=False)[0][0]
             if edgecolor not in [None, 'none']:
                 t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]
@@ -632,7 +659,7 @@ class SpectrumDataPlot(DataPlot):
         # add data
         for channel, pargs in zip(self.channels, plotargs):
             if self.state and not self.all_data:
-                valid = self.state.active
+                valid = self.state
             else:
                 valid = SegmentList([self.span])
             data = get_spectrum(str(channel), valid, query=False,
@@ -643,7 +670,7 @@ class SpectrumDataPlot(DataPlot):
                 data = [s[1:] for s in data]
             if self.pargs['logy']:
                 for sp in data:
-                    sp[sp.data == 0] = 1e-100
+                    sp.value[sp.value == 0] = 1e-100
 
             if use_percentiles:
                 ax.plot_spectrum_mmm(*data, **pargs)
@@ -705,7 +732,7 @@ class SpectrumDataPlot(DataPlot):
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
 
-        if len(self.channels) > 1:
+        if len(self.channels) > 1 or ax.legend_ is not None:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
@@ -721,6 +748,8 @@ class TimeSeriesHistogramPlot(DataPlot):
     type = 'histogram'
     data = 'timeseries'
     defaults = {'ylabel': 'Rate [Hz]',
+                'log': True,
+                'histtype': 'stepfilled',
                 'rwidth': 1}
 
     def init_plot(self, plot=HistogramPlot):
@@ -729,39 +758,22 @@ class TimeSeriesHistogramPlot(DataPlot):
         """
         self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
+        ax.grid(True, which='both')
         return self.plot, ax
 
-    def parse_histogram_kwargs(self):
-        """Extract the histogram arguments from everything else.
-        """
-        histargs = {}
-        for param in ['bins', 'range', 'normed', 'weights', 'cumulative',
-                      'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'color', 'label', 'stacked', 'logbins',
-                      'alpha', 'linecolor', 'edgecolor', 'facecolor']:
-            try:
-                histargs[param] = self.pargs.pop(param)
-            except KeyError:
-                if param == 'range':
-                    try:
-                        histargs[param] = self.pargs['xlim']
-                    except KeyError:
-                        pass
-                if param == 'log':
-                    histargs['log'] = self.pargs.pop('logy', False)
-            else:
-                if isinstance(histargs[param], (unicode, str)):
-                    try:
-                        histargs[param] = eval(histargs[param])
-                    except:
-                        pass
-        # remove logy if already requesting log histogram
-        if histargs.get('log', True) and self.pargs.get('logy', True):
-            self.pargs.pop('logy', None)
-        # set alpha
-        if len(self.channels) > 1:
-             histargs.setdefault('alpha', 0.7)
-        return histargs
+    def parse_plot_kwargs(self, **defaults):
+        kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
+            **defaults)
+        for histargs in kwargs:
+            histargs.setdefault('logbins', self.pargs.get('logx', False))
+            self.pargs.setdefault('logy', histargs['log'])
+            # set range as xlim
+            if 'range' not in histargs and 'xlim' in self.pargs:
+                histargs['range'] = self.pargs.get('xlim')
+            # set alpha
+            if len(self.channels) > 1:
+                 histargs.setdefault('alpha', 0.7)
+        return kwargs
 
     def process(self):
         """Get data and generate the figure.
@@ -778,14 +790,8 @@ class TimeSeriesHistogramPlot(DataPlot):
         if suptitle:
             plot.suptitle(suptitle)
 
-        # get spectrum format: 'amplitude' or 'power'
         # extract histogram arguments
-        range = self.pargs.pop('range', self.pargs.get('xlim'))
         histargs = self.parse_plot_kwargs()
-        for d in histargs:
-            d['range'] = range
-            d['log'] = self.pargs.pop('logy', False)
-            d['logbins'] = self.pargs.get('logx', False)
 
         # get data
         data = []
@@ -808,10 +814,9 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # plot
         for arr, pargs in zip(data, histargs):
-            if arr.size:
-                ax.hist(arr, **pargs)
-            else:
-                ax.hist([], **pargs)
+            if arr.size == 0 and pargs.get('histtype', '').startswith('step'):
+                pargs['histtype'] = 'bar'
+            ax.hist(arr, **pargs)
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
@@ -853,41 +858,42 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                 'size_range': None}
 
     def __init__(self, channels, start, end, state=None, outdir='.',
-                 tag=None, etg=None, **kwargs):
+                 etg=None, **kwargs):
         super(TriggerDataPlot, self).__init__(channels, start, end,
-                                                 state=state, outdir=outdir,
-                                                 tag=tag, **kwargs)
+                                              state=state, outdir=outdir,
+                                              **kwargs)
         self.etg = etg
         self.columns = [self.pargs.pop(c) for c in ('x', 'y', 'color')]
 
     @property
-    def tag(self):
+    def pid(self):
         """Unique identifier for this `TriggerDataPlot`.
 
-        Extends the standard `TimeSeriesDataPlot` tag with the ETG
+        Extends the standard `TimeSeriesDataPlot` pid with the ETG
         and each of the column names.
         """
         try:
-            return self._tag
+            return self._pid
         except AttributeError:
-            tag = super(TriggerDataPlot, self).tag
-            tag += '_%s' % re_cchar.sub('_', self.etg)
+            pid = super(TriggerDataPlot, self).pid
+            self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
-                    tag += '_%s' % re_cchar.sub('_', column)
-            return tag.upper()
+                    self._pid += '_%s' % re_cchar.sub('_', column)
+            self._pid = self._pid.upper()
+            return self.pid
 
-    @tag.setter
-    def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
-    def finalize(self, outputfile=None):
+    def finalize(self, outputfile=None, close=True, **savekwargs):
         if isinstance(self.plot, TimeSeriesPlot):
             return super(TriggerDataPlot, self).finalize(
-                       outputfile=outputfile)
+                       outputfile=outputfile, close=close, **savekwargs)
         else:
             return super(TimeSeriesDataPlot, self).finalize(
-                       outputfile=outputfile)
+                       outputfile=outputfile, close=close, **savekwargs)
 
     def process(self):
         # get columns
@@ -1051,7 +1057,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
             for ts in data:
                 # double-check log scales
                 if self.pargs['logy']:
-                    ts[ts.data == 0] = 1e-100
+                    ts.value[ts.value == 0] = 1e-100
                 if color is None:
                     line = ax.plot_timeseries(ts, label=label)[0]
                     color = line.get_color()
@@ -1103,6 +1109,17 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
     def __init__(self, *args, **kwargs):
         super(TriggerHistogramPlot, self).__init__(*args, **kwargs)
         self.etg = self.pargs.pop('etg')
+        self.column = self.pargs.pop('column')
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except AttributeError:
+            self._pid = super(TriggerHistogramPlot, self).pid
+            if self.column:
+                self._pid += '_%s' % re_cchar.sub('_', self.column).upper()
+            return self.pid
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -1110,6 +1127,7 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         """
         self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
         ax = self.plot.gca()
+        ax.grid(True, which='both')
         return self.plot, ax
 
     def process(self):
@@ -1118,17 +1136,15 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         # get histogram parameters
         (plot, ax) = self.init_plot()
 
-        column = self.pargs.pop('column')
-
-        # extract histogram arguments
-        histargs = self.parse_histogram_kwargs()
-        legendargs = self.parse_legend_kwargs()
-
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
+
+        # extract histogram arguments
+        histargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
 
         # add data
         data = []
@@ -1139,19 +1155,21 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
             else:
                 valid = SegmentList([self.span])
             table_ = get_triggers(str(channel), self.etg, valid, query=False)
-            data.append(get_table_column(table_, column))
+            data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
                 self.pargs.setdefault('xlim', channel.amplitude_range)
 
         # get range
-        if not 'range' in histargs:
-            histargs['range'] = ax.common_limits(data)
+        if not 'range' in histargs[0]:
+            for kwset in histargs:
+                kwset['range'] = ax.common_limits(data)
 
         # plot
-        for label, arr in zip(labels, data):
+        for label, arr, kwargs in zip(labels, data, histargs):
+            kwargs.pop('label')
             if arr.size:
-                ax.hist(arr, label=label, **histargs)
+                ax.hist(arr, label=label, **kwargs)
             else:
                 ax.plot([], label=label)
 
@@ -1192,6 +1210,21 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                              "'column' is given.")
         super(TriggerRateDataPlot, self).__init__(*args, **kwargs)
         self.etg = self.pargs.pop('etg')
+        self.column = self.pargs.pop('column')
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except AttributeError:
+            pid = super(TriggerRateDataPlot, self).pid
+            if self.column:
+                self.pid += '_%s' % re_cchar.sub('_', self.column).upper()
+            return pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     def process(self):
         """Read in all necessary data, and generate the figure.
@@ -1199,9 +1232,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
 
         # get rate arguments
         stride = self.pargs.pop('stride')
-        column = self.pargs.pop('column', None)
-        if column:
-            cname = get_column_string(column)
+        if self.column:
+            cname = get_column_string(self.column)
             bins = self.pargs.pop('bins')
             operator = self.pargs.pop('operator', '>=')
         else:
@@ -1211,12 +1243,12 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         labels = self.pargs.pop('labels', None)
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')
-        elif labels is None and column and len(self.channels) > 1:
+        elif labels is None and self.column and len(self.channels) > 1:
             labels = []
             for channel, bin in [(c, b) for c in self.channels for b in bins]:
                 labels.append(r' '.join([channel, cname, '$%s$' % str(operator),
                                          str(b)]))
-        elif labels is None and column:
+        elif labels is None and self.column:
             labels = [r' '.join([cname,'$%s$' % str(operator), str(b)])
                       for b in bins]
         elif labels is None:
@@ -1231,14 +1263,16 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             else:
                 valid = SegmentList([self.span])
             table_ = get_triggers(str(channel), self.etg, valid, query=False)
-            if column:
+            if self.column:
                 rates = binned_event_rates(
-                    table_, stride, column, bins, operator, self.start,
+                    table_, stride, self.column, bins, operator, self.start,
                     self.end).values()
             else:
                 rates = [event_rate(table_, stride, self.start, self.end)]
             for bin, rate in zip(bins, rates):
-                keys.append('%s_RATE_%s' % (str(channel), bin))
+                rate.channel = channel
+                keys.append('%s_EVENT_RATE_%s_%s'
+                            % (str(channel), str(self.column), bin))
                 if keys[-1] not in globalv.DATA:
                     add_timeseries(rate, keys[-1])
 
@@ -1264,10 +1298,11 @@ class DutyDataPlot(SegmentDataPlot):
                 'ylim': [0, 100],
                 'ylabel': r'Duty factor [\%]'}
 
-    def __init__(self, flags, start, end, state=None, outdir='.', tag=None,
+    def __init__(self, flags, start, end, state=None, outdir='.',
                  bins=None, **kwargs):
+        kwargs.setdefault('fileformat', 'png')
         super(DutyDataPlot, self).__init__(flags, start, end, state=state,
-                                           outdir=outdir, tag=tag, **kwargs)
+                                           outdir=outdir, **kwargs)
         self.bins = bins
 
     def get_bins(self):
@@ -1336,7 +1371,6 @@ class DutyDataPlot(SegmentDataPlot):
         if sep:
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
-            legendargs.setdefault('ncol', 2)
             legendargs.setdefault('borderaxespad', 0)
 
         # work out times and plot mean for legend
@@ -1362,10 +1396,10 @@ class DutyDataPlot(SegmentDataPlot):
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
             elif 'label' in pargs:
-                if legendargs.get('ncol', 1) > 1:
-                   pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
+                if legendargs.get('loc', None) in ['upper left', 2]:
+                    pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
-                   pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+                    pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
             if sidebyside:
                 t = times + self.bins * (0.1 + .8 * i/len(self.flags))
@@ -1402,14 +1436,14 @@ class DutyDataPlot(SegmentDataPlot):
                 if i < len(axes) - 1:
                     ax.set_xlabel('')
 
-            # add custom legend for mean
-            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
-            lkwargs = legendargs.copy()
-            lkwargs['loc'] = 'lower right'
-            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
-            lkwargs['fontsize'] = 12
-            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
-            axes[0].lines[0].set_label('_')
+        # add custom legend for mean
+        yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+        lkwargs = legendargs.copy()
+        lkwargs['loc'] = 'lower right'
+        lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
+        lkwargs['fontsize'] = 12
+        axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+        axes[0].lines[0].set_label('_')
 
         for ax in axes:
             try:
@@ -1463,7 +1497,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
-        ax.grid(b=True, axis='both', which='major')
 
         if self.state:
             self.pargs.setdefault(
@@ -1616,7 +1649,7 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
 register_plot(RayleighSpectrumDataPlot)
 
 
-class ODCDataPlot(StateVectorDataPlot):
+class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     """Custom `StateVectorDataPlot` for ODCs with bitmasks
     """
     type = 'odc'
@@ -1677,29 +1710,32 @@ class ODCDataPlot(StateVectorDataPlot):
                     stateseries.bits = channel.bits
                     if not 'int' in str(stateseries.dtype):
                         stateseries = stateseries.astype('uint32')
-                    newflags = stateseries.to_dqflags().values()
+                    newflags = stateseries.to_dqflags()
                     if flags[type_] is None:
                         flags[type_] = newflags
                     else:
-                        for i, flag in enumerate(newflags):
+                        for i, flag in newflags.iteritems():
                             flags[type_][i] += flag
-            n = len([m for m in channel.bits if m is not None and m is not ''])
-            for i in range(n):
+            i = 0
+            for i, bit in enumerate(channel.bits):
+                if bit is None or bit == '':
+                    continue
                 try:
-                    mask = flags['bitmask'][i].active
+                    mask = flags['bitmask'][bit].active
                 except TypeError:
                     continue
-                segs = flags['data'][i]
+                segs = flags['data'][bit]
                 if segs.name == channel.bits[0]:
-                    ax.plot(segs.known, y=-nflags-i, facecolor=(1., .7, 0.),
+                    ax.plot(segs.known, y=-nflags, facecolor=(1., .7, 0.),
                             edgecolor='none', height=1., label=None,
                             collection=False, zorder=-1001)
                 else:
-                    ax.plot(mask, y=-nflags-i, facecolor=maskcolor,
+                    ax.plot(mask, y=-nflags, facecolor=maskcolor,
                             edgecolor='none', height=1., label=None,
                             collection=False, zorder=-1001)
-                ax.plot(segs, y=-nflags-i, label=segs.name, **plotargs)
-            nflags += n
+                label = '[%s] %s' % (i, segs.name)
+                ax.plot(segs, y=-nflags, label=label, **plotargs)
+                nflags += 1
 
         # make custom legend
         v = plotargs.pop('known', None)
@@ -1745,3 +1781,114 @@ class ODCDataPlot(StateVectorDataPlot):
         return out
 
 register_plot(ODCDataPlot)
+
+
+class SegmentPiePlot(SegmentDataPlot):
+    type = 'segment-pie'
+    defaults = {
+        'legend-loc': 'center left',
+        'legend-bbox_to_anchor': (.8, .5),
+        'legend-frameon': False,
+    }
+
+    def init_plot(self, plot=Plot, geometry=(1,1)):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesDataPlot`.
+        """
+        figsize = self.pargs.pop('figsize', [12, 6])
+        self.plot = Plot(figsize=figsize)
+        axes = [self.plot.gca()]
+        return self.plot, axes
+
+    def parse_plot_kwargs(self, defaults=dict()):
+        """Parse pie() keyword arguments
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('labels', self._parse_labels())
+        for kwarg in ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
+                      'labeldistance', 'startangle', 'radius', 'counterclock',
+                      'wedgeprops', 'textprops']:
+            try:
+                val = self.pargs.pop(kwarg)
+            except KeyError:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
+                plotargs[kwarg] = val
+        return plotargs
+
+    def process(self):
+        (plot, axes) = self.init_plot(plot=Plot)
+        ax = axes[0]
+
+        # get labels
+        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
+        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+
+        # extract plotting arguments
+        legendargs = self.parse_legend_kwargs()
+        plotargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            data.append(float(abs(segs.active)))
+
+        # make pie
+        labels = plotargs.pop('labels')
+        patches = ax.pie(data, **plotargs)[0]
+        ax.axis('equal')
+
+        # make legend
+        legendargs['title'] = self.pargs.pop('title', None)
+        tot = float(sum(data))
+        pclabels = []
+        for d, label in zip(data, labels):
+            try:
+                pc = d/tot * 100
+            except ZeroDivisionError:
+                pc = 0.0
+            pclabels.append(label_to_latex(
+                '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+        leg = ax.legend(patches, pclabels, **legendargs)
+        legt = leg.get_title()
+        legt.set_fontsize('22')
+        legt.set_ha('left')
+
+        for wedge in patches:
+            wedge.set_edgecolor('white')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+        # copy title and move axes
+        if ax.get_title():
+            title = plot.suptitle(ax.get_title())
+            title.update_from(ax.title)
+            title.set_y(title._y + 0.05)
+            ax.set_title('')
+        axpos = ax.get_position()
+        offset = -.2
+        ax.set_position([axpos.x0+offset, .05, axpos.width, .9])
+
+        # add bit mask axes and finalise
+        self.pargs['xlim'] = None
+        return self.finalize(transparent="True", pad_inches=0)
+
+register_plot(SegmentPiePlot)

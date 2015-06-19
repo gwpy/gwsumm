@@ -33,6 +33,7 @@ These include:
 
    Tab
    SummaryArchiveMixin
+   DataTabBase
 
 
 Available Tabs
@@ -43,6 +44,7 @@ some common data displays.
 These include:
 
 .. autosummary::
+   :nosignatures:
    :toctree: api
 
    ExternalTab
@@ -75,6 +77,23 @@ This is achieved via the following class
    :toctree: api
 
    DataTab
+   EventTriggerTab
+
+Process-specific tabs
+---------------------
+
+The following `Tab` classes are provided to interface to a specific GW
+detector characterization or analysis group or process:
+
+.. autosummary::
+   :nosignatures:
+   :toctree: api
+
+   AccountingTab
+   GuardianTab
+   HvetoTab
+   SEIWatchDogTab
+   StampPEMTab
 
 """
 
@@ -89,3 +108,5 @@ from .hveto import *
 from .sei import *
 from .guardian import *
 from .stamp import *
+from .management import *
+from .etg import *

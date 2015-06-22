@@ -132,10 +132,13 @@ class GuardianTab(Tab):
         prefix = '%s:GRD-%s_%%s' % (self.ifo, self.node)
         state = sorted(self.states, key=lambda s: abs(s.active))[0]
 
-        version = get_timeseries(
-            prefix % 'VERSION', state, config=config, nds=nds,
-            multiprocess=multiprocess, cache=datacache,
-        ).join(gap='ignore').min().value
+        try:
+            version = get_timeseries(
+                prefix % 'VERSION', state, config=config, nds=nds,
+                multiprocess=multiprocess, cache=datacache,
+            ).join(gap='ignore').min().value
+        except ValueError:
+            version = 1201
 
         prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE']
         if version >= 1200:

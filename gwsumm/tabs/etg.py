@@ -246,7 +246,8 @@ class EventTriggerTab(get_tab('default')):
         """Write the '#main' HTML content for this `EventTriggerTab`.
         """
         # did it run
-        if not self.cache:
+        if (isinstance(self.cache, Cache) and len(self.cache == 0) or
+                isinstance(self.cache, str)):
             page = html.markup.page()
             page.div(class_='alert alert-danger')
             page.p("This analysis seems to have failed.")

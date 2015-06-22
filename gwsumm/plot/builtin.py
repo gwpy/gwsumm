@@ -1116,7 +1116,8 @@ class TriggerHistogramPlot(TimeSeriesHistogramPlot):
         try:
             return self._pid
         except AttributeError:
-            self._pid = super(TriggerHistogramPlot, self).pid
+            etg = re_cchar.sub('_', self.etg).upper()
+            self._pid = '%s_%s' % (etg, super(TriggerHistogramPlot, self).pid)
             if self.column:
                 self._pid += '_%s' % re_cchar.sub('_', self.column).upper()
             return self.pid
@@ -1217,7 +1218,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            pid = super(TriggerRateDataPlot, self).pid
+            etg = re_cchar.sub('_', self.etg).upper()
+            pid = '%s_%s' % (etg, super(TriggerRateDataPlot, self).pid)
             if self.column:
                 self.pid += '_%s' % re_cchar.sub('_', self.column).upper()
             return pid
@@ -1271,8 +1273,9 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                 rates = [event_rate(table_, stride, self.start, self.end)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
-                keys.append('%s_EVENT_RATE_%s_%s'
-                            % (str(channel), str(self.column), bin))
+                keys.append('%s_%s_EVENT_RATE_%s_%s'
+                            % (str(channel), str(self.etg),
+                               str(self.column), bin))
                 if keys[-1] not in globalv.DATA:
                     add_timeseries(rate, keys[-1])
 

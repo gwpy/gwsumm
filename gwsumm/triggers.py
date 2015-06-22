@@ -197,6 +197,12 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 if cache is None and re.match('dmt(.*)omega', etg.lower()):
                     segcache = find_dmt_omega(channel, segment[0], segment[1])
                     form = 'ligolw'
+                elif cache is None and etg.lower() in ['kw', 'kleinewelle']:
+                    segcache = find_kw(channel, segment[0], segment[1])
+                    form = 'ligolw'
+                    filter_ = lambda t: (
+                        float(get_row_value(t, 'time')) in segment and
+                        t.channel == str(channel))
                 elif cache is None:
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
@@ -245,9 +251,12 @@ def find_dmt_omega(channel, start, end, base=None):
     span = Segment(to_gps(start), to_gps(end))
     channel = get_channel(channel)
     ifo = channel.ifo
-    if base is None:
+    if base is None and channel.name.split(':', 1)[-1] == 'GDS-CALIB_STRAIN':
         base = '/gds-%s/dmt/triggers/%s-Omega_hoft' % (
             ifo.lower(), ifo[0].upper())
+    elif base is None:
+        raise NotImplementedError("This method doesn't know how to locate DMT "
+                                  "Omega trigger files for %r" % str(channel))
     gps5 = int('%.5s' % start)
     end5 = int('%.5s' % end)
     out = Cache()
@@ -265,5 +274,36 @@ def find_dmt_omega(channel, start, end, base=None):
         gps5 += 1
     out.sort(key=lambda e: e.path)
     vprint("    Found %d files for %s (DMT-Omega)\n"
+           % (len(out), channel.ndsname))
+    return out
+
+
+def find_kw(channel, start, end, base=None):
+    """Find KW trigger XML files
+    """
+    span = Segment(to_gps(start), to_gps(end))
+    channel = get_channel(channel)
+    ifo = channel.ifo
+    if base is None and channel.name.split(':', 1)[-1] == 'GDS-CALIB_STRAIN':
+        tag = '%s-KW_HOFT' % ifo[0].upper()
+        base = '/gds-%s/dmt/triggers/%s' % (ifo.lower(), tag)
+    elif base is None:
+        tag = '%s-KW_TRIGGERS' % ifo[0].upper()
+        base = '/gds-%s/dmt/triggers/%s' % (ifo.lower(), tag)
+    gps5 = int('%.5s' % start)
+    end5 = int('%.5s' % end)
+    out = Cache()
+    append = out.append
+    while gps5 <= end5:
+        trigglob = os.path.join(
+            base, '%s-%d' % (tag, gps5), '%s-*-*.xml' % tag)
+        found = glob.glob(trigglob)
+        for f in found:
+            ce = CacheEntry.from_T050017(f)
+            if ce.segment.intersects(span):
+                append(ce)
+        gps5 += 1
+    out.sort(key=lambda e: e.path)
+    vprint("    Found %d files for %s (KW)\n"
            % (len(out), channel.ndsname))
     return out

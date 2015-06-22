@@ -32,6 +32,7 @@ from gwpy.plotter.table import (get_table_column, get_row_value)
 from .. import (version, html)
 from ..config import NoOptionError
 from ..data import get_channel
+from ..state import (get_state, ALLSTATE)
 from ..triggers import (get_etg_table, get_triggers, register_etg_table)
 from ..utils import re_quote
 from ..mode import (get_mode, MODE_ENUM)
@@ -93,6 +94,7 @@ class EventTriggerTab(get_tab('default')):
         self.channel = channel and get_channel(channel) or None
         self.cache = cache
         self.url = url
+        self.error = dict()
         # parse ETG and LIGO_LW table class
         if etg is None:
             etg = self.name
@@ -218,7 +220,28 @@ class EventTriggerTab(get_tab('default')):
 
         return new
 
+    def finalize_states(self, config=None, **kwargs):
+        # finalize all-state
+        try:
+            allstate = get_state(ALLSTATE)
+        except ValueError:
+            allstate = generate_all_state(self.start, self.end)
+        allstate.fetch(config=config)
+        for state in self.states:
+            # if no segments, don't do anything:
+            if (state.filename is not None and
+                    not os.path.isdir(os.path.split(state.filename)[0])):
+                self.error[state] = (
+                    'warning', 'No analysis has been run.')
+            else:
+                state.fetch(config=config, **kwargs)
+                if state.filename is not None and len(states.active) == 0:
+                    self.error[state] = (
+                        'warning',
+                        'This analysis found no segments over which to run.')
+
     def process(self, *args, **kwargs):
+        error = None
         # read the cache files
         if isinstance(self.cache, str) and os.path.isfile(self.cache):
             with open(self.cache, 'r') as fobj:
@@ -227,40 +250,39 @@ class EventTriggerTab(get_tab('default')):
                                              segment=self.span)
                 except ValueError as e:
                     if "could not convert \'\\n\' to CacheEntry" in str(e):
-                        self.cache = Cache()
+                        error = 'could not parse event cache file'
                     else:
                         raise
         elif isinstance(self.cache, str):
+            error = 'could not locate event cache file'
             warn("Cache file %s not found." % self.cache)
-            return
         elif self.cache is not None and not isinstance(self.cache, Cache):
             raise ValueError("Cannot parse EventTriggerTab.cache of type %r"
                              % type(self.cache))
-
+        # push error to all states for HTML writing
+        if error:
+            for state in self.states:
+                self.error[state] = (
+                    'danger', 'This analysis seems to have failed: %s.' % error)
         # only process if the cachfile was found
         if kwargs.get('trigcache', None) is None:
             kwargs['trigcache'] = self.cache
         super(EventTriggerTab, self).process(*args, **kwargs)
 
+    def process_state(self, state, *args, **kwargs):
+        if self.error.get(state, None):
+            return
+        super(EventTriggerTab, self).process_state(state, *args, **kwargs)
+
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `EventTriggerTab`.
         """
-        # did it run
-        if (isinstance(self.cache, Cache) and len(self.cache == 0) or
-                isinstance(self.cache, str)):
+        if self.error.get(state, None):
+            level, message = self.error[state]
+            # no segments, print warning
             page = html.markup.page()
-            page.div(class_='alert alert-danger')
-            page.p("This analysis seems to have failed.")
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
-            page.div.close()
-        elif len(self.states[0].active) == 0:
-            page = html.markup.page()
-            page.div(class_='alert alert-info')
-            page.p("This analysis found no segments over which to run.")
+            page.div(class_='alert alert-%s' % level)
+            page.p(message)
             page.p("If you believe this to be an error, please contact %s."
                    % html.markup.oneliner.a('the DetChar group',
                                             class_='alert-link',

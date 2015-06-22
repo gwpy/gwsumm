@@ -19,23 +19,29 @@
 """Read and store transient event triggers
 """
 
+import os.path
+import glob
+import re
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
+from glue.lal import (Cache, CacheEntry)
 from glue.ligolw.table import (StripTableName as strip_table_name,
                                CompareTableNames as compare_table_names)
 from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.table import lsctables
 from gwpy.table.io import trigfind
+from gwpy.time import to_gps
 
 from gwpy.table.utils import (get_table_column, get_row_value)
-from gwpy.segments import (DataQualityFlag, SegmentList)
+from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 
 from . import globalv
 from .utils import (re_cchar, vprint)
+from .channels import get_channel
 from .data import find_cache_segments
 
 ETG_TABLE = lsctables.TableByName.copy()
@@ -46,7 +52,7 @@ ETG_TABLE.update({
     'omegadq': lsctables.SnglBurstTable,
     'kleinewelle': lsctables.SnglBurstTable,
     'kw': lsctables.SnglBurstTable,
-    'dmtomega': lsctables.SnglBurstTable,
+    'dmt_omega': lsctables.SnglBurstTable,
     'dmt_wsearch': lsctables.SnglBurstTable,
     # multi-IFO burst
     'cwb': lsctables.MultiBurstTable,
@@ -188,7 +194,10 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 raise NotImplementedError("HACR parsing has not been "
                                           "implemented.")
             else:
-                if cache is None:
+                if cache is None and re.match('dmt(.*)omega', etg.lower()):
+                    segcache = find_dmt_omega(channel, segment[0], segment[1])
+                    form = 'ligolw'
+                elif cache is None:
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                           segment[0],
                                                           segment[1])
@@ -228,3 +237,33 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         return out
     else:
         return
+
+
+def find_dmt_omega(channel, start, end, base=None):
+    """Find DMT-Omega trigger XML files
+    """
+    span = Segment(to_gps(start), to_gps(end))
+    channel = get_channel(channel)
+    ifo = channel.ifo
+    if base is None:
+        base = '/gds-%s/dmt/triggers/%s-Omega_hoft' % (
+            ifo.lower(), ifo[0].upper())
+    gps5 = int('%.5s' % start)
+    end5 = int('%.5s' % end)
+    out = Cache()
+    append = out.append
+    while gps5 <= end5:
+        trigglob = os.path.join(
+            base, str(gps5),
+            '%s-%s_%s_%s_OmegaC-*-*.xml' % (
+                ifo, channel.system, channel.subsystem, channel.signal))
+        found = glob.glob(trigglob)
+        for f in found:
+            ce = CacheEntry.from_T050017(f)
+            if ce.segment.intersects(span):
+                append(ce)
+        gps5 += 1
+    out.sort(key=lambda e: e.path)
+    vprint("    Found %d files for %s (DMT-Omega)\n"
+           % (len(out), channel.ndsname))
+    return out

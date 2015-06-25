@@ -235,7 +235,7 @@ class EventTriggerTab(get_tab('default')):
                     'warning', 'No analysis has been run.')
             else:
                 state.fetch(config=config, **kwargs)
-                if state.filename is not None and len(states.active) == 0:
+                if state.filename is not None and len(state.active) == 0:
                     self.error[state] = (
                         'warning',
                         'This analysis found no segments over which to run.')

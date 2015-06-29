@@ -101,7 +101,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     if query:
         if cache:
             try:
-                new = DataQualityDict.read(cache, allflags)
+                new = DataQualityDict.read(cache, list(allflags))
             except Exception as e:
                 if type(e) is not Exception:
                     raise

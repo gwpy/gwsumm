@@ -112,6 +112,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs
+                vprint("    Read %d segments for %s (%.2f%% coverage).\n"
+                       % (len(new[f].active), f,
+                          float(abs(new[f].known))/float(abs(newsegs))*100))
         else:
             if len(newsegs) >= 10:
                 qsegs = span

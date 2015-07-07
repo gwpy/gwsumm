@@ -715,7 +715,7 @@ if 'public_html' in os.getcwd():
     base = urlbase
 # otherwise get URL from html config
 elif ifo in ifobases:
-    urlbase = urlparse(ifobases['ifo']).path
+    urlbase = urlparse(ifobases[ifo]).path
     base = urlbase
 # otherwise let the write_html processor work it out on-the-fly
 else:

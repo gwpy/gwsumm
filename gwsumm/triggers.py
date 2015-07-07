@@ -240,6 +240,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         out.etg = str(etg)
         out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
                    times[i] in segments)
+        out.segments = segments & globalv.TRIGGERS[key].segments
         return out
     else:
         return

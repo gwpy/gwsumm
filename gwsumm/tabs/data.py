@@ -410,7 +410,8 @@ class DataTab(DataTabBase):
 
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None, plotqueue=None, segdb_error='raise'):
+                      trigcache=None, segmentcache=None, plotqueue=None,
+                      segdb_error='raise'):
         """Process data for this tab in a given state
 
         Parameters
@@ -432,6 +433,8 @@ class DataTab(DataTabBase):
             `Cache` of files from which to read time-series data
         trigcache : `~glue.lal.Cache`, optional
             `Cache` of files from which to read event triggers
+        segmentcache : `~glue.lal.Cache`, optional
+            `Cache` of files from which to read segments
         plotqueue : `multiprocessing.JoinableQueue`, optional
             queue in which to place plotting processes
         segdb_error : `str`, optional
@@ -529,9 +532,10 @@ class DataTab(DataTabBase):
         # find flags that need a DataQualityFlag
         dqflags = self.get_flags('segments', all_data=all_data)
         if len(dqflags):
-            vprint("    %d data-quality flags identified for SegDB query\n"
+            vprint("    %d data-quality flags identified for segments\n"
                    % len(dqflags))
-            get_segments(dqflags, state, config=config, segdb_error=segdb_error)
+            get_segments(dqflags, state, config=config, segdb_error=segdb_error,
+                         cache=segmentcache)
 
         # --------------------------------------------------------------------
         # process triggers

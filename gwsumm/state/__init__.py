@@ -79,13 +79,11 @@ def load_states(config, section='states'):
     given :class:`~configparser.ConfigParser`
     """
     config = GWSummConfigParser.from_configparser(config)
-    # get [start, stop) job interval
-    start = config.getint(section, 'gps-start-time')
-    end = config.getint(section, 'gps-end-time')
     # parse the [states] section into individual state definitions
     try:
         states = dict(config.nditems(section))
     except NoSectionError:
+        config.add_section(section)
         states = {}
     for state in states:
         if not (config.has_section('state-%s' % state) or
@@ -103,6 +101,8 @@ def load_states(config, section='states'):
                 SummaryState.from_ini(config, section)))
 
     # register All state
+    start = config.getint(section, 'gps-start-time')
+    end = config.getint(section, 'gps-end-time')
     try:
         all_ = generate_all_state(start, end)
     except ValueError:

@@ -528,6 +528,9 @@ if not opts.html_only:
             m = Channel.MATCH.match(section).groupdict()
         except AttributeError:
             continue
+        else:
+            if not m['ifo']:
+                continue
         if m['trend']:
             trend.add(section)
         else:

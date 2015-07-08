@@ -265,9 +265,13 @@ class SummaryState(DataQualityFlag):
         return self._fetch_segments(query=False)
 
     def _read_segments(self, filename):
-        segs = DataQualityFlag.read(filename)
-        self.known = segs.known
-        self.active = segs.active
+        segs = DataQualityFlag.read(filename, self.definition)
+        if self.known:
+            self.known = self.known & segs.known
+            self.active = self.known & segs.active
+        else:
+            self.known = segs.known
+            self.active = segs.active
         return self
 
     def fetch(self, config=GWSummConfigParser(), segdb_error='raise', **kwargs):

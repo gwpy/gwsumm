@@ -98,8 +98,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     # load new segments
     query &= abs(newsegs) != 0
     query &= len(allflags) > 0
+    if cache is not None:
+        query &= len(cache) != 0
     if query:
-        if cache:
+        if cache is not None:
             try:
                 new = DataQualityDict.read(cache, list(allflags))
             except Exception as e:

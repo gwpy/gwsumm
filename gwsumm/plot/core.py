@@ -462,6 +462,10 @@ class DataPlot(SummaryPlot):
             except NameError:
                 pass
         params.update(kwargs)
+        # escape text
+        for key, val in params.iteritems():
+            if key in ['title', 'ylabel', 'xlabel']:
+                params[key] = re.sub(r'(?<!\\)_', '\_', params[key])
         # format and return
         return cls(channels, start, end, **params)
 

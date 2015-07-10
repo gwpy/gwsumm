@@ -87,7 +87,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         type_ = isinstance(channel, Channel) and channel.type or None
         sr = isinstance(channel, Channel) and channel.sample_rate or None
         name = str(channel)
-        found = globalv.CHANNELS.sieve(name=str(channel), type=type_,
+        found = globalv.CHANNELS.sieve(name=name, type=type_,
                                        sample_rate=sr, exact_match=True)
     if len(found) == 1:
         return found[0]

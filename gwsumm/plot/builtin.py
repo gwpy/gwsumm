@@ -131,20 +131,20 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         legendargs = self.parse_legend_kwargs()
 
         # add data
-        mmmchans = self.get_channel_groups()
-        for channels, pargs in zip(mmmchans.values(), plotargs):
+        channels, groups = zip(*self.get_channel_groups())
+        for clist, pargs in zip(groups, plotargs):
             # pad data request to over-fill plots (no gaps at the end)
             if self.state and not self.all_data:
                 valid = self.state.active
-            elif channels[0].sample_rate:
+            elif clist[0].sample_rate:
                 valid = SegmentList([self.span.protract(
-                    1/channels[0].sample_rate.value)])
+                    1/clist[0].sample_rate.value)])
             else:
                 valid = SegmentList([self.span])
             # get data
             data = [get_timeseries(c, valid, query=False).join(
                         gap='pad', pad=numpy.nan)
-                    for c in channels]
+                    for c in clist]
             # double-check empty
             for ts in data:
                 if (hasattr(ts, 'metadata') and
@@ -161,7 +161,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 label = '%s [%s]' % (label,
                                      label_to_latex(str(data[0].channel)))
             # plot groups or single TimeSeries
-            if len(channels) > 1:
+            if len(clist) > 1:
                 ax.plot_timeseries_mmm(*data, label=label, **pargs)
             else:
                 ax.plot_timeseries(data[0], label=label, **pargs)
@@ -187,8 +187,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
-        if (len(mmmchans) > 1 or plotargs[0].get('label', None) in
-                [re.sub(r'(_|\\_)', r'\_', mmmchans.keys()[0]), None]):
+        if (len(channels) > 1 or plotargs[0].get('label', None) in
+                [re.sub(r'(_|\\_)', r'\_', channels[0]), None]):
             plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
@@ -334,7 +334,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         self.preview_labels = False
 
     def get_channel_groups(self, *args, **kwargs):
-        return OrderedDict((f, [f]) for f in self.flags)
+        return [(f, [f]) for f in self.flags]
 
     @property
     def flags(self):
@@ -516,7 +516,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         to set the bit names from the various channels as the defaults
         in stead of the channel names
         """
-        chans = self.get_channel_groups().keys()
+        chans = zip(*self.get_channel_groups())[0]
         labels = list(self.pargs.pop('labels', defaults))
         if isinstance(labels, (unicode, str)):
             labels = labels.split(',')

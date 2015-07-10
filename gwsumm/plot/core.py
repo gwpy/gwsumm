@@ -352,7 +352,6 @@ class DataPlot(SummaryPlot):
         """
         plotargs = defaults.copy()
         plotargs.setdefault('label', self._parse_labels())
-        chans_ = self.get_channel_groups()
         for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
                       'linewidth', 'marker', 'markeredgecolor',
                       'markeredgewidth', 'markerfacecolor',
@@ -374,9 +373,9 @@ class DataPlot(SummaryPlot):
                 except Exception:
                     pass
                 plotargs[kwarg] = val
-        chans = self.get_channel_groups().keys()
+        chans = zip(*self.get_channel_groups())[0]
         for key, val in plotargs.iteritems():
-            if (not isinstance(val, (list, tuple)) or len(val) != len(chans_)):
+            if (not isinstance(val, (list, tuple)) or len(val) != len(chans)):
                 plotargs[key] = [val]*len(self.get_channel_groups())
         out = []
         for i in range(len(chans)):
@@ -387,7 +386,7 @@ class DataPlot(SummaryPlot):
     def _parse_labels(self, defaults=None):
         """Pop the labels for plotting from the `pargs` for this Plot
         """
-        chans = self.get_channel_groups().keys()
+        chans = zip(*self.get_channel_groups())[0]
         if defaults is None:
             defaults = chans
         labels = self.pargs.pop('labels', defaults)
@@ -403,29 +402,37 @@ class DataPlot(SummaryPlot):
         self._channels.append(channel)
 
     def get_channel_groups(self):
-        """Find and group (mean, min, max) sets of channels
-        for plotting.
+        """Find and group (mean, min, max) sets of channels for plotting.
 
         Returns
         -------
-        groups : :class:`OrderedDict`
-            dict of (channelname, channellist) pairs giving core channel
+        groups : `list` of `tuple`
+            list of (channelname, channellist) tuples giving core channel
             name and an ordered list of channels. Ordering in preference
             of 'rms', 'mean', 'min', 'max'.
+
+        Notes
+        -----
+        This method used to return an `OrderedDict`, but was changed to
+        return a `list` of `tuple` to enable plotting a channel multiple
+        times on a plot, for whatever reason.
         """
         all_ = self.channels
-        out = OrderedDict()
+        out = []
         for c in all_:
             name = c.texname.rsplit('.', 1)[0]
             if ' ' in c.texname:
-                out[c.texname] = [c]
-            elif name in out.keys():
-                out[name].append(c)
+                out.append((c.texname, [c]))
             else:
-                out[name] = [c]
+                try:
+                    id_ = zip(*out)[0].index(name)
+                except (IndexError, ValueError):
+                    out.append((name, [c]))
+                else:
+                    out[id_][1].append(c)
         order = ['rms', 'mean', 'min', 'max']
-        for key in out.keys():
-            out[key].sort(key=lambda c: c.name.split('.')[-1] in order and
+        for channel, clist in out:
+            clist.sort(key=lambda c: c.name.split('.')[-1] in order and
                                         order.index(c.name.split('.')[-1])+1 or
                                         10)
         return out

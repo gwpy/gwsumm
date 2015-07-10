@@ -144,7 +144,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             parts = get_channels([m.group() for m in matches])
             new = Channel(name)
             new.subchannels = parts
-            new._ifo = "".join(set(p.ifo for p in parts))
+            new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
         globalv.CHANNELS.append(new)
         try:
             return get_channel(new)

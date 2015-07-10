@@ -375,8 +375,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                                                    end, state=state, **kwargs)
         # get flags
         if flags is None:
-            flags = dict(config.items(section)).pop('flags', '')
-        new.flags.append(flags)
+            flags = dict(config.items(section)).pop('flags', [])
+        if isinstance(flags, str):
+            flags = [f.strip('\n ') for f in flags.split(',')]
+        new.flags.extend(flags)
         return new
 
     def get_segment_color(self):

@@ -825,9 +825,9 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
     if isinstance(timeseries, StateVector):
-        globalv.DATA.setdefault(key, TimeSeriesList())
-    else:
         globalv.DATA.setdefault(key, StateVectorList())
+    else:
+        globalv.DATA.setdefault(key, TimeSeriesList())
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()

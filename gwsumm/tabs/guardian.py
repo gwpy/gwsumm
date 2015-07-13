@@ -292,7 +292,7 @@ class GuardianTab(Tab):
                                 query=False).copy()
             livetime = abs(flag.active)
             try:
-                duty = abs(flag.active) / float(abs(flag.valid)) * 100.
+                duty = abs(flag.active) / float(abs(flag.known)) * 100.
             except ZeroDivisionError:
                 duty = 0
             page.p('This state was active for %.2f seconds (%.2f%%) during '

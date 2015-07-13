@@ -48,8 +48,13 @@ from glue.segments import segmentlist
 
 from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
-from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
-                             StateVector, StateVectorDict)
+try:
+    from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                                 StateVector, StateVectorList, StateVectorDict)
+except ImportError:
+    from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                                 StateVector, StateVectorDict)
+    StateVectorList = TimeSeriesList
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
@@ -296,7 +301,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                 datasegs = reduce(operator.and_,
                                   [tsl.segments for tsl in tslist])
                 # build meta-timeseries for all interseceted segments
-                meta = TimeSeriesList()
+                meta = type(globalv.DATA[chans[0].ndsname])()
                 operators = [channel.name[m.span()[1]] for m in
                              list(re_channel.finditer(channel.ndsname))[:-1]]
                 for seg in datasegs:
@@ -332,7 +337,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     # set classes
     if statevector:
         SeriesClass = StateVector
-        ListClass = TimeSeriesList
+        ListClass = StateVectorList
         DictClass = StateVectorDict
     else:
         SeriesClass = TimeSeries
@@ -819,7 +824,10 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     """
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
-    globalv.DATA.setdefault(key, TimeSeriesList())
+    if isinstance(timeseries, StateVector):
+        globalv.DATA.setdefault(key, TimeSeriesList())
+    else:
+        globalv.DATA.setdefault(key, StateVectorList())
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()

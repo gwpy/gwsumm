@@ -525,12 +525,29 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if seg.intersects(data.span):
                         data = data.crop(*(data.span - seg))
                         break
-                data.channel = channel
-                if channel.ndsname in filter_:
-                    if callable(filter_[channel.ndsname]):
-                        data = filter_[channel.ndsname](data)
+                try:
+                    filt = filter_[channel.ndsname]
+                except KeyError:
+                    pass
+                else:
+                    # filter with function
+                    if callable(filt):
+                        data = filt(data)
+                    # filter with gain
+                    elif (isinstance(filt, tuple) and len(filt) == 3 and
+                              len(filt[0] + filt[1]) == 0):
+                        try:
+                            data *= filt[2]
+                        except TypeError:
+                            data = data * filt[2]
+                    # filter zpk
+                    elif isinstance(filt, tuple):
+                        data = data.filter(*filt)
+                    # filter fail
                     else:
-                        data = data.filter(*filter_[channel.ndsname])
+                        raise ValueError("Cannot parse filter for %s: %r"
+                                         % (channel.ndsname,
+                                            filt))
                 if isinstance(data, StateVector) or ':GRD-' in str(channel):
                     try:
                         data.unit = units.dimensionless_unscaled

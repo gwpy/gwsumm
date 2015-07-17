@@ -48,8 +48,13 @@ from glue.segments import segmentlist
 
 from gwpy.detector import Channel
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
-from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
-                             StateVector, StateVectorDict)
+try:
+    from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                                 StateVector, StateVectorList, StateVectorDict)
+except ImportError:
+    from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
+                                 StateVector, StateVectorDict)
+    StateVectorList = TimeSeriesList
 from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
@@ -296,7 +301,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                 datasegs = reduce(operator.and_,
                                   [tsl.segments for tsl in tslist])
                 # build meta-timeseries for all interseceted segments
-                meta = TimeSeriesList()
+                meta = type(globalv.DATA[chans[0].ndsname])()
                 operators = [channel.name[m.span()[1]] for m in
                              list(re_channel.finditer(channel.ndsname))[:-1]]
                 for seg in datasegs:
@@ -332,7 +337,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
     # set classes
     if statevector:
         SeriesClass = StateVector
-        ListClass = TimeSeriesList
+        ListClass = StateVectorList
         DictClass = StateVectorDict
     else:
         SeriesClass = TimeSeries
@@ -558,8 +563,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if abs(seg) == 0 or abs(seg) < ts.dt.value:
                         continue
                     if ts.span.intersects(seg):
-                        cropped = ts.crop(float(seg[0]), float(seg[1]),
-                                          copy=False)
+                        common = map(float, ts.span & seg)
+                        cropped = ts.crop(*common, copy=False)
                         if cropped.size:
                             data.append(cropped)
         out[channel.ndsname] = data.coalesce()
@@ -744,18 +749,16 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             if abs(seg) < specgram.dt.value:
                 continue
             if specgram.span.intersects(seg):
+                common = specgram.span & type(seg)(seg[0],
+                                                   seg[1] + specgram.dt.value)
+                s = specgram.crop(*common)
                 if format in ['amplitude', 'asd']:
-                    s = specgram.crop(*seg) ** (1/2.)
-                else:
-                    s = specgram.crop(*seg)
+                    s **= 1/2.
+                elif format in ['rayleigh']:
                     # XXX FIXME: this corrects the bias offset in Rayleigh
-                    if format in ['rayleigh']:
-                        med = numpy.median(s.value)
-                        s /= med
+                    med = numpy.median(s.value)
+                    s /= med
                 if s.shape[0]:
-                    # hack to fix potential issues in crop for spectrograms:
-                    while s.span[0] < seg[0]:
-                        s = s[1:]
                     out.append(s)
     return out.coalesce()
 
@@ -819,7 +822,10 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     """
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
-    globalv.DATA.setdefault(key, TimeSeriesList())
+    if isinstance(timeseries, StateVector):
+        globalv.DATA.setdefault(key, StateVectorList())
+    else:
+        globalv.DATA.setdefault(key, TimeSeriesList())
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()

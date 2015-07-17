@@ -519,6 +519,8 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):
                     continue
+                if data.unit is None:
+                    data.unit = 'undef'
                 for seg in globalv.DATA[channel.ndsname].segments:
                     if seg.intersects(data.span):
                         data = data.crop(*(data.span - seg))

@@ -327,7 +327,7 @@ globalconfig = ','.join(opts.global_config)
 jobs = []
 if not opts.skip_html_wrapper:
     htmljob = GWSummaryJob('local', executable, subdir=outdir, logdir=logdir,
-                           tag='%s_local' % opts.file_tag)
+                           tag='%s_local' % opts.file_tag, **condorcmds)
     jobs.append(htmljob)
 if not opts.html_wrapper_only:
     datajob = GWSummaryJob(universe, executable, subdir=outdir, logdir=logdir,

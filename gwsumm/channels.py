@@ -24,6 +24,11 @@ import urllib2
 import re
 from Queue import Queue
 
+try:
+    from kerberos import GSSError
+except ImportError:
+    GSSError = None
+
 from gwpy.detector import Channel
 
 from . import (globalv, version)
@@ -105,7 +110,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                 if globalv.HTMLONLY:
                     raise ValueError("")
                 new = Channel.query(name, timeout=timeout)
-            except (ValueError, urllib2.URLError):
+            except (ValueError, urllib2.URLError, GSSError):
                 new = Channel(str(channel))
             else:
                 new.name = str(channel)

@@ -228,6 +228,13 @@ popts.add_argument('-b', '--bulk-read', action='store_true', default=False,
 popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
                    default='raise', choices=['raise', 'ignore', 'warn'],
                    help="action upon error fetching segments from SegDB")
+popts.add_argument('--data-cache', action='append', default=[],
+                   help='path to LAL-format cache of TimeSeries data files')
+popts.add_argument('--event-cache', action='append', default=[],
+                   help='path to LAL-format cache of event trigger files')
+popts.add_argument('--segment-cache', action='append', default=[],
+                   help='path to LAL-format cache of state or data-quality '
+                        'segment files')
 
 # ----------------------------------------------------------------------------
 # Define sub-parsers
@@ -572,6 +579,19 @@ os.chdir(opts.output_dir)
 plotdir = os.path.join(path, 'plots')
 mkdir(plotdir)
 
+# read caches
+cache = {}
+for key, var in zip(['data', 'event', 'segment'],
+                    [opts.data_cache, opts.event_cache, opts.segment_cache]):
+    if var:
+        cache[key] = Cache()
+        for fp in var:
+            with open(fp, 'rb') as f:
+                cache[key].extend(Cache.fromfile(f))
+        cache[key] = cache[key].sieve(segment=span)
+    else:
+        cache[key] = None
+
 # -----------------------------------------------------------------------------
 # Read Archive
 
@@ -615,9 +635,7 @@ if hasattr(opts, 'daily_archive') and opts.daily_archive:
         if os.path.isfile(arch):
             archives.append(arch)
     # don't read any actual data
-    cache = Cache()
-else:
-    cache = None
+    cache['data'] = Cache()
 
 for arch in archives:
     vprint("Reading archived data from %s..." % arch)
@@ -810,8 +828,9 @@ for tab in alltabs:
         name = tab.name
     if not opts.html_only and isinstance(tab, get_tab('archived-data')):
         vprint("Processing %s\n" % name)
-        tab.process(config=config, nds=opts.nds, datacache=cache,
-                    trigcache=None, multiprocess=opts.multiprocess,
+        tab.process(config=config, nds=opts.nds, datacache=cache['data'],
+                    trigcache=cache['event'], segmentcache=cache['segment'],
+                    multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error)
     if not tab.hidden:
         mkdir(tab.href)

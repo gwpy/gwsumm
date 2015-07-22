@@ -83,8 +83,11 @@ def get_etg_table(etg):
     try:
         return ETG_TABLE[etg.lower()]
     except KeyError as e:
-        e.args = ('No LIGO_LW table registered to etg %r' % etg,)
-        raise
+        try:
+            return ETG_TABLE[re_cchar.sub('_', etg.lower())]
+        except KeyError:
+            e.args = ('No LIGO_LW table registered to etg %r' % etg,)
+            raise
 
 
 def register_etg_table(etg, table, force=False):

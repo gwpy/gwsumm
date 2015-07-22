@@ -59,3 +59,4 @@ from .registry import *
 from .utils import *
 from .core import *
 from .builtin import *
+from .triggers import *

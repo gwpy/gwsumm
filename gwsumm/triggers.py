@@ -55,7 +55,7 @@ ETG_TABLE.update({
     'dmt_omega': lsctables.SnglBurstTable,
     'dmt_wsearch': lsctables.SnglBurstTable,
     # multi-IFO burst
-    'cwb': lsctables.MultiBurstTable,
+    'cwb': lsctables.SnglBurstTable,
     # single-IFO inspiral
     'daily_ihope': lsctables.SnglInspiralTable,
     'daily_ahope': lsctables.SnglInspiralTable,
@@ -165,7 +165,10 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     try:
         columns = config.get(etg, 'columns').split(',')
     except (NoSectionError, NoOptionError):
-        columns = TableClass.validcolumns.keys()
+        if etg.lower() in ['cwb', 'cwb-ascii']:
+            columns = None
+        else:
+            columns = TableClass.validcolumns.keys()
     else:
         for col in ['process_id', 'search', 'channel']:
             if col not in columns:

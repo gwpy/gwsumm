@@ -243,6 +243,11 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         if any(map(isinf, ax.get_ylim())):
             ax.set_ylim(0.1, 10)
 
+        if 'time' in xcolumn:
+            ax.autoscale_view(tight=True, scalex=False)
+        else:
+            ax.autoscale_view(tight=True)
+
         # add colorbar
         if ccolumn:
             if not ntrigs:
@@ -441,6 +446,12 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 ax.hist(arr, label=label, weights=weights, **kwargs)
             else:
                 ax.plot([], label=label)
+
+        # tight scale the axes
+        if len(data) and direction == 'vertical' or True:
+            ax.autoscale_view(tight=True, scaley=False)
+        if len(data) and direction == 'horizontal' or False:
+            ax.autoscale_view(tight=True, scalex=False)
 
         # customise plot
         for key, val in self.pargs.iteritems():

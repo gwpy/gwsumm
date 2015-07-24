@@ -158,6 +158,9 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # get LIGO_LW table for this etg
     if tablename:
         TableClass = lsctables.TableByName[tablename]
+        register_etg_table(etg, TableClass, force=True)
+    elif key in globalv.TRIGGERS:
+        TableClass = type(globalv.TRIGGERS[key])
     else:
         TableClass = get_etg_table(etg)
 
@@ -188,44 +191,49 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # read new triggers
     query &= (abs(new) != 0)
     if query:
+        # store read kwargs
+        kwargs = {'columns': columns}
+
         # set content handler
         if contenthandler is None:
             contenthandler = get_partial_contenthandler(TableClass)
         lsctables.use_in(contenthandler)
 
         for segment in new:
-            filter_ = lambda t: float(get_row_value(t, 'time')) in segment
+            kwargs['filt'] = (
+                lambda t: float(get_row_value(t, 'time')) in segment)
             # find trigger files
             if cache is None and etg.lower() == 'hacr':
                 raise NotImplementedError("HACR parsing has not been "
                                           "implemented.")
+            if cache is None and re.match('dmt(.*)omega', etg.lower()):
+                segcache = find_dmt_omega(channel, segment[0], segment[1])
+                kwargs['format'] = 'ligolw'
+            elif cache is None and etg.lower() in ['kw', 'kleinewelle']:
+                segcache = find_kw(channel, segment[0], segment[1])
+                kwargs['format'] = 'ligolw'
+                kwargs['filt'] = lambda t: (
+                    float(get_row_value(t, 'time')) in segment and
+                    t.channel == str(channel))
+            elif cache is None:
+                segcache = trigfind.find_trigger_urls(str(channel), etg,
+                                                      segment[0],
+                                                      segment[1])
+                kwargs['format'] = 'ligolw'
             else:
-                if cache is None and re.match('dmt(.*)omega', etg.lower()):
-                    segcache = find_dmt_omega(channel, segment[0], segment[1])
-                    form = 'ligolw'
-                elif cache is None and etg.lower() in ['kw', 'kleinewelle']:
-                    segcache = find_kw(channel, segment[0], segment[1])
-                    form = 'ligolw'
-                    filter_ = lambda t: (
-                        float(get_row_value(t, 'time')) in segment and
-                        t.channel == str(channel))
-                elif cache is None:
-                    segcache = trigfind.find_trigger_urls(str(channel), etg,
-                                                          segment[0],
-                                                          segment[1])
-                    form = 'ligolw'
-                else:
-                    segcache = cache.sieve(segment=segment)
-                    form = etg.lower()
-                # read triggers and store
-                segcache = segcache.checkfilesexist()[0]
-                if form == 'ligolw':
-                    table = TableClass.read(segcache, columns=columns,
-                                            format=form, filt=filter_,
-                                            contenthandler=contenthandler)
-                else:
-                    table = TableClass.read(segcache, columns=columns,
-                                            format=form, filt=filter_)
+                segcache = cache.sieve(segment=segment)
+            if 'format' not in kwargs and 'ahope' not in etg.lower():
+                kwargs['format'] = etg.lower()
+            if (issubclass(TableClass, lsctables.SnglBurstTable) and
+                    etg.lower().startswith('cwb')):
+                kwargs['ifo'] = get_channel(channel).ifo
+            # read triggers and store
+            segcache = segcache.checkfilesexist()[0]
+            if len(segcache) == 0:
+                continue
+            if kwargs.get('format', None) == 'ligolw':
+                kwargs['contenthandler'] = contenthandler
+            table = TableClass.read(segcache, **kwargs)
             globalv.TRIGGERS[key].extend(table)
             csegs = find_cache_segments(segcache)
             try:

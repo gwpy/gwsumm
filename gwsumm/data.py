@@ -482,10 +482,6 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                                       connection=ndsconnection, type=ndstype,
                                       **ioargs)
             else:
-                if nproc > 1:
-                    for c in qchannels:
-                        if c.ndsname in filter_:
-                            del c.filter
                 # pad resampling
                 if segment[1] == cachesegments[-1][1] and qresample:
                     resamplepad = 8
@@ -508,10 +504,17 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         continue
                 else:
                     segstart, segend = map(float, segment)
+                # pull filters out because they can break multiprocessing
+                if nproc > 1:
+                    for c in qchannels:
+                        if c.ndsname in filter_:
+                            del c.filter
+                # read data
                 tsd = DictClass.read(segcache, qchannels, format='lcf',
                                      start=segstart, end=segend, type=ctype,
                                      nproc=nproc, resample=qresample,
                                      verbose=verbose, **ioargs)
+                # put filters back
                 for c in qchannels:
                     if c.ndsname in filter_:
                         c.filter = filter_[c.ndsname]

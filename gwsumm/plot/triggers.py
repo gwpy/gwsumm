@@ -402,7 +402,6 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
             try:
                 channel = get_channel(channel)
             except ValueError:
-                print(channel)
                 pass
             if self.state and not self.all_data:
                 valid = self.state.active
@@ -418,7 +417,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
             data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
-                self.pargs.setdefault('xlim', c.amplitude_range)
+                self.pargs.setdefault('xlim', channel.amplitude_range)
 
         # get range
         if not 'range' in histargs[0]:

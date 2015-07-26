@@ -581,7 +581,7 @@ mkdir(plotdir)
 
 # read caches
 cache = {}
-for key, var in zip(['data', 'event', 'segment'],
+for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
                     [opts.data_cache, opts.event_cache, opts.segment_cache]):
     if var:
         cache[key] = Cache()
@@ -589,8 +589,6 @@ for key, var in zip(['data', 'event', 'segment'],
             with open(fp, 'rb') as f:
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
-    else:
-        cache[key] = None
 
 # -----------------------------------------------------------------------------
 # Read Archive
@@ -635,7 +633,7 @@ if hasattr(opts, 'daily_archive') and opts.daily_archive:
         if os.path.isfile(arch):
             archives.append(arch)
     # don't read any actual data
-    cache['data'] = Cache()
+    cache['datacache'] = Cache()
 
 for arch in archives:
     vprint("Reading archived data from %s..." % arch)
@@ -828,10 +826,9 @@ for tab in alltabs:
         name = tab.name
     if not opts.html_only and isinstance(tab, get_tab('archived-data')):
         vprint("Processing %s\n" % name)
-        tab.process(config=config, nds=opts.nds, datacache=cache['data'],
-                    trigcache=cache['event'], segmentcache=cache['segment'],
+        tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,
-                    segdb_error=opts.on_segdb_error)
+                    segdb_error=opts.on_segdb_error, **cache)
     if not tab.hidden:
         mkdir(tab.href)
         page = tab.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,

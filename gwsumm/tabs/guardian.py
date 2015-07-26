@@ -34,6 +34,8 @@ import numpy
 
 from astropy.time import Time
 
+from glue.lal import Cache
+
 from gwpy.segments import (DataQualityDict, SegmentList, Segment)
 from gwpy.plotter import SegmentPlot
 
@@ -117,7 +119,7 @@ class GuardianTab(Tab):
 
     def process(self, nds='guess', multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
-                **kwargs):
+                segmentcache=Cache(), **kwargs):
         """Process data for the given state.
         """
         ifo = self.ifo
@@ -189,7 +191,7 @@ class GuardianTab(Tab):
 
         super(GuardianTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
-            datacache=datacache, **kwargs)
+            datacache=datacache, segmentcache=segmentcache, **kwargs)
 
     def write_state_html(self, state):
         """Write the HTML for the given state of this `GuardianTab`

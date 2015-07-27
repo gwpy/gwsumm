@@ -228,6 +228,9 @@ class HvetoTab(base):
         for plot in self.plots:
             if isinstance(plot, HvetoSegmentSummaryPlot):
                 plot.find_flags()
+
+        kwargs['trigcache'] = Cache()
+        kwargs['segmentcache'] = Cache()
         super(HvetoTab, self).process(config=config, **kwargs)
 
         # find some plots

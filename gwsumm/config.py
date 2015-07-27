@@ -72,6 +72,7 @@ class GWSummConfigParser(ConfigParser):
         for fp in filenames:
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)
+        self.files = map(os.path.abspath, readok)
         return readok
 
     @classmethod

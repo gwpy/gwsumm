@@ -382,7 +382,6 @@ if opts.ifo:
     config.set(DEFAULTSECT, 'ifo', opts.ifo)
 config.set(DEFAULTSECT, 'user', getpass.getuser())
 config.read(opts.config_file)
-config.files = map(os.path.abspath, opts.config_file)
 
 try:
     ifo = config.get(DEFAULTSECT, 'ifo')

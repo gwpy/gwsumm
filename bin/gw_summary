@@ -410,25 +410,11 @@ if opts.mode == 'week':
             raise parser.error(msg)
 
 # record times in ConfigParser
+config.set_date_options(opts.gpsstart, opts.gpsend, section=DEFAULTSECT)
+
+# convert times for convenience
 span = Segment(opts.gpsstart, opts.gpsend)
 utc = tconvert(opts.gpsstart)
-config.set(DEFAULTSECT, 'gps-start-time', str(int(opts.gpsstart)))
-config.set(DEFAULTSECT, 'gps-end-time', str(int(opts.gpsend)))
-config.set(DEFAULTSECT, 'yyyy', utc.strftime('%Y'))
-config.set(DEFAULTSECT, 'yy', utc.strftime('%y'))
-config.set(DEFAULTSECT, 'mm', utc.strftime('%m'))
-config.set(DEFAULTSECT, 'dd', utc.strftime('%d'))
-config.set(DEFAULTSECT, 'yyyymm', utc.strftime('%Y%m'))
-config.set(DEFAULTSECT, 'yyyymmdd', utc.strftime('%Y%m%d'))
-config.set(DEFAULTSECT, 'duration', str(int(opts.gpsend - opts.gpsstart)))
-if HASLAL:
-    nleap = lal.GPSLeapSeconds(int(opts.gpsstart))
-    config.set(DEFAULTSECT, 'leap-seconds', str(nleap))
-    config.set(DEFAULTSECT, 'gps-start-time-noleap',
-               str(int(opts.gpsstart) - nleap))
-    config.set(DEFAULTSECT, 'gps-end-time-noleap',
-               str(int(opts.gpsend) - nleap))
-
 starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')
 

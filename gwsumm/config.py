@@ -38,6 +38,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from gwpy.time import tconvert
+
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 
 
@@ -108,3 +110,46 @@ class GWSummConfigParser(ConfigParser):
                         '[%s]' % section, section, key, '%%(%s)s' % key)
                 s = section % {key: val}
             self._sections[s] = self._sections.pop(section)
+
+    def set_date_options(self, start, end, section=DEFAULTSECT):
+        """Set datetime options in [DEFAULT] based on the given times
+
+        The following options are set
+
+        - `gps-start-time` - the integer GPS start time of this job
+        - `gps-end-time` - the integer GPS end time of this job
+        - `yyyy` - the four-digit year of the start date
+        - `mm` - the two-digit month of the start date
+        - `dd` - the two-digit day-of-month of the start date
+        - `yyyymm` - the six-digit year and month of the start date
+        - `yyyymmdd` - the eight-digit year-month-day of the start date
+        - `duration` - the duration of the job (seconds)
+
+        Additionally, if LAL is available, the following extra options
+        are also set
+
+        - `leap-seconds` - the number of leap seconds for the start date
+        - `gps-start-time-noleap` - the leap-corrected integer GPS start time
+        - `gps-end-time-noleap` - the leap-corrected integer GPS end time
+
+        """
+        utc = tconvert(start)
+        self.set(section, 'gps-start-time', str(int(start)))
+        self.set(section, 'gps-end-time', str(int(end)))
+        self.set(section, 'yyyy', utc.strftime('%Y'))
+        self.set(section, 'yy', utc.strftime('%y'))
+        self.set(section, 'mm', utc.strftime('%m'))
+        self.set(section, 'dd', utc.strftime('%d'))
+        self.set(section, 'yyyymm', utc.strftime('%Y%m'))
+        self.set(section, 'yyyymmdd', utc.strftime('%Y%m%d'))
+        self.set(section, 'duration', str(int(end - start)))
+        try:
+            from lal import GPSLeapSeconds as leap_seconds
+        except ImportError:
+            pass
+        else:
+            nleap = leap_seconds(int(start))
+            self.set(section, 'leap-seconds', str(nleap))
+            self.set(section, 'gps-start-time-noleap',
+                       str(int(start) - nleap))
+            self.set(section, 'gps-end-time-noleap', str(int(end) - nleap))

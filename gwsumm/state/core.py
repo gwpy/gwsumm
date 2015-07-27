@@ -266,6 +266,9 @@ class SummaryState(DataQualityFlag):
 
     def _read_segments(self, filename):
         segs = DataQualityFlag.read(filename, self.definition)
+        # XXX HACK around malformed segment files with no segment_summary table
+        if segs.active and not segs.known:
+            segs.known = type(segs.active)(segs.active)
         if self.known:
             self.known = self.known & segs.known
             self.active = self.known & segs.active

@@ -62,6 +62,15 @@ class StampPEMTab(base):
 
         # work out day directory and url
         new.directory = os.path.normpath(config.get(section, 'base-directory'))
+        try:
+            home_, postbase = new.directory.split('/public_html/', 1)
+        except ValueError as e:
+            e.args = ('Stamp PEM directory not under \'public_html\', '
+                      'cannot format linkable URL',)
+            raise
+        else:
+            user = os.path.split(home_)[1]
+            new.url = '/~%s/%s' % (user, postbase.rstrip('/'))
         return new
 
     def process(self, config=GWSummConfigParser(), **kwargs):
@@ -72,21 +81,24 @@ class StampPEMTab(base):
                 glob.glob(os.path.join(self.directory, 'DAY_*.png')),
                 key=lambda p: float(re.split('[-_]', os.path.basename(p))[1]))
             for p in plots:
-                home_, postbase = p.split('/public_html/', 1)
-                user = os.path.split(home_)[1]
+                pname = os.path.split(p)[1]
                 self.plots.append(SummaryPlot(
-                    src='/~%s/%s' % (user, postbase),
-                    href='/~%s/%s' % (user, postbase.replace('.png', '.html'))))
+                    src=os.path.join(self.url, pname),
+                    href=os.path.join(self.url,
+                                      pname.replace('.png', '.html'))))
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `StampPEMTab`.
         """
         page = html.markup.page()
 
+        a = html.markup.oneliner.a('analysis', href=self.url+'/',
+                                   class_='alert-link', rel='external',
+                                   target='_blank')
         if not(os.path.isdir(self.directory)):
-            page.div(class_='alert alert-warning')
-            page.p("No analysis was performed for this period, "
-                   "please try again later.")
+            page.div(class_='alert alert-warning', role='alert')
+            page.p("No %s was performed for this period, "
+                   "please try again later." % a)
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the DetChar group',
@@ -95,8 +107,8 @@ class StampPEMTab(base):
             page.div.close()
 
         elif not self.plots:
-            page.div(class_='alert alert-warning')
-            page.p("This analysis produced no plots.")
+            page.div(class_='alert alert-warning', role='alert')
+            page.p("This %s produced no plots." % a)
             page.p("If you believe these data should have been found, please "
                    "contact %s."
                    % html.markup.oneliner.a('the DetChar group',
@@ -111,13 +123,10 @@ class StampPEMTab(base):
             page.hr(class_='row-divider')
 
             # link full results
-            home_, postbase = self.directory.split('/public_html/', 1)
-            user = os.path.split(home_)[1]
-            index = '/~%s/%s/' % (user, postbase.rstrip('/'))
             page.hr(class_='row-divider')
             page.div(class_='btn-group')
             page.a('Click here for the full Stamp PEM results',
-                   href=index, rel='external', target='_blank',
+                   href=self.url+'/', rel='external', target='_blank',
                    class_='btn btn-default btn-info btn-xl')
             page.div.close()
 

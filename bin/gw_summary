@@ -391,18 +391,10 @@ finally:
     globalv.IFO = ifo
 
 # interpolate section names
-for section in config.sections():
-    if section.startswith('%(ifo)s'):
-        if not ifo:
-            e =  InterpolationMissingOptionError(
-                     'ifo', 'DEFAULT', '%(ifo)s', section)
-            e.args = ('%s\n%s' % (str(e), "Please give --ifo on the command "
-                      "line, or specify 'ifo = XX' in the [DEFAULT] section "
-                      "of the INI file to use interpolation in [section] "
-                      "names"),)
-            raise e
-        s2 = section.replace('%(ifo)s', ifo)
-        config._sections[s2] = config._sections.pop(section)
+interp = {}
+if ifo:
+    interp['ifo'] = ifo
+config.interpolate_section_names(**interp)
 
 # double-check week mode matches calendar setting
 if opts.mode == 'week':

@@ -49,6 +49,8 @@ class GWSummConfigParser(ConfigParser):
         r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
     # use OrderedDict for dict type
     _dict = OrderedDict
+    # set interpolation match
+    _interpvar_re = re.compile(r"%\(([^)]+)\)s")
 
     def ndoptions(self, section, **kwargs):
         try:
@@ -92,3 +94,17 @@ class GWSummConfigParser(ConfigParser):
 
     def __repr__(self):
         return '<GWSummConfigParser()>'
+
+    def interpolate_section_names(self, **kwargs):
+        """Interpolate a specific key in a section name using val
+        """
+        for section in self.sections():
+            s = section
+            for key in self._interpvar_re.findall(section):
+                try:
+                    val = kwargs[key]
+                except KeyError:
+                    raise InterpolationMissingOptionError(
+                        '[%s]' % section, section, key, '%%(%s)s' % key)
+                s = section % {key: val}
+            self._sections[s] = self._sections.pop(section)

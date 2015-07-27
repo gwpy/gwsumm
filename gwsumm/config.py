@@ -19,6 +19,7 @@
 """Thin wrapper around configparser
 """
 
+import os.path
 import re
 import sys
 from StringIO import StringIO

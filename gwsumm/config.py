@@ -19,6 +19,7 @@
 """Thin wrapper around configparser
 """
 
+import re
 import sys
 from StringIO import StringIO
 
@@ -31,11 +32,22 @@ else:
     from ConfigParser import InterpolationMissingOptionError
     from ConfigParser import __all__ as _cp__all__
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 
 
 class GWSummConfigParser(ConfigParser):
+    # preserve case in options
     optionxform = str
+    # disable colon separator
+    OPTCRE = re.compile(
+        r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
+    # use OrderedDict for dict type
+    _dict = OrderedDict
 
     def ndoptions(self, section, **kwargs):
         try:

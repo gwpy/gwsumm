@@ -75,7 +75,10 @@ class FscanTab(base):
             d = dirs
         else:
             d = dirs[0]
-        new.directory = os.path.join(d, new.channel.replace(':', '_'))
+        if d is not None:
+            new.directory = os.path.join(d, new.channel.replace(':', '_'))
+        else:
+            new.directory = None
 
         # get navigation urls
         new.navigation = []

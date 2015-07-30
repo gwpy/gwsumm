@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+
+"""Plot the triggers for a given ETG and a given channel
+"""
+
+import argparse
+
+from matplotlib import use
+use('agg')
+from matplotlib.colors import LogNorm
+
+from gwpy.segments import Segment
+from gwpy.table.utils import get_row_value
+from gwpy.time import to_gps
+
+from gwsumm.plot import rcParams
+from gwsumm.segments import get_segments
+from gwsumm.triggers import get_triggers
+
+
+def safe_eval(val):
+    """Evaluate the given string as a line of python, if possible
+
+    If the :meth:`eval` fails, a `str` is returned in stead.
+    """
+    try:
+        return eval(val)
+    except (NameError, SyntaxError):
+        return str(val)
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('channel')
+parser.add_argument('gpsstart', type=to_gps)
+parser.add_argument('gpsend', type=to_gps)
+parser.add_argument('-e', '--etg', default='omicron',
+                    help='name of ETG, default: %(default)s')
+parser.add_argument('-t', '--epoch', type=to_gps,
+                    help='Zero-time for plot, defaults to GPSSTART')
+parser.add_argument('-f', '--fcolumn', default='peak_frequency',
+                  help='sngl_burst column for frequency: default: %(default)s')
+parser.add_argument('-c', '--color', default='snr',
+                  help='sngl_burst column for colour: default: %(default)s')
+parser.add_argument('-s', '--snr', default=0, type=float,
+                    help='minimum SNR, default: %(default)s')
+parser.add_argument('-p', '--plot-params', action='append', default=[],
+                    help='extra plotting keyword argument --%%{arg}=%%{param}')
+parser.add_argument('-o', '--output-file', default='trigs.png',
+                    help='output file name, default: %(default)s')
+parser.add_argument('-a', '--state', metavar='FLAG',
+                    help='restrict triggers to active times for flag')
+
+args = parser.parse_args()
+if args.epoch is None:
+    args.epoch = args.gpsstart
+span = Segment(args.gpsstart, args.gpsend)
+
+# format params
+params = {}
+for input_ in args.plot_params:
+    key, val = input_.split('=', 1)
+    params[key.strip('-')] = safe_eval(val)
+
+# get segments
+if args.state:
+    segs = get_segments(args.state, [span], url='https://dqsegdb5.phy.syr.edu')
+    filt = lambda row: (row.snr > args.snr and
+                        get_row_value(row, 'time') in segs)
+else:
+    filt = lambda row: row.snr > args.snr
+
+# get triggers
+trigs = get_triggers(args.channel, args.etg, [span])
+
+# plot
+plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,
+                  color=args.color, edgecolor='none', s=12)
+ax = plot.gca()
+map = ax.collections[0]
+
+# set axes properties
+ax.set_epoch(args.epoch)
+ax.set_xlim(args.gpsstart, args.gpsend)
+ax.set_ylabel('Frequency [Hz]')
+ax.set_yscale('log')
+
+# set mappable properties
+map.set_norm(LogNorm(vmin=3, vmax=50))
+if map._A is None:
+    map._A = ndarray((0,))
+
+plot.add_colorbar(mappable=map, ax=ax, label='Signal-to-noise ratio (SNR)',
+                  cmap='hot_r')
+for key, val in params.iteritems():
+    try:
+        getattr(ax, 'set_%s' % key)(val)
+    except AttributeError:
+        setattr(ax, key, val)
+
+# add segments
+if args.state:
+    sax = plot.add_state_segments(segs, ax=ax, plotargs={'label': ' '})
+    sax.set_epoch(args.epoch)
+
+# save and exit
+plot.save(args.output_file)
+print('Plot saved to %s' % args.output_file)

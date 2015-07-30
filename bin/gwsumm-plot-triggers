@@ -5,6 +5,8 @@
 
 import argparse
 
+from numpy import ndarray
+
 from matplotlib import use
 use('agg')
 from matplotlib.colors import LogNorm

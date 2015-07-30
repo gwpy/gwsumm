@@ -66,25 +66,32 @@ class FscanTab(base):
         new.layout = [2]
 
         # work out day directory and url
+        new.channel = config.get(section, 'channel')
         base = os.path.normpath(config.get(section, 'base-directory'))
         dirs = glob.glob(base)
         if len(dirs) == 0:
-            new.directory = None
+            d = None
         elif len(dirs) > 1:
-            new.directory = dirs
+            d = dirs
         else:
-            new.directory = dirs[0]
-        new.channel = config.get(section, 'channel')
+            d = dirs[0]
+        new.directory = os.path.join(d, new.channel.replace(':', '_'))
+
+        # get navigation urls
+        new.navigation = []
+        for key, val in filter(lambda x: x[0].startswith('navigation'),
+                               config.items(section)):
+            system = key.split('-', 1)[1]
+            new.navigation.append((system, val))
+
         return new
 
     def process(self, config=GWSummConfigParser(), **kwargs):
         # find all plots
         self.plots = []
         if isinstance(self.directory, str):
-            directory = os.path.join(self.directory,
-                                     self.channel.replace(':', '_'))
             plots = sorted(
-                glob.glob(os.path.join(directory, 'spec_*.png')),
+                glob.glob(os.path.join(self.directory, 'spec_*.png')),
                 key=lambda p: float(os.path.basename(p).split('_')[1]))
             for p in plots:
                 home_, postbase = p.split('/public_html/', 1)
@@ -97,8 +104,6 @@ class FscanTab(base):
         """
         page = html.markup.page()
 
-        chandir = os.path.join(self.directory,
-                               self.channel.replace(':', '_'))
         if self.directory is None:
             page.div(class_='alert alert-warning')
             page.p("No analysis was performed for this period, "
@@ -120,18 +125,6 @@ class FscanTab(base):
                                             href='mailto:detchar@ligo.org'))
             page.div.close()
             page.hr(class_='row-divider')
-        elif os.path.isdir(self.directory) and not os.path.isdir(chandir):
-            page.div(class_='alert alert-warning')
-            page.p("This analysis did not process %s. Please review your "
-                   "choice of channel." % self.channel)
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
-            page.div.close()
-            page.hr(class_='row-divider')
-            self.directory = [self.directory]
         elif not self.plots:
             page.div(class_='alert alert-warning')
             page.p("This analysis produced no plots.")
@@ -149,7 +142,7 @@ class FscanTab(base):
         # link full results
         for d in self.directory:
             # parse date
-            datestr = os.path.basename(d).split('_')[1:]
+            datestr = d.split(os.path.sep)[-2].split('_')[1:]
             datestr = '{0}-{1}-{2} {3}:{4}:{5} {6}'.format(*datestr)
             date = parser.parse(datestr).strftime('%Y-%m-%d %H:%M:%S %Z')
             # find HTML
@@ -161,17 +154,30 @@ class FscanTab(base):
             home_, postbase = index.split('/public_html/', 1)
             user = os.path.split(home_)[1]
             index = '/~%s/%s' % (user, postbase)
-            i2 = '/~%s/%s/' % (user, postbase.rsplit('/', 2)[0])
+            i2 = ('/~%s/%s/fscanNavigation.html'
+                  % (user, postbase.rsplit('/', 4)[0]))
             page.div(class_='btn-group')
             page.a('Click here for the full Fscan results for %s' % date,
                    href=index, rel='external', target='_blank',
                    class_='btn btn-default btn-info btn-xl')
             page.div.close()
-            page.div(class_='btn-group')
-            page.a('Click here for the Fscan channel index for %s' % date,
-                   href=i2, rel='external', target='_blank',
-                   class_='btn btn-default btn-info btn-xl')
+
+        if self.navigation:
+            page.h2('Fscan links:')
+        for i, (key, url) in enumerate(sorted(self.navigation,
+                                              key=lambda x: x[0])):
+            if not i % 6:
+                page.div(class_="row")
+            if i + 6 > len(self.navigation):
+                page.div(class_='col-sm-2')
+            else:
+                page.div(class_='col-sm-2', style='margin-bottom: 10px;')
+            page.a(key, href=url, rel='external', target='_blank',
+                   class_='btn btn-success btn-lg btn-block')
             page.div.close()
+            if i % 6 == 6 or i == len(self.navigation) - 1:
+                page.div.close()
+
 
         if self.plots:
             page.hr(class_='row-divider')

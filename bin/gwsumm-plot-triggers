@@ -51,6 +51,8 @@ parser.add_argument('-o', '--output-file', default='trigs.png',
                     help='output file name, default: %(default)s')
 parser.add_argument('-a', '--state', metavar='FLAG',
                     help='restrict triggers to active times for flag')
+parser.add_argument('-l', '--cache-file',
+                    help='cache file containing event trigger file references')
 
 args = parser.parse_args()
 if args.epoch is None:
@@ -72,7 +74,7 @@ else:
     filt = lambda row: row.snr > args.snr
 
 # get triggers
-trigs = get_triggers(args.channel, args.etg, [span])
+trigs = get_triggers(args.channel, args.etg, [span], cache=args.cache_file)
 
 # plot
 plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,

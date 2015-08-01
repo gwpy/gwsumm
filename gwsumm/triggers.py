@@ -32,6 +32,7 @@ from glue.ligolw.table import (StripTableName as strip_table_name,
                                CompareTableNames as compare_table_names)
 from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
+from gwpy.io.cache import cache_segments
 from gwpy.table import lsctables
 from gwpy.table.io import trigfind
 from gwpy.time import to_gps
@@ -42,7 +43,6 @@ from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 from . import globalv
 from .utils import (re_cchar, vprint)
 from .channels import get_channel
-from .data import find_cache_segments
 
 ETG_TABLE = lsctables.TableByName.copy()
 ETG_TABLE.update({
@@ -220,22 +220,28 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                                                       segment[0],
                                                       segment[1])
                 kwargs['format'] = 'ligolw'
-            else:
+            elif isinstance(cache, Cache):
                 segcache = cache.sieve(segment=segment)
+            else:
+                segcache = cache
+            if isinstance(segcache, Cache):
+                segcache = segcache.checkfilesexist()[0]
             if 'format' not in kwargs and 'ahope' not in etg.lower():
                 kwargs['format'] = etg.lower()
             if (issubclass(TableClass, lsctables.SnglBurstTable) and
                     etg.lower().startswith('cwb')):
                 kwargs['ifo'] = get_channel(channel).ifo
             # read triggers and store
-            segcache = segcache.checkfilesexist()[0]
             if len(segcache) == 0:
                 continue
             if kwargs.get('format', None) == 'ligolw':
                 kwargs['contenthandler'] = contenthandler
             table = TableClass.read(segcache, **kwargs)
             globalv.TRIGGERS[key].extend(table)
-            csegs = find_cache_segments(segcache)
+            try:
+                csegs = cache_segments(segcache)
+            except AttributeError:
+                csegs = SegmentList()
             try:
                 globalv.TRIGGERS[key].segments.extend(csegs)
             except AttributeError:

@@ -509,6 +509,18 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         super(StateVectorDataPlot, self).__init__(*args, **kwargs)
         self.flags = []
 
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            self._pid = hashlib.md5(chans).hexdigest()[:6]
+            if self.pargs.get('bits', None):
+                self._pid = hashlib.md5(
+                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+            return self.pid
+
     def _parse_labels(self, defaults=[]):
         """Pop the labels for plotting from the `pargs` for this Plot
 
@@ -532,8 +544,20 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         return labels
 
     def process(self):
+        # make font size smaller
+        _labelsize = rcParams['ytick.labelsize']
+        labelsize = self.pargs.pop('labelsize', 12)
+        if self.pargs.get('insetlabels', True) is False:
+            rcParams['ytick.labelsize'] = labelsize
+
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
+
+        # get bit setting
+        bits = self.pargs.pop('bits', None)
+        if bits and len(self.channels) > 1:
+            raise ValueError("Specifying 'bits' doesn't work for a "
+                             "state-vector plot including multiple channels")
 
         # extract plotting arguments
         mask = self.pargs.pop('mask')
@@ -552,6 +576,11 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
+            channel = get_channel(channel)
+            if bits:
+                bits_ = [x for (i, x) in enumerate(channel.bits) if i in bits]
+            else:
+                bits_ = channel.bits
             data = get_timeseries(str(channel), valid, query=False,
                                   statevector=True)
             flags = None
@@ -561,7 +590,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                     stateseries.dx = 0
                     if channel.sample_rate is not None:
                         stateseries.sample_rate = channel.sample_rate
-                stateseries.bits = channel.bits
+                stateseries.bits = bits_
                 if not 'int' in str(stateseries.dtype):
                     stateseries = stateseries.astype('uint32')
                 newflags = stateseries.to_dqflags().values()
@@ -570,7 +599,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 else:
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
-            nflags += len([m for m in channel.bits if m is not None])
+            nflags += len([m for m in bits_ if m is not None])
             if flags is not None:
                 kwargs = pargs.copy()
                 kwargs.update(plotargs)
@@ -592,6 +621,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             plot.add_bitmask(mask, topdown=True)
         if self.state and self.state.name != ALLSTATE:
             self.add_state_segments(ax)
+
+        # reset tick size and return
+        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
 
 register_plot(StateVectorDataPlot)
@@ -1212,10 +1244,35 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         'legend_fontsize': 12,
     })
 
+    def __init__(self, *args, **kwargs):
+        bitmaskc = kwargs.pop('bitmask_channel', None)
+        super(ODCDataPlot, self).__init__(*args, **kwargs)
+        if bitmaskc:
+            self.bitmask = bitmaskc.split(',')
+        else:
+            self.bitmask = map(get_odc_bitmask, self.channels)
+
+    def get_bitmask_channels(self):
+        return type(self.channels)(list(map(get_channel, self.bitmask)))
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            masks = "".join(map(str, self.get_bitmask_channels()))
+            self._pid = hashlib.md5(chans+masks).hexdigest()[:6]
+            if self.pargs.get('bits', None):
+                self._pid = hashlib.md5(
+                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+            return self.pid
+
     def process(self):
         # make font size smaller
         _labelsize = rcParams['ytick.labelsize']
-        rcParams['ytick.labelsize'] = 12
+        labelsize = self.pargs.pop('labelsize', 12)
+        rcParams['ytick.labelsize'] = labelsize
 
         # make figure
         (plot, axes) = self.init_plot(plot=SegmentPlot)
@@ -1234,7 +1291,8 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
 
         # plot segments
         nflags = 0
-        for channel in self.channels:
+        for i, (channel, bitmaskchan) in enumerate(
+                zip(self.channels, self.get_bitmask_channels())):
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
@@ -1242,7 +1300,6 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
             # read ODC and bitmask vector
             data = get_timeseries(str(channel), valid, query=False,
                                   statevector=True)
-            bitmaskchan = get_channel(get_odc_bitmask(channel))
             bitmask = get_timeseries(bitmaskchan, valid, query=False,
                                      statevector=True)
             # plot bitmask

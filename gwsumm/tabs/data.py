@@ -47,8 +47,7 @@ from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_channel, re_flagdiv, vprint,
-                     count_free_cores, get_odc_bitmask)
+from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, count_free_cores)
 
 from .registry import (get_tab, register_tab)
 
@@ -471,9 +470,7 @@ class DataTab(DataTabBase):
         svchannels = set(self.get_channels('statevector', all_data=all_data,
                                            read=True))
         odcchannels = self.get_channels('odc', all_data=all_data, read=True)
-        for odc in odcchannels:
-            bitmask = get_channel(get_odc_bitmask(odc))
-            svchannels.update([odc, bitmask])
+        svchannels.update(odcchannels)
         svchannels = list(svchannels)
         if len(svchannels):
             vprint("    %d channels identified as StateVectors\n"
@@ -835,6 +832,8 @@ class DataTab(DataTabBase):
             if skip:
                 continue
             out.update(plot.channels)
+            if plot.data == 'odc':
+                out.update(plot.get_bitmask_channels())
         return sorted(out, key=lambda ch: ch.name)
 
     def get_flags(self, *types, **kwargs):

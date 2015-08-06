@@ -163,7 +163,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 ax.plot_timeseries(data[0], label=label, **pargs)
 
             # allow channel data to set parameters
-            if hasattr(data[0].channel, 'amplitude_range'):
+            if hasattr(get_channel(data[0].channel), 'amplitude_range'):
                 self.pargs.setdefault('ylim',
                                       data[0].channel.amplitude_range)
 
@@ -712,13 +712,13 @@ class SpectrumDataPlot(DataPlot):
                 ax.plot_spectrum(data[0], **pargs)
 
             # allow channel data to set parameters
-            if hasattr(data[0].channel, 'frequency_range'):
-                self.pargs.setdefault('xlim', data[0].channel.frequency_range)
+            if hasattr(channel, 'frequency_range'):
+                self.pargs.setdefault('xlim', channel.frequency_range)
             if (sdform in ['amplitude', 'asd'] and
-                    hasattr(data[0].channel, 'asd_range')):
-                self.pargs.setdefault('ylim', data[0].channel.asd_range)
-            elif hasattr(data[0].channel, 'psd_range'):
-                self.pargs.setdefault('ylim', data[0].channel.psd_range)
+                    hasattr(channel, 'asd_range')):
+                self.pargs.setdefault('ylim', channel.asd_range)
+            elif hasattr(channel, 'psd_range'):
+                self.pargs.setdefault('ylim', channel.psd_range)
 
         # display references
         for i, ref in enumerate(refs):

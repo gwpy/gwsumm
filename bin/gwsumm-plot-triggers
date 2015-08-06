@@ -11,6 +11,8 @@ from matplotlib import use
 use('agg')
 from matplotlib.colors import LogNorm
 
+from glue.lal import Cache
+
 from gwpy.segments import Segment
 from gwpy.table.utils import get_row_value
 from gwpy.time import to_gps
@@ -53,6 +55,8 @@ parser.add_argument('-a', '--state', metavar='FLAG',
                     help='restrict triggers to active times for flag')
 parser.add_argument('-l', '--cache-file',
                     help='cache file containing event trigger file references')
+parser.add_argument('-C', '--columns', type=lambda x: x.split(','),
+                    help='list of columns to read from files, default: all')
 
 args = parser.parse_args()
 if args.epoch is None:
@@ -73,8 +77,19 @@ if args.state:
 else:
     filt = lambda row: row.snr > args.snr
 
+# read cache
+if args.cache_file:
+    with open(args.cache_file, 'rb') as f:
+        cache = Cache.fromfile(f).sieve(segment=span)
+    print("Read cache of %d files" % len(cache))
+else:
+    cache = None
+
 # get triggers
-trigs = get_triggers(args.channel, args.etg, [span], cache=args.cache_file)
+tmp = get_triggers(args.channel, args.etg, [span], cache=cache,
+                   columns=args.columns)
+trigs = tmp.copy()
+trigs.extend(filter(filt, tmp))
 print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot

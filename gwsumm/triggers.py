@@ -147,7 +147,7 @@ def get_partial_contenthandler(table):
 
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                  query=True, multiprocess=False, tablename=None,
-                 contenthandler=None, return_=True):
+                 columns=None, contenthandler=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -165,14 +165,15 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         TableClass = get_etg_table(etg)
 
     # work out columns
-    try:
-        columns = config.get(etg, 'columns').split(',')
-    except (NoSectionError, NoOptionError):
-        if etg.lower() in ['cwb', 'cwb-ascii']:
-            columns = None
-        else:
-            columns = TableClass.validcolumns.keys()
-    else:
+    if columns is None:
+        try:
+            columns = config.get(etg, 'columns').split(',')
+        except (NoSectionError, NoOptionError):
+            if etg.lower() in ['cwb', 'cwb-ascii']:
+                columns = None
+            else:
+                columns = TableClass.validcolumns.keys()
+    if columns is not None:
         for col in ['process_id', 'search', 'channel']:
             if col not in columns:
                 columns.append(col)

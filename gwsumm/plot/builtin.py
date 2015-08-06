@@ -578,7 +578,8 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             channel = get_channel(channel)
             if bits:
-                bits_ = [x for (i, x) in enumerate(channel.bits) if i in bits]
+                bits_ = [x if i in bits else None for
+                         (i, x) in enumerate(channel.bits)]
             else:
                 bits_ = channel.bits
             data = get_timeseries(str(channel), valid, query=False,

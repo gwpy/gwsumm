@@ -75,6 +75,7 @@ else:
 
 # get triggers
 trigs = get_triggers(args.channel, args.etg, [span], cache=args.cache_file)
+print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot
 plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,

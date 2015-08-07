@@ -433,6 +433,12 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 span = new.extent().protract(8)
                 fcache = find_frames(ifo, frametype, span[0], span[1],
                                      config=config, gaps='ignore')
+                if len(fcache) == 0 and frametype == '%s_R' % ifo:
+                    frametype = '%s_C' % ifo
+                    vprint("    Moving to backup frametype %s\n" % frametype)
+                    fcache = find_frames(ifo, frametype, span[0], span[1],
+                                         config=config, gaps='ignore')
+
             # parse discontiguous cache blocks and rebuild segment list
             cachesegments = find_cache_segments(fcache)
             new &= cachesegments

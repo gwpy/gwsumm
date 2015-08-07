@@ -394,7 +394,7 @@ class GuardianStatePlot(get_plot('segments')):
                     height=.6, **actargs)
 
         # make custom legend
-        seg = SegmentList([Segment(self.start - 10, self.start - 9)])
+        seg = Segment(self.start - 10, self.start - 9)
         v = plotargs.pop('known', None)
         if v:
             v.pop('collection', None)

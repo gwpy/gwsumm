@@ -25,6 +25,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from glue.lal import Cache
+
 from gwpy.segments import (DataQualityDict, SegmentList, Segment)
 from gwpy.plotter import SegmentPlot
 
@@ -149,7 +151,7 @@ class AccountingTab(ParentTab):
         kwargs['segdb_error'] = 'ignore'
         super(AccountingTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
-            datacache=datacache, **kwargs)
+            segmentcache=Cache(), datacache=datacache, **kwargs)
 
     def write_state_html(self, state):
         """Write the HTML for the given state of this `GuardianTab`

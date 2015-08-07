@@ -573,12 +573,6 @@ try:
 except NoSectionError:
     generate_all_state(*span)
 
-# build directories
-mkdir(opts.output_dir)
-os.chdir(opts.output_dir)
-plotdir = os.path.join(path, 'plots')
-mkdir(plotdir)
-
 # read caches
 cache = {}
 for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
@@ -589,6 +583,12 @@ for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
             with open(fp, 'rb') as f:
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
+
+# build directories
+mkdir(opts.output_dir)
+os.chdir(opts.output_dir)
+plotdir = os.path.join(path, 'plots')
+mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
 # Read Archive

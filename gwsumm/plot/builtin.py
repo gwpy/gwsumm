@@ -44,7 +44,7 @@ from .. import (globalv, mode, version)
 from ..utils import (re_quote, re_cchar, split_channels, get_odc_bitmask)
 from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
                     add_timeseries)
-from ..segments import get_segments
+from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
 from .mixins import *
@@ -324,23 +324,42 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'legend-fontsize': 12}
 
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
+        padding = kwargs.pop('padding', None)
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                                  outdir=outdir, **kwargs)
         self.flags = flags
         self.preview_labels = False
+        self.padding = padding
 
     def get_channel_groups(self, *args, **kwargs):
         return [(f, [f]) for f in self.flags]
 
     @property
     def flags(self):
-        return self._flags
+        return [f.name for f in self._flags]
 
     @flags.setter
     def flags(self, flist):
         if isinstance(flist, str):
             flist = [f.strip('\n ') for f in flist.split(',')]
-        self._flags = flist
+        self._flags = []
+        for f in flist:
+            if isinstance(f, DataQualityFlag):
+                self._flags.append(f)
+            else:
+                self._flags.append(DataQualityFlag(f))
+
+    @property
+    def padding(self):
+        return OrderedDict((f.name, f.padding) for f in self._flags)
+
+    @padding.setter
+    def padding(self, pad):
+        for f, p in format_padding(self._flags, pad).iteritems():
+            if isinstance(p, (float, int)):
+                f.padding = (p, p)
+            else:
+                f.padding = p
 
     @property
     def ifos(self):
@@ -367,6 +386,15 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     @classmethod
     def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
                  **kwargs):
+        # get padding
+        try:
+            kwargs.setdefault(
+                'padding', config.get(section, 'padding'))
+        except NoOptionError:
+            pass
+        if 'padding' in kwargs:
+            kwargs['padding'] = list(eval(kwargs['padding']))
+        # build figure
         new = super(SegmentDataPlot, cls).from_ini(config, section, start,
                                                    end, state=state, **kwargs)
         # get flags
@@ -448,7 +476,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
             ax.plot(segs, y=i, label=label, **pargs)
 
         # make custom legend
@@ -991,7 +1020,8 @@ class DutyDataPlot(SegmentDataPlot):
                 zip(cycle(axes), self.flags, plotargs,
                     cycle(rcParams['axes.color_cycle']))):
             # get segments
-            segs = get_segments(flag, validity=valid, query=False)
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding)
             duty, mean = self.calculate_duty_factor(segs)
             # plot duty cycle
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
@@ -1469,7 +1499,8 @@ class SegmentPiePlot(SegmentDataPlot):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            segs = get_segments(flag, validity=valid, query=False).coalesce()
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
             data.append(float(abs(segs.active)))
 
         # make pie

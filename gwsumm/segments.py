@@ -29,6 +29,7 @@ except ImportError:
 import warnings
 import operator
 
+from gwpy.utils.compat import OrderedDict
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
                            SegmentList, Segment)
 
@@ -47,7 +48,8 @@ SEGDB_URLS = [
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
-                 query=True, return_=True, segdb_error='raise', url=None):
+                 query=True, return_=True, coalesce=True, padding=None,
+                 segdb_error='raise', url=None):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -66,7 +68,14 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         flags = flag.split(',')
     else:
         flags = flag
-    allflags = set([f for cf in flags for f in re_flagdiv.split(cf)[::2] if f])
+    allflags = set([f for cf in flags for f in
+                    re_flagdiv.split(str(cf))[::2] if f])
+
+    if padding is None and isinstance(flag, DataQualityFlag):
+        padding = {flag: flag.padding}
+    elif padding is None:
+        padding = dict((flag, isinstance(flag, DataQualityFlag) and
+                              flag.padding or None) for flag in flags)
 
     # check validity
     if validity is None:
@@ -116,10 +125,12 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 if len(allflags) == 1:
                     f = list(allflags)[0]
                     new = DataQualityDict()
-                    new[f] = DataQualityFlag.read(cache, f, coalesce=True)
+                    new[f] = DataQualityFlag.read(cache, f, coalesce=False)
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs
+                if coalesce:
+                    new[f].coalesce()
                 vprint("    Read %d segments for %s (%.2f%% coverage).\n"
                        % (len(new[f].active), f,
                           float(abs(new[f].known))/float(abs(newsegs))*100))
@@ -161,6 +172,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs
+                if coalesce:
+                    new[f].coalesce()
                 vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
                        % (len(new[f].active), f,
                           float(abs(new[f].known))/float(abs(newsegs))*100))
@@ -176,22 +189,34 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 compound)
             if len(union + intersection) == 1:
                 out[compound].description = globalv.SEGMENTS[f].description
-            for f in exclude:
-                out[compound] -= globalv.SEGMENTS[f]
-            for f in intersection:
-                out[compound] &= globalv.SEGMENTS[f]
-            for f in union:
-                out[compound] |= globalv.SEGMENTS[f]
-            for f in notequal:
-                diff1 = out[compound] - globalv.SEGMENTS[f]
-                diff2 = globalv.SEGMENTS[f] - out[compound]
-                out[compound] = (diff1 | diff2)
+                out[compound].padding = padding.get(f, (0, 0))
+            for flist, op in zip([exclude, intersection, union, notequal],
+                                 [operator.sub, operator.and_, operator.or_,
+                                  not_equal]):
+                for f in flist:
+                    pad = padding.get(f, (0, 0))
+                    segs = globalv.SEGMENTS[f].copy()
+                    if isinstance(pad, (float, int)):
+                        segs = segs.pad(pad, pad)
+                    elif pad is not None:
+                        segs = segs.pad(*pad)
+                    if coalesce:
+                        segs = segs.coalesce()
+                    out[compound] = op(out[compound], segs)
             out[compound].known &= validity
             out[compound].active &= validity
+            if coalesce:
+                out[compound].coalesce()
         if isinstance(flag, basestring):
             return out[flag]
         else:
             return out
+
+
+def not_equal(a, b, f):
+    diff1 = a - b
+    diff2 = b - a
+    return diff1 | diff2
 
 
 def split_compound_flag(compound):
@@ -224,3 +249,22 @@ def split_compound_flag(compound):
         else:
             intersection.append(key)
     return union, intersection, exclude, notequal
+
+
+def format_padding(flags, padding):
+    """Format an arbitrary collection of paddings into a `dict`
+    """
+    # parse string to start with
+    if isinstance(padding, str):
+        padding = list(eval(str))
+    # zip list into dict
+    if (isinstance(padding, (list)) or
+            (isinstance(padding, tuple) and len(padding)
+             and (any(isinstance(p, (list, tuple)) for p in padding)
+                  or len(padding > 2)))):
+        return OrderedDict(zip(flags, padding))
+    # otherwise copy single padding param for all flags
+    elif not isinstance(padding, dict):
+        return OrderedDict((c, padding) for c in flags)
+    else:
+        return padding

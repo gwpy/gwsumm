@@ -410,7 +410,7 @@ class DataTab(DataTabBase):
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
                       trigcache=None, segmentcache=None, plotqueue=None,
-                      segdb_error='raise'):
+                      segdb_error='raise', datafind_error='raise'):
         """Process data for this tab in a given state
 
         Parameters
@@ -463,7 +463,7 @@ class DataTab(DataTabBase):
                    % len(tschannels))
             get_timeseries_dict(tschannels, state, config=config, nds=nds,
                                 multiprocess=multiprocess, cache=datacache,
-                                return_=False)
+                                datafind_error=datafind_error, return_=False)
             vprint("    All time-series data loaded\n")
 
         # find channels that need a StateVector
@@ -477,7 +477,8 @@ class DataTab(DataTabBase):
                    % (len(svchannels) - len(odcchannels)))
             get_timeseries_dict(svchannels, state, config=config, nds=nds,
                                 multiprocess=multiprocess, statevector=True,
-                                cache=datacache, return_=False, dtype='uint32')
+                                cache=datacache, return_=False,
+                                datafind_error=datafind_error, dtype='uint32')
             vprint("    All state-vector data loaded\n")
 
         # --------------------------------------------------------------------
@@ -504,7 +505,8 @@ class DataTab(DataTabBase):
                    % len(sgchannels))
             get_spectrograms(sgchannels, state, config=config, nds=nds,
                              multiprocess=multiprocess, return_=False,
-                             cache=datacache, **fftparams)
+                             cache=datacache, datafind_error=datafind_error,
+                             **fftparams)
         if len(raychannels):
             fp2 = fftparams.copy()
             fp2['method'] = 'rayleigh'

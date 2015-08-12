@@ -228,6 +228,10 @@ popts.add_argument('-b', '--bulk-read', action='store_true', default=False,
 popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
                    default='raise', choices=['raise', 'ignore', 'warn'],
                    help="action upon error fetching segments from SegDB")
+popts.add_argument('-G', '--on-datafind-error', action='store', type=str,
+                   default='raise', choices=['raise', 'ignore', 'warn'],
+                   help="action upon error querying for frames from the "
+                        "datafind server, default: %(default)s")
 popts.add_argument('--data-cache', action='append', default=[],
                    help='path to LAL-format cache of TimeSeries data files')
 popts.add_argument('--event-cache', action='append', default=[],
@@ -828,7 +832,8 @@ for tab in alltabs:
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,
-                    segdb_error=opts.on_segdb_error, **cache)
+                    segdb_error=opts.on_segdb_error,
+                    datafind_error=opts.on_datafind_error, **cache)
     if not tab.hidden:
         mkdir(tab.href)
         page = tab.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,

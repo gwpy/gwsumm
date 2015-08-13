@@ -601,10 +601,17 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
             nflags += len([m for m in bits_ if m is not None])
-            if flags is not None:
+            labels = pargs.pop('label', [None]*len(flags))
+            if isinstance(labels, str):
+                labels = [labels]
+            while len(labels) < len(flags):
+                labels.append(None)
+            for flag, label in zip(flags, labels)[::-1]:
                 kwargs = pargs.copy()
                 kwargs.update(plotargs)
-                ax.plot(*flags[::-1], **kwargs)
+                if label is not None:
+                    kwargs['label'] = label
+                ax.plot(flag, **kwargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():

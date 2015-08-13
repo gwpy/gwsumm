@@ -706,12 +706,12 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                 fftparams[param] = float(getattr(channel, param))
             elif param in fftparams:
                 fftparams[param] = float(fftparams[param])
+        try:
+            stride = float(fftparams.pop('stride'))
+        except KeyError:
+            stride = None
         if hasattr(channel, 'stride'):
             stride = float(channel.stride)
-        elif 'stride' in fftparams:
-            stride = float(fftparams.pop('stride'))
-        else:
-            stride = None
         # get time-series data
         if stride is not None:
             tmp = type(new)()

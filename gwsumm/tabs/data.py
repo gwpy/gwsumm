@@ -373,7 +373,7 @@ class DataTab(DataTabBase):
         config = GWSummConfigParser.from_configparser(config)
         # load state segments
         self.finalize_states(
-            config=config, segdb_error=stateargs.get('segdb_error', 'raise'))
+            config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'))
         vprint("States finalised\n")
 

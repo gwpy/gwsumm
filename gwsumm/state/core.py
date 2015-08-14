@@ -298,7 +298,7 @@ class SummaryState(DataQualityFlag):
             channel = channel.rstrip()
             thresh = float(thresh.strip())
             self._fetch_data(channel, thresh, match.groups()[0], config=config,
-                             datafind_error=datafind_erro, **kwargs)
+                             datafind_error=datafind_error, **kwargs)
         # fetch segments
         elif self.definition:
             self._fetch_segments(config=config, segdb_error=segdb_error,

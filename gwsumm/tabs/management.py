@@ -119,7 +119,7 @@ class AccountingTab(ParentTab):
 
     def process(self, nds='guess', multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
-                **kwargs):
+                datafind_error='raise', **kwargs):
         """Process time accounting data
         """
         ifo = self.ifo
@@ -131,6 +131,7 @@ class AccountingTab(ParentTab):
         # get data
         data = get_timeseries(self.channel, SegmentList([self.span]),
                               config=config, nds=nds, dtype='int16',
+                              datafind_error=datafind_error,
                               multiprocess=multiprocess, cache=datacache)
         vprint("    All time-series data loaded\n")
 
@@ -151,7 +152,8 @@ class AccountingTab(ParentTab):
         kwargs['segdb_error'] = 'ignore'
         super(AccountingTab, self).process(
             config=config, nds=nds, multiprocess=multiprocess,
-            segmentcache=Cache(), datacache=datacache, **kwargs)
+            segmentcache=Cache(), datacache=datacache,
+            datafind_error=datafind_error, **kwargs)
 
     def write_state_html(self, state):
         """Write the HTML for the given state of this `GuardianTab`

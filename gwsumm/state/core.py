@@ -277,7 +277,7 @@ class SummaryState(DataQualityFlag):
             self.active = segs.active
         return self
 
-    def fetch(self, config=GWSummConfigParser(), segdb_error='raise', **kwargs):
+    def fetch(self, config=GWSummConfigParser(), **kwargs):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
         """
@@ -300,8 +300,7 @@ class SummaryState(DataQualityFlag):
                              **kwargs)
         # fetch segments
         elif self.definition:
-            self._fetch_segments(config=config, segdb_error=segdb_error,
-                                 **kwargs)
+            self._fetch_segments(config=config, **kwargs)
         # fetch null
         else:
             start = config.getfloat(DEFAULTSECT, 'gps-start-time')

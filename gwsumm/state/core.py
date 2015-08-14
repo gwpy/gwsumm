@@ -301,7 +301,7 @@ class SummaryState(DataQualityFlag):
                              datafind_error=datafind_erro, **kwargs)
         # fetch segments
         elif self.definition:
-            self._fetch_segments(config=config, segdb_eror=segdb_error,
+            self._fetch_segments(config=config, segdb_error=segdb_error,
                                  **kwargs)
         # fetch null
         else:

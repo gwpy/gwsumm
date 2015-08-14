@@ -199,6 +199,10 @@ popts.add_argument('-a', '--archive', action='store_true', default=False,
 popts.add_argument('-S', '--on-segdb-error', action='store', type=str,
                    default='raise', choices=['raise', 'ignore', 'warn'],
                    help="action upon error fetching segments from SegDB")
+popts.add_argument('-G', '--on-datafind-error', action='store', type=str,
+                   default='raise', choices=['raise', 'ignore', 'warn'],
+                   help="action upon error querying for frames from the "
+                        "datafind server: default: %(default)s")
 popts.add_argument('--data-cache', action='append', default=[],
                    help='path to LAL-format cache of TimeSeries data files')
 popts.add_argument('--event-cache', action='append', default=[],
@@ -372,6 +376,7 @@ for job in jobs:
     if opts.ifo:
         job.add_opt('ifo', opts.ifo)
     job.add_opt('on-segdb-error', opts.on_segdb_error)
+    job.add_opt('on-datafind-error', opts.on_datafind_error)
     job.add_opt('output-dir', outdir)
     for opt, fplist in zip(
             ['--data-cache', '--event-cache', '--segment-cache'],

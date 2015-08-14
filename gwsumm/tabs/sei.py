@@ -99,7 +99,7 @@ class SEIWatchDogTab(base):
 
     def process(self, nds='guess', multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
-                trigcache=None, **kwargs):
+                trigcache=None, datafind_error='raise', **kwargs):
         """Process data for the given state.
         """
 
@@ -136,12 +136,14 @@ class SEIWatchDogTab(base):
         vprint("    %d channels identified for TimeSeries\n" % len(tschannels))
         tripdata = get_timeseries_dict(tschannels, state, config=config,
                                        nds=nds, multiprocess=multiprocess,
+                                       datafind_error=datafind_error,
                                        cache=datacache)
         vprint("    All time-series data loaded\n")
 
         vprint("    %d channels identified as StateVectors\n" % len(svchannels))
         latchdata = get_timeseries_dict(svchannels, state, config=config,
                                         nds=nds, multiprocess=multiprocess,
+                                        datafind_error=datafind_error,
                                         statevector=True, cache=datacache)
         vprint("    All state-vector data loaded\n")
 

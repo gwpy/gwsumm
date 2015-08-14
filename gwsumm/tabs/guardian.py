@@ -119,7 +119,7 @@ class GuardianTab(Tab):
 
     def process(self, nds='guess', multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
-                segmentcache=Cache(), **kwargs):
+                segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.
         """
         ifo = self.ifo
@@ -138,6 +138,7 @@ class GuardianTab(Tab):
             version = get_timeseries(
                 prefix % 'VERSION', state, config=config, nds=nds,
                 multiprocess=multiprocess, cache=datacache,
+                datafind_error=datafind_error,
             ).join(gap='ignore').min().value
         except ValueError:
             version = 1201
@@ -148,7 +149,8 @@ class GuardianTab(Tab):
         alldata = get_timeseries_dict(
             [prefix % x for x in prefices],
             state, config=config, nds=nds, multiprocess=multiprocess,
-            cache=datacache, dtype='int16').values()
+            cache=datacache, datafind_error=datafind_error,
+            dtype='int16').values()
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------

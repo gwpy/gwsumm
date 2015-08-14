@@ -25,6 +25,7 @@ import operator
 import os
 import urllib2
 from math import (floor, ceil, pi, sqrt)
+from time import sleep
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -100,7 +101,7 @@ def override_sample_rate(channel, rate):
 
 
 def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
-                urltype='file', gaps='warn'):
+                urltype='file', gaps='warn', onerror='raise'):
     """Query the datafind server for GWF files for the given type
     """
     vprint('    Finding %s-%s frames for [%d, %d)...'
@@ -119,22 +120,15 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
             port = int(port)
     else:
         port = config.getint('datafind', 'port')
-    # check certificates
-    if not port == 80:
+    # get credentials
+    if port == 80:
+        cert = None
+        key = None
+    else:
         cert, key = datafind.find_credential()
-    else:
-        cert, key = None, None
-    # connect with security
-    if cert and key:
-        dfconn = datafind.GWDataFindHTTPSConnection(host=host, port=port,
-                                                    cert_file=cert,
-                                                    key_file=key)
-    else:
-        dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
 
     # XXX HACK: LLO changed frame types on Dec 6 2013:
     LLOCHANGE = 1070291904
-
     if re.match('L1_{CRMT}', frametype) and gpsstart < LLOCHANGE:
         frametype = frametype[-1]
 
@@ -145,15 +139,31 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     if gpsend <= gpsstart:
         return Cache()
 
-    try:
-        cache = dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart,
-                                       gpsend, urltype=urltype, on_gaps=gaps)
-    except RuntimeError as e:
-        if 'Invalid GPS times' in str(e):
-            e2 = str(e2) + ': %d ... %d' % (gpsstart, gpsend)
-            raise RuntimeError(e2)
+    def _query():
+        if cert is not None:
+            dfconn = datafind.GWDataFindHTTPSConnection(
+                host=host, port=port, cert_file=cert, key_file=key)
         else:
-            raise
+            dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
+        return dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart,
+                                      gpsend, urltype=urltype, on_gaps=gaps)
+    try:
+        cache = _query()
+    except RuntimeError as e:
+        sleep(1)
+        try:
+            cache = _query()
+        except RuntimeError:
+            if 'Invalid GPS times' in str(e):
+                e.args = ('%s: %d ... %s' % (str(e), gpsstart, gpsend),)
+            if onerror in ['ignore', None]:
+                pass
+            elif onerror in ['warn']:
+                warnings.warn('Caught %s: %s'
+                              % (type(e).__name__, str(e)))
+            else:
+                raise
+            cache = Cache()
 
     # XXX: if querying for day of LLO frame type change, do both
     if (ifo[0].upper() == 'L' and frametype in ['C', 'R', 'M', 'T'] and
@@ -239,7 +249,7 @@ def find_types(site=None, match=None):
 def get_timeseries_dict(channels, segments, config=ConfigParser(),
                         cache=None, query=True, nds='guess', multiprocess=True,
                         frametype=None, statevector=False, return_=True,
-                        **ioargs):
+                        datafind_error='raise', **ioargs):
     """Retrieve the data for a set of channels
     """
     # separate channels by type
@@ -267,7 +277,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
                                  cache=cache, query=query, nds=nds,
                                  multiprocess=multiprocess, frametype=ftype[1],
                                  statevector=statevector, return_=False,
-                                 **ioargs)
+                                 datafind_error=datafind_error, **ioargs)
     if not return_:
         return
     else:
@@ -328,7 +338,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
 def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                          cache=None, query=True, nds='guess', frametype=None,
                          multiprocess=True, return_=True, statevector=False,
-                         archive=True, **ioargs):
+                         archive=True, datafind_error='raise', **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -432,12 +442,14 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent().protract(8)
                 fcache = find_frames(ifo, frametype, span[0], span[1],
-                                     config=config, gaps='ignore')
+                                     config=config, gaps='ignore',
+                                     onerror=datafind_error)
                 if len(fcache) == 0 and frametype == '%s_R' % ifo:
                     frametype = '%s_C' % ifo
                     vprint("    Moving to backup frametype %s\n" % frametype)
                     fcache = find_frames(ifo, frametype, span[0], span[1],
-                                         config=config, gaps='ignore')
+                                         config=config, gaps='ignore',
+                                         onerror=datafind_error)
 
             # parse discontiguous cache blocks and rebuild segment list
             cachesegments = find_cache_segments(fcache)
@@ -604,7 +616,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
 def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                    query=True, nds='guess', multiprocess=True,
                    frametype=None, statevector=False, return_=True,
-                   **ioargs):
+                   datafind_error='raise', **ioargs):
     """Retrieve the data (time-series) for a given channel
     """
     channel = get_channel(channel)
@@ -612,7 +624,7 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
                               cache=cache, query=query, nds=nds,
                               multiprocess=multiprocess, frametype=frametype,
                               statevector=statevector, return_=return_,
-                              **ioargs)
+                              datafind_error=datafind_error, **ioargs)
     if return_:
         return out[channel.ndsname]
     return
@@ -621,7 +633,8 @@ def get_timeseries(channel, segments, config=ConfigParser(), cache=None,
 @use_segmentlist
 def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                     query=True, nds='guess', format='power', return_=True,
-                    frametype=None, multiprocess=True, **fftparams):
+                    frametype=None, multiprocess=True, datafind_error='raise',
+                    **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -635,6 +648,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                                       query=query, nds=nds, format=format,
                                       return_=return_,
                                       multiprocess=multiprocess,
+                                      datafind_error=datafind_error,
                                       **fftparams))
     if return_ and len(channels) == 1:
         return specs[0]
@@ -668,7 +682,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
                      frametype=None, multiprocess=True, method='median-mean',
-                     **fftparams):
+                     datafind_error='raise', **fftparams):
     channel = get_channel(channel)
     if format in ['rayleigh']:
         method = format
@@ -725,7 +739,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
                                         multiprocess=nproc, query=query,
-                                        nds=nds)
+                                        datafind_error=datafind_error, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
@@ -875,7 +889,7 @@ def add_spectrogram(specgram, key=None, coalesce=True):
 def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
                      method='median-mean', frametype=None, multiprocess=True,
-                     **fftparams):
+                     datafind_error='raise', **fftparams):
     """Get spectrograms for multiple channels
     """
     channels = map(get_channel, channels)
@@ -895,12 +909,14 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
             new = type(new)([s for s in new if abs(s) >= stride])
         get_timeseries_dict(channels, new, config=config, cache=cache,
                             multiprocess=multiprocess, frametype=frametype,
-                            nds=nds, return_=False)
+                            datafind_error=datafind_error, nds=nds,
+                            return_=False)
     # loop over channels and generate spectrograms
     out = OrderedDict()
     for channel in channels:
          out[channel] = get_spectrogram(
              channel, segments, config=config, cache=cache, query=query,
              nds=nds, format=format, multiprocess=multiprocess,
-             return_=return_, method=method, **fftparams)
+             return_=return_, method=method, datafind_error=datafind_error,
+             **fftparams)
     return out

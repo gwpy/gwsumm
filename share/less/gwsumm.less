@@ -143,6 +143,7 @@ nav .nav > .active > a:hover,
   color: #333;
   background-color: #eee;
 }
+
 .dropdown-menu,
 .navbar-nav .open .dropdown-menu {
   padding-top: 5px;
@@ -292,11 +293,13 @@ a.step-back:hover,
   background-size: 100% 51px;
   background-repeat: no-repeat;
 }
-
 .navbar-ifo .navbar-brand,
 .navbar-ifo nav .nav > li > a {
   background-color: transparent;
   color: #eee;
+}
+.navbar-ifo .dropdown-toggle > .caret {
+  border-top-color: #eee !important;
 }
 
 .navbar-ifo a.step-forward:hover,
@@ -309,6 +312,10 @@ a.step-back:hover,
 .navbar-ifo nav .nav > li > a:hover {
   color: white;
   background-color: @ifo-background-color-dark;
+}
+.navbar-ifo .dropdown-toggle > .caret:hover,
+.navbar-ifo .dropdown.open .dropdown-toggle > .caret {
+  border-top-color: white !important;
 }
 
 @media (max-width: 1199px) {

@@ -507,7 +507,12 @@ class DataPlot(SummaryPlot):
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile
-        self.plot.save(outputfile, **savekwargs)
+        try:
+            self.plot.save(outputfile, **savekwargs)
+        except RuntimeError as e:
+            warnings.warn("Caught %s: %s [retrying...]"
+                         % (type(e).__name__, str(e)))
+            self.plot.save(outputfile, **savekwargs)
         if close:
             self.plot.close()
         return outputfile

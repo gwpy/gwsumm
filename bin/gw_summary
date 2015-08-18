@@ -136,8 +136,8 @@ class DateAction(argparse.Action):
         try:
             date = datetime.datetime.strptime(values, self.DATEFORMAT)
         except ValueError:
-            raise parser.error("%s malformed. Please format as %s"
-                               % (self.dest.title(), self.METAVAR))
+            raise parser.error("%s malformed: %r. Please format as %s"
+                               % (self.dest.title(), values, self.METAVAR))
         else:
             self.set_gps_times(namespace, date,
                                date + relativedelta(**self.TIMESCALE))

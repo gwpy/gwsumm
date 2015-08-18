@@ -39,6 +39,12 @@ from .utils import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+SEGDB_URLS = [
+    'https://segdb.ligo.caltech.edu',
+    'https://metaserver.phy.syr.edu',
+    'https://geosegdb.atlas.aei.uni-hannover.de',
+]
+
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                  query=True, return_=True, segdb_error='raise', url=None):
@@ -131,8 +137,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     kwargs['url'] = config.get('segment-database', 'url')
                 except (NoSectionError, NoOptionError):
                     pass
-            if kwargs.get('url', None) in ['https://segdb.ligo.caltech.edu',
-                                           'https://metaserver.phy.syr.edu']:
+            if kwargs.get('url', None) in SEGDB_URLS:
                 query_func = DataQualityDict.query_segdb
             else:
                 query_func = DataQualityDict.query_dqsegdb

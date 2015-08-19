@@ -274,7 +274,7 @@ def find_dmt_omega(channel, start, end, base=None):
     channel = get_channel(channel)
     ifo = channel.ifo
     if base is None and channel.name.split(':', 1)[-1] == 'GDS-CALIB_STRAIN':
-        base = '/gds-%s/dmt/triggers/%s-Omega_hoft' % (
+        base = '/gds-%s/dmt/triggers/%s-HOFT_Omega' % (
             ifo.lower(), ifo[0].upper())
     elif base is None:
         raise NotImplementedError("This method doesn't know how to locate DMT "

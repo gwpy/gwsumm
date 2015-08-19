@@ -673,7 +673,14 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                 data = _get_spectrogram(ch, SegmentList([seg]),
                                         config=config, query=False,
                                         format=format, return_=True)
-                sg = op(sg, data[0])
+                try:
+                    sg = op(sg, data[0])
+                except ValueError as e:
+                    if 'could not be broadcast together' in str(e):
+                        s = min(sg.shape[0], data[0].shape[0])
+                        sg = op(sg[:s], data[0][:s])
+                    else:
+                        raise
             out.append(sg)
         return out
 

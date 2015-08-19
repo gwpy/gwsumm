@@ -732,8 +732,9 @@ class DataTab(DataTabBase):
                 data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.data_table(headers, data)))
 
-        flags = sorted(set([(f, p) for plot in self.plots for
-                            (f, p) in plot.padding.iteritems()]),
+        flags = sorted(set([(f, p) for plot in
+                            filter(lambda p: p.data == 'segments', self.plots)
+                            for (f, p) in plot.padding.iteritems()]),
                        key=lambda x: x[0])
         if len(flags):
             page.h1('Segment information')

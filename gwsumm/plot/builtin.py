@@ -404,6 +404,13 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 return GREEN, 'red'
 
     def process(self):
+        # get labelsize
+        _labelsize = rcParams['ytick.labelsize']
+        labelsize = self.pargs.pop('labelsize', 12)
+        if self.pargs.get('insetlabels', True) is False:
+            rcParams['ytick.labelsize'] = labelsize
+
+        # create figure
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
 
@@ -481,6 +488,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             plot.add_bitmask(mask, topdown=True)
         if self.state and self.state.name != ALLSTATE:
             self.add_state_segments(ax)
+
+        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
 
 register_plot(SegmentDataPlot)

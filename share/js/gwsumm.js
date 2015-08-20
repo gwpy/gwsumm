@@ -170,6 +170,21 @@ function refreshImage() {
   });
 }
 
+function resizeFancyboxIframe() {
+  var width = Math.min(1200, $(".fancybox-skin").width());
+  // XXX: FIXME: this isn't finished yet
+  if (width > document.body.clientWidth ) {
+    $(".fancybox-iframe").width(width - 40);
+  } else {
+    $(".fancybox-iframe").width(width);
+  }
+  $(".fancybox-wrap").width(width + 30);
+
+  // set heights as half width
+  $(".fancybox-iframe").height(parseInt($(".fancybox-iframe").width() * 0.5));
+  $(".fancybox-wrap").height(parseInt($(".fancybox-wrap").width() * 0.5));
+}
+
 /* ------------------------------------------------------------------------- */
 /* Document ready and loaded                                                  */
 
@@ -200,9 +215,15 @@ $(window).load(function() {
     }
 
     // load the fancybox
-    $(".fancybox").fancybox({nextEffect: 'none',
-                             prevEffect: 'none',
-                             helpers: {overlay: {locked: false}}});
+    $(".fancybox").fancybox({
+        nextEffect: 'none',
+        prevEffect: 'none',
+        width: 1200,
+        iframe: {scrolling: 'no'},
+        scrolling: 'no',
+        beforeShow: function() {resizeFancyboxIframe()},
+        helpers: {overlay: {locked: false}}
+    });
 
     $('.dropdown-toggle').on('click', function() {
         var target = $(this).nextAll('.dropdown-menu');

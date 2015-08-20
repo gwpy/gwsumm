@@ -533,10 +533,19 @@ table.watchdog th {
 /* ------------------------------------------------------------------------- */
 /* Image                                                                     */
 
-#idq > h1:first-of-type,
-#idq > hr:first-of-type,
-#idq > p:first-of-type {
-  display: none;
+.svg-wrapper {
+  max-width: 1200px;
+  max-height: 600px;
+  width: 100%;
+}
+
+.fancybox {
+  max-width: 100%;
+}
+
+.fancybox-nav {
+  height: 10%;
+  width: 5%;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -558,7 +567,13 @@ a.reference {
   color: black;
 }
 
-.fancybox-iframe {
+#idq > h1:first-of-type,
+#idq > hr:first-of-type,
+#idq > p:first-of-type {
+  display: none;
+}
+
+#stamp-pem .fancybox-iframe {
   width: 1800px;
   height: 1000px;
   zoom: 1.00;
@@ -568,10 +583,5 @@ a.reference {
   -o-transform-origin: 0 0;
   -webkit-transform: scale(0.55);
   -webkit-transform-origin: 0 0;
-}
-
-.fancybox-nav {
-  height: 10%;
-  width: 5%;
 }
 

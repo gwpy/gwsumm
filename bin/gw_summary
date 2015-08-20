@@ -662,7 +662,7 @@ except NoSectionError:
     javascript = html.get_js()
 else:
     if not javascript:
-        css = html.get_js()
+        javascript = html.get_js()
 
 # enable comments
 try:

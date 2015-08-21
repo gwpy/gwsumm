@@ -803,7 +803,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                                                    seg[1] + specgram.dt.value)
                 s = specgram.crop(*common)
                 if format in ['amplitude', 'asd']:
-                    s **= 1/2.
+                    s = s**(1/2.)
                 elif format in ['rayleigh']:
                     # XXX FIXME: this corrects the bias offset in Rayleigh
                     med = numpy.median(s.value)

@@ -344,10 +344,13 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             flist = [f.strip('\n ') for f in flist.split(',')]
         self._flags = []
         for f in flist:
-            if isinstance(f, DataQualityFlag):
-                self._flags.append(f)
-            else:
-                self._flags.append(DataQualityFlag(f))
+            self.add_flag(f)
+
+    def add_flag(self, f):
+        if isinstance(f, DataQualityFlag):
+            self._flags.append(f)
+        else:
+            self._flags.append(DataQualityFlag(f))
 
     @property
     def padding(self):

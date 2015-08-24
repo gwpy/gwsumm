@@ -27,7 +27,8 @@ import getpass
 import re
 
 from copy import copy
-from multiprocessing import (Process, JoinableQueue)
+from multiprocessing import (Process, Queue)
+from multiprocessing.queues import Empty
 from time import sleep
 from StringIO import StringIO
 from datetime import timedelta
@@ -377,13 +378,6 @@ class DataTab(DataTabBase):
             datafind_error=stateargs.get('datafind_error', 'raise'))
         vprint("States finalised\n")
 
-        # setup plotting queue
-        if multiprocess and isinstance(multiprocess, int):
-            queue = JoinableQueue(count_free_cores(multiprocess))
-        elif multiprocess:
-            queue = JoinableQueue(count_free_cores())
-        else:
-            queue = None
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])
         if all_data:
@@ -397,20 +391,12 @@ class DataTab(DataTabBase):
             else:
                 vprint("Pre-processing all-data requests\n")
             self.process_state(state, config=config, multiprocess=multiprocess,
-                               plotqueue=queue, **stateargs)
-            vprint("    Done.\n")
+                               **stateargs)
 
-        # consolidate child processes
-        if queue is not None:
-            vprint("Waiting for plotting processes to complete.. ")
-            queue.close()
-            queue.join()
-            vprint('done.\n')
-            sleep(2)
 
     def process_state(self, state, nds='guess', multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None, segmentcache=None, plotqueue=None,
+                      trigcache=None, segmentcache=None,
                       segdb_error='raise', datafind_error='raise'):
         """Process data for this tab in a given state
 
@@ -435,8 +421,6 @@ class DataTab(DataTabBase):
             `Cache` of files from which to read event triggers
         segmentcache : `~glue.lal.Cache`, optional
             `Cache` of files from which to read segments
-        plotqueue : `multiprocessing.JoinableQueue`, optional
-            queue in which to place plotting processes
         segdb_error : `str`, optional
             if ``'raise'``: raise exceptions when the segment database
             reports exceptions, if ``'warn''`, print warnings but continue,
@@ -561,6 +545,23 @@ class DataTab(DataTabBase):
         new_plots = [p for p in self.plots + self.subplots if
                      p.new and (p.state is None or p.state.name == state.name)]
 
+        # setup plotting queue
+        if multiprocess:
+            queue = Queue()
+        else:
+            queue = None
+
+        # setup plotting processes
+        if queue:
+            def process_image(q):
+                while True:
+                    try:
+                        plot = q.get(block=False)
+                    except Empty:
+                        break
+                    else:
+                        plot.process()
+            multiprocess = count_free_cores(multiprocess)
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
@@ -569,18 +570,29 @@ class DataTab(DataTabBase):
                 continue
             globalv.WRITTEN_PLOTS.append(plot.outputfile)
             # queue plot for multiprocessing
-            if plotqueue and plot._threadsafe:
-                plotqueue.put(1)
-                process = Process(target=plot.queue, args=(plotqueue,))
-                process.daemon = True
-                process.start()
+            if queue and plot._threadsafe:
+                queue.put(plot)
                 nproc += 1
             # process plot now
             else:
                 plot.process()
-                vprint("        %s written\n" % plot.outputfile)
+
+        # finalize multiprocessing
         if nproc:
-            vprint("        %d plot processes executed.\n" % nproc)
+            # actually execute all processes
+            procs = []
+            for i in range(multiprocess):
+                procs.append(Process(target=process_image, args=(queue,)))
+                procs[-1].daemon = True
+                procs[-1].start()
+            vprint("        %d plot processes executed in %d processes.\n"
+                   % (nproc, multiprocess))
+            vprint("        Waiting for plotting to complete... ")
+            queue.close()
+            # wait for children to finish
+            for p in procs:
+                p.join()
+            vprint("Done.\n")
 
     # -------------------------------------------------------------------------
     # HTML operations

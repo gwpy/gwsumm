@@ -219,7 +219,7 @@ class DailyAhopeTab(base):
         super(DailyAhopeTab, self).process(*args, **kwargs)
 
     def process_state(self, state, nds='guess', multiprocess=False,
-                      config=GWSummConfigParser(), plotqueue=None,
+                      config=GWSummConfigParser(),
                       segdb_error='raise', trigcache=None, datacache=None):
         if trigcache is None:
             trigcache = self.inspiralcache
@@ -227,7 +227,7 @@ class DailyAhopeTab(base):
             datacache = Cache()
         super(DailyAhopeTab, self).process_state(
             state, nds=nds, multiprocess=multiprocess, config=config,
-            datacache=datacache, trigcache=trigcache, plotqueue=plotqueue)
+            datacache=datacache, trigcache=trigcache)
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `DailyAhopeTab`.

@@ -153,6 +153,8 @@ def split_channels(channelstring):
 def count_free_cores(max=cpu_count()):
     """Count the number of CPU cores not currently used by this job.
     """
+    if max is True:
+       max = cpu_count()
     active = 1 #len(active_children()
     return max - (active + 1)
 

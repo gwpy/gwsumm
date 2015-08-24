@@ -31,6 +31,7 @@ options acceptable for each mode.
 
 from __future__ import (division, print_function)
 
+import os
 import datetime
 import argparse
 import calendar
@@ -484,11 +485,13 @@ vprint("""
 Welcome to the GW summary information system command-line interface
 ------------------------------------------------------------------------------
 
+This is process %d
 You have selected %s mode.
 Start time %s (%s)
 End time: %s (%s)
 Output directory: %s
-""" % (mode.MODE_NAME[mode.get_mode()], starttime.utc.iso, starttime.gps,
+""" % (os.getpid(), mode.MODE_NAME[mode.get_mode()],
+       starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, path))))
 

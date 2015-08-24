@@ -144,6 +144,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             base = Plot
         plot = self.plot = EventTablePlot(figsize=[12, 6], base=base)
         ax = plot.gca()
+        ax.grid(True, which='both')
         if isinstance(plot, TimeSeriesPlot):
             ax.set_epoch(float(self.start))
             ax.set_xlim(float(self.start), float(self.end))

@@ -267,7 +267,12 @@ class EventTriggerTab(get_tab('default')):
         # only process if the cachfile was found
         if kwargs.get('trigcache', None) is None:
             kwargs['trigcache'] = self.cache
-        super(EventTriggerTab, self).process(*args, **kwargs)
+        try:
+            super(EventTriggerTab, self).process(*args, **kwargs)
+        except IOError as e:
+            msg = "GWSumm failed to process these data.<pre>%s</pre>" % str(e)
+            for state in self.states:
+                self.error[state] = ( 'danger', msg)
 
     def process_state(self, state, *args, **kwargs):
         if self.error.get(state, None):

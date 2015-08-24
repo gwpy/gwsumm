@@ -40,7 +40,7 @@ from gwpy.plotter.utils import rUNDERSCORE
 from .registry import register_plot
 from .. import globalv
 from ..channels import get_channel
-from ..utils import split_channels
+from ..utils import (vprint, split_channels)
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
@@ -476,17 +476,6 @@ class DataPlot(SummaryPlot):
         # format and return
         return cls(channels, start, end, **params)
 
-    def queue(self, queue):
-        """Submit this plot to the queue for processing.
-        """
-        # process data
-        try:
-            self.process()
-        # announce done regardless of status
-        finally:
-            queue.get()
-            queue.task_done()
-
     def process(self):
         """Process all data and generate the output file for this
         `SummaryPlot`.
@@ -513,6 +502,7 @@ class DataPlot(SummaryPlot):
             warnings.warn("Caught %s: %s [retrying...]"
                          % (type(e).__name__, str(e)))
             self.plot.save(outputfile, **savekwargs)
+        vprint("        %s written\n" % self.outputfile)
         if close:
             self.plot.close()
         return outputfile

@@ -406,7 +406,7 @@ class HvetoSegmentSummaryPlot(SegmentPlot):
             i = 1
             while True:
                 if flag in globalv.SEGMENTS:
-                    self.flags.append(flag)
+                    self.add_flag(flag)
                 else:
                     break
                 i += 1

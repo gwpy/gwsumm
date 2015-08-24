@@ -1130,7 +1130,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         plot = self.plot = SpectrumPlot(
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
-        ax.grid(b=True, axis='both', which='both')
 
         if self.state:
             self.pargs.setdefault(
@@ -1243,6 +1242,9 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
                 continue
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
+
+        # set grid
+        ax.grid(b=True, axis='both', which='both')
 
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)

@@ -164,8 +164,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
 
             # allow channel data to set parameters
             if hasattr(get_channel(data[0].channel), 'amplitude_range'):
-                self.pargs.setdefault('ylim',
-                                      data[0].channel.amplitude_range)
+                self.pargs.setdefault(
+                    'ylim', get_channel(data[0].channel).amplitude_range)
 
         # add horizontal lines to add
         for yval in self.pargs['hline']:

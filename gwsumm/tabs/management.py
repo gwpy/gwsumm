@@ -46,7 +46,7 @@ ParentTab = get_tab('default')
 
 
 class AccountingTab(ParentTab):
-    """Summarise the data recorded by the observatory mode channels
+    """Summarise the data recorded by the operating mode channels
     """
     type = 'archived-accounting'
 
@@ -97,7 +97,7 @@ class AccountingTab(ParentTab):
                 outdir=plotdir, tag='%s_SEGMENTS_%s' % (tag, ptag.upper()),
                 active=segcolors,
                 known={'alpha': 0.1, 'facecolor': 'lightgray'},
-                title='%s observatory mode %s' % (new.ifo, ptag)))
+                title='%s operating mode %s' % (new.ifo, ptag)))
 
         # plot pie charts
         try:
@@ -113,7 +113,7 @@ class AccountingTab(ParentTab):
             new.span[0], new.span[1], labels=groups.values(),
             outdir=plotdir, tag='%s_PIE_%s' % (tag, ptag.upper()),
             colors=piecolors, explode=explode,
-            title='%s observatory mode %s' % (new.ifo, ptag)))
+            title='%s operating mode %s' % (new.ifo, ptag)))
 
         return new
 

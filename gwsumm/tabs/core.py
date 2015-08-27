@@ -619,7 +619,8 @@ class Tab(object):
                         links[-1][1].append((name, child.href))
                         if child == self:
                             active = [len(links) - 1, i]
-                if children[0].shortname == 'Summary' and len(children) > 1:
+                if (children[0].shortname == 'Summary' and
+                        not children[0].group and len(children)) > 1:
                     links.insert(1, None)
                     if active and isinstance(active, int) and active > 0:
                         active += 1

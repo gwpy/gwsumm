@@ -234,8 +234,12 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             except AttributeError:
                 setattr(ax, key, val)
         if logx:
+            if ax.get_xlim()[0] <= 0 and not ntrigs:
+                ax.set_xlim(1, 10)
             ax.set_xscale('log')
         if logy:
+            if ax.get_ylim()[0] <= 0 and not ntrigs:
+                ax.set_ylim(1, 10)
             ax.set_yscale('log')
         if 'title' not in self.pargs.keys() and len(self.channels) == 1:
             plot.title = '%s (%s)' % (self.channels[0].texname, self.etg)

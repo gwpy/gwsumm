@@ -581,12 +581,12 @@ class DataTab(DataTabBase):
         if nproc:
             # actually execute all processes
             procs = []
-            for i in range(multiprocess):
+            for i in range(min(nproc, multiprocess)):
                 procs.append(Process(target=process_image, args=(queue,)))
                 procs[-1].daemon = True
                 procs[-1].start()
             vprint("        %d plot processes executed in %d processes.\n"
-                   % (nproc, multiprocess))
+                   % (nproc, len(procs)))
             vprint("        Waiting for plotting to complete... ")
             queue.close()
             # wait for children to finish

@@ -1292,11 +1292,13 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     data = 'odc'
     defaults = StateVectorDataPlot.defaults.copy()
     defaults.update({
-        'maskcolor': (.0, .4, 1.),
-        'legend_loc': 'upper left',
-        'legend_bbox_to_anchor': (1.01, 1),
-        'legend_borderaxespad': 0.,
-        'legend_fontsize': 12,
+        'in_mask_color': (.0, .4, 1.),
+        'masked_off_color': 'red',
+        'unmasked_off_color': (1.0, 0.7, 0.0),
+        'legend-loc': 'upper left',
+        'legend-bbox_to_anchor': (1.01, 1),
+        'legend-borderaxespad': 0.,
+        'legend-fontsize': 10,
     })
 
     def __init__(self, *args, **kwargs):
@@ -1332,16 +1334,18 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         # make figure
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
+        ax.grid(False, which='both', axis='y')
 
         # extract plotting arguments
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        activecolor, validcolor = self.get_segment_color()
-        edgecolor = self.pargs.pop('edgecolor')
-        maskcolor = self.pargs.pop('maskcolor')
+        activecolor = self.pargs.pop('active', GREEN)
+        edgecolor = self.pargs.pop('edgecolor', 'black')
+        maskoncolor = self.pargs.pop('masked_off_color', 'red')
+        maskoffcolor = self.pargs.pop('unmasked_off_color', (1.0, 0.7, 0.0))
+        inmaskcolor = self.pargs.pop('in_mask_color', (.0, .4, 1.))
         plotargs = {'facecolor': activecolor,
                     'edgecolor': edgecolor,
-                    'height': .7,
-                    'known': {'facecolor': validcolor, 'height': .7}}
+                    'height': .8}
         legendargs = self.parse_legend_kwargs()
 
         # plot segments
@@ -1386,39 +1390,59 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
                 except TypeError:
                     continue
                 segs = flags['data'][bit]
-                if segs.name == channel.bits[0]:
-                    ax.plot(segs.known, y=-nflags, facecolor=(1., .7, 0.),
-                            edgecolor='none', height=1., label=None,
-                            collection=False, zorder=-1001)
-                else:
-                    ax.plot(mask, y=-nflags, facecolor=maskcolor,
-                            edgecolor='none', height=1., label=None,
-                            collection=False, zorder=-1001)
                 label = '[%s] %s' % (i, segs.name)
-                ax.plot(segs, y=-nflags, label=label, **plotargs)
+                # plot summary bit
+                if segs.name == channel.bits[0]:
+                    summargs = plotargs.copy()
+                    summargs['height'] *= 3
+                    ax.plot(segs, y=-nflags - 1, label=label,
+                            known=maskoncolor, **summargs)
+                    nflags += 2
+                # plot masks and separate masked/not masked
+                else:
+                    maskon = segs.copy()
+                    maskon.known &= mask
+                    maskon.active &= mask
+                    maskoff = segs.copy()
+                    maskoff.known -= mask
+                    maskoff.active -= mask
+                    # plot mask
+                    ax.plot(mask, y=-nflags, facecolor=inmaskcolor,
+                            edgecolor='none', height=1., label=None,
+                            collection=False, zorder=-1001)
+                    # plot mask
+                    if maskoff:
+                        ax.plot(maskoff, y=-nflags, label=label,
+                                known=maskoffcolor, **plotargs)
+                        label = None
+                    if maskon:
+                        ax.plot(maskon, y=-nflags, label=label,
+                                known=maskoncolor, **plotargs)
+
+                    label = '[%s] %s' % (i, segs.name)
                 nflags += 1
 
         # make custom legend
-        v = plotargs.pop('known', None)
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
-        seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-        m = ax.plot(seg, y=0, facecolor=maskcolor, edgecolor='none',
-                    collection=False)[0][0]
-        s = ax.plot(seg, y=0, facecolor=(1., .7, 0.), edgecolor='none',
-                    collection=False)[0][0]
-        v['collection'] = False
-        v = ax.plot(seg, y=0, **v)[0][0]
-        a = ax.plot(seg, y=0, facecolor=activecolor, edgecolor=edgecolor,
-                    collection=False)[0][0]
+        seg = Segment(self.start - 10, self.start - 9)
+        m = ax.build_segment(seg, y=0, facecolor=inmaskcolor, edgecolor='none')
+        v = ax.build_segment(seg, y=0, facecolor=maskoncolor,
+                             edgecolor=edgecolor)
+        x = ax.build_segment(seg, y=0, facecolor=maskoffcolor,
+                             edgecolor=edgecolor)
+        a = ax.build_segment(seg, y=0, facecolor=activecolor,
+                             edgecolor=edgecolor)
         if edgecolor not in [None, 'none']:
-            t = ax.plot(seg, y=0, facecolor=edgecolor, collection=False)[0][0]
-            ax.legend([s, m, v, a, t],
-                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON',
+            t = ax.build_segment(seg, y=0, facecolor=edgecolor)
+            ax.legend([m, v, x, a, t],
+                      ['In bitmask', 'Bit masked\nand OFF',
+                       'Bit unmasked\nand OFF',  'Bit ON',
                        'Transition'], **legendargs)
         else:
-            ax.legend([s, m, v, a],
-                      ['Summary', 'In bitmask', 'Bit OFF', 'Bit ON'],
+            ax.legend([m, v, x, a],
+                      ['In bitmask', 'Bit masked\nand OFF',
+                       'Bit unmasked\nand OFF', 'Bit ON'],
                       **legendargs)
         ax.set_epoch(epoch)
         ax.set_xlim(*xlim)

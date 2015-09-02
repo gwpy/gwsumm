@@ -577,8 +577,11 @@ class DataTab(DataTabBase):
             else:
                 plot.process()
 
-        # finalize multiprocessing
-        if nproc:
+        # if a single multi-processed figure, just run it in this process
+        if nproc == 1:
+            queue.get().process()
+        # otherwise execute all processes and wait
+        elif nproc > 1:
             # actually execute all processes
             procs = []
             for i in range(min(nproc, multiprocess)):

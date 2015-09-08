@@ -57,6 +57,8 @@ parser.add_argument('-l', '--cache-file',
                     help='cache file containing event trigger file references')
 parser.add_argument('-C', '--columns', type=lambda x: x.split(','),
                     help='list of columns to read from files, default: all')
+parser.add_argument('--tiles', action='store_true', default=False,
+                    help='plot tiles instead of dots, default: %(default)s')
 
 args = parser.parse_args()
 if args.epoch is None:
@@ -93,8 +95,12 @@ trigs.extend(filter(filt, tmp))
 print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot
-plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,
-                  color=args.color, edgecolor='none', s=12)
+if args.tiles:
+    plot = trigs.plot('time', args.fcolumn, 'duration', 'bandwidth', epoch=args.epoch,
+                      color=args.color, edgecolor='face', linewidth=0.8)
+else:
+    plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,
+                      color=args.color, edgecolor='none', s=12)
 ax = plot.gca()
 map = ax.collections[0]
 

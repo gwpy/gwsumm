@@ -261,7 +261,7 @@ def format_padding(flags, padding):
     if (isinstance(padding, (list)) or
             (isinstance(padding, tuple) and len(padding)
              and (any(isinstance(p, (list, tuple)) for p in padding)
-                  or len(padding > 2)))):
+                  or len(padding) > 2))):
         return OrderedDict(zip(flags, padding))
     # otherwise copy single padding param for all flags
     elif not isinstance(padding, dict):

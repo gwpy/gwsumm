@@ -59,6 +59,8 @@ parser.add_argument('-o', '--output-file', default='trigs.png',
                     help='output file name, default: %(default)s')
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='print verbose output, default: False')
+parser.add_argument('-P', '--profile', action='store_true',
+                    help='print timing output, default: False')
 archopts = parser.add_mutually_exclusive_group()
 archopts.add_argument('-a', '--archive',
                       help='full path of HDF archive for data')
@@ -69,6 +71,7 @@ args = parser.parse_args()
 if args.epoch is None:
     args.epoch = args.gpsstart
 globalv.VERBOSE = args.verbose
+globalv.PROFILE = args.profile
 state = generate_all_state(args.gpsstart, args.gpsend)
 
 # format params

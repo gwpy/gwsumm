@@ -83,6 +83,7 @@ from gwpy.spectrum import psd
 from gwsumm import (globalv, version, mode, html)
 from gwsumm.config import *
 from gwsumm.channels import get_channels
+from gwsumm.segments import get_segments
 from gwsumm.tabs import get_tab
 from gwsumm.utils import *
 from gwsumm.state import *

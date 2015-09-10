@@ -1292,6 +1292,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     data = 'odc'
     defaults = StateVectorDataPlot.defaults.copy()
     defaults.update({
+        'no_summary_bit': False,
         'in_mask_color': (.0, .4, 1.),
         'masked_off_color': 'red',
         'unmasked_off_color': (1.0, 0.7, 0.0),
@@ -1338,6 +1339,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
 
         # extract plotting arguments
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        nosummary = self.pargs.pop('no_summary_bit', False)
         activecolor = self.pargs.pop('active', GREEN)
         edgecolor = self.pargs.pop('edgecolor', 'black')
         maskoncolor = self.pargs.pop('masked_off_color', 'red')
@@ -1392,7 +1394,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
                 segs = flags['data'][bit]
                 label = '[%s] %s' % (i, segs.name)
                 # plot summary bit
-                if segs.name == channel.bits[0]:
+                if segs.name == channel.bits[0] and not nosummary:
                     summargs = plotargs.copy()
                     summargs['height'] *= 3
                     ax.plot(segs, y=-nflags - 1, label=label,

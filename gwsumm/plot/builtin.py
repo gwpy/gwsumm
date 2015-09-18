@@ -41,6 +41,7 @@ from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.time import (from_gps, to_gps)
 
 from .. import (globalv, mode, version)
+from ..config import NoOptionError
 from ..utils import (re_quote, re_cchar, split_channels, get_odc_bitmask)
 from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
                     add_timeseries)

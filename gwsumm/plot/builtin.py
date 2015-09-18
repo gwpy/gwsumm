@@ -406,7 +406,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             flags = dict(config.items(section)).pop('flags', [])
         if isinstance(flags, str):
             flags = [f.strip('\n ') for f in flags.split(',')]
-        new.flags.extend(flags)
+        new.flags = flags
         return new
 
     def get_segment_color(self):

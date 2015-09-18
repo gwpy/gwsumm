@@ -607,8 +607,14 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         activecolor, validcolor = self.get_segment_color()
         edgecolor = self.pargs.pop('edgecolor')
         plotargs = {'facecolor': activecolor,
-                    'edgecolor': edgecolor,
-                    'known': {'facecolor': validcolor}}
+                    'edgecolor': edgecolor}
+        if isinstance(validcolor, dict):
+            plotargs['known'] = validcolor
+        elif (validcolor is None or isinstance(validcolor, str) or
+                isinstance(validcolor[0], (float, int))):
+            plotargs['known'] = {'facecolor': validcolor}
+        else:
+            plotargs['known'] = {'facecolor': validcolor[i]}
         extraargs = self.parse_plot_kwargs()
 
         # plot segments

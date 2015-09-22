@@ -23,6 +23,7 @@ from __future__ import division
 
 import hashlib
 import warnings
+import bisect
 from itertools import (izip, cycle)
 
 try:
@@ -935,7 +936,8 @@ class DutyDataPlot(SegmentDataPlot):
     defaults = {'alpha': 0.8,
                 'sep': False,
                 'side_by_side': False,
-                'ylim': [0, 100],
+                'normalized': None,
+                'cumulative': False,
                 'ylabel': r'Duty factor [\%]'}
 
     def __init__(self, flags, start, end, state=None, outdir='.',
@@ -944,6 +946,20 @@ class DutyDataPlot(SegmentDataPlot):
         super(DutyDataPlot, self).__init__(flags, start, end, state=state,
                                            outdir=outdir, **kwargs)
         self.bins = bins
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            super(DutyDataPlot, self).pid
+            if self.pargs.get('cumulative', False):
+                self._pid += '_CUMULATIVE'
+            return self.pid
+
+    @pid.setter
+    def pid(self, p):
+        self._pid = p
 
     def get_bins(self):
         """Work out the correct histogram binning for this `DutyDataPlot`
@@ -978,7 +994,16 @@ class DutyDataPlot(SegmentDataPlot):
         self.bins = numpy.asarray(self.bins)
         return self.bins
 
-    def calculate_duty_factor(self, segments, bins=None):
+    def calculate_duty_factor(self, segments, bins=None, cumulative=False,
+                              normalized=None):
+        if normalized is None and cumulative:
+            normalized = False
+        elif normalized is None:
+            normalized = 'percent'
+        if normalized == 'percent':
+            normalized = 100.
+        else:
+            normalized = float(normalized)
         if not bins:
             bins = self.get_bins()
         if isinstance(segments, DataQualityFlag):
@@ -988,8 +1013,13 @@ class DutyDataPlot(SegmentDataPlot):
         for i in range(len(bins)):
             bin = SegmentList([Segment(self.start + sum(bins[:i]),
                                        self.start + sum(bins[:i+1]))])
-            duty[i] = float(abs(segments & bin)) / float(bins[i]) * 100
+            d = float(abs(segments & bin))
+            if normalized:
+                d *= normalized / float(bins[i])
+            duty[i] = d
             mean[i] = duty[:i+1].mean()
+        if cumulative:
+            duty = duty.cumsum()
         return duty, mean
 
     def process(self, outputfile=None):
@@ -1006,6 +1036,10 @@ class DutyDataPlot(SegmentDataPlot):
 
         # extract plotting arguments
         sidebyside = self.pargs.pop('side_by_side', False)
+        normalized = self.pargs.pop('normalized', True)
+        cumulative = self.pargs.pop('cumulative', False)
+        if normalized is None and not cumulative:
+            normalized = 'percent'
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
         if sep:
@@ -1017,9 +1051,13 @@ class DutyDataPlot(SegmentDataPlot):
         self.get_bins()
         times = float(self.start) + numpy.concatenate(
                                  ([0], self.bins[:-1].cumsum()))
-        axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
+        if not cumulative:
+            axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
 
-        bottom = self.pargs.get('ylim')[0]
+        try:
+            bottom = self.pargs['ylim'][0]
+        except KeyError:
+            bottom = 0
 
         # plot segments
         if self.state and not self.all_data:
@@ -1032,28 +1070,31 @@ class DutyDataPlot(SegmentDataPlot):
             # get segments
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding)
-            duty, mean = self.calculate_duty_factor(segs)
+            duty, mean = self.calculate_duty_factor(
+                segs, normalized=normalized, cumulative=cumulative)
             # plot duty cycle
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
-            elif 'label' in pargs:
+            elif 'label' in pargs and normalized == 'percent':
                 if legendargs.get('loc', None) in ['upper left', 2]:
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
+            now = bisect.bisect_left(times, globalv.NOW)
             if sidebyside:
                 t = times + self.bins * (0.1 + .8 * i/len(self.flags))
-                b = ax.bar(t, duty-bottom, bottom=bottom,
-                           width=.8 * self.bins/len(self.flags),
+                b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
+                           width=.8 * self.bins[:now]/len(self.flags),
                            color=color, **pargs)
             else:
-                b = ax.bar(times, duty-bottom, bottom=bottom, width=self.bins,
-                           color=color, **pargs)
+                b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
+                           width=self.bins[:now], color=color, **pargs)
             # plot mean
-            t = [self.start] + list(times + self.bins/2.) + [self.end]
-            mean = [mean[0]] + list(mean) + [mean[-1]]
-            ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+            if not cumulative:
+                t = [self.start] + list(times + self.bins/2.) + [self.end]
+                mean = [mean[0]] + list(mean) + [mean[-1]]
+                ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -1062,6 +1103,9 @@ class DutyDataPlot(SegmentDataPlot):
                     getattr(ax, 'set_%s' % key)(val)
                 except AttributeError:
                     setattr(ax, key, val)
+        if 'hours' in self.pargs.get('ylabel', ''):
+            ax.get_yaxis().get_major_locator().set_params(
+                steps=[1, 2, 4, 8, 12, 24])
         if sep:
             # set text
             ylabel = axes[0].yaxis.get_label()
@@ -1078,13 +1122,14 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_xlabel('')
 
         # add custom legend for mean
-        yoff = 0.01 * float.__div__(*axes[0].get_position().size)
-        lkwargs = legendargs.copy()
-        lkwargs['loc'] = 'lower right'
-        lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
-        lkwargs['fontsize'] = 12
-        axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
-        axes[0].lines[0].set_label('_')
+        if not cumulative:
+            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+            lkwargs = legendargs.copy()
+            lkwargs['loc'] = 'lower right'
+            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
+            lkwargs['fontsize'] = 12
+            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+            axes[0].lines[0].set_label('_')
 
         for ax in axes:
             try:

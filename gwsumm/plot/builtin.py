@@ -165,7 +165,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 ax.plot_timeseries(data[0], label=label, **pargs)
 
             # allow channel data to set parameters
-            if hasattr(get_channel(data[0].channel), 'amplitude_range'):
+            if hasattr(get_channel(str(data[0].channel)), 'amplitude_range'):
                 self.pargs.setdefault(
                     'ylim', get_channel(data[0].channel).amplitude_range)
 

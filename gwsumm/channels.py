@@ -107,8 +107,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         # match single raw channel
         if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
             try:
-                if globalv.HTMLONLY:
-                    raise ValueError("")
+                raise ValueError("")  # XXX: hacky removal of CIS query
                 new = Channel.query(name, timeout=timeout)
             except (ValueError, urllib2.URLError, GSSError):
                 new = Channel(str(channel))

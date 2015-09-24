@@ -902,19 +902,24 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
     channels = map(get_channel, channels)
     # get timeseries data in bulk
     if query:
+        qchannels = map(
+            get_channel, set(c2 for c in
+                map(lambda x: re_channel.findall(x.ndsname), channels)
+                for c2 in c))
         if format in ['rayleigh']:
             method_ = format
         else:
             method_ = method
-        keys = ['%s,%s' % (channel.ndsname, method_) for channel in channels]
+        print('specgram', map(str, qchannels))
+        keys = ['%s,%s' % (channel.ndsname, method_) for channel in qchannels]
         havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))
         new = segments - havesegs
-        strides = set([getattr(c, 'stride', 0) for c in channels])
+        strides = set([getattr(c, 'stride', 0) for c in qchannels])
         if len(strides) == 1:
             stride = strides.pop()
             new = type(new)([s for s in new if abs(s) >= stride])
-        get_timeseries_dict(channels, new, config=config, cache=cache,
+        get_timeseries_dict(qchannels, new, config=config, cache=cache,
                             multiprocess=multiprocess, frametype=frametype,
                             datafind_error=datafind_error, nds=nds,
                             return_=False)

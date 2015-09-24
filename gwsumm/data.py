@@ -910,7 +910,6 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
             method_ = format
         else:
             method_ = method
-        print('specgram', map(str, qchannels))
         keys = ['%s,%s' % (channel.ndsname, method_) for channel in qchannels]
         havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))

@@ -131,7 +131,7 @@ def read_data_archive(sourcefile):
         for dataset in group.itervalues():
             ts = TimeSeries.read(dataset, format='hdf')
             if (re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name) and
-                    t.sample_rate.value == 1.0):
+                    ts.sample_rate.value == 1.0):
                 ts.channel.type = 's-trend'
             elif re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name):
                 ts.channel.type = 'm-trend'

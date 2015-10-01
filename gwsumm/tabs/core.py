@@ -552,7 +552,7 @@ class Tab(object):
         # build HTML brand
         if isinstance(brand, html.markup.page):
             brand_.add(str(brand))
-        else:
+        elif brand:
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
         return html.navbar(self._build_nav_links(tabs), class_=class_,
@@ -656,7 +656,7 @@ class Tab(object):
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
                    ifo=None, ifomap=dict(), brand=None, base=None,
-                   css=html.CSS, js=html.JS, about=None, footer=None, **inargs):
+                   css=None, js=None, about=None, footer=None, **inargs):
         """Write the HTML page for this `Tab`.
 
         Parameters
@@ -697,6 +697,10 @@ class Tab(object):
             os.makedirs(outdir)
 
         # initialise HTML page
+        if css is None:
+            css = html.get_css(ifo=ifo or 'All')
+        if js is None:
+            js = html.get_js()
         self.initialise_html_page(title=title, subtitle=subtitle, css=css,
                                   base=base, js=js)
 

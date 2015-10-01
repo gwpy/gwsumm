@@ -733,6 +733,8 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             stride = None
         if hasattr(channel, 'stride'):
             stride = float(channel.stride)
+        if hasattr(channel, 'window'):
+            fftparams['window'] = channel.window
         # get time-series data
         if stride is not None:
             tmp = type(new)()

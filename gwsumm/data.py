@@ -688,9 +688,16 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 @use_segmentlist
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
-                     frametype=None, multiprocess=True, method='median-mean',
+                     frametype=None, multiprocess=True, method=None,
                      datafind_error='raise', **fftparams):
     channel = get_channel(channel)
+    if method is None:
+        methods = set([key.split(',', 1)[1] for key in globalv.SPECTROGRAMS
+                       if key.startswith('%s,' % channel.ndsname)])
+        if len(methods) == 1:
+            method = list(methods)[0]
+        else:
+            method = 'median-mean'
     if format in ['rayleigh']:
         method = format
     key = '%s,%s' % (channel.ndsname, method)

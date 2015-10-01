@@ -255,7 +255,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     # separate channels by type
     if query:
         if frametype is not None:
-            frametypes = {frametype: channels}
+            frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
             allchannels = set([
@@ -646,7 +646,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     for c in channels:
         specs.append(_get_spectrogram(c, segments, config=config, cache=cache,
                                       query=query, nds=nds, format=format,
-                                      return_=return_,
+                                      return_=return_, frametype=frametype,
                                       multiprocess=multiprocess,
                                       datafind_error=datafind_error,
                                       **fftparams))

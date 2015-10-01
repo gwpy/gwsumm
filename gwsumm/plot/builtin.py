@@ -35,6 +35,8 @@ from matplotlib.pyplot import subplots
 
 from dateutil.relativedelta import relativedelta
 
+from astropy.units import Quantity
+
 from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
@@ -277,6 +279,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         # allow channel data to set parameters
         if hasattr(channel, 'frequency_range'):
             self.pargs.setdefault('ylim', channel.frequency_range)
+            if isinstance(self.pargs['ylim'], Quantity):
+                self.pargs['ylim'] = self.pargs['ylim'].value
         if (ratio is None and sdform in ['amplitude', 'asd'] and
                 hasattr(channel, 'asd_range') and clim is None):
             clim = channel.asd_range
@@ -770,6 +774,8 @@ class SpectrumDataPlot(DataPlot):
             # allow channel data to set parameters
             if hasattr(channel, 'frequency_range'):
                 self.pargs.setdefault('xlim', channel.frequency_range)
+                if isinstance(self.pargs['xlim'], Quantity):
+                    self.pargs['xlim'] = self.pargs['xlim'].value
             if (sdform in ['amplitude', 'asd'] and
                     hasattr(channel, 'asd_range')):
                 self.pargs.setdefault('ylim', channel.asd_range)
@@ -1248,6 +1254,8 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         # allow channel data to set parameters
         if hasattr(self.channels[0], 'frequency_range'):
             self.pargs.setdefault('xlim', self.channels[0].frequency_range)
+            if isinstance(self.pargs['xlim'], Quantity):
+                self.pargs['xlim'] = self.pargs['xlim'].value
         if hasattr(self.channels[0], 'asd_range'):
             self.pargs.setdefault('ylim', self.channels[0].asd_range)
 

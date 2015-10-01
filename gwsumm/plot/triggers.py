@@ -25,6 +25,8 @@ from itertools import (izip, cycle)
 
 from numpy import isinf
 
+from astropy.units import Quantity
+
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
@@ -214,6 +216,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 lim = '%slim' % c
                 if hasattr(channel, param) and c in ('x', 'y'):
                     self.pargs.setdefault(lim, getattr(channel, param))
+                    if isinstance(self.pargs[lim], Quantity):
+                        self.pargs[lim] = self.pargs[lim].value
                 # set clim separately
                 elif hasattr(channel, param):
                     if not clim:
@@ -444,7 +448,9 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 else:
                     self.pargs.setdefault(
                         'ybound', 1/float(abs(self.span)) * .5)
-            kwargs.setdefault('bottom', self.pargs.get('ybound', None))
+            if (kwargs.get('logy', False) or
+                kwargs.get('yscale', 'linear') == 'log'):
+                kwargs.setdefault('bottom', 1e-100)
             label = kwargs.pop('label', None)
             if arr.size:
                 ax.hist(arr, label=label, weights=weights, **kwargs)

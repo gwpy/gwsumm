@@ -214,7 +214,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 # set x and y in plotargs
                 param = '%s_range' % column
                 lim = '%slim' % c
-                if hasattr(channel, param) and c in ('x', 'y'):
+                if (getattr(channel, param, None) is not None
+                        and c in ('x', 'y')):
                     self.pargs.setdefault(lim, getattr(channel, param))
                     if isinstance(self.pargs[lim], Quantity):
                         self.pargs[lim] = self.pargs[lim].value

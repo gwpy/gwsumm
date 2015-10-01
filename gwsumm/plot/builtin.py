@@ -277,7 +277,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 ratio = getattr(allspec, ratio)(axis=0)
 
         # allow channel data to set parameters
-        if hasattr(channel, 'frequency_range'):
+        if getattr(channel, 'frequency_range', None) is not None:
             self.pargs.setdefault('ylim', channel.frequency_range)
             if isinstance(self.pargs['ylim'], Quantity):
                 self.pargs['ylim'] = self.pargs['ylim'].value
@@ -772,7 +772,7 @@ class SpectrumDataPlot(DataPlot):
                 ax.plot_spectrum(data[0], **pargs)
 
             # allow channel data to set parameters
-            if hasattr(channel, 'frequency_range'):
+            if getattr(channel, 'frequency_range', None) is not None:
                 self.pargs.setdefault('xlim', channel.frequency_range)
                 if isinstance(self.pargs['xlim'], Quantity):
                     self.pargs['xlim'] = self.pargs['xlim'].value
@@ -1252,7 +1252,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         #plot.add_colorbar(ax=ax, log=True, label='Fractional time at amplitude')
 
         # allow channel data to set parameters
-        if hasattr(self.channels[0], 'frequency_range'):
+        if getattr(self.channels[0], 'frequency_range', None) is not None:
             self.pargs.setdefault('xlim', self.channels[0].frequency_range)
             if isinstance(self.pargs['xlim'], Quantity):
                 self.pargs['xlim'] = self.pargs['xlim'].value

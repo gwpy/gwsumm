@@ -22,6 +22,7 @@
 from __future__ import division
 
 import operator
+import re
 import os
 import urllib2
 from math import (floor, ceil, pi, sqrt)
@@ -48,6 +49,7 @@ from glue.lal import Cache
 from glue.segments import segmentlist
 
 from gwpy.detector import Channel
+from gwpy import astro
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 try:
     from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
@@ -255,7 +257,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
     # separate channels by type
     if query:
         if frametype is not None:
-            frametypes = {frametype: channels}
+            frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
             allchannels = set([
@@ -646,7 +648,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     for c in channels:
         specs.append(_get_spectrogram(c, segments, config=config, cache=cache,
                                       query=query, nds=nds, format=format,
-                                      return_=return_,
+                                      return_=return_, frametype=frametype,
                                       multiprocess=multiprocess,
                                       datafind_error=datafind_error,
                                       **fftparams))
@@ -688,9 +690,16 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 @use_segmentlist
 def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
-                     frametype=None, multiprocess=True, method='median-mean',
+                     frametype=None, multiprocess=True, method=None,
                      datafind_error='raise', **fftparams):
     channel = get_channel(channel)
+    if method is None:
+        methods = set([key.split(',', 1)[1] for key in globalv.SPECTROGRAMS
+                       if key.startswith('%s,' % channel.ndsname)])
+        if len(methods) == 1:
+            method = list(methods)[0]
+        else:
+            method = 'median-mean'
     if format in ['rayleigh']:
         method = format
     key = '%s,%s' % (channel.ndsname, method)
@@ -933,3 +942,52 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
              return_=return_, method=method, datafind_error=datafind_error,
              **fftparams)
     return out
+
+
+@use_segmentlist
+def get_range(channel, segments, config=ConfigParser(), cache=None,
+              query=True, nds='guess', return_=True, multiprocess=True,
+              datafind_error='raise', frametype=None,
+              stride=None, fftlength=None, overlap=None,
+              method=None, **rangekwargs):
+    """Calculate the sensitive distance for a given strain channel
+    """
+    if not rangekwargs:
+        rangekwargs = {'mass1': 1.4, 'mass2': 1.4}
+    rangetype = 'energy' in rangekwargs and 'burst' or 'inspiral'
+    if rangetype == 'burst':
+        range_func = astro.burst_range
+    else:
+        range_func = astro.inspiral_range
+    re_float = re.compile('[.-]')
+    rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
+                                re_float.sub('_', str(val))) for key, val in
+                    rangekwargs.iteritems()])
+    channel = get_channel(channel)
+    key = '%s_%s' % (channel.ndsname, rkey)
+    # get old segments
+    havesegs = globalv.DATA.get(key, TimeSeriesList()).segments
+    new = segments - havesegs
+    query &= abs(new) != 0
+    # calculate new range
+    out = TimeSeriesList()
+    if query:
+        # get spectrograms
+        spectrograms = get_spectrogram(channel, new, config=config,
+                                       cache=cache, multiprocess=multiprocess,
+                                       frametype=frametype, format='psd',
+                                       datafind_error=datafind_error, nds=nds,
+                                       stride=stride, fftlength=fftlength,
+                                       overlap=overlap, method=method)
+        # calculate range for each PSD in each spectrogram
+        for sg in spectrograms:
+            ts = TimeSeries(numpy.zeros(sg.shape[0],), unit='Mpc',
+                            epoch=sg.epoch, dx=sg.dx, channel=key)
+            for i in range(sg.shape[0]):
+                psd = sg[i]
+                psd = Spectrum(psd.value, f0=psd.x0, df=psd.dx)
+                ts[i] = range_func(psd, **rangekwargs)
+            add_timeseries(ts, key=key)
+
+    if return_:
+        return get_timeseries(key, segments, query=False)

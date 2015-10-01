@@ -151,7 +151,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                         not 'x0' in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
             # double-check log scales
-            if self.pargs['logy']:
+            if self.pargs.get('logy', False):
                 for ts in data:
                     ts.value[ts.value == 0] = 1e-100
             # set label
@@ -172,7 +172,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                     'ylim', get_channel(data[0].channel).amplitude_range)
 
         # add horizontal lines to add
-        for yval in self.pargs['hline']:
+        for yval in self.pargs.get('hline', []):
             try:
                 yval = float(yval)
             except ValueError:
@@ -861,7 +861,7 @@ class TimeSeriesHistogramPlot(DataPlot):
             **defaults)
         for histargs in kwargs:
             histargs.setdefault('logbins', self.pargs.get('logx', False))
-            self.pargs.setdefault('logy', histargs['log'])
+            self.pargs.setdefault('logy', histargs.get('log', False))
             # set range as xlim
             if 'range' not in histargs and 'xlim' in self.pargs:
                 histargs['range'] = self.pargs.get('xlim')
@@ -870,7 +870,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                  histargs.setdefault('alpha', 0.7)
         return kwargs
 
-    def process(self):
+    def process(self, outputfile=None):
         """Get data and generate the figure.
         """
         # get histogram parameters
@@ -929,7 +929,7 @@ class TimeSeriesHistogramPlot(DataPlot):
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        return self.finalize()
+        return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesHistogramPlot)
 

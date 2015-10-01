@@ -275,7 +275,7 @@ class DataTab(DataTabBase):
             if cp.has_section(pdef):
                 type_ = cp.get(pdef, 'type')
                 PlotClass = get_plot(type_)
-            elif re.search('-histogram\Z', pdef):
+            elif pdef != 'range-histogram' and pdef.endswith('-histogram'):
                 type_ = None
                 etg, column = pdef.rsplit('-', 2)[:2]
                 mods.setdefault('etg', etg)

@@ -944,6 +944,20 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
     return out
 
 
+def get_range_channel(channel, **rangekwargs):
+    """Return the meta-channel name used to store range data
+    """
+    if not rangekwargs:
+        rangekwargs = {'mass1': 1.4, 'mass2': 1.4}
+    rangetype = 'energy' in rangekwargs and 'burst' or 'inspiral'
+    re_float = re.compile('[.-]')
+    rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
+                                re_float.sub('_', str(val))) for key, val in
+                    rangekwargs.iteritems()])
+    channel = get_channel(channel)
+    return '%s_%s' % (channel.ndsname, rkey)
+
+
 @use_segmentlist
 def get_range(channel, segments, config=ConfigParser(), cache=None,
               query=True, nds='guess', return_=True, multiprocess=True,
@@ -959,12 +973,8 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
         range_func = astro.burst_range
     else:
         range_func = astro.inspiral_range
-    re_float = re.compile('[.-]')
-    rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
-                                re_float.sub('_', str(val))) for key, val in
-                    rangekwargs.iteritems()])
     channel = get_channel(channel)
-    key = '%s_%s' % (channel.ndsname, rkey)
+    key = get_range_channel(channel, **rangekwargs)
     # get old segments
     havesegs = globalv.DATA.get(key, TimeSeriesList()).segments
     new = segments - havesegs

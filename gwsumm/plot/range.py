@@ -23,7 +23,7 @@ from __future__ import division
 
 from .. import (globalv, version)
 from .registry import (get_plot, register_plot)
-from ..data import get_range
+from ..data import (get_range_channel, get_range)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -69,7 +69,7 @@ class RangePlotMixin(object):
             try:
                 keys.append(rlist[0].channel)
             except IndexError:
-                keys.append(channel)
+                keys.append(get_range_channel(channel, **kwargs))
 
         # reset channel lists and generate time-series plot
         channels = self.channels

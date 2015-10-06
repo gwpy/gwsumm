@@ -142,34 +142,40 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             else:
                 valid = SegmentList([self.span])
             # get data
-            data = [get_timeseries(c, valid, query=False).join(
-                        gap='pad', pad=numpy.nan)
+            data = [get_timeseries(c, valid, query=False)
                     for c in clist]
-            # double-check empty
-            for ts in data:
+            flatdata = [ts for tsl in data for ts in tsl]
+            if len(clist) > 1:
+                data = [tsl.join(gap='pad', pad=numpy.nan) for tsl in data]
+            # validate parameters
+            for ts in flatdata:
+                # double-check empty
                 if (hasattr(ts, 'metadata') and
                         not 'x0' in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
-            # double-check log scales
-            if self.pargs.get('logy', False):
-                for ts in data:
+                # double-check log scales
+                if self.pargs.get('logy', False):
                     ts.value[ts.value == 0] = 1e-100
             # set label
-            label = pargs.pop('label', label_to_latex(data[0].name))
+            label = pargs.pop('label', label_to_latex(flatdata[0].name))
             if self.fileformat == 'svg' and not label.startswith(
-                    label_to_latex(str(data[0].channel)).split('.')[0]):
+                    label_to_latex(str(flatdata[0].channel)).split('.')[0]):
                 label = '%s [%s]' % (label,
-                                     label_to_latex(str(data[0].channel)))
+                                     label_to_latex(str(flatdata[0].channel)))
             # plot groups or single TimeSeries
             if len(clist) > 1:
                 ax.plot_timeseries_mmm(*data, label=label, **pargs)
             else:
-                ax.plot_timeseries(data[0], label=label, **pargs)
+                for ts in data[0]:
+                    line = ax.plot_timeseries(ts, label=label, **pargs)[0]
+                    label = None
+                    pargs['color'] = line.get_color()
 
             # allow channel data to set parameters
-            if hasattr(get_channel(str(data[0].channel)), 'amplitude_range'):
+            if getattr(get_channel(str(flatdata[0].channel)),
+                       'amplitude_range', None) is not None:
                 self.pargs.setdefault(
-                    'ylim', get_channel(data[0].channel).amplitude_range)
+                    'ylim', get_channel(flatdata[0].channel).amplitude_range)
 
         # add horizontal lines to add
         for yval in self.pargs.get('hline', []):

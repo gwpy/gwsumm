@@ -144,9 +144,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             # get data
             data = [get_timeseries(c, valid, query=False)
                     for c in clist]
-            flatdata = [ts for tsl in data for ts in tsl]
             if len(clist) > 1:
                 data = [tsl.join(gap='pad', pad=numpy.nan) for tsl in data]
+            flatdata = [ts for tsl in data for ts in tsl]
             # validate parameters
             for ts in flatdata:
                 # double-check empty
@@ -157,14 +157,26 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 if self.pargs.get('logy', False):
                     ts.value[ts.value == 0] = 1e-100
             # set label
-            label = pargs.pop('label', label_to_latex(flatdata[0].name))
-            if self.fileformat == 'svg' and not label.startswith(
-                    label_to_latex(str(flatdata[0].channel)).split('.')[0]):
-                label = '%s [%s]' % (label,
-                                     label_to_latex(str(flatdata[0].channel)))
+            try:
+                label = pargs.pop('label')
+            except KeyError:
+                try:
+                    label = label_to_latex(flatdata[0].name)
+                except IndexError:
+                    label = clist[0]
+                else:
+                    if self.fileformat == 'svg' and not label.startswith(
+                            label_to_latex(
+                            str(flatdata[0].channel)).split('.')[0]):
+                        label += ' [%s]' % (
+                            label_to_latex(str(flatdata[0].channel)))
             # plot groups or single TimeSeries
             if len(clist) > 1:
                 ax.plot_timeseries_mmm(*data, label=label, **pargs)
+            elif len(flatdata) == 0:
+                ax.plot_timeseries(
+                    data[0].EntryClass([], epoch=self.start, unit='s',
+                                       name=label), label=label, **pargs)
             else:
                 for ts in data[0]:
                     line = ax.plot_timeseries(ts, label=label, **pargs)[0]
@@ -172,10 +184,12 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                     pargs['color'] = line.get_color()
 
             # allow channel data to set parameters
-            if getattr(get_channel(str(flatdata[0].channel)),
-                       'amplitude_range', None) is not None:
-                self.pargs.setdefault(
-                    'ylim', get_channel(flatdata[0].channel).amplitude_range)
+            if len(flatdata):
+                chan = get_channel(str(flatdata[0].channel))
+            else:
+                chan = get_channel(clist[0])
+            if getattr(chan, 'amplitude_range', None) is not None:
+                self.pargs.setdefault('ylim', chan.amplitude_range)
 
         # add horizontal lines to add
         for yval in self.pargs.get('hline', []):
@@ -916,8 +930,8 @@ class TimeSeriesHistogramPlot(DataPlot):
         # plot
         for arr, pargs in zip(data, histargs):
             if arr.size == 0:
-                kwargs = {'label': pargs.get('label', None),
-                          'color': pargs.get('color', None)}
+                kwargs = dict(
+                    (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
                 ax.plot([], **kwargs)
             else:
                 ax.hist(arr, **pargs)

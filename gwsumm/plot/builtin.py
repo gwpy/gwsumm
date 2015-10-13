@@ -395,7 +395,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         """Interferometer set for this `SegmentDataPlot`
         """
         allflags = [f for flag in self.flags for f in flag.split(',')]
-        return set([f[:2] for f in allflags])
+        return set([f.strip('!&-_')[:2] for f in allflags])
 
     @property
     def pid(self):

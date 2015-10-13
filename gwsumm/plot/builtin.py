@@ -1647,7 +1647,7 @@ class SegmentPiePlot(SegmentDataPlot):
                 '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
         leg = ax.legend(patches, pclabels, **legendargs)
         legt = leg.get_title()
-        legt.set_fontsize('22')
+        legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
         legt.set_ha('left')
 
         # customise plot

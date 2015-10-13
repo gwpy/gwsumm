@@ -1556,6 +1556,8 @@ class SegmentPiePlot(SegmentDataPlot):
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
         'legend-frameon': False,
+        'wedge-width': .55,
+        'wedge-edgecolor': 'white',
     }
 
     def init_plot(self, plot=Plot, geometry=(1,1)):
@@ -1590,6 +1592,13 @@ class SegmentPiePlot(SegmentDataPlot):
                 plotargs[kwarg] = val
         return plotargs
 
+    def parse_wedge_kwargs(self, defaults=dict()):
+        wedgeargs = defaults.copy()
+        for key in self.pargs.keys():
+            if key.startswith('wedge-'):
+                wedgeargs[key[6:]] = self.pargs.pop(key)
+        return wedgeargs
+
     def process(self):
         (plot, axes) = self.init_plot(plot=Plot)
         ax = axes[0]
@@ -1601,6 +1610,7 @@ class SegmentPiePlot(SegmentDataPlot):
 
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
+        wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
 
         # get segments
@@ -1619,6 +1629,11 @@ class SegmentPiePlot(SegmentDataPlot):
         patches = ax.pie(data, **plotargs)[0]
         ax.axis('equal')
 
+        # set wedge params
+        for wedge in patches:
+            for key, val in wedgeargs.iteritems():
+                getattr(wedge, 'set_%s' % key)(val)
+
         # make legend
         legendargs['title'] = self.pargs.pop('title', None)
         tot = float(sum(data))
@@ -1634,9 +1649,6 @@ class SegmentPiePlot(SegmentDataPlot):
         legt = leg.get_title()
         legt.set_fontsize('22')
         legt.set_ha('left')
-
-        for wedge in patches:
-            wedge.set_edgecolor('white')
 
         # customise plot
         for key, val in self.pargs.iteritems():

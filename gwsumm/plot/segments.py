@@ -944,10 +944,10 @@ class SegmentPiePlot(SegmentDataPlot):
                 pclabels.append(label_to_latex(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
         # add time to top
-        if self.state and self.state.name == ALLSTATE:
-            tspan = '[%d--%d]' % self.span
-        else:
+        if self.state and self.state.name != ALLSTATE:
             tspan = '[%d--%d, %s]' % (self.span, self.state.name)
+        else:
+            tspan = '[%d--%d]' % self.span
         extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
                           linewidth=0)
 

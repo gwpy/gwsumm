@@ -957,3 +957,78 @@ class SegmentPiePlot(SegmentDataPlot):
                              pad_inches=0)
 
 register_plot(SegmentPiePlot)
+
+
+class NetworkDutyPiePlot(SegmentPiePlot):
+    """Special case of the `SegmentPiePlot` for network duty factors
+    """
+    type = 'network-duty-pie'
+    NETWORK_NAME = {
+        0: 'no',
+        1: 'single',
+        2: 'double',
+        3: 'triple',
+        4: 'quadruple',
+        5: 'quintuple',
+        6: 'sextuple',
+    }
+    NETWORK_COLOR = {
+        'H1': 'red',
+        'L1': (0.2, 0.8, 0.2),
+        'V1': (0.5, 0., 0.75),
+        'G1': 'gray',
+        'no': 'black',
+        'single': (1.0, 0.7, 0.0),
+        'double': (0.0, 0.4, 1.0),
+        'triple': 'pink',
+        'quadruple': (1.0, 0.4, 0.0),
+    }
+    defaults = SegmentPiePlot.defaults.copy()
+    defaults.update({
+        'legend-fontsize': 24,
+    })
+
+    def process(self):
+        # get segments
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        # construct compound flags for each network size
+        flags = dict((f[:2],f) for f in self.flags)
+        network = ''.join(sorted(set(flags.keys())))
+        self.pargs.setdefault('title', '%s network duty factor' % network)
+        networkflags = []
+        colors = []
+        labels = []
+        exclude = DataQualityFlag()
+        for i in list(range(len(flags)+1))[::-1]:
+            name = self.NETWORK_NAME[i]
+            flag = '%s:%s' % (network, name)
+            networksegs = DataQualityFlag(flag, known=valid)
+            for ifoset in itertools.combinations(flags, i):
+                if not ifoset:
+                    compound = '!%s' % '!'.join(flags.values())
+                else:
+                    compound = '&'.join(flags[ifo] for ifo in ifoset)
+                segs = get_segments(compound, validity=valid, query=False,
+                                    padding=self.padding).coalesce()
+                networksegs += segs
+            globalv.SEGMENTS[flag] = networksegs - exclude
+            exclude = networksegs
+            networkflags.append(flag)
+            labels.append('%s interferometer' % name.title())
+            colors.append(self.NETWORK_COLOR.get(name))
+
+        self.pargs.setdefault('colors', colors)
+        self.pargs.setdefault('labels', labels)
+
+        # reset flags and generate plot
+        flags_ = self.flags
+        outputfile = self.outputfile
+        self.flags = networkflags
+        out = super(NetworkDutyPiePlot, self).process(outputfile=outputfile)
+        self.flags = flags_
+        return out
+
+register_plot(NetworkDutyPiePlot)

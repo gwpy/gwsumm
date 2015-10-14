@@ -489,10 +489,13 @@ class DataPlot(SummaryPlot):
     def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.
         """
-        # quick fix for x-axis labels hitting the axis
+        # customise axes
         for ax in self.plot.axes:
+            # quick fix for x-axis labels hitting the axis
             ax.tick_params(axis='x', pad=10)
             ax.xaxis.labelpad = 10
+            if ax.get_title() and ax.title.get_position()[1] == 1.0:
+                ax.title.set_y(1.02)
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile

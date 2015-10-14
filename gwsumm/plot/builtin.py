@@ -748,7 +748,7 @@ class SpectrumDataPlot(DataPlot):
                                         label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
-            plot.suptitle(suptitle, y=0.995, va='top')
+            plot.suptitle(suptitle, y=0.993, va='top')
 
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
@@ -904,7 +904,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                                         label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
-            plot.suptitle(suptitle, y=0.995, va='top')
+            plot.suptitle(suptitle, y=0.993, va='top')
 
         # extract histogram arguments
         histargs = self.parse_plot_kwargs()
@@ -1218,7 +1218,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
                                         label_to_latex(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
-            plot.suptitle(suptitle, y=0.995, va='top')
+            plot.suptitle(suptitle, y=0.993, va='top')
 
         # parse plotting arguments
         varargs = self.parse_variance_kwargs()

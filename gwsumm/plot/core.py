@@ -37,6 +37,7 @@ from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter.utils import rUNDERSCORE
 
+from . import rcParams
 from .registry import register_plot
 from .. import globalv
 from ..channels import get_channel
@@ -497,6 +498,10 @@ class DataPlot(SummaryPlot):
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.01)
+            # lighten color of axes
+            color = rcParams['grid.color']
+            for edge in ax.spines:
+                ax.spines[edge].set_edgecolor(color)
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile

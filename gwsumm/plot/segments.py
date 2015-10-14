@@ -893,6 +893,7 @@ class SegmentPiePlot(SegmentDataPlot):
         #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 
         # extract plotting arguments
+        future = self.pargs.pop('include_future', False)
         legendargs = self.parse_legend_kwargs()
         wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
@@ -907,6 +908,14 @@ class SegmentPiePlot(SegmentDataPlot):
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
             data.append(float(abs(segs.active)))
+        if future:
+            total = sum(data)
+            alltime = abs(self.span)
+            data.append(alltime-total)
+            if 'labels' in plotargs:
+                plotargs['labels'] = list(plotargs['labels']) + [' ']
+            if 'colors' in plotargs:
+                plotargs['colors'] = list(plotargs['colors']) + ['white']
 
         # make pie
         labels = plotargs.pop('labels')
@@ -923,13 +932,16 @@ class SegmentPiePlot(SegmentDataPlot):
         tot = float(sum(data))
         pclabels = []
         for d, label in zip(data, labels):
-            try:
-                pc = d/tot * 100
-            except ZeroDivisionError:
-                pc = 0.0
-            pclabels.append(label_to_latex(
-                '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
-        leg = ax.legend(patches, pclabels, **legendargs)
+            if not label or label == ' ':
+                pclabels.append(label)
+            else:
+                try:
+                    pc = d/tot * 100
+                except ZeroDivisionError:
+                    pc = 0.0
+                pclabels.append(label_to_latex(
+                    '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+        leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
         legt = leg.get_title()
         legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
         legt.set_ha('left')

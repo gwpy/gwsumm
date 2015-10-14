@@ -883,7 +883,7 @@ class SegmentPiePlot(SegmentDataPlot):
                 wedgeargs[key[6:]] = self.pargs.pop(key)
         return wedgeargs
 
-    def process(self):
+    def process(self, outputfile=None):
         (plot, axes) = self.init_plot(plot=Plot)
         ax = axes[0]
 
@@ -953,6 +953,7 @@ class SegmentPiePlot(SegmentDataPlot):
 
         # add bit mask axes and finalise
         self.pargs['xlim'] = None
-        return self.finalize(transparent="True", pad_inches=0)
+        return self.finalize(outputfile=outputfile, transparent="True",
+                             pad_inches=0)
 
 register_plot(SegmentPiePlot)

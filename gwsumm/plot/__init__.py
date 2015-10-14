@@ -60,5 +60,6 @@ from .registry import *
 from .utils import *
 from .core import *
 from .builtin import *
+from .segments import *
 from .triggers import *
 from .range import *

@@ -1,0 +1,958 @@
+# -*- coding: utf-8 -*-
+# Copyright (C) Duncan Macleod (2013)
+#
+# This file is part of GWSumm.
+#
+# GWSumm is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# GWSumm is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Definitions for the standard plots
+"""
+
+from __future__ import division
+
+import hashlib
+import bisect
+from itertools import cycle
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
+from dateutil.relativedelta import relativedelta
+
+from gwpy.plotter import *
+from gwpy.plotter.tex import label_to_latex
+from gwpy.time import (from_gps, to_gps)
+
+from .. import (globalv, mode, version)
+from ..config import NoOptionError
+from ..utils import (re_quote, get_odc_bitmask)
+from ..data import (get_channel, get_timeseries)
+from ..segments import (get_segments, format_padding)
+from ..state import ALLSTATE
+from .registry import (get_plot, register_plot)
+from .mixins import *
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = version.version
+
+TimeSeriesDataPlot = get_plot('timeseries')
+GREEN = (0.2, 0.8, 0.2)
+
+
+class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
+    """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
+    """
+    type = 'segments'
+    data = 'segments'
+    defaults = {'mask': None,
+                'color': None,
+                'on_is_bad': False,
+                'insetlabels': 'inset',
+                'edgecolor': 'black',
+                'legend-bbox_to_anchor': (1.01, 1.),
+                'legend-loc': 'upper left',
+                'legend-borderaxespad': 0,
+                'legend-fontsize': 12}
+
+    def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
+        padding = kwargs.pop('padding', None)
+        super(SegmentDataPlot, self).__init__([], start, end, state=state,
+                                                 outdir=outdir, **kwargs)
+        self.flags = flags
+        self.preview_labels = False
+        self.padding = padding
+
+    def get_channel_groups(self, *args, **kwargs):
+        return [(f, [f]) for f in self.flags]
+
+    @property
+    def flags(self):
+        return [f.name for f in self._flags]
+
+    @flags.setter
+    def flags(self, flist):
+        if isinstance(flist, str):
+            flist = [f.strip('\n ') for f in flist.split(',')]
+        self._flags = []
+        for f in flist:
+            self.add_flag(f)
+
+    def add_flag(self, f):
+        if isinstance(f, DataQualityFlag):
+            self._flags.append(f)
+        else:
+            self._flags.append(DataQualityFlag(f))
+
+    @property
+    def padding(self):
+        return OrderedDict((f.name, f.padding) for f in self._flags)
+
+    @padding.setter
+    def padding(self, pad):
+        for f, p in format_padding(self._flags, pad).iteritems():
+            if isinstance(p, (float, int)):
+                f.padding = (p, p)
+            else:
+                f.padding = p
+
+    @property
+    def ifos(self):
+        """Interferometer set for this `SegmentDataPlot`
+        """
+        allflags = [f for flag in self.flags for f in flag.split(',')]
+        return set([f.strip('!&-_')[:2] for f in allflags])
+
+    @property
+    def pid(self):
+        """File pid for this `DataPlot`.
+        """
+        try:
+            return self._pid
+        except AttributeError:
+            self._pid = hashlib.md5(
+                "".join(map(str, self.flags))).hexdigest()[:6]
+            return self.pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @classmethod
+    def from_ini(cls, config, section, start, end, flags=None, state=ALLSTATE,
+                 **kwargs):
+        # get padding
+        try:
+            kwargs.setdefault(
+                'padding', config.get(section, 'padding'))
+        except NoOptionError:
+            pass
+        if 'padding' in kwargs:
+            kwargs['padding'] = list(eval(kwargs['padding']))
+        # build figure
+        new = super(SegmentDataPlot, cls).from_ini(config, section, start,
+                                                   end, state=state, **kwargs)
+        # get flags
+        if flags is None:
+            flags = dict(config.items(section)).pop('flags', [])
+        if isinstance(flags, str):
+            flags = [f.strip('\n ') for f in flags.split(',')]
+        new.flags = flags
+        return new
+
+    def get_segment_color(self):
+        """Parse the configured ``pargs`` and determine the colors for
+        active and valid segments.
+        """
+        active = self.pargs.pop('active', None)
+        known = self.pargs.pop('known', None)
+        # both defined by user
+        if active is not None and known is not None:
+            return active, known
+        # only active defined by user
+        elif isinstance(active, str) and active.lower() != 'red':
+            return active, 'red'
+        elif active is not None:
+            return active, 'blue'
+        # only known defined by user
+        elif known not in [None, GREEN, 'green', 'g']:
+            return GREEN, known
+        elif known is not None:
+            return 'blue', known
+        else:
+            onisbad = bool(self.pargs.pop('on_is_bad', True))
+            if onisbad:
+                return 'red', GREEN
+            else:
+                return GREEN, 'red'
+
+    def process(self):
+        # get labelsize
+        _labelsize = rcParams['ytick.labelsize']
+        labelsize = self.pargs.pop('labelsize', 12)
+        if self.pargs.get('insetlabels', True) is False:
+            rcParams['ytick.labelsize'] = labelsize
+
+        # create figure
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
+
+        # extract plotting arguments
+        legendargs = self.parse_legend_kwargs()
+        mask = self.pargs.pop('mask')
+        activecolor, validcolor = self.get_segment_color()
+        if isinstance(activecolor, dict):
+            self.pargs.update(activecolor)
+        elif isinstance(activecolor, tuple):
+            self.pargs['facecolor'] = [activecolor] * len(self.flags)
+        else:
+            self.pargs['facecolor'] = activecolor
+        plotargs = self.parse_plot_kwargs()
+        for i, kwdict in enumerate(plotargs):
+            if isinstance(validcolor, dict):
+                kwdict['known'] = validcolor
+            elif (validcolor is None or isinstance(validcolor, str) or
+                    isinstance(validcolor[0], (float, int))):
+                kwdict['known'] = {'facecolor': validcolor}
+            else:
+                kwdict['known'] = {'facecolor': validcolor[i]}
+        legcolors = plotargs[0].copy()
+
+        # plot segments
+        for i, (flag, pargs) in enumerate(
+                zip(self.flags, plotargs)[::-1]):
+            label = re_quote.sub('', pargs.pop('label', str(flag)))
+            if (self.fileformat == 'svg' and not str(flag) in label and
+                    ax.get_insetlabels()):
+                label = '%s [%s]' % (label, str(flag))
+            elif self.fileformat == 'svg' and not str(flag) in label:
+                label = '[%s] %s' % (label, str(flag))
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
+            ax.plot(segs, y=i, label=label, **pargs)
+
+        # make custom legend
+        known = legcolors.pop('known', None)
+        if known:
+            active = legcolors.pop('facecolor')
+            edgecolor = legcolors.pop('edgecolor')
+            epoch = ax.get_epoch()
+            xlim = ax.get_xlim()
+            seg = SegmentList([Segment(self.start - 10, self.start - 9)])
+            v = ax.plot(seg, facecolor=known['facecolor'],
+                        collection=False)[0][0]
+            a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
+                        collection=False)[0][0]
+            if edgecolor not in [None, 'none']:
+                t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]
+                ax.legend([v, a, t], ['Known', 'Active', 'Transition'],
+                          **legendargs)
+            else:
+                ax.legend([v, a], ['Known', 'Active'], **legendargs)
+            ax.set_epoch(epoch)
+            ax.set_xlim(*xlim)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if 'ylim' not in self.pargs:
+            ax.set_ylim(-0.5, len(self.flags) - 0.5)
+
+        # add bit mask axes and finalise
+        if mask is None and not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        elif mask is not None:
+            plot.add_bitmask(mask, topdown=True)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
+
+        rcParams['ytick.labelsize'] = _labelsize
+        return self.finalize()
+
+register_plot(SegmentDataPlot)
+
+
+class StateVectorDataPlot(TimeSeriesDataPlot):
+    """DataPlot of some `StateVector` data.
+
+    While technically a sub-class of the `TimeSeriesDataPlot`, for
+    data access and processing reasons, the output shadows that of the
+    `SegmentDataPlot` more closely.
+    """
+    type = 'statevector'
+    data = 'statevector'
+    defaults = SegmentDataPlot.defaults.copy()
+
+    # copy from SegmentDataPlot
+    flag = property(fget=SegmentDataPlot.flags.__get__,
+                    fset=SegmentDataPlot.flags.__set__,
+                    fdel=SegmentDataPlot.flags.__delete__,
+                    doc="""List of flags generated for this
+                        `StateVectorDataPlot`.""")
+    get_segment_color = SegmentDataPlot.__dict__['get_segment_color']
+
+    def __init__(self, *args, **kwargs):
+        super(StateVectorDataPlot, self).__init__(*args, **kwargs)
+        self.flags = []
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            self._pid = hashlib.md5(chans).hexdigest()[:6]
+            if self.pargs.get('bits', None):
+                self._pid = hashlib.md5(
+                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+            return self.pid
+
+    def _parse_labels(self, defaults=[]):
+        """Pop the labels for plotting from the `pargs` for this Plot
+
+        This method overrides from the `TimeSeriesDataPlot` in order
+        to set the bit names from the various channels as the defaults
+        in stead of the channel names
+        """
+        chans = zip(*self.get_channel_groups())[0]
+        labels = list(self.pargs.pop('labels', defaults))
+        if isinstance(labels, (unicode, str)):
+            labels = labels.split(',')
+        for i, l in enumerate(labels):
+            if isinstance(l, (list, tuple)):
+                labels[i] = list(labels[i])
+                for j, l2 in enumerate(l):
+                    labels[i][j] = rUNDERSCORE.sub(r'\_', str(l2).strip('\n '))
+            elif isinstance(l, str):
+                labels[i] = rUNDERSCORE.sub(r'\_', str(l).strip('\n '))
+        while len(labels) < len(chans):
+            labels.append(None)
+        return labels
+
+    def process(self):
+        # make font size smaller
+        _labelsize = rcParams['ytick.labelsize']
+        labelsize = self.pargs.pop('labelsize', 12)
+        if self.pargs.get('insetlabels', True) is False:
+            rcParams['ytick.labelsize'] = labelsize
+
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
+
+        # get bit setting
+        bits = self.pargs.pop('bits', None)
+        if bits and len(self.channels) > 1:
+            raise ValueError("Specifying 'bits' doesn't work for a "
+                             "state-vector plot including multiple channels")
+
+        # extract plotting arguments
+        mask = self.pargs.pop('mask')
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        activecolor, validcolor = self.get_segment_color()
+        edgecolor = self.pargs.pop('edgecolor')
+        plotargs = {'facecolor': activecolor,
+                    'edgecolor': edgecolor}
+        if isinstance(validcolor, dict):
+            plotargs['known'] = validcolor
+        elif (validcolor is None or isinstance(validcolor, str) or
+                isinstance(validcolor[0], (float, int))):
+            plotargs['known'] = {'facecolor': validcolor}
+        else:
+            plotargs['known'] = {'facecolor': validcolor[i]}
+        extraargs = self.parse_plot_kwargs()
+
+        # plot segments
+        nflags = 0
+        for channel, pargs in zip(self.channels[::-1], extraargs[::-1]):
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            channel = get_channel(channel)
+            if bits:
+                bits_ = [x if i in bits else None for
+                         (i, x) in enumerate(channel.bits)]
+            else:
+                bits_ = channel.bits
+            data = get_timeseries(str(channel), valid, query=False,
+                                  statevector=True)
+            flags = None
+            for stateseries in data:
+                if not stateseries.size:
+                    stateseries.epoch = self.start
+                    stateseries.dx = 0
+                    if channel.sample_rate is not None:
+                        stateseries.sample_rate = channel.sample_rate
+                stateseries.bits = bits_
+                if not 'int' in str(stateseries.dtype):
+                    stateseries = stateseries.astype('uint32')
+                newflags = stateseries.to_dqflags().values()
+                if flags is None:
+                    flags = newflags
+                else:
+                    for i, flag in enumerate(newflags):
+                        flags[i] += flag
+            nflags += len([m for m in bits_ if m is not None])
+            labels = pargs.pop('label', [None]*len(flags))
+            if isinstance(labels, str):
+                labels = [labels]
+            while len(labels) < len(flags):
+                labels.append(None)
+            for flag, label in zip(flags, labels)[::-1]:
+                kwargs = pargs.copy()
+                kwargs.update(plotargs)
+                if label is not None:
+                    kwargs['label'] = label
+                ax.plot(flag, **kwargs)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if 'ylim' not in self.pargs:
+            ax.set_ylim(-0.5, nflags - 0.5)
+
+        # add bit mask axes and finalise
+        if mask is None and not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        elif mask is not None:
+            plot.add_bitmask(mask, topdown=True)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
+
+        # reset tick size and return
+        rcParams['ytick.labelsize'] = _labelsize
+        return self.finalize()
+
+register_plot(StateVectorDataPlot)
+
+
+class DutyDataPlot(SegmentDataPlot):
+    """`DataPlot` of the duty-factor for a `SegmentList`
+    """
+    type = 'duty'
+    data = 'segments'
+    defaults = {'alpha': 0.8,
+                'sep': False,
+                'side_by_side': False,
+                'normalized': None,
+                'cumulative': False,
+                'ylabel': r'Duty factor [\%]'}
+
+    def __init__(self, flags, start, end, state=None, outdir='.',
+                 bins=None, **kwargs):
+        kwargs.setdefault('fileformat', 'png')
+        super(DutyDataPlot, self).__init__(flags, start, end, state=state,
+                                           outdir=outdir, **kwargs)
+        self.bins = bins
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            super(DutyDataPlot, self).pid
+            if self.pargs.get('cumulative', False):
+                self._pid += '_CUMULATIVE'
+            return self.pid
+
+    @pid.setter
+    def pid(self, p):
+        self._pid = p
+
+    def get_bins(self):
+        """Work out the correct histogram binning for this `DutyDataPlot`
+        """
+        # if not given anything, work it out from the mode
+        if self.bins is None:
+            m = mode.MODE_NAME[mode.get_mode()]
+            # for day mode, make hourly duty factor
+            if m in ['DAY']:
+                dt = relativedelta(hours=1)
+            # for week and month mode, use daily
+            elif m in ['WEEK', 'MONTH']:
+                dt = relativedelta(days=1)
+            # for year mode, use a month
+            elif m in ['YEAR']:
+                dt = relativedelta(months=1)
+            # otherwise provide 10 bins
+            else:
+                dt = relativedelta(seconds=float(abs(self.span))/10.)
+        # if given a float, assume this is the bin size
+        elif isinstance(self.bins, (float, int)):
+            dt = relativedelta(seconds=self.bins)
+        # if we don't have a list, we must have worked out dt
+        if not isinstance(self.bins, (list, tuple, numpy.ndarray)):
+            self.bins = []
+            s = from_gps(self.start)
+            e = from_gps(self.end)
+            while s < e:
+                t = int(to_gps(s + dt) - to_gps(s))
+                self.bins.append(t)
+                s += dt
+        self.bins = numpy.asarray(self.bins)
+        return self.bins
+
+    def calculate_duty_factor(self, segments, bins=None, cumulative=False,
+                              normalized=None):
+        if normalized is None and cumulative:
+            normalized = False
+        elif normalized is None:
+            normalized = 'percent'
+        if normalized == 'percent':
+            normalized = 100.
+        else:
+            normalized = float(normalized)
+        if not bins:
+            bins = self.get_bins()
+        if isinstance(segments, DataQualityFlag):
+            segments = segments.known & segments.active
+        duty = numpy.zeros(len(bins))
+        mean = numpy.zeros(len(bins))
+        for i in range(len(bins)):
+            bin = SegmentList([Segment(self.start + sum(bins[:i]),
+                                       self.start + sum(bins[:i+1]))])
+            d = float(abs(segments & bin))
+            if normalized:
+                d *= normalized / float(bins[i])
+            duty[i] = d
+            mean[i] = duty[:i+1].mean()
+        if cumulative:
+            duty = duty.cumsum()
+        return duty, mean
+
+    def process(self, outputfile=None):
+        sep = self.pargs.pop('sep', False)
+        if sep:
+            if self.pargs.get('side_by_side'):
+                raise ValueError('DutyDataPlot parameters \'sep\' and '
+                                 '\'side_by_side\' should not be used together')
+            geometry = (len(self.flags), 1)
+        else:
+            geometry = (1, 1)
+
+        (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
+
+        # extract plotting arguments
+        sidebyside = self.pargs.pop('side_by_side', False)
+        normalized = self.pargs.pop('normalized', True)
+        cumulative = self.pargs.pop('cumulative', False)
+        if normalized is None and not cumulative:
+            normalized = 'percent'
+        plotargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
+        if sep:
+            legendargs.setdefault('loc', 'upper left')
+            legendargs.setdefault('bbox_to_anchor', (1.01, 1))
+            legendargs.setdefault('borderaxespad', 0)
+
+        # work out times and plot mean for legend
+        self.get_bins()
+        times = float(self.start) + numpy.concatenate(
+                                 ([0], self.bins[:-1].cumsum()))
+        if not cumulative:
+            axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
+
+        try:
+            bottom = self.pargs['ylim'][0]
+        except KeyError:
+            bottom = 0
+
+        # plot segments
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        for i, (ax, flag, pargs, color) in enumerate(
+                zip(cycle(axes), self.flags, plotargs,
+                    cycle(rcParams['axes.color_cycle']))):
+            # get segments
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding)
+            duty, mean = self.calculate_duty_factor(
+                segs, normalized=normalized, cumulative=cumulative)
+            # plot duty cycle
+            if sep and pargs.get('label') == flag.replace('_', r'\_'):
+                pargs.pop('label', None)
+            elif 'label' in pargs and normalized == 'percent':
+                if legendargs.get('loc', None) in ['upper left', 2]:
+                    pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
+                else:
+                    pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+            color = pargs.pop('color', color)
+            now = bisect.bisect_left(times, globalv.NOW)
+            if sidebyside:
+                t = times + self.bins * (0.1 + .8 * i/len(self.flags))
+                b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
+                           width=.8 * self.bins[:now]/len(self.flags),
+                           color=color, **pargs)
+            else:
+                b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
+                           width=self.bins[:now], color=color, **pargs)
+            # plot mean
+            if not cumulative:
+                t = [self.start] + list(times + self.bins/2.) + [self.end]
+                mean = [mean[0]] + list(mean) + [mean[-1]]
+                ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            for ax in axes:
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+        if 'hours' in self.pargs.get('ylabel', ''):
+            ax.get_yaxis().get_major_locator().set_params(
+                steps=[1, 2, 4, 8, 12, 24])
+        if sep:
+            # set text
+            ylabel = axes[0].yaxis.get_label()
+            y = axes[-1].get_position().y0 + (
+                axes[0].get_position().y1 - axes[-1].get_position().y0)/2.
+            t = plot.text(0.04, y, ylabel.get_text(), rotation=90, ha='center',
+                          va='center')
+            t.set_fontproperties(ylabel.get_font_properties())
+            for i, ax in enumerate(axes):
+                ax.set_ylabel('')
+                if i:
+                    ax.set_title('')
+                if i < len(axes) - 1:
+                    ax.set_xlabel('')
+
+        # add custom legend for mean
+        if not cumulative:
+            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+            lkwargs = legendargs.copy()
+            lkwargs['loc'] = 'lower right'
+            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
+            lkwargs['fontsize'] = 12
+            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+            axes[0].lines[0].set_label('_')
+
+        for ax in axes:
+            try:
+                plot.add_legend(ax=ax, **legendargs)
+            except AttributeError:
+                pass
+
+        # add extra axes and finalise
+        if not plot.colorbars:
+            for ax in axes:
+                plot.add_colorbar(ax=ax, visible=False)
+        if self.state:
+            self.add_state_segments(axes[-1])
+
+        return self.finalize(outputfile=outputfile)
+
+register_plot(DutyDataPlot)
+
+
+class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
+    """Custom `StateVectorDataPlot` for ODCs with bitmasks
+    """
+    type = 'odc'
+    data = 'odc'
+    defaults = StateVectorDataPlot.defaults.copy()
+    defaults.update({
+        'no_summary_bit': False,
+        'in_mask_color': (.0, .4, 1.),
+        'masked_off_color': 'red',
+        'unmasked_off_color': (1.0, 0.7, 0.0),
+        'legend-loc': 'upper left',
+        'legend-bbox_to_anchor': (1.01, 1),
+        'legend-borderaxespad': 0.,
+        'legend-fontsize': 10,
+    })
+
+    def __init__(self, *args, **kwargs):
+        bitmaskc = kwargs.pop('bitmask_channel', None)
+        super(ODCDataPlot, self).__init__(*args, **kwargs)
+        if bitmaskc:
+            self.bitmask = bitmaskc.split(',')
+        else:
+            self.bitmask = map(get_odc_bitmask, self.channels)
+
+    def get_bitmask_channels(self):
+        return type(self.channels)(list(map(get_channel, self.bitmask)))
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            masks = "".join(map(str, self.get_bitmask_channels()))
+            self._pid = hashlib.md5(chans+masks).hexdigest()[:6]
+            if self.pargs.get('bits', None):
+                self._pid = hashlib.md5(
+                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+            return self.pid
+
+    def process(self):
+        # make font size smaller
+        _labelsize = rcParams['ytick.labelsize']
+        labelsize = self.pargs.pop('labelsize', 12)
+        rcParams['ytick.labelsize'] = labelsize
+
+        # make figure
+        (plot, axes) = self.init_plot(plot=SegmentPlot)
+        ax = axes[0]
+        ax.grid(False, which='both', axis='y')
+
+        # extract plotting arguments
+        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
+        nosummary = self.pargs.pop('no_summary_bit', False)
+        activecolor = self.pargs.pop('active', GREEN)
+        edgecolor = self.pargs.pop('edgecolor', 'black')
+        maskoncolor = self.pargs.pop('masked_off_color', 'red')
+        maskoffcolor = self.pargs.pop('unmasked_off_color', (1.0, 0.7, 0.0))
+        inmaskcolor = self.pargs.pop('in_mask_color', (.0, .4, 1.))
+        plotargs = {'facecolor': activecolor,
+                    'edgecolor': edgecolor,
+                    'height': .8}
+        legendargs = self.parse_legend_kwargs()
+
+        # plot segments
+        nflags = 0
+        for i, (channel, bitmaskchan) in enumerate(
+                zip(self.channels, self.get_bitmask_channels())):
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            # read ODC and bitmask vector
+            data = get_timeseries(str(channel), valid, query=False,
+                                  statevector=True)
+            bitmask = get_timeseries(bitmaskchan, valid, query=False,
+                                     statevector=True)
+            # plot bitmask
+            flags = {}
+            # plot bits
+            for type_, svlist in zip(['bitmask', 'data'], [bitmask, data]):
+                flags[type_] = None
+                for stateseries in svlist:
+                    if not stateseries.size:
+                        stateseries.epoch = self.start
+                        stateseries.dx = 0
+                        if channel.sample_rate is not None:
+                            stateseries.sample_rate = channel.sample_rate
+                    stateseries.bits = channel.bits
+                    if not 'int' in str(stateseries.dtype):
+                        stateseries = stateseries.astype('uint32')
+                    newflags = stateseries.to_dqflags()
+                    if flags[type_] is None:
+                        flags[type_] = newflags
+                    else:
+                        for i, flag in newflags.iteritems():
+                            flags[type_][i] += flag
+            i = 0
+            for i, bit in enumerate(channel.bits):
+                if bit is None or bit == '':
+                    continue
+                try:
+                    mask = flags['bitmask'][bit].active
+                except TypeError:
+                    continue
+                segs = flags['data'][bit]
+                label = '[%s] %s' % (i, segs.name)
+                # plot summary bit
+                if segs.name == channel.bits[0] and not nosummary:
+                    summargs = plotargs.copy()
+                    summargs['height'] *= 3
+                    ax.plot(segs, y=-nflags - 1, label=label,
+                            known=maskoncolor, **summargs)
+                    nflags += 2
+                # plot masks and separate masked/not masked
+                else:
+                    maskon = segs.copy()
+                    maskon.known &= mask
+                    maskon.active &= mask
+                    maskoff = segs.copy()
+                    maskoff.known -= mask
+                    maskoff.active -= mask
+                    # plot mask
+                    ax.plot(mask, y=-nflags, facecolor=inmaskcolor,
+                            edgecolor='none', height=1., label=None,
+                            collection=False, zorder=-1001)
+                    # plot mask
+                    if maskoff:
+                        ax.plot(maskoff, y=-nflags, label=label,
+                                known=maskoffcolor, **plotargs)
+                        label = None
+                    if maskon:
+                        ax.plot(maskon, y=-nflags, label=label,
+                                known=maskoncolor, **plotargs)
+
+                    label = '[%s] %s' % (i, segs.name)
+                nflags += 1
+
+        # make custom legend
+        epoch = ax.get_epoch()
+        xlim = ax.get_xlim()
+        seg = Segment(self.start - 10, self.start - 9)
+        m = ax.build_segment(seg, y=0, facecolor=inmaskcolor, edgecolor='none')
+        v = ax.build_segment(seg, y=0, facecolor=maskoncolor,
+                             edgecolor=edgecolor)
+        x = ax.build_segment(seg, y=0, facecolor=maskoffcolor,
+                             edgecolor=edgecolor)
+        a = ax.build_segment(seg, y=0, facecolor=activecolor,
+                             edgecolor=edgecolor)
+        if edgecolor not in [None, 'none']:
+            t = ax.build_segment(seg, y=0, facecolor=edgecolor)
+            ax.legend([m, v, x, a, t],
+                      ['In bitmask', 'Bit masked\nand OFF',
+                       'Bit unmasked\nand OFF',  'Bit ON',
+                       'Transition'], **legendargs)
+        else:
+            ax.legend([m, v, x, a],
+                      ['In bitmask', 'Bit masked\nand OFF',
+                       'Bit unmasked\nand OFF', 'Bit ON'],
+                      **legendargs)
+        ax.set_epoch(epoch)
+        ax.set_xlim(*xlim)
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if 'ylim' not in self.pargs:
+            ax.set_ylim(-nflags+0.5, 0.5)
+
+        # add bit mask axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        if self.state and self.state.name != ALLSTATE:
+            self.add_state_segments(ax)
+        out = self.finalize()
+        rcParams['ytick.labelsize'] = _labelsize
+        return out
+
+register_plot(ODCDataPlot)
+
+
+class SegmentPiePlot(SegmentDataPlot):
+    type = 'segment-pie'
+    defaults = {
+        'legend-loc': 'center left',
+        'legend-bbox_to_anchor': (.8, .5),
+        'legend-frameon': False,
+        'wedge-width': .55,
+        'wedge-edgecolor': 'white',
+    }
+
+    def init_plot(self, plot=Plot, geometry=(1,1)):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesDataPlot`.
+        """
+        figsize = self.pargs.pop('figsize', [12, 6])
+        self.plot = Plot(figsize=figsize)
+        axes = [self.plot.gca()]
+        return self.plot, axes
+
+    def parse_plot_kwargs(self, defaults=dict()):
+        """Parse pie() keyword arguments
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('labels', self._parse_labels())
+        for kwarg in ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
+                      'labeldistance', 'startangle', 'radius', 'counterclock',
+                      'wedgeprops', 'textprops']:
+            try:
+                val = self.pargs.pop(kwarg)
+            except KeyError:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
+                plotargs[kwarg] = val
+        return plotargs
+
+    def parse_wedge_kwargs(self, defaults=dict()):
+        wedgeargs = defaults.copy()
+        for key in self.pargs.keys():
+            if key.startswith('wedge-'):
+                wedgeargs[key[6:]] = self.pargs.pop(key)
+        return wedgeargs
+
+    def process(self):
+        (plot, axes) = self.init_plot(plot=Plot)
+        ax = axes[0]
+
+        # get labels
+        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
+        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+
+        # extract plotting arguments
+        legendargs = self.parse_legend_kwargs()
+        wedgeargs = self.parse_wedge_kwargs()
+        plotargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
+            data.append(float(abs(segs.active)))
+
+        # make pie
+        labels = plotargs.pop('labels')
+        patches = ax.pie(data, **plotargs)[0]
+        ax.axis('equal')
+
+        # set wedge params
+        for wedge in patches:
+            for key, val in wedgeargs.iteritems():
+                getattr(wedge, 'set_%s' % key)(val)
+
+        # make legend
+        legendargs['title'] = self.pargs.pop('title', None)
+        tot = float(sum(data))
+        pclabels = []
+        for d, label in zip(data, labels):
+            try:
+                pc = d/tot * 100
+            except ZeroDivisionError:
+                pc = 0.0
+            pclabels.append(label_to_latex(
+                '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+        leg = ax.legend(patches, pclabels, **legendargs)
+        legt = leg.get_title()
+        legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
+        legt.set_ha('left')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+        # copy title and move axes
+        if ax.get_title():
+            title = plot.suptitle(ax.get_title())
+            title.update_from(ax.title)
+            title.set_y(title._y + 0.05)
+            ax.set_title('')
+        axpos = ax.get_position()
+        offset = -.2
+        ax.set_position([axpos.x0+offset, .05, axpos.width, .9])
+
+        # add bit mask axes and finalise
+        self.pargs['xlim'] = None
+        return self.finalize(transparent="True", pad_inches=0)
+
+register_plot(SegmentPiePlot)

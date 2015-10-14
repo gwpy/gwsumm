@@ -498,10 +498,12 @@ class DataPlot(SummaryPlot):
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.01)
-            # lighten color of axes
+            # lighten color of axes and legend borders
             color = rcParams['grid.color']
             for edge in ax.spines:
                 ax.spines[edge].set_edgecolor(color)
+            if ax.legend_ and ax.legend_.get_frame().get_edgecolor() != 'none':
+                ax.legend_.get_frame().set_edgecolor(color)
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile

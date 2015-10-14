@@ -32,6 +32,8 @@ except ImportError:
 
 from dateutil.relativedelta import relativedelta
 
+from matplotlib.patches import Rectangle
+
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 from gwpy.time import (from_gps, to_gps)
@@ -941,7 +943,18 @@ class SegmentPiePlot(SegmentDataPlot):
                     pc = 0.0
                 pclabels.append(label_to_latex(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+        # add time to top
+        if self.state and self.state.name == ALLSTATE:
+            tspan = '[%d--%d]' % self.span
+        else:
+            tspan = '[%d--%d, %s]' % (self.span, self.state.name)
+        extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
+                          linewidth=0)
+
         leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
+        t = leg.get_texts()[0]
+        t.set_fontproperties(t.get_fontproperties().copy())
+        t.set_size(min(12, t.get_size()))
         legt = leg.get_title()
         legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
         legt.set_ha('left')

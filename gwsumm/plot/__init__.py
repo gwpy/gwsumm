@@ -47,6 +47,7 @@ rcParams.update({
     'figure.subplot.right': 0.9,
     'figure.subplot.top': 0.90,
     'axes.labelsize': 20,
+    'grid.color': 'gray',
     'svg.fonttype': 'none',
 })
 

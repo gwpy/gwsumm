@@ -974,7 +974,7 @@ class SegmentPiePlot(SegmentDataPlot):
             ax.set_title('')
         axpos = ax.get_position()
         offset = -.2
-        ax.set_position([axpos.x0+offset, .05, axpos.width, .9])
+        ax.set_position([axpos.x0+offset, .1, axpos.width, .8])
 
         # add bit mask axes and finalise
         self.pargs['xlim'] = None

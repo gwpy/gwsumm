@@ -592,6 +592,7 @@ class DataTab(DataTabBase):
                    % (nproc, len(procs)))
             vprint("        Waiting for plotting to complete... ")
             queue.close()
+            sleep(2)
             # wait for children to finish
             for p in procs:
                 p.join()

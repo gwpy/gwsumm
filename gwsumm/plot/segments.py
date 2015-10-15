@@ -40,7 +40,7 @@ from gwpy.time import (from_gps, to_gps)
 
 from .. import (globalv, mode, version)
 from ..config import NoOptionError
-from ..utils import (re_quote, get_odc_bitmask)
+from ..utils import (re_quote, get_odc_bitmask, re_flagdiv)
 from ..data import (get_channel, get_timeseries)
 from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
@@ -73,6 +73,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         padding = kwargs.pop('padding', None)
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                                  outdir=outdir, **kwargs)
+        self._allflags = []
         self.flags = flags
         self.preview_labels = False
         self.padding = padding
@@ -93,18 +94,29 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             self.add_flag(f)
 
     def add_flag(self, f):
+        # append flag to main list
         if isinstance(f, DataQualityFlag):
             self._flags.append(f)
         else:
             self._flags.append(DataQualityFlag(f))
+        # append raw flags to 'allflags' property
+        flags = re_flagdiv.split(str(f))[::2]
+        for f in flags:
+            if not f:
+                continue
+            self._allflags.append(DataQualityFlag(f))
+
+    @property
+    def allflags(self):
+        return [f.name for f in self._allflags]
 
     @property
     def padding(self):
-        return OrderedDict((f.name, f.padding) for f in self._flags)
+        return OrderedDict((f.name, f.padding) for f in self._allflags)
 
     @padding.setter
     def padding(self, pad):
-        for f, p in format_padding(self._flags, pad).iteritems():
+        for f, p in format_padding(self._allflags, pad).iteritems():
             if isinstance(p, (float, int)):
                 f.padding = (p, p)
             else:
@@ -114,8 +126,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     def ifos(self):
         """Interferometer set for this `SegmentDataPlot`
         """
-        allflags = [f for flag in self.flags for f in flag.split(',')]
-        return set([f.strip('!&-_')[:2] for f in allflags])
+        return set([f.strip('!&-_')[:2] for f in self.allflags])
 
     @property
     def pid(self):

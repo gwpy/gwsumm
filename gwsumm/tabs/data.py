@@ -747,21 +747,21 @@ class DataTab(DataTabBase):
                 data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.data_table(headers, data)))
 
-        flags = sorted(set([(f, p) for plot in
-                            filter(lambda p: p.data == 'segments', self.plots)
-                            for (f, p) in plot.padding.iteritems()]),
-                       key=lambda x: x[0])
-        if len(flags):
+        allflags = sorted(set([
+            (f, p) for plot in filter(lambda p: p.data == 'segments',
+                                      self.plots)
+            for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
+        if len(allflags):
             page.h1('Segment information')
             page.add("The following flags were used in "
                      "the above data. This list does not include state "
-                     "information")
+                     "information or combinations of flags")
             # make summary table
             headers = ['Name', 'Defined duration', 'Active duration',
                        'Padding', 'Description']
             data = []
             pc = float(abs(state.active) / 100.)
-            for flag, padding in flags:
+            for flag, padding in allflags:
                 if padding == (0, 0):
                     padding = None
                 flag = get_segments(flag, state.active, query=False,
@@ -782,7 +782,7 @@ class DataTab(DataTabBase):
             page.add(str(html.data_table(headers, data)))
             # print segment lists
             page.div(class_='panel-group', id="accordion")
-            for i, (flag, padding) in enumerate(flags):
+            for i, (flag, padding) in enumerate(allflags):
                 flag = get_segments(flag, state.active, query=False,
                                     padding={flag: padding})
                 page.div(class_='panel well panel-primary')

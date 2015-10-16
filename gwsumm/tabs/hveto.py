@@ -99,7 +99,8 @@ class HvetoTab(base):
         gps = int(new.span[0])
         duration = int(abs(new.span))
         basedir = os.path.normpath(config.get(section, 'base-directory'))
-        daydir = os.path.join(basedir, config.get(section, 'directory-tag'))
+        daydir = os.path.realpath(
+            os.path.join(basedir, config.get(section, 'directory-tag')))
         new.directory = daydir
         home_, postbase = daydir.split('/public_html/', 1)
         user = os.path.split(home_)[1]

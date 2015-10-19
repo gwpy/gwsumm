@@ -942,6 +942,8 @@ class SegmentPiePlot(SegmentDataPlot):
 
         # make legend
         legendargs['title'] = self.pargs.pop('title', None)
+        legth = legendargs.pop('threshold', 0)
+        legsort = legendargs.pop('sorted', False)
         tot = float(sum(data))
         pclabels = []
         for d, label in zip(data, labels):
@@ -961,6 +963,16 @@ class SegmentPiePlot(SegmentDataPlot):
             tspan = '[%d--%d]' % self.span
         extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
                           linewidth=0)
+        # sort entries
+        if legsort:
+            patches, pclabels, data = map(list, zip(*sorted(
+                 zip(patches, pclabels, data),
+                 key=lambda x: x[2],
+                 reverse=True)))
+        # and restrict to the given threshold
+        if legth:
+            patches, pclabels, data = map(list, zip(*[
+                x for x in zip(patches, pclabels, data) if x[2] >= legth]))
 
         leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
         t = leg.get_texts()[0]

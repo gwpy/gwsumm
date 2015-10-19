@@ -892,7 +892,7 @@ class SegmentPiePlot(SegmentDataPlot):
     def parse_wedge_kwargs(self, defaults=dict()):
         wedgeargs = defaults.copy()
         for key in self.pargs.keys():
-            if key.startswith('wedge-'):
+            if key.startswith('wedge-') or key.startswith('wedge_'):
                 wedgeargs[key[6:]] = self.pargs.pop(key)
         return wedgeargs
 

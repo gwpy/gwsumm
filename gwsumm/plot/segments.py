@@ -44,6 +44,7 @@ from ..utils import (re_quote, get_odc_bitmask, re_flagdiv)
 from ..data import (get_channel, get_timeseries)
 from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
+from .core import (BarPlot, PiePlot)
 from .registry import (get_plot, register_plot)
 from .mixins import *
 
@@ -847,7 +848,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
 register_plot(ODCDataPlot)
 
 
-class SegmentPiePlot(SegmentDataPlot):
+class SegmentPiePlot(PiePlot, SegmentDataPlot):
     type = 'segment-pie'
     defaults = {
         'legend-loc': 'center left',
@@ -866,33 +867,10 @@ class SegmentPiePlot(SegmentDataPlot):
         axes = [self.plot.gca()]
         return self.plot, axes
 
-    def parse_plot_kwargs(self, defaults=dict()):
-        """Parse pie() keyword arguments
-        """
-        plotargs = defaults.copy()
-        plotargs.setdefault('labels', self._parse_labels())
-        for kwarg in ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
-                      'labeldistance', 'startangle', 'radius', 'counterclock',
-                      'wedgeprops', 'textprops']:
-            try:
-                val = self.pargs.pop(kwarg)
-            except KeyError:
-                try:
-                    val = self.pargs.pop('%ss' % kwarg)
-                except KeyError:
-                    val = None
-            if val is not None:
-                try:
-                    val = eval(val)
-                except Exception:
-                    pass
-                plotargs[kwarg] = val
-        return plotargs
-
     def parse_wedge_kwargs(self, defaults=dict()):
         wedgeargs = defaults.copy()
         for key in self.pargs.keys():
-            if key.startswith('wedge-'):
+            if key.startswith('wedge-') or key.startswith('wedge_'):
                 wedgeargs[key[6:]] = self.pargs.pop(key)
         return wedgeargs
 
@@ -942,6 +920,8 @@ class SegmentPiePlot(SegmentDataPlot):
 
         # make legend
         legendargs['title'] = self.pargs.pop('title', None)
+        legth = legendargs.pop('threshold', 0)
+        legsort = legendargs.pop('sorted', False)
         tot = float(sum(data))
         pclabels = []
         for d, label in zip(data, labels):
@@ -961,6 +941,16 @@ class SegmentPiePlot(SegmentDataPlot):
             tspan = '[%d--%d]' % self.span
         extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
                           linewidth=0)
+        # sort entries
+        if legsort:
+            patches, pclabels, data = map(list, zip(*sorted(
+                 zip(patches, pclabels, data),
+                 key=lambda x: x[2],
+                 reverse=True)))
+        # and restrict to the given threshold
+        if legth:
+            patches, pclabels, data = map(list, zip(*[
+                x for x in zip(patches, pclabels, data) if x[2] >= legth]))
 
         leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
         t = leg.get_texts()[0]
@@ -1068,3 +1058,109 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         return out
 
 register_plot(NetworkDutyPiePlot)
+
+
+class SegmentBarPlot(BarPlot, SegmentDataPlot):
+    type = 'segment-bar'
+    defaults = {
+        'edgecolor': 'white',
+        'scale': 'percent',
+        'color': GREEN,
+        'edgecolor': 'green',
+        'alpha': .6,
+    }
+    SCALE_UNIT = {
+        None: 'seconds',
+        1: 'seconds',
+        'percent': r'\%',
+        60: 'minutes',
+        3600: 'hours',
+    }
+
+    def init_plot(self, plot=Plot, geometry=(1,1)):
+        """Initialise the Figure and Axes objects for this
+        `TimeSeriesDataPlot`.
+        """
+        figsize = self.pargs.pop('figsize', [12, 6])
+        self.plot = Plot(figsize=figsize)
+        axes = [self.plot.gca()]
+        return self.plot, axes
+
+    def process(self, outputfile=None):
+        (plot, axes) = self.init_plot(plot=Plot)
+        ax = axes[0]
+
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        else:
+            self.pargs.setdefault(
+                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+
+        scale = self.pargs.pop('scale', 'percent')
+        if scale == 'percent':
+            self.pargs.setdefault('ylim', (0, 100))
+        elif isinstance(scale, (int, float)):
+            self.pargs.setdefault('ylim', (0, abs(self.span) / scale))
+        try:
+            self.pargs.setdefault('ylabel', 'Livetime [%s]'
+                                  % self.SCALE_UNIT[scale])
+        except KeyError:
+            self.pargs.setdefault('ylabel', 'Livetime')
+
+        # extract plotting arguments
+        sort = self.pargs.pop('sorted', False)
+        plotargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        labels = plotargs.pop('labels', self.flags)
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
+            livetime = float(abs(segs.active))
+            if scale == 'percent':
+                data.append(100 * livetime / float(abs(segs.known)))
+            elif isinstance(scale, (float, int)):
+                data.append(livetime / scale)
+
+        if sort:
+            data, labels = zip(*sorted(
+                zip(data, labels), key=lambda x: x[0], reverse=True))
+
+        # make bar chart
+        width = plotargs.pop('width', .8)
+        x = numpy.arange(len(data)) - width/2.
+        patches = ax.bar(x, data, width=width, **plotargs)[0]
+
+        # set labels
+        ax.set_xticks(range(len(data)))
+        ax.set_xticklabels(labels, rotation=30,
+                           rotation_mode='anchor', ha='right', fontsize=13)
+        ax.tick_params(axis='x', pad=2)
+        ax.xaxis.labelpad = 2
+        ax.xaxis.grid(False)
+        self.pargs.setdefault('xlim', (-.5, len(data)-.5))
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+        # add bit mask axes and finalise
+        self.pargs['xlim'] = None
+        return self.finalize(outputfile=outputfile, transparent="True",
+                             pad_inches=0)
+
+register_plot(SegmentBarPlot)

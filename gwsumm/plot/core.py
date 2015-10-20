@@ -493,8 +493,9 @@ class DataPlot(SummaryPlot):
         # customise axes
         for ax in self.plot.axes:
             # quick fix for x-axis labels hitting the axis
-            ax.tick_params(axis='x', pad=10)
-            ax.xaxis.labelpad = 10
+            if not self.type == 'bar' or self.type.endswith('-bar'):
+                ax.tick_params(axis='x', pad=10)
+                ax.xaxis.labelpad = 10
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.01)
@@ -519,3 +520,51 @@ class DataPlot(SummaryPlot):
         return outputfile
 
 register_plot(DataPlot)
+
+
+# -- custom plot types --------------------------------------------------------
+
+
+class _SingleCallPlot(object):
+    """Custom plot mixin to parse plot kwargs for a single call
+
+    """
+    DRAW_PARAMS = []
+
+    def parse_plot_kwargs(self, defaults=dict()):
+        """Parse pie() keyword arguments
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('labels', self._parse_labels())
+        for kwarg in self.DRAW_PARAMS:
+            try:
+                val = self.pargs.pop(kwarg)
+            except KeyError:
+                try:
+                    val = self.pargs.pop('%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
+                plotargs[kwarg] = val
+        return plotargs
+
+
+
+class BarPlot(_SingleCallPlot, DataPlot):
+    """`DataPlot` with bars
+    """
+    type = 'bar'
+    DRAW_PARAMS = ['width', 'bottom', 'color', 'edgecolor', 'linewidth',
+                   'xerr', 'yerr', 'ecolor', 'capsize', 'error_kw',
+                   'align', 'orientation', 'log', 'alpha']
+
+
+class PiePlot(_SingleCallPlot, DataPlot):
+    type = 'pie'
+    DRAW_PARAMS = ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
+                   'labeldistance', 'startangle', 'radius', 'counterclock',
+                   'wedgeprops', 'textprops']

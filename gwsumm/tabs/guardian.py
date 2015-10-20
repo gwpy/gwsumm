@@ -32,6 +32,9 @@ from dateutil import tz
 
 import numpy
 
+from matplotlib.cm import get_cmap
+from matplotlib.colors import Normalize
+
 from astropy.time import Time
 
 from glue.lal import Cache
@@ -101,7 +104,9 @@ class GuardianTab(Tab):
         except NoOptionError:
             new.transstates = new.grdstates.keys()
 
-        # build plots
+        # -- build plots ------------------------
+
+        new.layout = [1, 2]
         grdidxs = dict((state, idx) for idx, state in
                        new.grdstates.iteritems())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
@@ -109,12 +114,35 @@ class GuardianTab(Tab):
                   if plot[-i-1]]
         flags = [new.segmenttag % name for name in pstates]
         labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]
+
+        # segment plot
         new.plots.append(get_plot('guardian')(
             flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
             known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
             tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
             title='%s Guardian %s state' % (
                 new.ifo, new.node.replace('_', r'\_')), zorder=2))
+
+        # pie
+        cmap = get_cmap('brg')(Normalize(-1, 1)(
+            numpy.linspace(-1, 1, len(pstates))))[::-1]
+        th = len(flags) > 8 and (new.span[1] - new.span[0])/200. or 0
+        new.plots.append(get_plot('segment-pie')(
+            flags, new.span[0], new.span[1], labels=pstates, colors=cmap,
+            tag='GRD_%s_SEGMENT_PIE' % re.sub('[-\s]', '_', new.node),
+            startangle=180, counterclock=False, wedge_linewidth=0.01,
+            outdir=plotdir, title='%s Guardian %s state' % (
+                new.ifo, new.node.replace('_', r'\_')),
+            legend_fontsize=16, legend_sorted=True, legend_threshold=th,
+        ))
+
+        # bar
+        new.plots.append(get_plot('segment-bar')(
+            flags, new.span[0], new.span[1], labels=pstates, sorted=True,
+            tag='GRD_%s_SEGMENT_BAR' % re.sub('[-\s]', '_', new.node),
+            outdir=plotdir, title='%s Guardian %s state' % (
+                new.ifo, new.node.replace('_', r'\_')),
+        ))
         return new
 
     def process(self, nds='guess', multiprocess=True,

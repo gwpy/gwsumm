@@ -78,7 +78,7 @@ else:
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
-from gwpy.spectrum import psd
+from gwpy.spectrum import lal_ as lalpsd
 
 from gwsumm import (globalv, version, mode, html)
 from gwsumm.config import *
@@ -464,11 +464,11 @@ except ValueError:
 # set LAL FFT plan wisdom level
 duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
 if duration > 200000:
-     psd.LAL_FFTPLAN_LEVEL = 3
+     lalpsd.LAL_FFTPLAN_LEVEL = 3
 elif duration > 40000:
-     psd.LAL_FFTPLAN_LEVEL = 2
+     lalpsd.LAL_FFTPLAN_LEVEL = 2
 else:
-     psd.LAL_FFTPLAN_LEVEL = 1
+     lalpsd.LAL_FFTPLAN_LEVEL = 1
 
 # set processing options
 if opts.multiprocess == 1:

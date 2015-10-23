@@ -21,6 +21,8 @@
 
 from __future__ import division
 
+from gwpy.segments import SegmentList
+
 from .. import (globalv, version)
 from .registry import (get_plot, register_plot)
 from ..data import (get_range_channel, get_range)
@@ -65,7 +67,7 @@ class RangePlotMixin(object):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            rlist = get_range(channel, valid, **kwargs)
+            rlist = get_range(channel, valid, query=self.read, **kwargs)
             try:
                 keys.append(rlist[0].channel)
             except IndexError:

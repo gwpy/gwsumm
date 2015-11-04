@@ -73,12 +73,14 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
             method.
         """
+        epoch = ax.get_epoch()
         kwargs.setdefault('edgecolor', 'darkgreen')
         kwargs.setdefault('facecolor', GREEN)
         kwargs.setdefault('known', {'facecolor': 'red', 'edgecolor': 'darkred'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
+        ax.set_epoch(epoch)
+        sax.set_epoch(epoch)
         sax.tick_params(axis='y', which='major', labelsize=12)
-        sax.set_epoch(float(self.start))
         sax.yaxis.set_ticks_position('none')
         return sax
 

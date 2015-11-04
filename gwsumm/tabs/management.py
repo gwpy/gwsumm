@@ -66,7 +66,7 @@ class AccountingTab(ParentTab):
         # -----------
         # build plots
 
-        new.layout = (2, (1, 2))
+        new.layout = [2,2]
         new.segmenttag = '%s:%%s' % (new.channel)
         tag = new.channel.split(':', 1)[-1].replace('-', '_')
 
@@ -113,6 +113,19 @@ class AccountingTab(ParentTab):
             new.span[0], new.span[1], labels=groups.values(),
             outdir=plotdir, tag='%s_PIE_%s' % (tag, ptag.upper()),
             colors=piecolors, explode=explode,
+            title='%s operating mode %s' % (new.ifo, ptag)))
+
+        # plot bar chart
+        new.plots.append(get_plot('duty')(
+            [new.segmenttag % idx for idx in groups],
+            new.span[0], new.span[1],
+            labels=[f.replace(' ', '\n') for f in groups.values()],
+            outdir=plotdir, tag='%s_SEGMENT_BAR_%s' % (tag, ptag.upper()),
+            colors=piecolors, stacked=True, ylim=[0, 100],
+            ylabel=r'Percentage [\%] of available time',
+            legend_loc='upper left', legend_bbox_to_anchor=(1.01, 1),
+            legend_fontsize=12, legend_borderaxespad=0, legend_frameon=False,
+            legend_handlelength=1.0, legend_handletextpad=.5,
             title='%s operating mode %s' % (new.ifo, ptag)))
 
         return new

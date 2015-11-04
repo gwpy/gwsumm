@@ -828,6 +828,180 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     return out.coalesce()
 
 
+
+@use_segmentlist
+def get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), cache=None,
+                              query=True, nds='guess', format='power', return_=True,
+                              frametype=None, multiprocess=True, datafind_error='raise',
+                              **fftparams):
+    """Retrieve the time-series and generate a coherence spectrogram of
+    the two given channels
+    """
+    spec = _get_coherence_spectrogram(channel_pair, segments,
+                                      config=config, cache=cache,
+                                      query=query, nds=nds, format=format,
+                                      return_=return_, frametype=frametype,
+                                      multiprocess=multiprocess,
+                                      datafind_error=datafind_error,
+                                      **fftparams)
+
+    return spec
+
+
+
+@use_segmentlist
+def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), cache=None,
+                               query=True, nds='guess', format='power', return_=True,
+                               frametype=None, multiprocess=True,
+                               datafind_error='raise', **fftparams):
+
+    channel1 = get_channel(channel_pair[0])
+    channel2 = get_channel(channel_pair[1])
+
+    # define the key that will be used to store the coherence spectrogram in globalv
+    key = '%s,%s' % (channel1.ndsname, channel2.ndsname)
+
+    # read segments from global memory
+    havesegs = globalv.COHERENCE_SPECTROGRAMS.get(key,
+                                                  SpectrogramList()).segments
+    new = segments - havesegs
+
+    # get processes
+    if multiprocess is True:
+        nproc = count_free_cores()
+    elif multiprocess is False:
+        nproc = 1
+    else:
+        nproc = multiprocess
+
+    globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
+
+    # get data if query=True or if there are new segments
+    query &= abs(new) != 0
+
+    if query:
+
+        # read channel information
+        try:
+            filter_ = channel1.frequency_response
+        except AttributeError:
+            filter_ = None
+        else:
+            if isinstance(filter_, str):
+                filter_ = eval(filter_)
+
+        # read FFT params (method key not necessary)
+        fftparams = fftparams.copy()
+
+        try:
+            del fftparams['method']
+        except KeyError:
+            pass
+
+        for param in ['fftlength', 'overlap']:
+            if hasattr(channel1, param):
+                fftparams[param] = float(getattr(channel1, param))
+            elif param in fftparams:
+                fftparams[param] = float(fftparams[param])
+
+        try:
+            stride = float(fftparams.pop('stride'))
+        except KeyError:
+            stride = None
+
+        if hasattr(channel1, 'stride'):
+            stride = float(channel.stride)
+
+        if hasattr(channel1, 'window'):
+            fftparams['window'] = channel.window
+
+        # get time-series data
+        if stride is not None:
+            tmp = type(new)()
+            for s in new:
+                if abs(s) < stride:
+                    continue
+                else:
+                    d = float(abs(s))
+                    tmp.append(type(s)(s[0], s[0] + d//stride * stride))
+            new = tmp
+
+        timeserieslist1 = get_timeseries(channel1, new, config=config,
+                                         cache=cache, frametype=frametype,
+                                         multiprocess=nproc, query=query,
+                                         datafind_error=datafind_error, nds=nds)
+        timeserieslist2 = get_timeseries(channel2, new, config=config,
+                                         cache=cache, frametype=frametype,
+                                         multiprocess=nproc, query=query,
+                                         datafind_error=datafind_error, nds=nds)
+
+        # calculate coherence spectrograms
+        if len(timeserieslist1):
+            vprint("    Calculating coherence spectrograms for %s and %s" % (str(channel1), str(channel2)))
+        for ts1, ts2 in zip(timeserieslist1, timeserieslist2):
+            fftparams.setdefault('fftlength', 1)
+            fftparams.setdefault('overlap', 0.5)
+
+            if not stride and fftparams['overlap'] != 0:
+                stride = ceil(fftparams['fftlength'] * 1.5)
+            elif not stride:
+                stride = fftparams['fftlength']
+
+            if abs(ts1.span) < stride:
+                continue
+
+            try:
+                specgram = ts1.coherence_spectrogram(ts2, stride, nproc=nproc,
+                                                     **fftparams)
+            except ZeroDivisionError:
+                if stride == 0:
+                    raise ZeroDivisionError("Coherence spectrogram stride is 0")
+                elif fftparams['fftlength'] == 0:
+                    raise ZeroDivisionError("FFT length is 0")
+                else:
+                    raise
+            except ValueError as e:
+                if 'has no unit' in str(e):
+                    unit = ts1.unit
+                    ts1._unit = units.Unit('count')
+                    specgram = ts1.coherence_spectrogram(ts2, stride, nproc=nproc,
+                                                         **fftparams)
+                    specgram._unit = None
+                else:
+                    raise
+
+            if filter_:
+                specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
+
+            globalv.COHERENCE_SPECTROGRAMS[key].append(specgram)
+            globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
+
+            vprint('.')
+
+        if len(timeserieslist1):
+            vprint('\n')
+
+    if not return_:
+        return
+
+    # return correct data
+    out = SpectrogramList()
+    for specgram in globalv.COHERENCE_SPECTROGRAMS[key]:
+        for seg in segments:
+            if abs(seg) < specgram.dt.value:
+                continue
+            if specgram.span.intersects(seg):
+                common = specgram.span & type(seg)(seg[0],
+                                                   seg[1] + specgram.dt.value)
+                s = specgram.crop(*common)
+                if format in ['amplitude', 'asd']:
+                    s = s**(1/2.)
+                if s.shape[0]:
+                    out.append(s)
+    return out.coalesce()
+
+
+
 def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
                  query=True, nds='guess', format='power', return_=True,
                  **fftparams):
@@ -882,6 +1056,63 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
     return out
 
 
+def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=None,
+                           query=True, nds='guess', format='power', return_=True,
+                           **fftparams):
+    """Retrieve the time-series and generate a coherence spectrogram of the given
+    channel
+    """
+
+    channel1 = get_channel(channel_pair[0])
+    channel2 = get_channel(channel_pair[1])
+
+    if isinstance(segments, DataQualityFlag):
+        name = ','.join([channel1.ndsname, channel2.ndsname, segments.name])
+        segments = segments.active
+    else:
+        name = channel1.ndsname + channel2.ndsname
+    name += ',%s' % format
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+
+    if name not in globalv.COHERENCE_SPECTRUM:
+        vprint("    Calculating 5/50/95 percentile spectra for %s"
+               % name.rsplit(',', 1)[0])
+        speclist = get_coherence_spectrogram(channel_pair, segments, config=config,
+                                             cache=cache, query=query, nds=nds,
+                                             format=format, **fftparams)
+        try:
+            specgram = speclist.join(gap='ignore')
+        except ValueError as e:
+            if 'units do not match' in str(e):
+                warnings.warn(str(e))
+                for spec in speclist[1:]:
+                    spec.unit = speclist[0].unit
+                specgram = speclist.join(gap='ignore')
+            else:
+                raise
+        try:
+            globalv.COHERENCE_SPECTRUM[name] = specgram.percentile(50)
+        except (ValueError, IndexError):
+            globalv.COHERENCE_SPECTRUM[name] = Spectrum([], channel=channel, f0=0, df=1,
+                                              unit=units.Unit(''))
+            globalv.COHERENCE_SPECTRUM[cmin] = globalv.COHERENCE_SPECTRUM[name]
+            globalv.COHERENCE_SPECTRUM[cmax] = globalv.COHERENCE_SPECTRUM[name]
+        else:
+            globalv.COHERENCE_SPECTRUM[cmin] = specgram.percentile(5)
+            globalv.COHERENCE_SPECTRUM[cmax] = specgram.percentile(95)
+        vprint(".\n")
+
+    if not return_:
+        return
+
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+    out = (globalv.COHERENCE_SPECTRUM[name], globalv.COHERENCE_SPECTRUM[cmin],
+           globalv.COHERENCE_SPECTRUM[cmax])
+    return out
+
+
 def add_timeseries(timeseries, key=None, coalesce=True):
     """Add a `TimeSeries` to the global memory cache
     """
@@ -905,6 +1136,17 @@ def add_spectrogram(specgram, key=None, coalesce=True):
     globalv.SPECTROGRAMS[key].append(specgram)
     if coalesce:
         globalv.SPECTROGRAMS[key].coalesce()
+
+
+def add_coherence_spectrogram(specgram, key=None, coalesce=True):
+    """Add a `Coherence spectrogram` to the global memory cache
+    """
+    if key is None:
+        key = specgram.name or str(specgram.channel)
+    globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
+    globalv.COHERENCE_SPECTROGRAMS[key].append(specgram)
+    if coalesce:
+        globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
 
 
 @use_segmentlist
@@ -940,12 +1182,59 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
     # loop over channels and generate spectrograms
     out = OrderedDict()
     for channel in channels:
-         out[channel] = get_spectrogram(
-             channel, segments, config=config, cache=cache, query=query,
-             nds=nds, format=format, multiprocess=multiprocess,
-             return_=return_, method=method, datafind_error=datafind_error,
-             **fftparams)
+        out[channel] = get_spectrogram(
+            channel, segments, config=config, cache=cache, query=query,
+            nds=nds, format=format, multiprocess=multiprocess,
+            return_=return_, method=method, datafind_error=datafind_error,
+            **fftparams)
     return out
+
+
+
+@use_segmentlist
+def get_coherence_spectrograms(channel_pairs, segments, config=ConfigParser(), cache=None,
+                               query=True, nds='guess', format='power', return_=True,
+                               method='median-mean', frametype=None, multiprocess=True,
+                               datafind_error='raise', **fftparams):
+    """Get coherence spectrograms for multiple channels
+    """
+
+    channels = map(get_channel, channel_pairs)
+
+    # get timeseries data in bulk
+    if query:
+        qchannels = map(
+            get_channel, set(c2 for c in
+                map(lambda x: re_channel.findall(x.ndsname), channels)
+                for c2 in c))
+        if format in ['rayleigh']:
+            method_ = format
+        else:
+            method_ = method
+        keys = ['%s,%s' % (channel.ndsname, method_) for channel in qchannels]
+        havesegs = reduce(operator.and_, (globalv.COHERENCE_SPECTROGRAMS.get(
+            key, SpectrogramList()).segments for key in keys))
+        new = segments - havesegs
+        strides = set([getattr(c, 'stride', 0) for c in qchannels])
+        if len(strides) == 1:
+            stride = strides.pop()
+            new = type(new)([s for s in new if abs(s) >= stride])
+        get_timeseries_dict(qchannels, new, config=config, cache=cache,
+                            multiprocess=multiprocess, frametype=frametype,
+                            datafind_error=datafind_error, nds=nds,
+                            return_=False)
+    # loop over channels and generate spectrograms
+    out = OrderedDict()
+
+    for channel_pair in zip(channels[0::2], channels[1::2]):
+        out[channel] = get_coherence_spectrogram(
+                            channel_pair, segments, config=config, cache=cache, query=query,
+                            nds=nds, format=format, multiprocess=multiprocess,
+                            return_=return_, method=method, datafind_error=datafind_error,
+                            **fftparams)
+    return out
+
+
 
 
 def get_range_channel(channel, **rangekwargs):

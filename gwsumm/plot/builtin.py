@@ -35,7 +35,8 @@ from gwpy.plotter.tex import label_to_latex
 
 from .. import (globalv, mode, version)
 from ..utils import (re_quote, re_cchar, split_channels)
-from ..data import (get_channel, get_timeseries, get_spectrogram, get_spectrum,
+from ..data import (get_channel, get_timeseries, get_spectrogram,
+                    get_coherence_spectrogram, get_spectrum, get_coherence_spectrum,
                     add_timeseries)
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
@@ -273,8 +274,16 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             valid = self.state.active
         else:
             valid = SegmentList([self.span])
-        specgrams = get_spectrogram(channel, valid, query=False,
-                                    format=sdform)
+
+        if self.type is 'spectrogram':
+            specgrams = get_spectrogram(channel, valid, query=False,
+                                        format=sdform)
+        elif self.type is 'coherence_spectrogram':
+            specgrams = get_coherence_spectrogram(self.channels, valid, query=False,
+                                                  format=sdform)
+        else:
+            raise ValueError('Unrecognized type in SpectrogramDataPlot')
+
         # calculate ratio spectrum
         if len(specgrams) and (ratio in ['median', 'mean'] or
                                isinstance(ratio, int)):
@@ -329,6 +338,21 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         return self.finalize()
 
 register_plot(SpectrogramDataPlot)
+
+
+class CoherenceSpectrogramDataPlot(SpectrogramDataPlot):
+    """DataPlot a Spectrogram of the coherence between two channels
+    """
+    type = 'coherence_spectrogram'
+    data = 'coherence_spectrogram'
+    defaults = {'ratio': None,
+                'format': None,
+                'clim': None,
+                'cmap': 'jet',
+                'logcolor': False,
+                'colorlabel': None}
+
+register_plot(CoherenceSpectrogramDataPlot)
 
 
 class SpectrumDataPlot(DataPlot):
@@ -391,13 +415,29 @@ class SpectrumDataPlot(DataPlot):
                 refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
 
         # add data
-        for channel, pargs in zip(self.channels, plotargs):
+        if self.type is 'spectrum':
+            iterator = zip(self.channels, plotargs)
+        elif self.type is 'coherence_spectrum':
+            iterator = zip(self.channels[0::2], self.channels[1::2], plotargs)
+        else:
+            raise ValueError('Unrecognized type in SpectrumDataPlot')
+
+        for tuple in iterator:
+            channel = tuple[0]
+            channel2 = tuple[1]
+            pargs = tuple[-1]
+
             if self.state and not self.all_data:
                 valid = self.state
             else:
                 valid = SegmentList([self.span])
-            data = get_spectrum(str(channel), valid, query=False,
-                                format=sdform)
+
+            if self.type is 'spectrum':
+                data = get_spectrum(str(channel), valid, query=False,
+                                    format=sdform)
+            elif self.type is 'coherence_spectrum':
+                data = get_coherence_spectrum([str(channel), str(channel2)], valid, query=False,
+                                              format=sdform)
 
             # anticipate log problems
             if self.pargs['logx']:
@@ -476,6 +516,22 @@ class SpectrumDataPlot(DataPlot):
         return self.finalize()
 
 register_plot(SpectrumDataPlot)
+
+
+class CoherenceSpectrumDataPlot(SpectrumDataPlot):
+    """Coherence pectrum plot for a `SummaryTab`
+    """
+    type = 'coherence_spectrum'
+    data = 'coherence_spectrum'
+    defaults = {'logx': True,
+                'logy': False,
+                'format': None,
+                'alpha': 0.1,
+                'zorder': 1,
+                'no_percentiles': False,
+                'reference_linestyle': '--'}
+
+register_plot(CoherenceSpectrumDataPlot)
 
 
 class TimeSeriesHistogramPlot(DataPlot):

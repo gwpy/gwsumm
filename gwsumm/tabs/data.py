@@ -43,7 +43,7 @@ from .. import (version, globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
-                    get_spectrum)
+                    get_coherence_spectrograms, get_spectrum)
 from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
@@ -486,6 +486,11 @@ class DataTab(DataTabBase):
         raychannels = self.get_channels('rayleigh-spectrogram',
                                         'rayleigh-spectrum',
                                         all_data=all_data, read=True)
+        # for coherence spectrograms, we need all pairs of channels, not just the unique ones
+        csgchannels = self.get_channels('coherence_spectrogram',
+                                        all_data=all_data, read=True,
+                                        unique=False)
+
         if len(sgchannels):
             vprint("    %d channels identified for Spectrogram\n"
                    % len(sgchannels))
@@ -498,6 +503,20 @@ class DataTab(DataTabBase):
             fp2['method'] = 'rayleigh'
             get_spectrograms(raychannels, state, config=config, return_=False,
                              multiprocess=multiprocess, **fp2)
+
+        if len(csgchannels):
+
+            if (len(csgchannels)%2 != 0):
+                raise ValueError('Error processing coherence spectrograms: you must supply'
+                                 'exactly 2 channels for each spectrogram.')
+
+            vprint("    %d channel pairs identified for Coherence Spectrogram\n"
+                   % (len(csgchannels)/2))
+
+            get_coherence_spectrograms(csgchannels, state, config=config, nds=nds,
+                                       multiprocess=multiprocess, return_=False,
+                                       cache=datacache, datafind_error=datafind_error,
+                                       **fftparams)
 
         # --------------------------------------------------------------------
         # process spectra
@@ -849,7 +868,12 @@ class DataTab(DataTabBase):
             an alphabetically-sorted `list` of channels
         """
         isnew = kwargs.pop('new', True)
-        out = set()
+        if kwargs.pop('unique', True):
+            out = set()
+            add = out.update
+        else:
+            out = list()
+            add = out.extend
         for plot in self.plots:
             if not plot.data in types:
                 continue
@@ -862,10 +886,10 @@ class DataTab(DataTabBase):
                     break
             if skip:
                 continue
-            out.update(plot.channels)
+            add(plot.channels)
             if plot.data == 'odc':
-                out.update(plot.get_bitmask_channels())
-        return sorted(out, key=lambda ch: ch.name)
+                add(plot.get_bitmask_channels())
+        return out
 
     def get_flags(self, *types, **kwargs):
         """Return the `set` of data-quality flags required for plots of the

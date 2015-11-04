@@ -482,15 +482,19 @@ class DutyDataPlot(SegmentDataPlot):
         # if not given anything, work it out from the mode
         if self.bins is None:
             m = mode.MODE_NAME[mode.get_mode()]
-            # for day mode, make hourly duty factor
-            if m in ['DAY']:
-                dt = relativedelta(hours=1)
-            # for week and month mode, use daily
-            elif m in ['WEEK', 'MONTH']:
-                dt = relativedelta(days=1)
+            duration = float(abs(self.span))
             # for year mode, use a month
-            elif m in ['YEAR']:
+            if m in ['YEAR'] or duration >= 86400 * 300:
                 dt = relativedelta(months=1)
+            # for more than 8 weeks, use weeks
+            elif duration >= 86400 * 7 * 8:
+                dt = relativedelta(weeks=1)
+            # for week and month mode, use daily
+            elif m in ['WEEK', 'MONTH'] or duration >= 86400 * 7:
+                dt = relativedelta(days=1)
+            # for day mode, make hourly duty factor
+            elif m in ['DAY']:
+                dt = relativedelta(hours=1)
             # otherwise provide 10 bins
             else:
                 dt = relativedelta(seconds=float(abs(self.span))/10.)

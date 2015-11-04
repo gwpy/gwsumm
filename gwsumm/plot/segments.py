@@ -452,6 +452,7 @@ class DutyDataPlot(SegmentDataPlot):
                 'side_by_side': False,
                 'normalized': None,
                 'cumulative': False,
+                'stacked': False,
                 'ylabel': r'Duty factor [\%]'}
 
     def __init__(self, flags, start, end, state=None, outdir='.',
@@ -549,6 +550,7 @@ class DutyDataPlot(SegmentDataPlot):
         (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
 
         # extract plotting arguments
+        stacked = self.pargs.pop('stacked', False)
         sidebyside = self.pargs.pop('side_by_side', False)
         normalized = self.pargs.pop('normalized', True)
         cumulative = self.pargs.pop('cumulative', False)
@@ -560,18 +562,31 @@ class DutyDataPlot(SegmentDataPlot):
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
             legendargs.setdefault('borderaxespad', 0)
+        rollingmean = self.pargs.pop('rolling_mean',
+                                     not stacked and not cumulative)
 
         # work out times and plot mean for legend
         self.get_bins()
         times = float(self.start) + numpy.concatenate(
                                  ([0], self.bins[:-1].cumsum()))
-        if not cumulative:
+        now = bisect.bisect_left(times, globalv.NOW)
+        if rollingmean:
             axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
 
+        # get bar parameters
         try:
             bottom = self.pargs['ylim'][0]
         except KeyError:
             bottom = 0
+        bottom = numpy.zeros(times.size) + bottom
+        if sidebyside:
+            width = .8 * self.bins[:now]/len(self.flags)
+            times = times + self.bins * (0.1 + .8 * i/len(self.flags))
+        elif stacked:
+            width = self.bins[:now] * .9
+            times = times + self.bins * .05
+        else:
+            width = self.bins[:now]
 
         # plot segments
         if self.state and not self.all_data:
@@ -589,26 +604,30 @@ class DutyDataPlot(SegmentDataPlot):
             # plot duty cycle
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
-            elif 'label' in pargs and normalized == 'percent':
+            elif 'label' in pargs and normalized == 'percent' and not stacked:
                 if legendargs.get('loc', None) in ['upper left', 2]:
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
-            now = bisect.bisect_left(times, globalv.NOW)
-            if sidebyside:
-                t = times + self.bins * (0.1 + .8 * i/len(self.flags))
-                b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=.8 * self.bins[:now]/len(self.flags),
-                           color=color, **pargs)
+            if stacked:
+                height = duty
+                pargs.setdefault('edgecolor', color)
             else:
-                b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=self.bins[:now], color=color, **pargs)
+                height = duty - bottom
+
+            b = ax.bar(times[:now], height[:now], bottom=bottom[:now],
+                       width=width, color=color, **pargs)
+
             # plot mean
-            if not cumulative:
+            if rollingmean:
                 t = [self.start] + list(times + self.bins/2.) + [self.end]
                 mean = [mean[0]] + list(mean) + [mean[-1]]
                 ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+
+            # record duty for stacked chart
+            if stacked:
+                bottom += height
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -636,7 +655,7 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_xlabel('')
 
         # add custom legend for mean
-        if not cumulative:
+        if rollingmean:
             yoff = 0.01 * float.__div__(*axes[0].get_position().size)
             lkwargs = legendargs.copy()
             lkwargs['loc'] = 'lower right'

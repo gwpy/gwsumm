@@ -40,6 +40,8 @@ The available classes are:
    TriggerRateDataPlot
 """
 
+from matplotlib import __version__ as mpl_version
+
 from gwpy.plotter import rcParams
 rcParams.update({
     'figure.subplot.bottom': 0.17,
@@ -50,6 +52,10 @@ rcParams.update({
     'grid.color': 'gray',
     'svg.fonttype': 'none',
 })
+
+# use new viridis colormap by default
+if mpl_version >= '1.5':
+    rcParams['image.cmap'] = 'viridis'
 
 from gwsumm import version
 

@@ -90,7 +90,6 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 'clim': None,
                 'logcolor': False,
                 'colorlabel': None,
-                'cmap': 'jet',
                 'size_by': None,
                 'size_by_log': None,
                 'size_range': None}
@@ -169,7 +168,10 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # get plot arguments
         for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'size_by',
                     'size_by_log', 'size_range', 'cmap', 's', 'marker']:
-            val = self.pargs.pop(key)
+            try:
+                val = self.pargs.pop(key)
+            except KeyError:
+                continue
             if key == 'facecolor' and len(self.channels) > 1 and val is None:
                 val = color_cycle()
             if key == 'marker' and len(self.channels) > 1 and val is None:

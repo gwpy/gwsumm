@@ -54,7 +54,7 @@ rcParams.update({
 })
 
 # use new viridis colormap by default
-if mpl_version >= '1.5':
+if '1.5' <= mpl_version < '2.0':
     rcParams['image.cmap'] = 'viridis'
 
 from gwsumm import version

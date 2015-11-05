@@ -217,7 +217,6 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     defaults = {'ratio': None,
                 'format': None,
                 'clim': None,
-                'cmap': 'jet',
                 'logcolor': False,
                 'colorlabel': None}
 
@@ -256,8 +255,12 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
-        cmap = self.pargs.pop('cmap')
         ratio = self.ratio
+
+        # get cmap
+        if ratio in ['median', 'mean']:
+            self.pargs.setdefault('cmap', 'Spectral_r')
+        cmap = self.pargs.pop('cmap', None)
 
         # get data
         if self.state and not self.all_data:
@@ -577,7 +580,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         'reference_linestyle': '--',
         'log': True,
         'nbins': 100,
-        'cmap': 'jet',
     }
 
     def __init__(self, channels, *args, **kwargs):
@@ -611,6 +613,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             plot.suptitle(suptitle, y=0.993, va='top')
 
         # parse plotting arguments
+        cmap = self.pargs.pop('cmap', None)
         varargs = self.parse_variance_kwargs()
         plotargs = self.parse_plot_kwargs()[0]
         legendargs = self.parse_legend_kwargs()
@@ -644,7 +647,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             plotargs.setdefault('vmin', 1/livetime)
         plotargs.setdefault('vmax', 1.)
         plotargs.pop('label')
-        plotargs.setdefault('cmap', 'jet')
 
         specgram = get_spectrogram(self.channels[0], valid, query=False,
                                     format='asd').join(gap='ignore')
@@ -657,7 +659,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             variance /= livetime / specgram.dt.value
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
-            m = ax.plot_variance(variance, **plotargs)
+            m = ax.plot_variance(variance, cmap=cmap, **plotargs)
         #else:
         #    ax.scatter([1], [1], c=[1], visible=False, vmin=plotargs['vmin'],
         #               vmax=plotargs['vmax'], cmap=plotargs['cmap'])
@@ -734,7 +736,7 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
     defaults = {'ratio': None,
                 'format': 'rayleigh',
                 'clim': [0.25, 4],
-                'cmap': 'spectral',
+                'cmap': 'BrBG',
                 'logcolor': True,
                 'colorlabel': 'Rayleigh statistic'}
 

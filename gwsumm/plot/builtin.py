@@ -348,7 +348,6 @@ class CoherenceSpectrogramDataPlot(SpectrogramDataPlot):
     defaults = {'ratio': None,
                 'format': None,
                 'clim': None,
-                'cmap': 'jet',
                 'logcolor': False,
                 'colorlabel': None}
 

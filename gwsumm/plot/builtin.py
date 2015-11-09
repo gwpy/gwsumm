@@ -531,6 +531,10 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
                 'no_percentiles': False,
                 'reference_linestyle': '--'}
 
+    # override this to allow us to set the legend manually
+    def _parse_labels(self, defaults=None):
+        return self.pargs.pop('labels', defaults)
+
 register_plot(CoherenceSpectrumDataPlot)
 
 

@@ -1101,6 +1101,10 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
         else:
             globalv.COHERENCE_SPECTRUM[cmin] = specgram.percentile(5)
             globalv.COHERENCE_SPECTRUM[cmax] = specgram.percentile(95)
+
+        # set the spectrum's name manually; this will be used for the legend
+        globalv.COHERENCE_SPECTRUM[name].name = 'test'#channel1.ndsname + channel2.ndsname
+
         vprint(".\n")
 
     if not return_:

@@ -118,8 +118,12 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
             host = None
             port = None
         else:
-            host, port = host.split(':')
-            port = int(port)
+            try:
+                host, port = host.rsplit(':', 1)
+            except ValueError:
+                port = None
+            else:
+                port = int(port)
     else:
         port = config.getint('datafind', 'port')
     # get credentials

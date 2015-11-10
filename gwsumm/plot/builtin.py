@@ -738,7 +738,7 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
     defaults = {'ratio': None,
                 'format': 'rayleigh',
                 'clim': [0.25, 4],
-                'cmap': 'BrBG',
+                'cmap': 'BrBG_r',
                 'logcolor': True,
                 'colorlabel': 'Rayleigh statistic'}
 

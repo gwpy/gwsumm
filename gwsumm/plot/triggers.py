@@ -157,6 +157,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
 
         # get colouring params
+        cmap = self.pargs.pop('cmap', 'YlOrRd')
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
@@ -264,7 +265,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         if ccolumn:
             if not ntrigs:
                 ax.scatter([1], [1], c=[1], visible=False)
-            plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
+            plot.add_colorbar(ax=ax, cmap=cmap, clim=clim,
+                              log=clog, label=clabel)
         else:
             plot.add_colorbar(ax=ax, visible=False)
 

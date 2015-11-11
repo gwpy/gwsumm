@@ -452,6 +452,7 @@ class DutyDataPlot(SegmentDataPlot):
                 'side_by_side': False,
                 'normalized': None,
                 'cumulative': False,
+                'stacked': False,
                 'ylabel': r'Duty factor [\%]'}
 
     def __init__(self, flags, start, end, state=None, outdir='.',
@@ -481,15 +482,19 @@ class DutyDataPlot(SegmentDataPlot):
         # if not given anything, work it out from the mode
         if self.bins is None:
             m = mode.MODE_NAME[mode.get_mode()]
-            # for day mode, make hourly duty factor
-            if m in ['DAY']:
-                dt = relativedelta(hours=1)
-            # for week and month mode, use daily
-            elif m in ['WEEK', 'MONTH']:
-                dt = relativedelta(days=1)
+            duration = float(abs(self.span))
             # for year mode, use a month
-            elif m in ['YEAR']:
+            if m in ['YEAR'] or duration >= 86400 * 300:
                 dt = relativedelta(months=1)
+            # for more than 8 weeks, use weeks
+            elif duration >= 86400 * 7 * 8:
+                dt = relativedelta(weeks=1)
+            # for week and month mode, use daily
+            elif m in ['WEEK', 'MONTH'] or duration >= 86400 * 7:
+                dt = relativedelta(days=1)
+            # for day mode, make hourly duty factor
+            elif m in ['DAY']:
+                dt = relativedelta(hours=1)
             # otherwise provide 10 bins
             else:
                 dt = relativedelta(seconds=float(abs(self.span))/10.)
@@ -550,6 +555,7 @@ class DutyDataPlot(SegmentDataPlot):
 
         # extract plotting arguments
         style = self.pargs.pop('style', 'bar')
+        stacked = self.pargs.pop('stacked', False)
         sidebyside = self.pargs.pop('side_by_side', False)
         normalized = self.pargs.pop('normalized', True)
         cumulative = self.pargs.pop('cumulative', False)
@@ -561,18 +567,31 @@ class DutyDataPlot(SegmentDataPlot):
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
             legendargs.setdefault('borderaxespad', 0)
+        rollingmean = self.pargs.pop('rolling_mean',
+                                     not stacked and not cumulative)
 
         # work out times and plot mean for legend
         self.get_bins()
         times = float(self.start) + numpy.concatenate(
                                  ([0], self.bins[:-1].cumsum()))
-        if not cumulative:
+        now = bisect.bisect_left(times, globalv.NOW)
+        if rollingmean:
             axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
 
+        # get bar parameters
         try:
             bottom = self.pargs['ylim'][0]
         except KeyError:
             bottom = 0
+        bottom = numpy.zeros(times.size) + bottom
+        if sidebyside:
+            width = .8 * self.bins[:now]/len(self.flags)
+            times = times + self.bins * (0.1 + .8 * i/len(self.flags))
+        elif stacked:
+            width = self.bins[:now] * .9
+            times = times + self.bins * .05
+        else:
+            width = self.bins[:now]
 
         # plot segments
         if self.state and not self.all_data:
@@ -590,7 +609,7 @@ class DutyDataPlot(SegmentDataPlot):
             # plot duty cycle
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
-            elif 'label' in pargs and normalized == 'percent':
+            elif 'label' in pargs and normalized == 'percent' and not stacked:
                 if legendargs.get('loc', None) in ['upper left', 2]:
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
@@ -604,28 +623,33 @@ class DutyDataPlot(SegmentDataPlot):
             elif style not in ['bar', 'fill']:
                 raise ValueError("Cannot display %s with style=%r"
                                  % (type(self).__name__, style))
-            elif sidebyside:
-                t = times + self.bins * (0.1 + .8 * i/len(self.flags))
-                b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=.8 * self.bins[:now]/len(self.flags),
-                           color=color, **pargs)
             else:
+                if stacked:
+                    height = duty
+                    pargs.setdefault('edgecolor', color)
+                else:
+                    height = duty - bottom
                 barargs = pargs.copy()
                 if style == 'fill':
                     ec = barargs.pop('edgecolor', 'black')
                     barargs['edgecolor'] = 'none'
                     lw = barargs.pop('linewidth', 1)
                     barargs['linewidth'] = 0
-                b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=self.bins[:now], color=color, **barargs)
+                b = ax.bar(times[:now], height[:now], bottom=bottom[:now],
+                           width=width, color=color, **barargs)
                 if style == 'fill':
                     ax.plot(times[:now], duty[:now], drawstyle='steps-post',
                             color=ec, linewidth=lw)
+
             # plot mean
-            if not cumulative:
+            if rollingmean:
                 t = [self.start] + list(times + self.bins/2.) + [self.end]
                 mean = [mean[0]] + list(mean) + [mean[-1]]
                 ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+
+            # record duty for stacked chart
+            if stacked:
+                bottom += height
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -653,7 +677,7 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_xlabel('')
 
         # add custom legend for mean
-        if not cumulative:
+        if rollingmean:
             yoff = 0.01 * float.__div__(*axes[0].get_position().size)
             lkwargs = legendargs.copy()
             lkwargs['loc'] = 'lower right'

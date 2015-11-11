@@ -549,6 +549,7 @@ class DutyDataPlot(SegmentDataPlot):
         (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
 
         # extract plotting arguments
+        style = self.pargs.pop('style', 'bar')
         sidebyside = self.pargs.pop('side_by_side', False)
         normalized = self.pargs.pop('normalized', True)
         cumulative = self.pargs.pop('cumulative', False)
@@ -596,14 +597,30 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
             now = bisect.bisect_left(times, globalv.NOW)
-            if sidebyside:
+            if style == 'line':
+                lineargs = pargs.copy()
+                lineargs.setdefault('drawstyle', 'steps-post')
+                ax.plot(times[:now], duty[:now], color=color, **lineargs)
+            elif style not in ['bar', 'fill']:
+                raise ValueError("Cannot display %s with style=%r"
+                                 % (type(self).__name__, style))
+            elif sidebyside:
                 t = times + self.bins * (0.1 + .8 * i/len(self.flags))
                 b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
                            width=.8 * self.bins[:now]/len(self.flags),
                            color=color, **pargs)
             else:
+                barargs = pargs.copy()
+                if style == 'fill':
+                    ec = barargs.pop('edgecolor', 'black')
+                    barargs['edgecolor'] = 'none'
+                    lw = barargs.pop('linewidth', 1)
+                    barargs['linewidth'] = 0
                 b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=self.bins[:now], color=color, **pargs)
+                           width=self.bins[:now], color=color, **barargs)
+                if style == 'fill':
+                    ax.plot(times[:now], duty[:now], drawstyle='steps-post',
+                            color=ec, linewidth=lw)
             # plot mean
             if not cumulative:
                 t = [self.start] + list(times + self.bins/2.) + [self.end]

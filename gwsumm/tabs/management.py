@@ -141,8 +141,13 @@ class AccountingTab(ParentTab):
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
 
+        # get archived GPS time
+        tag = self.segmenttag % self.modes.keys()[0]
+        lastgps = globalv.SEGMENTS[tag].known[-1][-1]
+
         # get data
-        data = get_timeseries(self.channel, SegmentList([self.span]),
+        new = SegmentList([type(self.span)(lastgps, self.span[1])])
+        data = get_timeseries(self.channel, new,
                               config=config, nds=nds, dtype='int16',
                               datafind_error=datafind_error,
                               multiprocess=multiprocess, cache=datacache)

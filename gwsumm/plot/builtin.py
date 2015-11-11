@@ -23,6 +23,7 @@ from __future__ import division
 
 import hashlib
 import warnings
+from itertools import cycle
 
 from matplotlib.pyplot import subplots
 
@@ -484,14 +485,26 @@ class TimeSeriesHistogramPlot(DataPlot):
                 'histtype': 'stepfilled',
                 'rwidth': 1}
 
-    def init_plot(self, plot=HistogramPlot):
+    def init_plot(self, plot=HistogramPlot, geometry=None, figsize=[12, 6]):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
-        ax = self.plot.gca()
-        ax.grid(True, which='both')
-        return self.plot, ax
+        if geometry is None and self.pargs.pop('sep', False):
+            if self.data == 'segments':
+                geometry = (len(self.flags), 1)
+            else:
+                geometry = (len(self.channels), 1)
+        elif geometry is None:
+            geometry = (1, 1)
+        self.plot, axes = subplots(
+            nrows=geometry[0], ncols=geometry[1], sharex=True,
+            subplot_kw={'projection': plot._DefaultAxesClass.name},
+            FigureClass=plot, figsize=figsize, squeeze=True)
+        if isinstance(axes, plot._DefaultAxesClass):
+            axes = [axes]
+        for ax in axes:
+            ax.grid(True, which='both')
+        return self.plot, axes
 
     def parse_plot_kwargs(self, **defaults):
         kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
@@ -510,8 +523,8 @@ class TimeSeriesHistogramPlot(DataPlot):
     def process(self, outputfile=None):
         """Get data and generate the figure.
         """
-        # get histogram parameters
-        (plot, ax) = self.init_plot()
+        # get plot and axes
+        (plot, axes) = self.init_plot()
 
         if self.state:
             self.pargs.setdefault(
@@ -540,12 +553,12 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # get range
         if not 'range' in histargs[0]:
-            l = ax.common_limits(data)
+            l = axes[0].common_limits(data)
             for d in histargs:
                 d['range'] = l
 
         # plot
-        for arr, pargs in zip(data, histargs):
+        for ax, arr, pargs in zip(cycle(axes), data, histargs):
             if arr.size == 0:
                 kwargs = dict(
                     (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
@@ -555,17 +568,34 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
-        if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
+        for i, ax in enumerate(axes):
+            for key, val in self.pargs.iteritems():
+                if key == 'title' and i > 0:
+                    continue
+                if key == 'xlabel' and i < (len(axes) - 1):
+                    continue
+                if key == 'ylabel' and (
+                        (len(axes) % 2 and i != len(axes) // 2) or
+                        (len(axes) % 2 == 0 and i > 0)):
+                    continue
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+            if len(self.channels) > 1:
+                    plot.add_legend(ax=ax, **legendargs)
+        if len(axes) % 2 == 0 and axes[0].get_ylabel():
+            label = axes[0].yaxis.label
+            ax = axes[int(len(axes) // 2)-1]
+            ax.set_ylabel(label.get_text())
+            ax.yaxis.label.set_position((0, -.2 / len(axes)))
+            if len(axes) != 2:
+                label.set_text('')
 
         # add extra axes and finalise
         if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+            for ax in axes:
+                plot.add_colorbar(ax=ax, visible=False)
         return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesHistogramPlot)

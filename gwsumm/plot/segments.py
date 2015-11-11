@@ -1181,3 +1181,104 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                              pad_inches=0)
 
 register_plot(SegmentBarPlot)
+
+
+class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
+    """Histogram of segment duration
+    """
+    type = 'segment-histogram'
+    data = 'segments'
+    defaults = {'ylabel': 'Number of segments',
+                'log': False,
+                'histtype': 'stepfilled',
+                'bottom': 0,
+                'rwidth': 1}
+
+    def process(self, outputfile=None):
+        # make axes
+        (plot, axes) = self.init_plot()
+
+        # use state to generate suptitle with GPS span
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        else:
+            self.pargs.setdefault(
+                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+
+        # extract plotting arguments
+        histargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
+            livetime = float(abs(segs.active))
+            data.append(map(lambda x: float(abs(x)), segs.active))
+
+        # get range
+        if not 'range' in histargs[0]:
+            l = axes[0].common_limits(data)
+            for d in histargs:
+                d['range'] = l
+
+        # plot
+        for ax, arr, pargs in zip(cycle(axes), data, histargs):
+            if len(arr) == 0:
+                kwargs = dict(
+                    (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
+                ax.plot([], **kwargs)
+            else:
+                if pargs.get('normed', False) in ['N', 'num', 'number']:
+                    pargs['normed'] = False
+                    pargs.setdefault('weights', [1/len(arr)] * len(arr))
+                ax.hist(arr, **pargs)
+
+        # customise plot
+        legendargs = self.parse_legend_kwargs()
+        for i, ax in enumerate(axes):
+            for key, val in self.pargs.iteritems():
+                if key == 'title' and i > 0:
+                    continue
+                if key == 'xlabel' and i < (len(axes) - 1):
+                    continue
+                if key == 'ylabel' and (
+                        (len(axes) % 2 and i != len(axes) // 2) or
+                        (len(axes) % 2 == 0 and i > 0)):
+                    continue
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+            if len(self.flags) > 1:
+                plot.add_legend(ax=ax, **legendargs)
+        if len(axes) % 2 == 0 and axes[0].get_ylabel():
+            label = axes[0].yaxis.label
+            ax = axes[int(len(axes) // 2)-1]
+            ax.set_ylabel(label.get_text())
+            ax.yaxis.label.set_position((0, -.2 / len(axes)))
+            if len(axes) != 2:
+                label.set_text('')
+
+        # set common ylim
+        if 'ylim' not in self.pargs:
+            y0 = min([ax.get_ylim()[0] for ax in axes])
+            y1 = max([ax.get_ylim()[1] for ax in axes])
+            for ax in axes:
+                ax.set_ylim(y0, y1)
+
+        # add bit mask axes and finalise
+        return self.finalize(outputfile=outputfile, transparent="True",
+                             pad_inches=0)
+
+register_plot(SegmentHistogramPlot)

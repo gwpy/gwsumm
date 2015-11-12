@@ -158,6 +158,10 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         ts = TimeSeries(numpy.zeros(range.size), xindex=range.times, unit='s')
         dx = range.dx.value
 
+        # use float, not LIGOTimeGPS for speed
+        segments = type(segments)([type(s)(float(s[0]), float(s[1])) for
+                                  s in segments])
+
         def livetime_(t):
             return float(abs(SegmentList([Segment(t, t+dx)]) & segments))
 

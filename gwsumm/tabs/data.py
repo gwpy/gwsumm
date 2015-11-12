@@ -561,7 +561,6 @@ class DataTab(DataTabBase):
                         break
                     else:
                         plot.process()
-            multiprocess = count_free_cores(multiprocess)
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):

@@ -209,8 +209,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         activecolor, validcolor = self.get_segment_color()
         if isinstance(activecolor, dict):
             self.pargs.update(activecolor)
-        elif isinstance(activecolor, tuple):
-            self.pargs['facecolor'] = [activecolor] * len(self.flags)
         else:
             self.pargs['facecolor'] = activecolor
         plotargs = self.parse_plot_kwargs()

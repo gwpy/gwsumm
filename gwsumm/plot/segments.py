@@ -930,6 +930,16 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
 
+        # use state to generate suptitle with GPS span
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        else:
+            self.pargs.setdefault(
+                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+
         # get segments
         data = []
         for flag in self.flags:
@@ -975,13 +985,12 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                     pc = 0.0
                 pclabels.append(label_to_latex(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+
         # add time to top
-        if self.state and self.state.name != ALLSTATE:
-            tspan = '[%d--%d, %s]' % (self.span, self.state.name)
-        else:
-            tspan = '[%d--%d]' % self.span
-        extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
-                          linewidth=0)
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
+                              linewidth=0)
         # sort entries
         if legsort:
             patches, pclabels, data = map(list, zip(*sorted(
@@ -993,10 +1002,13 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             patches, pclabels, data = map(list, zip(*[
                 x for x in zip(patches, pclabels, data) if x[2] >= legth]))
 
-        leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
-        t = leg.get_texts()[0]
-        t.set_fontproperties(t.get_fontproperties().copy())
-        t.set_size(min(12, t.get_size()))
+        if suptitle:
+            leg = ax.legend([extra]+patches, [suptitle]+pclabels, **legendargs)
+            t = leg.get_texts()[0]
+            t.set_fontproperties(t.get_fontproperties().copy())
+            t.set_size(min(12, t.get_size()))
+        else:
+            leg = ax.legend(patches, pclabels, **legendargs)
         legt = leg.get_title()
         legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
         legt.set_ha('left')

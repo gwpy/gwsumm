@@ -189,15 +189,17 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
 
         # get data
         for channel, flag, pargs in zip(self.channels, self.flags, plotargs):
+            pad = 0
             if self.state and not self.all_data:
                 valid = self.state.active
-            elif clist[0].sample_rate:
+                pad = numpy.nan
+            elif channel.sample_rate:
                 valid = SegmentList([self.span.protract(
-                    1/clist[0].sample_rate.value)])
+                    1/channel.sample_rate.value)])
             else:
                 valid = SegmentList([self.span])
             data = get_timeseries(
-                channel, valid, query=False).join(gap='pad', pad=0)
+                channel, valid, query=False).join(gap='pad', pad=pad)
             if data.unit.name == 'undef':
                 data.override_unit('Mpc')
             segments = get_segments(flag, valid, query=False)

@@ -33,6 +33,7 @@ __version__ = version.version
 
 class RangePlotMixin(object):
     data = 'spectrogram'
+    _threadsafe = False
     defaults = {
         'snr': 8.0,
         'stride': 60.,
@@ -84,7 +85,6 @@ class RangePlotMixin(object):
 
 class RangeDataPlot(RangePlotMixin, get_plot('timeseries')):
     type = 'range'
-    _threadsafe = False
     defaults = get_plot('timeseries').defaults.copy()
     defaults.update(RangePlotMixin.defaults.copy())
     defaults.update({
@@ -96,7 +96,6 @@ register_plot(RangeDataPlot)
 
 class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
     type = 'range-histogram'
-    _threadsafe = False
     defaults = get_plot('histogram').defaults.copy()
     defaults.update(RangePlotMixin.defaults.copy())
     defaults.update({

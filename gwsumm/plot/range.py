@@ -21,11 +21,20 @@
 
 from __future__ import division
 
-from gwpy.segments import SegmentList
+import re
+import hashlib
+from math import pi
+
+import numpy
+
+from gwpy.segments import (Segment, SegmentList)
+from gwpy.timeseries import TimeSeries
 
 from .. import (globalv, version)
 from .registry import (get_plot, register_plot)
-from ..data import (get_range_channel, get_range)
+from ..data import (get_range_channel, get_range, get_timeseries)
+from ..segments import get_segments
+from ..utils import split_channels
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -103,3 +112,131 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
     })
 
 register_plot(RangeDataHistogramPlot)
+
+
+# -- time-volume --------------------------------------------------------------
+
+class SimpleTimeVolumeDataPlot(get_plot('segments')):
+    """Time-series of the time-volume searched by an interferometer
+    """
+    data = 'timeseries'
+    type = 'time-volume'
+    defaults = get_plot('timeseries').defaults.copy()
+
+    def __init__(self, sources, *args, **kwargs):
+        if isinstance(sources, str):
+            sources = split_channels(sources)
+        channels = sources[::2]
+        flags = sources[1::2]
+        get_plot('timeseries').__init__(self, channels, *args, **kwargs)
+        self._allflags = []
+        self.flags = flags
+
+    @classmethod
+    def from_ini(cls, *args, **kwargs):
+        return get_plot('timeseries').from_ini(cls, *args, **kwargs)
+
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels+self.flags))
+            self._pid = hashlib.md5(chans).hexdigest()[:6]
+            return self.pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
+    @pid.deleter
+    def pid(self):
+        del self._pid
+
+    @staticmethod
+    def calculate_time_volume(segments, range):
+        ts = TimeSeries(numpy.zeros(range.size), xindex=range.times, unit='s')
+        dx = range.dx.value
+
+        def livetime_(t):
+            return float(abs(SegmentList([Segment(t, t+dx)]) & segments))
+
+        livetime = numpy.vectorize(livetime_, otypes=[float])
+        ts[:] = livetime(ts.times.value) * ts.unit
+        return (4/3. * pi * ts * range ** 3).to('Mpc^3 year')
+
+    def process(self, outputfile=None):
+        """Generate the figure for this plot
+        """
+        plot, axes = self.init_plot()
+        ax = axes[0]
+
+        # get plotting arguments
+        cumulative = self.pargs.pop('cumulative', False)
+        plotargs = self.parse_plot_kwargs()
+        legendargs = self.parse_legend_kwargs()
+
+        # set ylabel
+        if cumulative:
+            self.pargs.setdefault('ylabel',
+                                  'Cumulative time-volume [Mpc$^3$ yr]')
+        else:
+            self.pargs.setdefault('ylabel', 'Time-volume [Mpc$^3$ yr]')
+
+        # get data
+        for channel, flag, pargs in zip(self.channels, self.flags, plotargs):
+            if self.state and not self.all_data:
+                valid = self.state.active
+            elif clist[0].sample_rate:
+                valid = SegmentList([self.span.protract(
+                    1/clist[0].sample_rate.value)])
+            else:
+                valid = SegmentList([self.span])
+            data = get_timeseries(
+                channel, valid, query=False).join(gap='pad', pad=0)
+            if data.unit.name == 'undef':
+                data.override_unit('Mpc')
+            segments = get_segments(flag, valid, query=False)
+            timevolume = self.calculate_time_volume(segments.active, data)
+            if cumulative:
+                ax.plot(timevolume.cumsum(), **pargs)
+            else:
+                ax.plot(timevolume, **pargs)
+
+        # add horizontal lines to add
+        for yval in self.pargs.get('hline', []):
+            try:
+                yval = float(yval)
+            except ValueError:
+                continue
+            else:
+                ax.plot([self.start, self.end], [yval, yval],
+                        linestyle='--', color='red')
+
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+        if (len(self.channels) > 1 or plotargs[0].get('label', None) in
+                [re.sub(r'(_|\\_)', r'\_', str(self.channels[0])), None]):
+            plot.add_legend(ax=ax, **legendargs)
+
+        # add extra axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        if self.state:
+            self.add_state_segments(ax)
+        return self.finalize(outputfile=outputfile)
+
+register_plot(SimpleTimeVolumeDataPlot)
+
+
+class GWpyTimeVolumeDataPlot(RangePlotMixin, SimpleTimeVolumeDataPlot):
+    """TimeVolumeDataPlot where the range is calculated on-the-fly
+    """
+    type = 'strain-time-volume'
+    _threadsafe = False
+
+register_plot(GWpyTimeVolumeDataPlot)

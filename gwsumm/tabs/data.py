@@ -514,7 +514,11 @@ class DataTab(DataTabBase):
         # process segments
 
         # find flags that need a DataQualityFlag
-        dqflags = self.get_flags('segments', all_data=all_data)
+        dqflags = set(self.get_flags('segments', all_data=all_data))
+        dqflags.update(self.get_flags('timeseries', all_data=all_data,
+                                      type='time-volume'))
+        dqflags.update(self.get_flags('spectrogram', all_data=all_data,
+                                      type='strain-time-volume'))
         if len(dqflags):
             vprint("    %d data-quality flags identified for segments\n"
                    % len(dqflags))

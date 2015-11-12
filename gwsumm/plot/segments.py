@@ -171,9 +171,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         active and valid segments.
         """
         active = self.pargs.pop('active', None)
-        known = self.pargs.pop('known', None)
+        known = self.pargs.pop('known', 'undefined')
         # both defined by user
-        if active is not None and known is not None:
+        if active is not None and known is not 'undefined':
             return active, known
         # only active defined by user
         elif isinstance(active, str) and active.lower() != 'red':
@@ -181,9 +181,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         elif active is not None:
             return active, 'blue'
         # only known defined by user
-        elif known not in [None, GREEN, 'green', 'g']:
+        elif known not in ['undefined', None, GREEN, 'green', 'g']:
             return GREEN, known
-        elif known is not None:
+        elif known != 'undefined':
             return 'blue', known
         else:
             onisbad = bool(self.pargs.pop('on_is_bad', True))
@@ -215,7 +215,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             self.pargs['facecolor'] = activecolor
         plotargs = self.parse_plot_kwargs()
         for i, kwdict in enumerate(plotargs):
-            if isinstance(validcolor, dict):
+            if isinstance(validcolor, dict) or validcolor is None:
                 kwdict['known'] = validcolor
             elif (validcolor is None or isinstance(validcolor, str) or
                     isinstance(validcolor[0], (float, int))):

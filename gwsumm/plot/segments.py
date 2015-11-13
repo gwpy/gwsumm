@@ -582,14 +582,6 @@ class DutyDataPlot(SegmentDataPlot):
         except KeyError:
             bottom = 0
         bottom = numpy.zeros(times.size) + bottom
-        if sidebyside:
-            width = .8 * self.bins[:now]/len(self.flags)
-            times = times + self.bins * (0.1 + .8 * i/len(self.flags))
-        elif stacked:
-            width = self.bins[:now] * .9
-            times = times + self.bins * .05
-        else:
-            width = self.bins[:now]
 
         # plot segments
         if self.state and not self.all_data:
@@ -613,6 +605,7 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
+            # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()
                 lineargs.setdefault('drawstyle', 'steps-post')
@@ -621,19 +614,34 @@ class DutyDataPlot(SegmentDataPlot):
                 raise ValueError("Cannot display %s with style=%r"
                                  % (type(self).__name__, style))
             else:
+                # work out positions
+                if sidebyside:
+                    pad = .1
+                    x = 1 - pad * 2
+                    w = pargs.pop('width', 1.) * x / len(self.flags)
+                    offset = pad + x/len(self.flags) * (i + 1/2.)
+                    print(w, offset)
+                elif stacked:
+                    offset = .5
+                    w = pargs.pop('width', .9)
+                else:
+                    offset = .5
+                    w = pargs.pop('width', 1.)
+                width = w * self.bins[:now]
                 if stacked:
                     height = duty
                     pargs.setdefault('edgecolor', color)
                 else:
                     height = duty - bottom
-                barargs = pargs.copy()
                 if style == 'fill':
-                    ec = barargs.pop('edgecolor', 'black')
-                    barargs['edgecolor'] = 'none'
-                    lw = barargs.pop('linewidth', 1)
-                    barargs['linewidth'] = 0
-                b = ax.bar(times[:now], height[:now], bottom=bottom[:now],
-                           width=width, color=color, **barargs)
+                    width = self.bins[:now]
+                    ec = pargs.pop('edgecolor', 'black')
+                    pargs['edgecolor'] = 'none'
+                    lw = pargs.pop('linewidth', 1)
+                    pargs['linewidth'] = 0
+                b = ax.bar(times[:now] + self.bins * offset, height[:now],
+                           bottom=bottom[:now], align='center',
+                           width=width, color=color, **pargs)
                 if style == 'fill':
                     ax.plot(times[:now], duty[:now], drawstyle='steps-post',
                             color=ec, linewidth=lw)

@@ -613,7 +613,6 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
-            now = bisect.bisect_left(times, globalv.NOW)
             if style == 'line':
                 lineargs = pargs.copy()
                 lineargs.setdefault('drawstyle', 'steps-post')

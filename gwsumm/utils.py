@@ -135,9 +135,13 @@ def split_channels(channelstring):
         # check for complete line without NDS type
         line = channelstring.split('\n')[0].rstrip('\', \n')
         if not ',' in line:
-            channelstring = channelstring.split('\n', 1)[1]
-            out.append(line)
-            continue
+            try:
+                channelstring = channelstring.split('\n', 1)[1]
+            except IndexError:
+                pass
+            else:
+                out.append(line)
+                continue
         # check for channel name with optional nds type
         for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:
             if nds2type and ',%s' % nds2type in channelstring:

@@ -515,7 +515,11 @@ class DataTab(DataTabBase):
         # process segments
 
         # find flags that need a DataQualityFlag
-        dqflags = self.get_flags('segments', all_data=all_data)
+        dqflags = set(self.get_flags('segments', all_data=all_data))
+        dqflags.update(self.get_flags('timeseries', all_data=all_data,
+                                      type='time-volume'))
+        dqflags.update(self.get_flags('spectrogram', all_data=all_data,
+                                      type='strain-time-volume'))
         if len(dqflags):
             vprint("    %d data-quality flags identified for segments\n"
                    % len(dqflags))
@@ -562,7 +566,6 @@ class DataTab(DataTabBase):
                         break
                     else:
                         plot.process()
-            multiprocess = count_free_cores(multiprocess)
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):

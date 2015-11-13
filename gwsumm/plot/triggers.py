@@ -391,6 +391,10 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 self._pid += '_%s' % re_cchar.sub('_', self.column).upper()
             return self.pid
 
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
+
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.

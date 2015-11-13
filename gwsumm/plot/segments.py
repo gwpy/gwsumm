@@ -677,10 +677,16 @@ class DutyDataPlot(SegmentDataPlot):
         if rollingmean:
             yoff = 0.01 * float.__div__(*axes[0].get_position().size)
             lkwargs = legendargs.copy()
-            lkwargs['loc'] = 'lower right'
-            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
-            lkwargs['fontsize'] = 12
-            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+            lkwargs.update({
+                'loc': 'lower right',
+                'bbox_to_anchor': (1.0, 1. + yoff),
+                'fontsize': 12,
+                'borderaxespad': 0,
+            })
+            leg = axes[0].legend(['Rolling mean'], **lkwargs)
+            if leg.get_frame().get_edgecolor() != 'none':
+                ax.legend_.get_frame().set_edgecolor(rcParams['grid.color'])
+            axes[0].add_artist(leg)
             axes[0].lines[0].set_label('_')
 
         for ax in axes:

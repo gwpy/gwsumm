@@ -161,6 +161,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
+        no_loudest = self.pargs.pop('no_loudest', False) is not False
 
         # get plot arguments
         plotargs = []
@@ -270,7 +271,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         else:
             plot.add_colorbar(ax=ax, visible=False)
 
-        if len(self.channels) == 1 and len(table):
+        if len(self.channels) == 1 and len(table) and not no_loudest:
             if ccolumn is None:
                 ax.add_loudest(table, ycolumn, xcolumn, ycolumn)
             else:

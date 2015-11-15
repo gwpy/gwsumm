@@ -571,6 +571,114 @@ class TimeSeriesHistogramPlot(DataPlot):
 register_plot(TimeSeriesHistogramPlot)
 
 
+class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
+    """DataPlot of the 2D histogram of two `TimeSeries`.
+    """
+    type = 'histogram2d'
+    data = 'timeseries'
+    defaults = {
+        'logy': False,
+        'hline': list(),
+        'grid': 'both'
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(TimeSeriesHistogram2dDataPlot, self).__init__(*args, **kwargs)
+        channels = self.channels
+        if isinstance(channels, (list, tuple)) and len(channels) > 2:
+            raise ValueError("Cannot generate TimeSeriesHistogram2dDataPlot "
+                            " plot with more than 2 channels")
+    
+    def parse_hist_kwargs(self, **defaults):
+        kwargs = {'bins': self.pargs.pop('nbins', 100),
+                  'normed': self.pargs.pop('normed', True)}
+        if 'range' in self.pargs:
+            ranges = [float(r) for r in self.pargs['range'].split(',')]
+            kwargs['range'] = [[ranges[0], ranges[1]],
+                               [ranges[2], ranges[3]]]
+        elif 'xlim' in self.pargs and 'ylim' in self.pargs:
+            xlim = self.pargs['xlim']
+            ylim = self.pargs['ylim']
+            kwargs['range'] = [[xlim[0], xlim[1]], [ylim[0], ylim[1]]]
+        else:
+            kwargs['range'] = None
+        return kwargs
+
+    def parse_pcmesh_kwargs(self, **defaults):
+        kwargs= {
+                  'cmap': self.pargs.pop('cmap', 'Spectral'),
+                  'edgecolors': self.pargs.pop('edgecolors', 'None'),
+                  'shading': self.pargs.pop('shading', 'gouraud'),
+                  'alpha': self.pargs.pop('alpha', None)
+                }
+        return kwargs
+
+    def process(self, outputfile=None):
+        """Get data and generate the figure.
+        """
+        # get histogram parameters
+        (plot, ax) = self.init_plot()
+
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+        # get data
+        data = []
+        for channel in self.channels:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data.append(get_timeseries(channel, valid, query=False).join(
+                gap='ignore', pad=numpy.nan))
+        if len(data)==1:
+            data.append(data[0])
+        # allow channel data to set parameters
+        self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
+        self.pargs.setdefault('ylabel', label_to_latex(data[1].name))
+        if hasattr(data[0].channel, 'amplitude_range'):
+            self.pargs.setdefault('xlim', data[0].channel.amplitude_range)
+        if hasattr(data[1].channel, 'amplitude_range'):
+            self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
+        # histogram
+        hist_kwargs = self.parse_hist_kwargs()
+        h, xedges, yedges = numpy.histogram2d(data[0], data[1],
+                                              **hist_kwargs)
+        h = numpy.ma.masked_where(h==0, numpy.flipud(numpy.rot90(h)))
+        x, y = numpy.meshgrid(xedges[:-1]+numpy.diff(xedges),
+                              yedges[:-1]+numpy.diff(yedges))
+        # plot
+        pcmesh_kwargs = self.parse_pcmesh_kwargs()
+        ax.pcolormesh(x, y, h, **pcmesh_kwargs)
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                if key=='grid':
+                    if val=='off':
+                        ax.grid('off')
+                    elif val in ['both', 'major', 'minor']:
+                        ax.grid('on', which=val)
+                    else:
+                       raise ValueError("Invalid ax.grid argument; "
+                                        "valid options are: 'off', "
+                                        "'both', 'major' or 'minor'")
+                else:
+                    setattr(ax, key, val)
+        # add extra axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        return self.finalize(outputfile=outputfile)
+
+register_plot(TimeSeriesHistogram2dDataPlot)
+
+
 class SpectralVarianceDataPlot(SpectrumDataPlot):
     """SpectralVariance histogram plot for a `DataTab`
     """

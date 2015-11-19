@@ -579,7 +579,13 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
     defaults = {
         'logy': False,
         'hline': list(),
-        'grid': 'both'
+        'grid': 'both',
+        'shading': 'flat',
+        'cmap': 'inferno_r',
+        'alpha': None,
+        'edgecolors': 'None',
+        'nbins': 100,
+        'normed': True
     }
 
     def __init__(self, *args, **kwargs):
@@ -590,8 +596,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                              " plot with more than 2 channels")
 
     def parse_hist_kwargs(self, **defaults):
-        kwargs = {'bins': self.pargs.pop('nbins', 100),
-                  'normed': self.pargs.pop('normed', True)}
+        kwargs = {'bins': self.pargs.pop('nbins'),
+                  'normed': self.pargs.pop('normed')}
         if 'range' in self.pargs:
             ranges = [float(r) for r in self.pargs['range'].split(',')]
             kwargs['range'] = [[ranges[0], ranges[1]],
@@ -606,10 +612,10 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
 
     def parse_pcmesh_kwargs(self, **defaults):
         kwargs = {
-                  'cmap': self.pargs.pop('cmap', 'Spectral'),
-                  'edgecolors': self.pargs.pop('edgecolors', 'None'),
-                  'shading': self.pargs.pop('shading', 'gouraud'),
-                  'alpha': self.pargs.pop('alpha', None)
+                  'cmap': self.pargs.pop('cmap'),
+                  'edgecolors': self.pargs.pop('edgecolors'),
+                  'shading': self.pargs.pop('shading'),
+                  'alpha': self.pargs.pop('alpha')
                  }
         return kwargs
 

@@ -587,8 +587,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         channels = self.channels
         if isinstance(channels, (list, tuple)) and len(channels) > 2:
             raise ValueError("Cannot generate TimeSeriesHistogram2dDataPlot "
-                            " plot with more than 2 channels")
-    
+                             " plot with more than 2 channels")
+
     def parse_hist_kwargs(self, **defaults):
         kwargs = {'bins': self.pargs.pop('nbins', 100),
                   'normed': self.pargs.pop('normed', True)}
@@ -605,12 +605,12 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         return kwargs
 
     def parse_pcmesh_kwargs(self, **defaults):
-        kwargs= {
+        kwargs = {
                   'cmap': self.pargs.pop('cmap', 'Spectral'),
                   'edgecolors': self.pargs.pop('edgecolors', 'None'),
                   'shading': self.pargs.pop('shading', 'gouraud'),
                   'alpha': self.pargs.pop('alpha', None)
-                }
+                 }
         return kwargs
 
     def process(self, outputfile=None):
@@ -636,7 +636,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                 valid = SegmentList([self.span])
             data.append(get_timeseries(channel, valid, query=False).join(
                 gap='ignore', pad=numpy.nan))
-        if len(data)==1:
+        if len(data) == 1:
             data.append(data[0])
         # allow channel data to set parameters
         self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
@@ -649,7 +649,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         hist_kwargs = self.parse_hist_kwargs()
         h, xedges, yedges = numpy.histogram2d(data[0], data[1],
                                               **hist_kwargs)
-        h = numpy.ma.masked_where(h==0, numpy.flipud(numpy.rot90(h)))
+        h = numpy.ma.masked_where(h == 0, numpy.flipud(numpy.rot90(h)))
         x, y = numpy.meshgrid(xedges[:-1]+numpy.diff(xedges),
                               yedges[:-1]+numpy.diff(yedges),
                               copy=False, sparse=True)
@@ -661,15 +661,15 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                if key=='grid':
-                    if val=='off':
+                if key == 'grid':
+                    if val == 'off':
                         ax.grid('off')
                     elif val in ['both', 'major', 'minor']:
                         ax.grid('on', which=val)
                     else:
-                       raise ValueError("Invalid ax.grid argument; "
-                                        "valid options are: 'off', "
-                                        "'both', 'major' or 'minor'")
+                        raise ValueError("Invalid ax.grid argument; "
+                                         "valid options are: 'off', "
+                                         "'both', 'major' or 'minor'")
                 else:
                     setattr(ax, key, val)
         # add extra axes and finalise

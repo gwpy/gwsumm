@@ -651,7 +651,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                                               **hist_kwargs)
         h = numpy.ma.masked_where(h==0, numpy.flipud(numpy.rot90(h)))
         x, y = numpy.meshgrid(xedges[:-1]+numpy.diff(xedges),
-                              yedges[:-1]+numpy.diff(yedges))
+                              yedges[:-1]+numpy.diff(yedges),
+                              copy=False, sparse=True)
         # plot
         pcmesh_kwargs = self.parse_pcmesh_kwargs()
         ax.pcolormesh(x, y, h, **pcmesh_kwargs)

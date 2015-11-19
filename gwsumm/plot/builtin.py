@@ -584,7 +584,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         'cmap': 'inferno_r',
         'alpha': None,
         'edgecolors': 'None',
-        'nbins': 100,
+        'bins': 100,
         'normed': True
     }
 
@@ -596,7 +596,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                              " plot with more than 2 channels")
 
     def parse_hist_kwargs(self, **defaults):
-        kwargs = {'bins': self.pargs.pop('nbins'),
+        kwargs = {'bins': self.pargs.pop('bins'),
                   'normed': self.pargs.pop('normed')}
         if 'range' in self.pargs:
             ranges = [float(r) for r in self.pargs['range'].split(',')]
@@ -655,13 +655,11 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         hist_kwargs = self.parse_hist_kwargs()
         h, xedges, yedges = numpy.histogram2d(data[0], data[1],
                                               **hist_kwargs)
-        h = numpy.ma.masked_where(h == 0, numpy.flipud(numpy.rot90(h)))
-        x, y = numpy.meshgrid(xedges[:-1]+numpy.diff(xedges),
-                              yedges[:-1]+numpy.diff(yedges),
-                              copy=False, sparse=True)
+        h = numpy.ma.masked_where(h==0, h)
+        x, y = numpy.meshgrid(xedges, yedges, copy=False, sparse=True)
         # plot
         pcmesh_kwargs = self.parse_pcmesh_kwargs()
-        ax.pcolormesh(x, y, h, **pcmesh_kwargs)
+        ax.pcolormesh(x, y, h.T, **pcmesh_kwargs)
         # customise plot
         for key, val in self.pargs.iteritems():
             try:

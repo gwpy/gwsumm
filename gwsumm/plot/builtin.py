@@ -655,7 +655,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         """Get data and generate the figure.
         """
         # get histogram parameters
-        (plot, ax) = self.init_plot()
+        plot, axes = self.init_plot()
+        ax = axes[0]
 
         if self.state:
             self.pargs.setdefault(

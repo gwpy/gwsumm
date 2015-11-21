@@ -639,7 +639,7 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['edgecolor'] = 'none'
                     lw = pargs.pop('linewidth', 1)
                     pargs['linewidth'] = 0
-                b = ax.bar(times[:now] + self.bins * offset, height[:now],
+                b = ax.bar((times + self.bins * offset)[:now], height[:now],
                            bottom=bottom[:now], align='center',
                            width=width, color=color, **pargs)
                 if style == 'fill':

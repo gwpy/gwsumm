@@ -145,7 +145,7 @@ class AccountingTab(ParentTab):
         tag = self.segmenttag % self.modes.keys()[0]
         try:
             lastgps = globalv.SEGMENTS[tag].known[-1][-1]
-        except KeyError:
+        except (IndexError, KeyError):
             lastgps = self.span[0]
 
         # get data

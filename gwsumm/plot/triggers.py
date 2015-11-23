@@ -45,6 +45,11 @@ __version__ = version.version
 
 TimeSeriesDataPlot = get_plot('timeseries')
 
+LATEX_OPERATOR = {
+    '>=': r'\geq',
+    '<=': r'\leq',
+}
+
 
 class TriggerPlotMixin(object):
     """Mixin to overwrite `channels` property for trigger plots
@@ -537,6 +542,10 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             cname = get_column_string(self.column)
             bins = self.pargs.pop('bins')
             operator = self.pargs.pop('operator', '>=')
+            try:
+                opstr = LATEX_OPERATOR[operator]
+            except KeyError:
+                opstr = str(operator)
         else:
             bins = ['_']
 
@@ -547,11 +556,10 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []
             for channel, bin in [(c, b) for c in self.channels for b in bins]:
-                labels.append(r' '.join([channel, cname, '$%s$' % str(operator),
+                labels.append(r' '.join([channel, cname, '$%s$' % opstr,
                                          str(b)]))
         elif labels is None and self.column:
-            labels = [r' '.join([cname,'$%s$' % str(operator), str(b)])
-                      for b in bins]
+            labels = [r' '.join([cname,'$%s$' % opstr, str(b)]) for b in bins]
         elif labels is None:
             labels = self.channels
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)

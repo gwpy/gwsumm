@@ -403,6 +403,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 else:
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
+            if flags is None:
+                flags = [DataQualityFlag(b) for b in channel.bits if
+                         b not in [None, '']]
             nflags += len([m for m in bits_ if m is not None])
             labels = pargs.pop('label', [None]*len(flags))
             if isinstance(labels, str):
@@ -1010,8 +1013,11 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                  reverse=True)))
         # and restrict to the given threshold
         if legth:
-            patches, pclabels, data = map(list, zip(*[
-                x for x in zip(patches, pclabels, data) if x[2] >= legth]))
+            try:
+                patches, pclabels, data = map(list, zip(*[
+                    x for x in zip(patches, pclabels, data) if x[2] >= legth]))
+            except ValueError:
+                pass
 
         if suptitle:
             leg = ax.legend([extra]+patches, [suptitle]+pclabels, **legendargs)
@@ -1193,7 +1199,10 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                                 padding=self.padding).coalesce()
             livetime = float(abs(segs.active))
             if scale == 'percent':
-                data.append(100 * livetime / float(abs(segs.known)))
+                try:
+                    data.append(100 * livetime / float(abs(segs.known)))
+                except ZeroDivisionError:
+                    data.append(0)
             elif isinstance(scale, (float, int)):
                 data.append(livetime / scale)
 

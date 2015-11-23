@@ -157,7 +157,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
 
         # get colouring params
-        cmap = self.pargs.pop('cmap', 'YlOrRd')
+        cmap = self.pargs.pop('cmap', 'YlGnBu')
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)

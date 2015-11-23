@@ -17,7 +17,7 @@ from gwpy.segments import Segment
 from gwpy.table.utils import get_row_value
 from gwpy.time import to_gps
 
-from gwsumm.plot import rcParams
+from gwsumm.plot import (get_plot, rcParams)
 from gwsumm.segments import get_segments
 from gwsumm.triggers import get_triggers
 
@@ -96,8 +96,9 @@ print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot
 if args.tiles:
-    plot = trigs.plot('time', args.fcolumn, 'duration', 'bandwidth', epoch=args.epoch,
-                      color=args.color, edgecolor='face', linewidth=0.8)
+    plot = trigs.plot('time', args.fcolumn, 'duration', 'bandwidth',
+                      epoch=args.epoch, color=args.color, edgecolor='face',
+                      linewidth=0.8)
 else:
     plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,
                       color=args.color, edgecolor='none', s=12)
@@ -116,7 +117,7 @@ if map._A is None:
     map._A = ndarray((0,))
 
 plot.add_colorbar(mappable=map, ax=ax, label='Signal-to-noise ratio (SNR)',
-                  cmap='hot_r')
+                  cmap=get_plot('triggers').defaults.get('cmap',  'YlGnBu'))
 for key, val in params.iteritems():
     try:
         getattr(ax, 'set_%s' % key)(val)

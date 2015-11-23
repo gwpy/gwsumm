@@ -93,6 +93,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 'vmin': None,
                 'vmax': None,
                 'clim': None,
+                'cmap': 'YlGnBu',
                 'logcolor': False,
                 'colorlabel': None,
                 'size_by': None,
@@ -162,7 +163,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
 
         # get colouring params
-        cmap = self.pargs.pop('cmap', 'YlGnBu')
+        cmap = self.pargs.pop('cmap')
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)

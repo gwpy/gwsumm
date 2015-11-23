@@ -510,7 +510,7 @@ class DataPlot(SummaryPlot):
             outputfile = self.outputfile
         try:
             self.plot.save(outputfile, **savekwargs)
-        except RuntimeError as e:
+        except (IOError, RuntimeError) as e:
             warnings.warn("Caught %s: %s [retrying...]"
                          % (type(e).__name__, str(e)))
             self.plot.save(outputfile, **savekwargs)

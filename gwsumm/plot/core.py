@@ -505,6 +505,9 @@ class DataPlot(SummaryPlot):
                 ax.spines[edge].set_edgecolor(color)
             if ax.legend_ and ax.legend_.get_frame().get_edgecolor() != 'none':
                 ax.legend_.get_frame().set_edgecolor(color)
+        # customise colorbars
+        for cb in self.plot.colorbars:
+            cb.outline.set_edgecolor(color)
         # save figure and close
         if outputfile is None:
             outputfile = self.outputfile

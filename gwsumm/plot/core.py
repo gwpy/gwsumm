@@ -513,9 +513,6 @@ class DataPlot(SummaryPlot):
             outputfile = self.outputfile
         if outputfile.endswith('.pdf'):
             extensions = ['.pdf', '.png']
-            if self.href == self.outputfile:
-                self.fileformat = 'png'
-                self._href = self.outputfile
         else:
             extensions = [os.path.splitext(outputfile)[1]]
 
@@ -528,7 +525,6 @@ class DataPlot(SummaryPlot):
                              % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
             vprint("        %s written\n" % fp)
-        vprint("        %s written\n" % self.outputfile)
         if close:
             self.plot.close()
         return outputfile

@@ -418,7 +418,10 @@ class PlotTab(Tab):
                        class_=aclass, **fbkw)
             else:
                 page.a(href=plot.href, class_=aclass, **fancyboxargs)
-            page.img(src=plot.src)
+            if plot.src.endswith('.pdf'):
+                page.img(src=plot.src.replace('.pdf', '.png'))
+            else:
+                page.img(src=plot.src)
             page.a.close()
             page.div.close()
             # detect end of row

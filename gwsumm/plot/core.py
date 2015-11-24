@@ -360,7 +360,7 @@ class DataPlot(SummaryPlot):
                       'bins', 'range', 'normed', 'weights', 'cumulative',
                       'bottom', 'histtype', 'align', 'orientation', 'rwidth',
                       'log', 'stacked', 'logbins', 'linecolor',
-                      'facecolor']:
+                      'facecolor', 'rasterized']:
             try:
                 val = self.pargs.pop(kwarg)
             except KeyError:
@@ -505,16 +505,26 @@ class DataPlot(SummaryPlot):
                 ax.spines[edge].set_edgecolor(color)
             if ax.legend_ and ax.legend_.get_frame().get_edgecolor() != 'none':
                 ax.legend_.get_frame().set_edgecolor(color)
-        # save figure and close
+        # customise colorbars
+        for cb in self.plot.colorbars:
+            cb.outline.set_edgecolor(color)
+        # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
-        try:
-            self.plot.save(outputfile, **savekwargs)
-        except (IOError, RuntimeError) as e:
-            warnings.warn("Caught %s: %s [retrying...]"
-                         % (type(e).__name__, str(e)))
-            self.plot.save(outputfile, **savekwargs)
-        vprint("        %s written\n" % self.outputfile)
+        if outputfile.endswith('.pdf'):
+            extensions = ['.pdf', '.png']
+        else:
+            extensions = [os.path.splitext(outputfile)[1]]
+
+        for ext in extensions:
+            fp = '%s%s' % (os.path.splitext(outputfile)[0], ext)
+            try:
+                self.plot.save(fp, **savekwargs)
+            except (IOError, RuntimeError) as e:
+                warnings.warn("Caught %s: %s [retrying...]"
+                             % (type(e).__name__, str(e)))
+                self.plot.save(fp, **savekwargs)
+            vprint("        %s written\n" % fp)
         if close:
             self.plot.close()
         return outputfile
@@ -560,11 +570,11 @@ class BarPlot(_SingleCallPlot, DataPlot):
     type = 'bar'
     DRAW_PARAMS = ['width', 'bottom', 'color', 'edgecolor', 'linewidth',
                    'xerr', 'yerr', 'ecolor', 'capsize', 'error_kw',
-                   'align', 'orientation', 'log', 'alpha']
+                   'align', 'orientation', 'log', 'alpha', 'rasterized']
 
 
 class PiePlot(_SingleCallPlot, DataPlot):
     type = 'pie'
     DRAW_PARAMS = ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
                    'labeldistance', 'startangle', 'radius', 'counterclock',
-                   'wedgeprops', 'textprops']
+                   'wedgeprops', 'textprops', 'rasterized']

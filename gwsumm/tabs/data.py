@@ -765,11 +765,11 @@ class DataTab(DataTabBase):
             headers = ['Name', 'Defined duration', 'Active duration',
                        'Padding', 'Description']
             data = []
-            pc = float(abs(state.active) / 100.)
+            pc = float(abs(self.span) / 100.)
             for flag, padding in allflags:
                 if padding == (0, 0):
                     padding = None
-                flag = get_segments(flag, state.active, query=False,
+                flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
                 v = flag.version and str(flag.version) or ''
                 try:

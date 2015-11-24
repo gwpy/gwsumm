@@ -360,7 +360,7 @@ class DataPlot(SummaryPlot):
                       'bins', 'range', 'normed', 'weights', 'cumulative',
                       'bottom', 'histtype', 'align', 'orientation', 'rwidth',
                       'log', 'stacked', 'logbins', 'linecolor',
-                      'facecolor']:
+                      'facecolor', 'rasterized']:
             try:
                 val = self.pargs.pop(kwarg)
             except KeyError:
@@ -560,11 +560,11 @@ class BarPlot(_SingleCallPlot, DataPlot):
     type = 'bar'
     DRAW_PARAMS = ['width', 'bottom', 'color', 'edgecolor', 'linewidth',
                    'xerr', 'yerr', 'ecolor', 'capsize', 'error_kw',
-                   'align', 'orientation', 'log', 'alpha']
+                   'align', 'orientation', 'log', 'alpha', 'rasterized']
 
 
 class PiePlot(_SingleCallPlot, DataPlot):
     type = 'pie'
     DRAW_PARAMS = ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
                    'labeldistance', 'startangle', 'radius', 'counterclock',
-                   'wedgeprops', 'textprops']
+                   'wedgeprops', 'textprops', 'rasterized']

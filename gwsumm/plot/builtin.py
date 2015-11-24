@@ -260,6 +260,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
+        rasterized = self.pargs.pop('rasterized', True)
         ratio = self.ratio
 
         # get cmap
@@ -308,7 +309,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         for specgram in specgrams:
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
-            ax.plot_spectrogram(specgram, cmap=cmap)
+            ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
 
         # add colorbar
         if len(specgrams) == 0:

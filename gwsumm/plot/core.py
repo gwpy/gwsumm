@@ -508,15 +508,26 @@ class DataPlot(SummaryPlot):
         # customise colorbars
         for cb in self.plot.colorbars:
             cb.outline.set_edgecolor(color)
-        # save figure and close
+        # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
-        try:
-            self.plot.save(outputfile, **savekwargs)
-        except (IOError, RuntimeError) as e:
-            warnings.warn("Caught %s: %s [retrying...]"
-                         % (type(e).__name__, str(e)))
-            self.plot.save(outputfile, **savekwargs)
+        if outputfile.endswith('.pdf'):
+            extensions = ['.pdf', '.png']
+            if self.href == self.outputfile:
+                self.fileformat = 'png'
+                self._href = self.outputfile
+        else:
+            extensions = [os.path.splitext(outputfile)[1]]
+
+        for ext in extensions:
+            fp = '%s%s' % (os.path.splitext(outputfile)[0], ext)
+            try:
+                self.plot.save(fp, **savekwargs)
+            except (IOError, RuntimeError) as e:
+                warnings.warn("Caught %s: %s [retrying...]"
+                             % (type(e).__name__, str(e)))
+                self.plot.save(fp, **savekwargs)
+            vprint("        %s written\n" % fp)
         vprint("        %s written\n" % self.outputfile)
         if close:
             self.plot.close()

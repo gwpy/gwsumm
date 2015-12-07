@@ -45,6 +45,11 @@ __version__ = version.version
 
 TimeSeriesDataPlot = get_plot('timeseries')
 
+LATEX_OPERATOR = {
+    '>=': r'\geq',
+    '<=': r'\leq',
+}
+
 
 class TriggerPlotMixin(object):
     """Mixin to overwrite `channels` property for trigger plots
@@ -88,9 +93,9 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 'vmin': None,
                 'vmax': None,
                 'clim': None,
+                'cmap': 'YlGnBu',
                 'logcolor': False,
                 'colorlabel': None,
-                'cmap': 'jet',
                 'size_by': None,
                 'size_by_log': None,
                 'size_range': None}
@@ -158,9 +163,11 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         labels = map(lambda s: str(s).strip('\n '), labels)
 
         # get colouring params
+        cmap = self.pargs.pop('cmap')
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
+        no_loudest = self.pargs.pop('no_loudest', False) is not False
 
         # get plot arguments
         plotargs = []
@@ -168,8 +175,12 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             plotargs.append(dict())
         # get plot arguments
         for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'size_by',
-                    'size_by_log', 'size_range', 'cmap', 's', 'marker']:
-            val = self.pargs.pop(key)
+                    'size_by_log', 'size_range', 'cmap', 's', 'marker',
+                    'rasterized']:
+            try:
+                val = self.pargs.pop(key)
+            except KeyError:
+                continue
             if key == 'facecolor' and len(self.channels) > 1 and val is None:
                 val = color_cycle()
             if key == 'marker' and len(self.channels) > 1 and val is None:
@@ -262,11 +273,12 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         if ccolumn:
             if not ntrigs:
                 ax.scatter([1], [1], c=[1], visible=False)
-            plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel)
+            plot.add_colorbar(ax=ax, cmap=cmap, clim=clim,
+                              log=clog, label=clabel)
         else:
             plot.add_colorbar(ax=ax, visible=False)
 
-        if len(self.channels) == 1 and len(table):
+        if len(self.channels) == 1 and len(table) and not no_loudest:
             if ccolumn is None:
                 ax.add_loudest(table, ycolumn, xcolumn, ycolumn)
             else:
@@ -385,6 +397,10 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
             if self.column:
                 self._pid += '_%s' % re_cchar.sub('_', self.column).upper()
             return self.pid
+
+    @pid.setter
+    def pid(self, id_):
+        self._pid = str(id_)
 
     def init_plot(self, plot=HistogramPlot):
         """Initialise the Figure and Axes objects for this
@@ -528,6 +544,10 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             cname = get_column_string(self.column)
             bins = self.pargs.pop('bins')
             operator = self.pargs.pop('operator', '>=')
+            try:
+                opstr = LATEX_OPERATOR[operator]
+            except KeyError:
+                opstr = str(operator)
         else:
             bins = ['_']
 
@@ -538,11 +558,10 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []
             for channel, bin in [(c, b) for c in self.channels for b in bins]:
-                labels.append(r' '.join([channel, cname, '$%s$' % str(operator),
+                labels.append(r' '.join([channel, cname, '$%s$' % opstr,
                                          str(b)]))
         elif labels is None and self.column:
-            labels = [r' '.join([cname,'$%s$' % str(operator), str(b)])
-                      for b in bins]
+            labels = [r' '.join([cname,'$%s$' % opstr, str(b)]) for b in bins]
         elif labels is None:
             labels = self.channels
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)

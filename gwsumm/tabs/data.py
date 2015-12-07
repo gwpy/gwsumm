@@ -275,7 +275,8 @@ class DataTab(DataTabBase):
             if cp.has_section(pdef):
                 type_ = cp.get(pdef, 'type')
                 PlotClass = get_plot(type_)
-            elif pdef != 'range-histogram' and pdef.endswith('-histogram'):
+            elif (pdef not in ['range-histogram', 'segment-histogram'] and
+                    pdef.endswith('-histogram')):
                 type_ = None
                 etg, column = pdef.rsplit('-', 2)[:2]
                 mods.setdefault('etg', etg)
@@ -514,7 +515,11 @@ class DataTab(DataTabBase):
         # process segments
 
         # find flags that need a DataQualityFlag
-        dqflags = self.get_flags('segments', all_data=all_data)
+        dqflags = set(self.get_flags('segments', all_data=all_data))
+        dqflags.update(self.get_flags('timeseries', all_data=all_data,
+                                      type='time-volume'))
+        dqflags.update(self.get_flags('spectrogram', all_data=all_data,
+                                      type='strain-time-volume'))
         if len(dqflags):
             vprint("    %d data-quality flags identified for segments\n"
                    % len(dqflags))
@@ -561,7 +566,6 @@ class DataTab(DataTabBase):
                         break
                     else:
                         plot.process()
-            multiprocess = count_free_cores(multiprocess)
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
@@ -761,11 +765,11 @@ class DataTab(DataTabBase):
             headers = ['Name', 'Defined duration', 'Active duration',
                        'Padding', 'Description']
             data = []
-            pc = float(abs(state.active) / 100.)
+            pc = float(abs(self.span) / 100.)
             for flag, padding in allflags:
                 if padding == (0, 0):
                     padding = None
-                flag = get_segments(flag, state.active, query=False,
+                flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
                 v = flag.version and str(flag.version) or ''
                 try:

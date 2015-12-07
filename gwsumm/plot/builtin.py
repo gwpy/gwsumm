@@ -23,6 +23,7 @@ from __future__ import division
 
 import hashlib
 import warnings
+from itertools import cycle
 
 from matplotlib.pyplot import subplots
 
@@ -73,13 +74,17 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
             method.
         """
+        epoch = ax.get_epoch()
         kwargs.setdefault('edgecolor', 'darkgreen')
         kwargs.setdefault('facecolor', GREEN)
         kwargs.setdefault('known', {'facecolor': 'red', 'edgecolor': 'darkred'})
         sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
+        ax.set_epoch(epoch)
+        sax.set_epoch(epoch)
         sax.tick_params(axis='y', which='major', labelsize=12)
-        sax.set_epoch(float(self.start))
         sax.yaxis.set_ticks_position('none')
+        sax.set_epoch(epoch)
+        ax.set_epoch(epoch)
         return sax
 
     def init_plot(self, plot=TimeSeriesPlot, geometry=(1,1)):
@@ -217,7 +222,6 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     defaults = {'ratio': None,
                 'format': None,
                 'clim': None,
-                'cmap': 'jet',
                 'logcolor': False,
                 'colorlabel': None}
 
@@ -256,8 +260,13 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         clim = self.pargs.pop('clim')
         clog = self.pargs.pop('logcolor')
         clabel = self.pargs.pop('colorlabel')
-        cmap = self.pargs.pop('cmap')
+        rasterized = self.pargs.pop('rasterized', True)
         ratio = self.ratio
+
+        # get cmap
+        if ratio in ['median', 'mean']:
+            self.pargs.setdefault('cmap', 'Spectral_r')
+        cmap = self.pargs.pop('cmap', None)
 
         # get data
         if self.state and not self.all_data:
@@ -300,7 +309,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         for specgram in specgrams:
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
-            ax.plot_spectrogram(specgram, cmap=cmap)
+            ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
 
         # add colorbar
         if len(specgrams) == 0:
@@ -479,14 +488,26 @@ class TimeSeriesHistogramPlot(DataPlot):
                 'histtype': 'stepfilled',
                 'rwidth': 1}
 
-    def init_plot(self, plot=HistogramPlot):
+    def init_plot(self, plot=HistogramPlot, geometry=None, figsize=[12, 6]):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
-        ax = self.plot.gca()
-        ax.grid(True, which='both')
-        return self.plot, ax
+        if geometry is None and self.pargs.pop('sep', False):
+            if self.data == 'segments':
+                geometry = (len(self.flags), 1)
+            else:
+                geometry = (len(self.channels), 1)
+        elif geometry is None:
+            geometry = (1, 1)
+        self.plot, axes = subplots(
+            nrows=geometry[0], ncols=geometry[1], sharex=True,
+            subplot_kw={'projection': plot._DefaultAxesClass.name},
+            FigureClass=plot, figsize=figsize, squeeze=True)
+        if isinstance(axes, plot._DefaultAxesClass):
+            axes = [axes]
+        for ax in axes:
+            ax.grid(True, which='both')
+        return self.plot, axes
 
     def parse_plot_kwargs(self, **defaults):
         kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
@@ -505,8 +526,8 @@ class TimeSeriesHistogramPlot(DataPlot):
     def process(self, outputfile=None):
         """Get data and generate the figure.
         """
-        # get histogram parameters
-        (plot, ax) = self.init_plot()
+        # get plot and axes
+        (plot, axes) = self.init_plot()
 
         if self.state:
             self.pargs.setdefault(
@@ -535,12 +556,12 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # get range
         if not 'range' in histargs[0]:
-            l = ax.common_limits(data)
+            l = axes[0].common_limits(data)
             for d in histargs:
                 d['range'] = l
 
         # plot
-        for arr, pargs in zip(data, histargs):
+        for ax, arr, pargs in zip(cycle(axes), data, histargs):
             if arr.size == 0:
                 kwargs = dict(
                     (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
@@ -550,20 +571,151 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
+        for i, ax in enumerate(axes):
+            for key, val in self.pargs.iteritems():
+                if key == 'title' and i > 0:
+                    continue
+                if key == 'xlabel' and i < (len(axes) - 1):
+                    continue
+                if key == 'ylabel' and (
+                        (len(axes) % 2 and i != len(axes) // 2) or
+                        (len(axes) % 2 == 0 and i > 0)):
+                    continue
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+            if len(self.channels) > 1:
+                    plot.add_legend(ax=ax, **legendargs)
+        if len(axes) % 2 == 0 and axes[0].get_ylabel():
+            label = axes[0].yaxis.label
+            ax = axes[int(len(axes) // 2)-1]
+            ax.set_ylabel(label.get_text())
+            ax.yaxis.label.set_position((0, -.2 / len(axes)))
+            if len(axes) != 2:
+                label.set_text('')
+
+        # add extra axes and finalise
+        if not plot.colorbars:
+            for ax in axes:
+                plot.add_colorbar(ax=ax, visible=False)
+        return self.finalize(outputfile=outputfile)
+
+register_plot(TimeSeriesHistogramPlot)
+
+
+class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
+    """DataPlot of the 2D histogram of two `TimeSeries`.
+    """
+    type = 'histogram2d'
+    data = 'timeseries'
+    defaults = {
+        'logy': False,
+        'hline': list(),
+        'grid': 'both',
+        'shading': 'flat',
+        'cmap': 'inferno_r',
+        'alpha': None,
+        'edgecolors': 'None',
+        'bins': 100,
+        'normed': True
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(TimeSeriesHistogram2dDataPlot, self).__init__(*args, **kwargs)
+        channels = self.channels
+        if isinstance(channels, (list, tuple)) and len(channels) > 2:
+            raise ValueError("Cannot generate TimeSeriesHistogram2dDataPlot "
+                             " plot with more than 2 channels")
+
+    def parse_hist_kwargs(self, **defaults):
+        kwargs = {'bins': self.pargs.pop('bins'),
+                  'normed': self.pargs.pop('normed')}
+        if 'range' in self.pargs:
+            ranges = [float(r) for r in self.pargs['range'].split(',')]
+            kwargs['range'] = [[ranges[0], ranges[1]],
+                               [ranges[2], ranges[3]]]
+        elif 'xlim' in self.pargs and 'ylim' in self.pargs:
+            xlim = self.pargs['xlim']
+            ylim = self.pargs['ylim']
+            kwargs['range'] = [[xlim[0], xlim[1]], [ylim[0], ylim[1]]]
+        else:
+            kwargs['range'] = None
+        return kwargs
+
+    def parse_pcmesh_kwargs(self, **defaults):
+        kwargs = {
+                  'cmap': self.pargs.pop('cmap'),
+                  'edgecolors': self.pargs.pop('edgecolors'),
+                  'shading': self.pargs.pop('shading'),
+                  'alpha': self.pargs.pop('alpha')
+                 }
+        return kwargs
+
+    def process(self, outputfile=None):
+        """Get data and generate the figure.
+        """
+        # get histogram parameters
+        plot, axes = self.init_plot()
+        ax = axes[0]
+
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+        # get data
+        data = []
+        for channel in self.channels:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data.append(get_timeseries(channel, valid, query=False).join(
+                gap='ignore', pad=numpy.nan))
+        if len(data) == 1:
+            data.append(data[0])
+        # allow channel data to set parameters
+        self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
+        self.pargs.setdefault('ylabel', label_to_latex(data[1].name))
+        if hasattr(data[0].channel, 'amplitude_range'):
+            self.pargs.setdefault('xlim', data[0].channel.amplitude_range)
+        if hasattr(data[1].channel, 'amplitude_range'):
+            self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
+        # histogram
+        hist_kwargs = self.parse_hist_kwargs()
+        h, xedges, yedges = numpy.histogram2d(data[0], data[1],
+                                              **hist_kwargs)
+        h = numpy.ma.masked_where(h==0, h)
+        x, y = numpy.meshgrid(xedges, yedges, copy=False, sparse=True)
+        # plot
+        pcmesh_kwargs = self.parse_pcmesh_kwargs()
+        ax.pcolormesh(x, y, h.T, **pcmesh_kwargs)
+        # customise plot
         for key, val in self.pargs.iteritems():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
-                setattr(ax, key, val)
-        if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
-
+                if key == 'grid':
+                    if val == 'off':
+                        ax.grid('off')
+                    elif val in ['both', 'major', 'minor']:
+                        ax.grid('on', which=val)
+                    else:
+                        raise ValueError("Invalid ax.grid argument; "
+                                         "valid options are: 'off', "
+                                         "'both', 'major' or 'minor'")
+                else:
+                    setattr(ax, key, val)
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         return self.finalize(outputfile=outputfile)
 
-register_plot(TimeSeriesHistogramPlot)
+register_plot(TimeSeriesHistogram2dDataPlot)
 
 
 class SpectralVarianceDataPlot(SpectrumDataPlot):
@@ -577,7 +729,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         'reference_linestyle': '--',
         'log': True,
         'nbins': 100,
-        'cmap': 'jet',
     }
 
     def __init__(self, channels, *args, **kwargs):
@@ -611,6 +762,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             plot.suptitle(suptitle, y=0.993, va='top')
 
         # parse plotting arguments
+        cmap = self.pargs.pop('cmap', None)
         varargs = self.parse_variance_kwargs()
         plotargs = self.parse_plot_kwargs()[0]
         legendargs = self.parse_legend_kwargs()
@@ -644,7 +796,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             plotargs.setdefault('vmin', 1/livetime)
         plotargs.setdefault('vmax', 1.)
         plotargs.pop('label')
-        plotargs.setdefault('cmap', 'jet')
 
         specgram = get_spectrogram(self.channels[0], valid, query=False,
                                     format='asd').join(gap='ignore')
@@ -657,7 +808,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             variance /= livetime / specgram.dt.value
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
-            m = ax.plot_variance(variance, **plotargs)
+            m = ax.plot_variance(variance, cmap=cmap, **plotargs)
         #else:
         #    ax.scatter([1], [1], c=[1], visible=False, vmin=plotargs['vmin'],
         #               vmax=plotargs['vmax'], cmap=plotargs['cmap'])
@@ -734,7 +885,7 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
     defaults = {'ratio': None,
                 'format': 'rayleigh',
                 'clim': [0.25, 4],
-                'cmap': 'spectral',
+                'cmap': 'BrBG_r',
                 'logcolor': True,
                 'colorlabel': 'Rayleigh statistic'}
 

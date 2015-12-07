@@ -171,9 +171,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         active and valid segments.
         """
         active = self.pargs.pop('active', None)
-        known = self.pargs.pop('known', None)
+        known = self.pargs.pop('known', 'undefined')
         # both defined by user
-        if active is not None and known is not None:
+        if active is not None and known is not 'undefined':
             return active, known
         # only active defined by user
         elif isinstance(active, str) and active.lower() != 'red':
@@ -181,9 +181,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         elif active is not None:
             return active, 'blue'
         # only known defined by user
-        elif known not in [None, GREEN, 'green', 'g']:
+        elif known not in ['undefined', None, GREEN, 'green', 'g']:
             return GREEN, known
-        elif known is not None:
+        elif known != 'undefined':
             return 'blue', known
         else:
             onisbad = bool(self.pargs.pop('on_is_bad', True))
@@ -209,13 +209,11 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         activecolor, validcolor = self.get_segment_color()
         if isinstance(activecolor, dict):
             self.pargs.update(activecolor)
-        elif isinstance(activecolor, tuple):
-            self.pargs['facecolor'] = [activecolor] * len(self.flags)
         else:
             self.pargs['facecolor'] = activecolor
         plotargs = self.parse_plot_kwargs()
         for i, kwdict in enumerate(plotargs):
-            if isinstance(validcolor, dict):
+            if isinstance(validcolor, dict) or validcolor is None:
                 kwdict['known'] = validcolor
             elif (validcolor is None or isinstance(validcolor, str) or
                     isinstance(validcolor[0], (float, int))):
@@ -405,6 +403,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 else:
                     for i, flag in enumerate(newflags):
                         flags[i] += flag
+            if flags is None:
+                flags = [DataQualityFlag(b) for b in channel.bits if
+                         b not in [None, '']]
             nflags += len([m for m in bits_ if m is not None])
             labels = pargs.pop('label', [None]*len(flags))
             if isinstance(labels, str):
@@ -452,6 +453,7 @@ class DutyDataPlot(SegmentDataPlot):
                 'side_by_side': False,
                 'normalized': None,
                 'cumulative': False,
+                'stacked': False,
                 'ylabel': r'Duty factor [\%]'}
 
     def __init__(self, flags, start, end, state=None, outdir='.',
@@ -481,15 +483,19 @@ class DutyDataPlot(SegmentDataPlot):
         # if not given anything, work it out from the mode
         if self.bins is None:
             m = mode.MODE_NAME[mode.get_mode()]
-            # for day mode, make hourly duty factor
-            if m in ['DAY']:
-                dt = relativedelta(hours=1)
-            # for week and month mode, use daily
-            elif m in ['WEEK', 'MONTH']:
-                dt = relativedelta(days=1)
+            duration = float(abs(self.span))
             # for year mode, use a month
-            elif m in ['YEAR']:
+            if m in ['YEAR'] or duration >= 86400 * 300:
                 dt = relativedelta(months=1)
+            # for more than 8 weeks, use weeks
+            elif duration >= 86400 * 7 * 8:
+                dt = relativedelta(weeks=1)
+            # for week and month mode, use daily
+            elif m in ['WEEK', 'MONTH'] or duration >= 86400 * 7:
+                dt = relativedelta(days=1)
+            # for day mode, make hourly duty factor
+            elif m in ['DAY']:
+                dt = relativedelta(hours=1)
             # otherwise provide 10 bins
             else:
                 dt = relativedelta(seconds=float(abs(self.span))/10.)
@@ -549,6 +555,8 @@ class DutyDataPlot(SegmentDataPlot):
         (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
 
         # extract plotting arguments
+        style = self.pargs.pop('style', 'bar')
+        stacked = self.pargs.pop('stacked', False)
         sidebyside = self.pargs.pop('side_by_side', False)
         normalized = self.pargs.pop('normalized', True)
         cumulative = self.pargs.pop('cumulative', False)
@@ -560,18 +568,23 @@ class DutyDataPlot(SegmentDataPlot):
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
             legendargs.setdefault('borderaxespad', 0)
+        rollingmean = self.pargs.pop('rolling_mean',
+                                     not stacked and not cumulative)
 
         # work out times and plot mean for legend
         self.get_bins()
         times = float(self.start) + numpy.concatenate(
                                  ([0], self.bins[:-1].cumsum()))
-        if not cumulative:
+        now = bisect.bisect_left(times, globalv.NOW)
+        if rollingmean:
             axes[0].plot(times[:1], [-1], 'k--', label='Rolling mean')
 
+        # get bar parameters
         try:
             bottom = self.pargs['ylim'][0]
         except KeyError:
             bottom = 0
+        bottom = numpy.zeros(times.size) + bottom
 
         # plot segments
         if self.state and not self.all_data:
@@ -589,26 +602,62 @@ class DutyDataPlot(SegmentDataPlot):
             # plot duty cycle
             if sep and pargs.get('label') == flag.replace('_', r'\_'):
                 pargs.pop('label', None)
-            elif 'label' in pargs and normalized == 'percent':
+            elif 'label' in pargs and normalized == 'percent' and not stacked:
                 if legendargs.get('loc', None) in ['upper left', 2]:
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', color)
-            now = bisect.bisect_left(times, globalv.NOW)
-            if sidebyside:
-                t = times + self.bins * (0.1 + .8 * i/len(self.flags))
-                b = ax.bar(t[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=.8 * self.bins[:now]/len(self.flags),
-                           color=color, **pargs)
+            # plot in relevant style
+            if style == 'line':
+                lineargs = pargs.copy()
+                lineargs.setdefault('drawstyle', 'steps-post')
+                ax.plot(times[:now], duty[:now], color=color, **lineargs)
+            elif style not in ['bar', 'fill']:
+                raise ValueError("Cannot display %s with style=%r"
+                                 % (type(self).__name__, style))
             else:
-                b = ax.bar(times[:now], (duty-bottom)[:now], bottom=bottom,
-                           width=self.bins[:now], color=color, **pargs)
+                # work out positions
+                if sidebyside:
+                    pad = .1
+                    x = 1 - pad * 2
+                    w = pargs.pop('width', 1.) * x / len(self.flags)
+                    offset = pad + x/len(self.flags) * (i + 1/2.)
+                    print(w, offset)
+                elif stacked:
+                    offset = .5
+                    w = pargs.pop('width', .9)
+                else:
+                    offset = .5
+                    w = pargs.pop('width', 1.)
+                width = w * self.bins[:now]
+                if stacked:
+                    height = duty
+                    pargs.setdefault('edgecolor', color)
+                else:
+                    height = duty - bottom
+                if style == 'fill':
+                    width = self.bins[:now]
+                    ec = pargs.pop('edgecolor', 'black')
+                    pargs['edgecolor'] = 'none'
+                    lw = pargs.pop('linewidth', 1)
+                    pargs['linewidth'] = 0
+                b = ax.bar((times + self.bins * offset)[:now], height[:now],
+                           bottom=bottom[:now], align='center',
+                           width=width, color=color, **pargs)
+                if style == 'fill':
+                    ax.plot(times[:now], duty[:now], drawstyle='steps-post',
+                            color=ec, linewidth=lw)
+
             # plot mean
-            if not cumulative:
+            if rollingmean:
                 t = [self.start] + list(times + self.bins/2.) + [self.end]
                 mean = [mean[0]] + list(mean) + [mean[-1]]
                 ax.plot(t, mean, color=sep and 'k' or color, linestyle='--')
+
+            # record duty for stacked chart
+            if stacked:
+                bottom += height
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -636,13 +685,19 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_xlabel('')
 
         # add custom legend for mean
-        if not cumulative:
+        if rollingmean:
             yoff = 0.01 * float.__div__(*axes[0].get_position().size)
             lkwargs = legendargs.copy()
-            lkwargs['loc'] = 'lower right'
-            lkwargs['bbox_to_anchor'] = (1.0, 1. + yoff)
-            lkwargs['fontsize'] = 12
-            axes[0].add_artist(axes[0].legend(['Rolling mean'], **lkwargs))
+            lkwargs.update({
+                'loc': 'lower right',
+                'bbox_to_anchor': (1.0, 1. + yoff),
+                'fontsize': 12,
+                'borderaxespad': 0,
+            })
+            leg = axes[0].legend(['Rolling mean'], **lkwargs)
+            if leg.get_frame().get_edgecolor() != 'none':
+                ax.legend_.get_frame().set_edgecolor(rcParams['grid.color'])
+            axes[0].add_artist(leg)
             axes[0].lines[0].set_label('_')
 
         for ax in axes:
@@ -889,6 +944,16 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
 
+        # use state to generate suptitle with GPS span
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        else:
+            self.pargs.setdefault(
+                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+
         # get segments
         data = []
         for flag in self.flags:
@@ -934,13 +999,12 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                     pc = 0.0
                 pclabels.append(label_to_latex(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
+
         # add time to top
-        if self.state and self.state.name != ALLSTATE:
-            tspan = '[%d--%d, %s]' % (self.span, self.state.name)
-        else:
-            tspan = '[%d--%d]' % self.span
-        extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
-                          linewidth=0)
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
+                              linewidth=0)
         # sort entries
         if legsort:
             patches, pclabels, data = map(list, zip(*sorted(
@@ -949,13 +1013,19 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                  reverse=True)))
         # and restrict to the given threshold
         if legth:
-            patches, pclabels, data = map(list, zip(*[
-                x for x in zip(patches, pclabels, data) if x[2] >= legth]))
+            try:
+                patches, pclabels, data = map(list, zip(*[
+                    x for x in zip(patches, pclabels, data) if x[2] >= legth]))
+            except ValueError:
+                pass
 
-        leg = ax.legend([extra]+patches, [tspan]+pclabels, **legendargs)
-        t = leg.get_texts()[0]
-        t.set_fontproperties(t.get_fontproperties().copy())
-        t.set_size(min(12, t.get_size()))
+        if suptitle:
+            leg = ax.legend([extra]+patches, [suptitle]+pclabels, **legendargs)
+            t = leg.get_texts()[0]
+            t.set_fontproperties(t.get_fontproperties().copy())
+            t.set_size(min(12, t.get_size()))
+        else:
+            leg = ax.legend(patches, pclabels, **legendargs)
         legt = leg.get_title()
         legt.set_fontsize(max(22, legendargs.get('fontsize', 22)+4))
         legt.set_ha('left')
@@ -1129,7 +1199,10 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                                 padding=self.padding).coalesce()
             livetime = float(abs(segs.active))
             if scale == 'percent':
-                data.append(100 * livetime / float(abs(segs.known)))
+                try:
+                    data.append(100 * livetime / float(abs(segs.known)))
+                except ZeroDivisionError:
+                    data.append(0)
             elif isinstance(scale, (float, int)):
                 data.append(livetime / scale)
 
@@ -1164,3 +1237,104 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                              pad_inches=0)
 
 register_plot(SegmentBarPlot)
+
+
+class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
+    """Histogram of segment duration
+    """
+    type = 'segment-histogram'
+    data = 'segments'
+    defaults = {'ylabel': 'Number of segments',
+                'log': False,
+                'histtype': 'stepfilled',
+                'bottom': 0,
+                'rwidth': 1}
+
+    def process(self, outputfile=None):
+        # make axes
+        (plot, axes) = self.init_plot()
+
+        # use state to generate suptitle with GPS span
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        else:
+            self.pargs.setdefault(
+                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+
+        # extract plotting arguments
+        histargs = self.parse_plot_kwargs()
+
+        # get segments
+        data = []
+        for flag in self.flags:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            segs = get_segments(flag, validity=valid, query=False,
+                                padding=self.padding).coalesce()
+            livetime = float(abs(segs.active))
+            data.append(map(lambda x: float(abs(x)), segs.active))
+
+        # get range
+        if not 'range' in histargs[0]:
+            l = axes[0].common_limits(data)
+            for d in histargs:
+                d['range'] = l
+
+        # plot
+        for ax, arr, pargs in zip(cycle(axes), data, histargs):
+            if len(arr) == 0:
+                kwargs = dict(
+                    (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
+                ax.plot([], **kwargs)
+            else:
+                if pargs.get('normed', False) in ['N', 'num', 'number']:
+                    pargs['normed'] = False
+                    pargs.setdefault('weights', [1/len(arr)] * len(arr))
+                ax.hist(arr, **pargs)
+
+        # customise plot
+        legendargs = self.parse_legend_kwargs()
+        for i, ax in enumerate(axes):
+            for key, val in self.pargs.iteritems():
+                if key == 'title' and i > 0:
+                    continue
+                if key == 'xlabel' and i < (len(axes) - 1):
+                    continue
+                if key == 'ylabel' and (
+                        (len(axes) % 2 and i != len(axes) // 2) or
+                        (len(axes) % 2 == 0 and i > 0)):
+                    continue
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+            if len(self.flags) > 1:
+                plot.add_legend(ax=ax, **legendargs)
+        if len(axes) % 2 == 0 and axes[0].get_ylabel():
+            label = axes[0].yaxis.label
+            ax = axes[int(len(axes) // 2)-1]
+            ax.set_ylabel(label.get_text())
+            ax.yaxis.label.set_position((0, -.2 / len(axes)))
+            if len(axes) != 2:
+                label.set_text('')
+
+        # set common ylim
+        if 'ylim' not in self.pargs:
+            y0 = min([ax.get_ylim()[0] for ax in axes])
+            y1 = max([ax.get_ylim()[1] for ax in axes])
+            for ax in axes:
+                ax.set_ylim(y0, y1)
+
+        # add bit mask axes and finalise
+        return self.finalize(outputfile=outputfile, transparent="True",
+                             pad_inches=0)
+
+register_plot(SegmentHistogramPlot)

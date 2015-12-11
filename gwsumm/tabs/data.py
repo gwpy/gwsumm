@@ -553,6 +553,7 @@ class DataTab(DataTabBase):
         # setup plotting queue
         if multiprocess:
             queue = Queue()
+            exceptions = Queue()
         else:
             queue = None
 
@@ -565,7 +566,12 @@ class DataTab(DataTabBase):
                     except Empty:
                         break
                     else:
-                        plot.process()
+                        try:
+                            plot.process()
+                        except Exception as e:
+                            exceptions.put(e)
+                        else:
+                            exceptions.put(False)
         # process each one
         nproc = 0
         for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
@@ -597,9 +603,12 @@ class DataTab(DataTabBase):
             vprint("        Waiting for plotting to complete... ")
             queue.close()
             sleep(2)
-            # wait for children to finish
+            # wait for children to finish and re-raise any exceptions
             for p in procs:
                 p.join()
+                e = exceptions.get()
+                if isinstance(e, Exception):
+                    raise e
             vprint("Done.\n")
 
     # -------------------------------------------------------------------------

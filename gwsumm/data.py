@@ -910,10 +910,10 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
             stride = None
 
         if hasattr(channel1, 'stride'):
-            stride = float(channel.stride)
+            stride = float(channel1.stride)
 
         if hasattr(channel1, 'window'):
-            fftparams['window'] = channel.window
+            fftparams['window'] = channel1.window
 
         # get time-series data
         if stride is not None:
@@ -1094,7 +1094,7 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
         try:
             globalv.COHERENCE_SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):
-            globalv.COHERENCE_SPECTRUM[name] = Spectrum([], channel=channel, f0=0, df=1,
+            globalv.COHERENCE_SPECTRUM[name] = Spectrum([], channel=channel1, f0=0, df=1,
                                               unit=units.Unit(''))
             globalv.COHERENCE_SPECTRUM[cmin] = globalv.COHERENCE_SPECTRUM[name]
             globalv.COHERENCE_SPECTRUM[cmax] = globalv.COHERENCE_SPECTRUM[name]
@@ -1103,7 +1103,7 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
             globalv.COHERENCE_SPECTRUM[cmax] = specgram.percentile(95)
 
         # set the spectrum's name manually; this will be used for the legend
-        globalv.COHERENCE_SPECTRUM[name].name = 'test'#channel1.ndsname + channel2.ndsname
+        globalv.COHERENCE_SPECTRUM[name].name = channel1.ndsname + '\n' + channel2.ndsname
 
         vprint(".\n")
 

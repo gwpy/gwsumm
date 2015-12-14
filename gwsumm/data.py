@@ -35,6 +35,7 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+from itertools import izip_longest
 
 import decorator
 import numpy
@@ -858,13 +859,12 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
     channel1 = get_channel(channel_pair[0])
     channel2 = get_channel(channel_pair[1])
 
-    # define the key that will be used to store the coherence spectrogram in globalv
+    # key used to store the coherence spectrogram in globalv
     key = '%s,%s' % (channel1.ndsname, channel2.ndsname)
 
-    # read segments from global memory
-    havesegs = globalv.COHERENCE_SPECTROGRAMS.get(key,
+    # check how much of the coherence spectrogram still needs to be calculated
+    new = segments - globalv.COHERENCE_SPECTROGRAMS.get(key,
                                                   SpectrogramList()).segments
-    new = segments - havesegs
 
     # get processes
     if multiprocess is True:
@@ -874,6 +874,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
     else:
         nproc = multiprocess
 
+    # if there are no existing spectrogram, initialize as a list
     globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     # get data if query=True or if there are new segments
@@ -881,105 +882,151 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
 
     if query:
 
-        # read channel information
-        try:
-            filter_ = channel1.frequency_response
-        except AttributeError:
-            filter_ = None
-        else:
-            if isinstance(filter_, str):
-                filter_ = eval(filter_)
-
-        # read FFT params (method key not necessary)
+        # use FFT params from the first channel (method key not necessary)
         fftparams = fftparams.copy()
-
+        fftparams.pop('method', None)
+        fftparams.setdefault('fftlength', 1)
+        fftparams.setdefault('overlap', 0.5)
         try:
-            del fftparams['method']
+            stride = float(fftparams.pop('stride'))
         except KeyError:
-            pass
-
+            stride = None
+        if hasattr(channel1, 'stride'):
+            stride = float(channel1.stride)
+        if not stride and fftparams['overlap'] != 0:
+            stride = ceil(fftparams['fftlength'] * 1.5)
+        elif not stride:
+            stride = fftparams['fftlength']
+        if hasattr(channel1, 'window'):
+            fftparams['window'] = channel1.window
         for param in ['fftlength', 'overlap']:
             if hasattr(channel1, param):
                 fftparams[param] = float(getattr(channel1, param))
             elif param in fftparams:
                 fftparams[param] = float(fftparams[param])
+        if stride == 0:
+            raise ZeroDivisionError("Coherence spectrogram stride is 0")
+        elif fftparams['fftlength'] == 0:
+            raise ZeroDivisionError("FFT length is 0")
 
-        try:
-            stride = float(fftparams.pop('stride'))
-        except KeyError:
-            stride = None
+        # XXX HACK: use dummy timeseries to find lower sampling rate
+        s = new[0].start
+        dts1 = get_timeseries(channel1, SegmentList([Segment(s,s+1)]), config=config,
+                              cache=cache, frametype=frametype,
+                              multiprocess=nproc, query=query,
+                              datafind_error=datafind_error, nds=nds)
+        dts2 = get_timeseries(channel2, SegmentList([Segment(s,s+1)]), config=config,
+                              cache=cache, frametype=frametype,
+                              multiprocess=nproc, query=query,
+                              datafind_error=datafind_error, nds=nds)
+        sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
 
-        if hasattr(channel1, 'stride'):
-            stride = float(channel1.stride)
+        # loop over components needed to calculate coherence
+        components = ('Cxy', 'Cxx', 'Cyy')
+        for comp in components:
 
-        if hasattr(channel1, 'window'):
-            fftparams['window'] = channel1.window
-
-        # get time-series data
-        if stride is not None:
-            tmp = type(new)()
-            for s in new:
-                if abs(s) < stride:
-                    continue
-                else:
-                    d = float(abs(s))
-                    tmp.append(type(s)(s[0], s[0] + d//stride * stride))
-            new = tmp
-
-        timeserieslist1 = get_timeseries(channel1, new, config=config,
-                                         cache=cache, frametype=frametype,
-                                         multiprocess=nproc, query=query,
-                                         datafind_error=datafind_error, nds=nds)
-        timeserieslist2 = get_timeseries(channel2, new, config=config,
-                                         cache=cache, frametype=frametype,
-                                         multiprocess=nproc, query=query,
-                                         datafind_error=datafind_error, nds=nds)
-
-        # calculate coherence spectrograms
-        if len(timeserieslist1):
-            vprint("    Calculating coherence spectrograms for %s and %s" % (str(channel1), str(channel2)))
-        for ts1, ts2 in zip(timeserieslist1, timeserieslist2):
-            fftparams.setdefault('fftlength', 1)
-            fftparams.setdefault('overlap', 0.5)
-
-            if not stride and fftparams['overlap'] != 0:
-                stride = ceil(fftparams['fftlength'] * 1.5)
-            elif not stride:
-                stride = fftparams['fftlength']
-
-            if abs(ts1.span) < stride:
-                continue
+            # key used to store this component in globalv (including sample rate)
+            if comp == 'Cxy':
+                ckey = '%s,%s' % (channel1.ndsname, channel2.ndsname)
+            elif comp == 'Cxx':
+                ckey = channel1.ndsname
+            elif comp == 'Cyy':
+                ckey = channel2.ndsname
+            ckey = ckey + '@%d' % (sampling)
 
             try:
-                specgram = ts1.coherence_spectrogram(ts2, stride, nproc=nproc,
-                                                     **fftparams)
-            except ZeroDivisionError:
-                if stride == 0:
-                    raise ZeroDivisionError("Coherence spectrogram stride is 0")
-                elif fftparams['fftlength'] == 0:
-                    raise ZeroDivisionError("FFT length is 0")
-                else:
-                    raise
-            except ValueError as e:
-                if 'has no unit' in str(e):
-                    unit = ts1.unit
-                    ts1._unit = units.Unit('count')
-                    specgram = ts1.coherence_spectrogram(ts2, stride, nproc=nproc,
-                                                         **fftparams)
-                    specgram._unit = None
-                else:
-                    raise
+                filter_ = channel1.frequency_response
+            except AttributeError:
+                filter_ = None
+            else:
+                if isinstance(filter_, str):
+                    filter_ = eval(filter_)
 
-            if filter_:
-                specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
+            # check how much of this component still needs to be calculated
+            req = new - globalv.COHERENCE_COMPONENTS.get(ckey,
+                                                         SpectrogramList()).segments
 
-            globalv.COHERENCE_SPECTROGRAMS[key].append(specgram)
-            globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
+            # if there are no existing spectrograms, initialize as a list
+            globalv.COHERENCE_COMPONENTS.setdefault(ckey, SpectrogramList())
 
-            vprint('.')
+            # get data if there are new segments
+            if abs(req) != 0:
 
-        if len(timeserieslist1):
-            vprint('\n')
+                # get time-series data
+                if stride is not None:
+                    tmp = type(req)()
+                    for s in req:
+                        if abs(s) < stride:
+                            continue
+                        else:
+                            d = float(abs(s))
+                            tmp.append(type(s)(s[0], s[0] + d//stride * stride))
+                    req = tmp
+
+                timeserieslist1, timeserieslist2 = [], []
+                if comp in ('Cxy', 'Cxx'):
+                    timeserieslist1 = get_timeseries(channel1, req, config=config,
+                                                     cache=cache, frametype=frametype,
+                                                     multiprocess=nproc, query=query,
+                                                     datafind_error=datafind_error, nds=nds)
+                if comp in ('Cxy', 'Cyy'):
+                    timeserieslist2 = get_timeseries(channel2, req, config=config,
+                                                     cache=cache, frametype=frametype,
+                                                     multiprocess=nproc, query=query,
+                                                     datafind_error=datafind_error, nds=nds)
+
+                # calculate component
+                if len(timeserieslist1) + len(timeserieslist2):
+                    vprint("    Calculating component %s for coherence spectrogram"
+                           " for %s and %s @ %d Hz" % (comp, str(channel1), str(channel2), sampling))
+
+                for ts1, ts2 in izip_longest(timeserieslist1, timeserieslist2):
+
+                    # ensure there is enough data to do something with
+                    if comp in ('Cxx', 'Cxy') and abs(ts1.span) < stride:
+                        continue
+                    elif comp in ('Cyy', 'Cxy') and abs(ts2.span) < stride:
+                        continue
+
+                    # downsample if necessary
+                    if ts1 is not None and ts1.sample_rate.value != sampling:
+                        ts1 = ts1.resample(sampling)
+                    if ts2 is not None and ts2.sample_rate.value != sampling:
+                        ts2 = ts2.resample(sampling)
+
+                    # ignore units when calculating coherence
+                    if ts1 is not None:
+                        ts1._unit = units.Unit('count')
+                    if ts2 is not None:
+                        ts2._unit = units.Unit('count')
+
+                    # calculate the component spectrogram
+                    if comp == 'Cxx':
+                        specgram = ts1.spectrogram(stride, nproc=nproc, **fftparams)
+                    elif comp == 'Cyy':
+                        specgram = ts2.spectrogram(stride, nproc=nproc, **fftparams)
+                    elif comp == 'Cxy':
+                        specgram = ts1.spectrogram(stride, nproc=nproc, cross=ts2,
+                                                   **fftparams)
+                    if filter_:
+                        specgram = (specgram ** (1/2.)).filter(*filter_, inplace=True) ** 2
+
+                    globalv.COHERENCE_COMPONENTS[ckey].append(specgram)
+                    globalv.COHERENCE_COMPONENTS[ckey].coalesce()
+
+                    vprint('.')
+
+                if len(timeserieslist1) + len(timeserieslist2):
+                    vprint('\n')
+
+        # calculate the coherence spectrogram and store in globalv
+        cxx = globalv.COHERENCE_COMPONENTS[channel1.ndsname + '@%d' % (sampling)][0]
+        cyy = globalv.COHERENCE_COMPONENTS[channel2.ndsname + '@%d' % (sampling)][0]
+        cxy = globalv.COHERENCE_COMPONENTS[channel1.ndsname + ',' + channel2.ndsname + '@%d' % (sampling)][0]
+        csg = abs(cxy)**2 / cxx / cyy
+
+        globalv.COHERENCE_SPECTROGRAMS[key].append(csg)
+        globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
 
     if not return_:
         return
@@ -999,8 +1046,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
                 if s.shape[0]:
                     out.append(s)
     return out.coalesce()
-
-
 
 def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
                  query=True, nds='guess', format='power', return_=True,
@@ -1070,37 +1115,85 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
         name = ','.join([channel1.ndsname, channel2.ndsname, segments.name])
         segments = segments.active
     else:
-        name = channel1.ndsname + channel2.ndsname
+        name = channel1.ndsname + ',' + channel2.ndsname
     name += ',%s' % format
     cmin = '%s.min' % name
     cmax = '%s.max' % name
 
+    # XXX HACK: use dummy timeseries to find lower sampling rate
+    s = segments[0].start
+    dts1 = get_timeseries(channel1, SegmentList([Segment(s,s+1)]), config=config,
+                          cache=cache, query=query, nds=nds)
+    dts2 = get_timeseries(channel2, SegmentList([Segment(s,s+1)]), config=config,
+                          cache=cache, query=query, nds=nds)
+    sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
+
     if name not in globalv.COHERENCE_SPECTRUM:
         vprint("    Calculating 5/50/95 percentile spectra for %s"
                % name.rsplit(',', 1)[0])
+
         speclist = get_coherence_spectrogram(channel_pair, segments, config=config,
                                              cache=cache, query=query, nds=nds,
                                              format=format, **fftparams)
+
+        # get component spectrograms from globalv
+        cxxlist = globalv.COHERENCE_COMPONENTS[channel1.ndsname + '@%d' % (sampling)]
+        cyylist = globalv.COHERENCE_COMPONENTS[channel2.ndsname + '@%d' % (sampling)]
+        cxylist = globalv.COHERENCE_COMPONENTS[channel1.ndsname + ',' + channel2.ndsname + '@%d' % (sampling)]
+
         try:
-            specgram = speclist.join(gap='ignore')
+            cxx = cxxlist.join(gap='ignore')
         except ValueError as e:
             if 'units do not match' in str(e):
                 warnings.warn(str(e))
-                for spec in speclist[1:]:
-                    spec.unit = speclist[0].unit
-                specgram = speclist.join(gap='ignore')
+                for spec in cxxlist[1:]:
+                    spec.unit = cxxlist[0].unit
+                cxx = cxxlist.join(gap='ignore')
             else:
                 raise
         try:
-            globalv.COHERENCE_SPECTRUM[name] = specgram.percentile(50)
+            cyy = cyylist.join(gap='ignore')
+        except ValueError as e:
+            if 'units do not match' in str(e):
+                warnings.warn(str(e))
+                for spec in cyylist[1:]:
+                    spec.unit = cyylist[0].unit
+                cyy = cyylist.join(gap='ignore')
+            else:
+                raise
+        try:
+            cxy = cxylist.join(gap='ignore')
+        except ValueError as e:
+            if 'units do not match' in str(e):
+                warnings.warn(str(e))
+                for spec in cxylist[1:]:
+                    spec.unit = cxylist[0].unit
+                cxy = cxylist.join(gap='ignore')
+            else:
+                raise
+
+        # average spectrograms to get PSDs and CSD
+        try:
+            Cxx = cxx.percentile(50)
+            Cyy = cyy.percentile(50)
+            Cxy = cxy.percentile(50)
+            globalv.COHERENCE_SPECTRUM[name] = Spectrum( abs(Cxy)**2 / Cxx / Cyy,
+                                                         f0=cxx.f0, df=cxx.df )
         except (ValueError, IndexError):
             globalv.COHERENCE_SPECTRUM[name] = Spectrum([], channel=channel1, f0=0, df=1,
-                                              unit=units.Unit(''))
+                                                        unit=units.Unit(''))
             globalv.COHERENCE_SPECTRUM[cmin] = globalv.COHERENCE_SPECTRUM[name]
             globalv.COHERENCE_SPECTRUM[cmax] = globalv.COHERENCE_SPECTRUM[name]
         else:
-            globalv.COHERENCE_SPECTRUM[cmin] = specgram.percentile(5)
-            globalv.COHERENCE_SPECTRUM[cmax] = specgram.percentile(95)
+            # FIXME: how to calculate percentiles correctly?
+            globalv.COHERENCE_SPECTRUM[cmin] = Spectrum( abs(cxy.percentile(5))**2 /
+                                                         cxx.percentile(95) /
+                                                         cyy.percentile(95), f0=cxx.f0,
+                                                         df=cxx.df )
+            globalv.COHERENCE_SPECTRUM[cmax] = Spectrum( abs(cxy.percentile(95))**2 /
+                                                         cxx.percentile(5) /
+                                                         cyy.percentile(5), f0=cxx.f0,
+                                                         df=cxx.df )
 
         # set the spectrum's name manually; this will be used for the legend
         globalv.COHERENCE_SPECTRUM[name].name = channel1.ndsname + '\n' + channel2.ndsname
@@ -1112,8 +1205,8 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
 
     cmin = '%s.min' % name
     cmax = '%s.max' % name
-    out = (globalv.COHERENCE_SPECTRUM[name], globalv.COHERENCE_SPECTRUM[cmin],
-           globalv.COHERENCE_SPECTRUM[cmax])
+    out = (globalv.COHERENCE_SPECTRUM[name], globalv.COHERENCE_SPECTRUM[name],
+           globalv.COHERENCE_SPECTRUM[name])
     return out
 
 

@@ -697,7 +697,9 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
                      query=True, nds='guess', format='power', return_=True,
                      frametype=None, multiprocess=True, method=None,
                      datafind_error='raise', **fftparams):
+
     channel = get_channel(channel)
+
     if method is None:
         methods = set([key.split(',', 1)[1] for key in globalv.SPECTROGRAMS
                        if key.startswith('%s,' % channel.ndsname)])
@@ -707,7 +709,16 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             method = 'median-mean'
     if format in ['rayleigh']:
         method = format
-    key = '%s,%s' % (channel.ndsname, method)
+
+    # clean fftparams dict using channel default values
+    fftparams = _clean_fftparams(fftparams, channel)
+
+    # key used to store the coherence spectrogram in globalv
+    key = _make_key(channel, fftparams, method=method)
+
+    # extract spectrogram stride from dict
+    stride = float(fftparams.pop('stride'))
+
     # read segments from global memory
     havesegs = globalv.SPECTROGRAMS.get(key,
                                         SpectrogramList()).segments
@@ -734,21 +745,6 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
             if isinstance(filter_, str):
                 filter_ = eval(filter_)
 
-        # read FFT params
-        fftparams = fftparams.copy()
-        for param in ['fftlength', 'overlap']:
-            if hasattr(channel, param):
-                fftparams[param] = float(getattr(channel, param))
-            elif param in fftparams:
-                fftparams[param] = float(fftparams[param])
-        try:
-            stride = float(fftparams.pop('stride'))
-        except KeyError:
-            stride = None
-        if hasattr(channel, 'stride'):
-            stride = float(channel.stride)
-        if hasattr(channel, 'window'):
-            fftparams['window'] = channel.window
         # get time-series data
         if stride is not None:
             tmp = type(new)()
@@ -767,12 +763,6 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
-            fftparams.setdefault('fftlength', 1)
-            fftparams.setdefault('overlap', 0.5)
-            if not stride and fftparams['overlap'] != 0:
-                stride = ceil(fftparams['fftlength'] * 1.5)
-            elif not stride:
-                stride = fftparams['fftlength']
             if abs(ts.span) < stride:
                 continue
             try:
@@ -862,9 +852,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
     # clean fftparams dict using channel 1 default values
     fftparams = _clean_fftparams(fftparams, channel1)
 
-    # only welch method for coherence spectrograms
-    fftparams['method'] = 'welch'
-
     # key used to store the coherence spectrogram in globalv
     key = _make_key(channel_pair, fftparams)
 
@@ -897,9 +884,9 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(), ca
 
     # keys used to store component spectrograms in globalv
     components = ('Cxy', 'Cxx', 'Cyy')
-    ckeys = [ _make_key([channel1, channel2], fftparams, sampling),
-              _make_key(channel1, fftparams, sampling),
-              _make_key(channel2, fftparams, sampling) ]
+    ckeys = [ _make_key([channel1, channel2], fftparams, sampling=sampling),
+              _make_key(channel1, fftparams, sampling=sampling),
+              _make_key(channel2, fftparams, sampling=sampling) ]
 
     # get data if query=True or if there are new segments
     query &= abs(new) != 0
@@ -1366,7 +1353,7 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
         return get_timeseries(key, segments, query=False)
 
 
-def _make_key(channels, fftparams, sampling=None):
+def _make_key(channels, fftparams, method=None, sampling=None):
 
     # generate the key string used to store spectrograms in `globalv`
 
@@ -1384,8 +1371,8 @@ def _make_key(channels, fftparams, sampling=None):
 
     # parameters to append to channel names
     p = []
+    p.append(method)
     p.append(fftparams.get('stride', None))
-    p.append(fftparams.get('method', None))
     p.append(fftparams.get('window', None))
     p.append(fftparams.get('fftlength', None))
     p.append(fftparams.get('overlap', None))
@@ -1400,10 +1387,10 @@ def _make_key(channels, fftparams, sampling=None):
 def _clean_fftparams(fftparams, channel):
 
     # replace missing fftparams with defaults or values from given channel
+
     fftparams = fftparams.copy()
 
     # set defaults
-    fftparams.setdefault('method', 'welch')
     fftparams.setdefault('window', None)
     fftparams.setdefault('fftlength', 1)
     fftparams.setdefault('overlap', 0.5)

@@ -279,8 +279,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             specgrams = get_spectrogram(channel, valid, query=False,
                                         format=sdform)
         elif self.type is 'coherence_spectrogram':
-            specgrams = get_coherence_spectrogram(self.channels, valid, query=False,
-                                                  format=sdform)
+            specgrams = get_coherence_spectrogram(self.channels, valid,
+                                                  query=False)
         else:
             raise ValueError('Unrecognized type in SpectrogramDataPlot')
 

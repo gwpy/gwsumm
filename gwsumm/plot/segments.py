@@ -696,7 +696,7 @@ class DutyDataPlot(SegmentDataPlot):
             })
             leg = axes[0].legend(['Rolling mean'], **lkwargs)
             if leg.get_frame().get_edgecolor() != 'none':
-                ax.legend_.get_frame().set_edgecolor(rcParams['grid.color'])
+                leg.get_frame().set_edgecolor(rcParams['grid.color'])
             axes[0].add_artist(leg)
             axes[0].lines[0].set_label('_')
 

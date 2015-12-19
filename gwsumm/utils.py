@@ -35,7 +35,7 @@ re_cchar = re.compile("[\W_]+")
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
 re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
-                         '(?:[-_][a-zA-Z0-9_]+)'  # underscore-delimiter parts
+                         '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
                          '(?:\.[a-z]+)?'  # trend type
                          '(?:,[a-z-]+)?')  # NDS channel type
 

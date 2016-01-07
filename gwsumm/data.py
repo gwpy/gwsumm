@@ -1105,14 +1105,6 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(), cache=
     cmin = name + '.min'
     cmax = name + '.max'
 
-    # XXX HACK: use dummy timeseries to find lower sampling rate
-    s = segments[0].start
-    dts1 = get_timeseries(channel1, SegmentList([Segment(s,s+1)]), config=config,
-                          cache=cache, query=query, nds=nds)
-    dts2 = get_timeseries(channel2, SegmentList([Segment(s,s+1)]), config=config,
-                          cache=cache, query=query, nds=nds)
-    sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
-
     if name not in globalv.COHERENCE_SPECTRUM:
         vprint("    Calculating 5/50/95 percentile spectra for %s"
                % name.rsplit(',', 1)[0])

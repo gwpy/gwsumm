@@ -948,6 +948,10 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
                                           datafind_error=datafind_error,
                                           nds=nds)
 
+                if (comp is 'Cxy' and
+                        timeserieslist1.segments != timeserieslist2.segments):
+                    raise ValueError('Data mismatch in calculating coherence.')
+
                 # calculate component
                 if len(timeserieslist1) + len(timeserieslist2):
                     vprint("    Calculating component %s for coherence "

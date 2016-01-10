@@ -487,7 +487,7 @@ class DataTab(DataTabBase):
                                         'rayleigh-spectrum',
                                         all_data=all_data, read=True)
         # for coherence spectrograms, we need all pairs of channels, not just the unique ones
-        csgchannels = self.get_channels('coherence_spectrogram',
+        csgchannels = self.get_channels('coherence-spectrogram',
                                         all_data=all_data, read=True,
                                         unique=False)
 

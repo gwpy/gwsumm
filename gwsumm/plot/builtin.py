@@ -275,14 +275,12 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         else:
             valid = SegmentList([self.span])
 
-        if self.type == 'spectrogram':
-            specgrams = get_spectrogram(channel, valid, query=False,
-                                        format=sdform)
-        elif self.type == 'coherence-spectrogram':
+        if self.type == 'coherence-spectrogram':
             specgrams = get_coherence_spectrogram(self.channels, valid,
                                                   query=False)
         else:
-            raise ValueError('Unrecognized type in SpectrogramDataPlot')
+            specgrams = get_spectrogram(channel, valid, query=False,
+                                        format=sdform)
 
         # calculate ratio spectrum
         if len(specgrams) and (ratio in ['median', 'mean'] or
@@ -414,12 +412,10 @@ class SpectrumDataPlot(DataPlot):
                 refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
 
         # add data
-        if self.type == 'spectrum':
-            iterator = zip(self.channels, plotargs)
-        elif self.type == 'coherence-spectrum':
+        if self.type == 'coherence-spectrum':
             iterator = zip(self.channels[0::2], self.channels[1::2], plotargs)
         else:
-            raise ValueError('Unrecognized type in SpectrumDataPlot')
+            iterator = zip(self.channels, plotargs)
 
         for tuple in iterator:
             channel = tuple[0]
@@ -431,12 +427,12 @@ class SpectrumDataPlot(DataPlot):
             else:
                 valid = SegmentList([self.span])
 
-            if self.type == 'spectrum':
+            if self.type == 'coherence-spectrum':
+                data = get_coherence_spectrum([str(channel), str(channel2)],
+                                              valid, query=False, format=sdform)
+            else:
                 data = get_spectrum(str(channel), valid, query=False,
                                     format=sdform)
-            elif self.type == 'coherence-spectrum':
-                data = get_coherence_spectrum([str(channel), str(channel2)], valid, query=False,
-                                              format=sdform)
 
             # anticipate log problems
             if self.pargs['logx']:

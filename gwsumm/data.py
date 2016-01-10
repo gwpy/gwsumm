@@ -874,22 +874,29 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
     globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     # XXX HACK: use dummy timeseries to find lower sampling rate
-    s = segments[0].start
-    dts1 = get_timeseries(channel1, SegmentList([Segment(s, s+1)]),
-                          config=config, cache=cache, frametype=frametype,
-                          multiprocess=nproc, query=query,
-                          datafind_error=datafind_error, nds=nds)
-    dts2 = get_timeseries(channel2, SegmentList([Segment(s, s+1)]),
-                          config=config, cache=cache, frametype=frametype,
-                          multiprocess=nproc, query=query,
-                          datafind_error=datafind_error, nds=nds)
-    sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
+    if len(segments) > 0:
+        s = segments[0].start
+        dts1 = get_timeseries(channel1, SegmentList([Segment(s, s+1)]),
+                              config=config, cache=cache, frametype=frametype,
+                              multiprocess=nproc, query=query,
+                              datafind_error=datafind_error, nds=nds)
+        dts2 = get_timeseries(channel2, SegmentList([Segment(s, s+1)]),
+                              config=config, cache=cache, frametype=frametype,
+                              multiprocess=nproc, query=query,
+                              datafind_error=datafind_error, nds=nds)
+        sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
+    else:
+        sampling = None;
 
     # keys used to store component spectrograms in globalv
     components = ('Cxy', 'Cxx', 'Cyy')
     ckeys = [_make_key([channel1, channel2], fftparams, sampling=sampling),
              _make_key(channel1, fftparams, sampling=sampling),
              _make_key(channel2, fftparams, sampling=sampling)]
+
+    # initialize component lists if they don't exist yet
+    for ck in ckeys:
+        globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
 
     # get data if query=True or if there are new segments
     query &= abs(new) != 0
@@ -914,9 +921,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
             # check how much of this component still needs to be calculated
             req = new - globalv.COHERENCE_COMPONENTS.get(
                             ckey, SpectrogramList()).segments
-
-            # if there are no existing spectrograms, initialize as a list
-            globalv.COHERENCE_COMPONENTS.setdefault(ckey, SpectrogramList())
 
             # get data if there are new segments
             if abs(req) != 0:

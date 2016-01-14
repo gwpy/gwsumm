@@ -903,6 +903,9 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
     if query:
 
+        # the intersecting segments will be calculated when needed
+        intersection = None
+
         # loop over components needed to calculate coherence
         stride = float(fftparams.pop('stride'))
         for comp in components:
@@ -936,33 +939,47 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
                             tmp.append(type(s)(s[0], s[0]+d//stride * stride))
                     req = tmp
 
-                timeserieslist1, timeserieslist2 = [], []
-                if comp in ('Cxy', 'Cxx'):
-                    timeserieslist1 = get_timeseries(
-                                          channel1, req, config=config,
-                                          cache=cache, frametype=frametype,
-                                          multiprocess=nproc, query=query,
-                                          datafind_error=datafind_error,
-                                          nds=nds)
-                if comp in ('Cxy', 'Cyy'):
-                    timeserieslist2 = get_timeseries(
-                                          channel2, req, config=config,
-                                          cache=cache, frametype=frametype,
-                                          multiprocess=nproc, query=query,
-                                          datafind_error=datafind_error,
-                                          nds=nds)
+                # calculate intersection of segments lazily
+                # this should occur on first pass (Cxy)
+                if intersection is None:
+                    total1 = get_timeseries(
+                                 channel1, req, config=config,
+                                 cache=cache, frametype=frametype,
+                                 multiprocess=nproc, query=query,
+                                 datafind_error=datafind_error,
+                                 nds=nds)
+                    total2 = get_timeseries(
+                                 channel2, req, config=config,
+                                 cache=cache, frametype=frametype,
+                                 multiprocess=nproc, query=query,
+                                 datafind_error=datafind_error,
+                                 nds=nds)
+                    intersection = total1.segments & total2.segments
 
-                if (comp is 'Cxy' and
-                        timeserieslist1.segments != timeserieslist2.segments):
-                    raise ValueError('Data mismatch in calculating coherence.')
+                # get required timeseries data (using intersection)
+                tslist1, tslist2 = [], []
+                if comp in ('Cxy', 'Cxx'):
+                    tslist1 = get_timeseries(
+                                  channel1, intersection, config=config,
+                                  cache=cache, frametype=frametype,
+                                  multiprocess=nproc, query=query,
+                                  datafind_error=datafind_error,
+                                  nds=nds)
+                if comp in ('Cxy', 'Cyy'):
+                    tslist2 = get_timeseries(
+                                  channel2, intersection, config=config,
+                                  cache=cache, frametype=frametype,
+                                  multiprocess=nproc, query=query,
+                                  datafind_error=datafind_error,
+                                  nds=nds)
 
                 # calculate component
-                if len(timeserieslist1) + len(timeserieslist2):
+                if len(tslist1) + len(tslist2):
                     vprint("    Calculating component %s for coherence "
                            "spectrogram for %s and %s @ %d Hz" % (
                                comp, str(channel1), str(channel2), sampling))
 
-                for ts1, ts2 in izip_longest(timeserieslist1, timeserieslist2):
+                for ts1, ts2 in izip_longest(tslist1, tslist2):
 
                     # ensure there is enough data to do something with
                     if comp in ('Cxx', 'Cxy') and abs(ts1.span) < stride:
@@ -1002,7 +1019,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
                     vprint('.')
 
-                if len(timeserieslist1) + len(timeserieslist2):
+                if len(tslist1) + len(tslist2):
                     vprint('\n')
 
     # calculate coherence from the components and store in globalv

@@ -23,6 +23,9 @@ import os.path
 import re
 import sys
 from StringIO import StringIO
+from importlib import import_module
+
+from six.moves import http_client as httplib
 
 if sys.version_info[0] >= 3:
     from configparser import *
@@ -38,7 +41,13 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from astropy import units
+
+from gwpy.detector import Channel
 from gwpy.time import tconvert
+
+from .utils import (nat_sorted, split_channels, re_cchar)
+from .channels import get_channels
 
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 
@@ -153,3 +162,105 @@ class GWSummConfigParser(ConfigParser):
             self.set(section, 'gps-start-time-noleap',
                        str(int(start) - nleap))
             self.set(section, 'gps-end-time-noleap', str(int(end) - nleap))
+
+    def finalize(self):
+        """Finalize this `GWSummConfigParser` by running all the loaders
+
+        This method is just a shortcut to run each of the following
+
+        .. autosummary::
+
+           ~GWSummConfigParser.load_plugins
+           ~GWSummConfigParser.load_units
+           ~GWSummConfigParser.load_channels
+
+        """
+        self.load_plugins()
+        self.load_units()
+        self.load_channels()
+
+    def load_plugins(self):
+        """Load all plugin modules as defined in the [plugins] section
+        """
+        try:
+            plugins = self.ndoptions('plugins')
+        except NoSectionError:
+            pass
+        else:
+            for plugin in plugins:
+                import_module(plugin)
+
+    def load_units(self):
+        """Load all unit definitions as defined in the [units] section
+        """
+        try:
+            customunits = self.nditems('units')
+        except NoSectionError:
+            pass
+        else:
+            new_ = []
+            for unit, b in customunits:
+                if b.lower() == 'dimensionless':
+                    b = ''
+                new_.append(units.def_unit([unit], units.Unit(b)))
+            units.add_enabled_units(new_)
+
+    def load_channels(self):
+        """Load all channel definitions as given in the selfuration
+
+        Channels are loaded from sections named [channels-...] or
+        those sections whose name is a channel name in itself
+        """
+        channels_re = re.compile('channels[-\s]')
+        # parse channel grouns into individual sections
+        for section in filter(channels_re.match, self.sections()):
+            names = split_channels(self.get(section, 'channels'))
+            items = dict(self.nditems(section, raw=True))
+            items.pop('channels')
+            for name in names:
+                name = name.strip(' \n')
+                if not self.has_section(name):
+                    self.add_section(name)
+                for key, val in items.iteritems():
+                    if not self.has_option(name, key):
+                        self.set(name, key, val)
+
+        # read all channels
+        raw = set()
+        trend = set()
+        for section in self.sections():
+            try:
+                m = Channel.MATCH.match(section).groupdict()
+            except AttributeError:
+                continue
+            else:
+                if not m['ifo']:
+                    continue
+            if m['trend']:
+                trend.add(section)
+            else:
+                raw.add(section)
+        for group in [raw, trend]:
+            try:
+                newchannels = get_channels(group)
+            except httplib.HTTPException:
+                newchannels = []
+
+            # read custom channel definitions
+            for channel, section in zip(newchannels, group):
+                for key, val in nat_sorted(self.nditems(section),
+                                           key=lambda x: x[0]):
+                    key = re_cchar.sub('_', key.rstrip())
+                    if key.isdigit():
+                        if not hasattr(channel, 'bits'):
+                            channel.bits = []
+                        while len(channel.bits) < int(key):
+                            channel.bits.append(None)
+                        if val.startswith('r"') or val.startswith('r\''):
+                            val = eval(val)
+                        channel.bits.append(val)
+                    else:
+                        try:
+                            setattr(channel, key, eval(val.rstrip()))
+                        except NameError:
+                            setattr(channel, key, val.rstrip())

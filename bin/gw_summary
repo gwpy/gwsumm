@@ -55,8 +55,6 @@ else:
 from matplotlib import use
 use('Agg')
 
-from astropy import units
-
 from glue.lal import Cache
 
 try:
@@ -460,84 +458,10 @@ Output directory: %s
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, path))))
 
-# -- Load plugins
-# loading the module containing a plugin should 'register' the relevant
-# Plot, or Tab, so they are accessible downstream
-try:
-    plugins = config.ndoptions('plugins')
-except NoSectionError:
-    pass
-else:
-    for plugin in plugins:
-        importlib.import_module(plugin)
-
-# Load custom units
-try:
-    customunits = config.nditems('units')
-except NoSectionError:
-    pass
-else:
-    new_ = []
-    for unit, b in customunits:
-        if b.lower() == 'dimensionless':
-            b = ''
-        new_.append(units.def_unit([unit], units.Unit(b)))
-    units.add_enabled_units(new_)
-
-if not opts.html_only:
-    # parse channel grouns into individual sections
-    for section in config.sections():
-        if re.match('channels[-\s]', section):
-            names = split_channels(config.get(section, 'channels'))
-            items = dict(config.nditems(section, raw=True))
-            items.pop('channels')
-            for name in names:
-                name = name.strip(' \n')
-                if not config.has_section(name):
-                    config.add_section(name)
-                for key, val in items.iteritems():
-                    if not config.has_option(name, key):
-                        config.set(name, key, val)
-
-    # read all channels
-    raw = set()
-    trend = set()
-    for section in config.sections():
-        try:
-            m = Channel.MATCH.match(section).groupdict()
-        except AttributeError:
-            continue
-        else:
-            if not m['ifo']:
-                continue
-        if m['trend']:
-            trend.add(section)
-        else:
-            raw.add(section)
-    for group in [raw, trend]:
-        try:
-            newchannels = get_channels(group)
-        except httplib.HTTPException:
-            newchannels = []
-
-        # read custom channel definitions
-        for channel, section in zip(newchannels, group):
-            for key, val in nat_sorted(config.nditems(section),
-                                       key=lambda x: x[0]):
-                key = re_cchar.sub('_', key.rstrip())
-                if key.isdigit():
-                    if not hasattr(channel, 'bits'):
-                        channel.bits = []
-                    while len(channel.bits) < int(key):
-                        channel.bits.append(None)
-                    if val.startswith('r"') or val.startswith('r\''):
-                        val = eval(val)
-                    channel.bits.append(val)
-                else:
-                    try:
-                        setattr(channel, key, eval(val.rstrip()))
-                    except NameError:
-                        setattr(channel, key, val.rstrip())
+# -- Finalise configuration
+config.load_plugins()
+config.load_units()
+config.load_channels()
 
 # read states
 try:

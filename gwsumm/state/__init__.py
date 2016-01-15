@@ -55,60 +55,9 @@ API reference
 
 """
 
-import re
-
-from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
-
-from .. import globalv
-from ..config import (GWSummConfigParser, NoSectionError)
-from ..utils import re_cchar
-from ..segments import get_segments
-
-from .registry import (get_state, get_states, register_state)
-
 from .core import SummaryState
 from .registry import (get_state, get_states, register_state)
 from .all import (ALLSTATE, generate_all_state)
 
 __all__ = ['ALLSTATE', 'SummaryState', 'get_state', 'get_states',
-           'register_state', 'load_states', 'generate_all_state']
-
-
-def load_states(config, section='states'):
-    """Read and format a list of `SummaryState` definitions from the
-    given :class:`~configparser.ConfigParser`
-    """
-    config = GWSummConfigParser.from_configparser(config)
-    # parse the [states] section into individual state definitions
-    try:
-        states = dict(config.nditems(section))
-    except NoSectionError:
-        config.add_section(section)
-        states = {}
-    for state in states:
-        if not (config.has_section('state-%s' % state) or
-                config.has_section('state %s' % state)):
-            section = 'state-%s' % state
-            config.add_section(section)
-            config.set(section, 'name', state)
-            config.set(section, 'definition', states[state])
-
-    # parse each state section into a new state
-    states = []
-    for section in config.sections():
-        if re.match('state[-\s]', section):
-            states.append(register_state(
-                SummaryState.from_ini(config, section)))
-
-    # register All state
-    start = config.getint(section, 'gps-start-time')
-    end = config.getint(section, 'gps-end-time')
-    try:
-        all_ = generate_all_state(start, end)
-    except ValueError:
-        all_ = get_state(ALLSTATE)
-        pass
-    else:
-        states.insert(0, all_)
-
-    return states
+           'register_state', 'generate_all_state']

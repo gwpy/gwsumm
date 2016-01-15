@@ -173,11 +173,13 @@ class GWSummConfigParser(ConfigParser):
            ~GWSummConfigParser.load_plugins
            ~GWSummConfigParser.load_units
            ~GWSummConfigParser.load_channels
+           ~GWSummConfigParser.load_states
 
         """
         self.load_plugins()
         self.load_units()
         self.load_channels()
+        self.load_states()
 
     def load_plugins(self):
         """Load all plugin modules as defined in the [plugins] section
@@ -271,3 +273,43 @@ class GWSummConfigParser(ConfigParser):
                             setattr(channel, key, val.rstrip())
                 channels.append(channel)
         return channels
+
+    def load_states(self, section='states'):
+        """Read and format a list of `SummaryState` definitions from the
+        given :class:`~configparser.ConfigParser`
+        """
+        from .state import (register_state, SummaryState,
+                            ALLSTATE, generate_all_state, get_state)
+        # parse the [states] section into individual state definitions
+        try:
+            states = dict(self.nditems(section))
+        except NoSectionError:
+            self.add_section(section)
+            states = {}
+        for state in states:
+            if not (self.has_section('state-%s' % state) or
+                    self.has_section('state %s' % state)):
+                section = 'state-%s' % state
+                self.add_section(section)
+                self.set(section, 'name', state)
+                self.set(section, 'definition', states[state])
+
+        # parse each state section into a new state
+        states = []
+        for section in self.sections():
+            if re.match('state[-\s]', section):
+                states.append(register_state(
+                    SummaryState.from_ini(self, section)))
+
+        # register All state
+        start = self.getint(section, 'gps-start-time')
+        end = self.getint(section, 'gps-end-time')
+        try:
+            all_ = generate_all_state(start, end)
+        except ValueError:
+            all_ = get_state(ALLSTATE)
+            pass
+        else:
+            states.insert(0, all_)
+
+        return states

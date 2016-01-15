@@ -469,12 +469,8 @@ units = config.load_units()
 vprint("    Loaded %d units\n" % len(units))
 channels = config.load_channels()
 vprint("    Loaded %d channels\n" % len(channels))
-
-# read states
-try:
-    load_states(config)
-except NoSectionError:
-    generate_all_state(*span)
+states = config.load_states()
+vprint("    Loaded %d states\n" % len(states))
 
 # read caches
 cache = {}

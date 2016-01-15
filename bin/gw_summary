@@ -459,9 +459,16 @@ Output directory: %s
        os.path.abspath(os.path.join(opts.output_dir, path))))
 
 # -- Finalise configuration
-config.load_plugins()
-config.load_units()
-config.load_channels()
+vprint("Loading configuration...\n")
+plugins = config.load_plugins()
+if plugins:
+    vprint("    Loaded %d plugins:\n" % len(plugins))
+    for mod in plugins:
+        vprint("        %s" % mod)
+units = config.load_units()
+vprint("    Loaded %d units\n" % len(units))
+channels = config.load_channels()
+vprint("    Loaded %d channels\n" % len(channels))
 
 # read states
 try:
@@ -474,11 +481,13 @@ cache = {}
 for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
                     [opts.data_cache, opts.event_cache, opts.segment_cache]):
     if var:
+        vprint("Reading %s from %d files... " % (key, len(var)))
         cache[key] = Cache()
         for fp in var:
             with open(fp, 'rb') as f:
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
+        vprint("done [%d entries]\n" % len(cache[key]))
 
 # build directories
 mkdir(opts.output_dir)

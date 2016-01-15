@@ -43,7 +43,7 @@ except ImportError:
 
 from astropy import units
 
-from gwpy.detector import Channel
+from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .utils import (nat_sorted, split_channels, re_cchar)
@@ -182,13 +182,15 @@ class GWSummConfigParser(ConfigParser):
     def load_plugins(self):
         """Load all plugin modules as defined in the [plugins] section
         """
+        mods = []
         try:
             plugins = self.ndoptions('plugins')
         except NoSectionError:
             pass
         else:
             for plugin in plugins:
-                import_module(plugin)
+                mods.append(import_module(plugin))
+        return mods
 
     def load_units(self):
         """Load all unit definitions as defined in the [units] section
@@ -196,7 +198,7 @@ class GWSummConfigParser(ConfigParser):
         try:
             customunits = self.nditems('units')
         except NoSectionError:
-            pass
+            return []
         else:
             new_ = []
             for unit, b in customunits:
@@ -204,6 +206,7 @@ class GWSummConfigParser(ConfigParser):
                     b = ''
                 new_.append(units.def_unit([unit], units.Unit(b)))
             units.add_enabled_units(new_)
+            return zip(*new_)[1]
 
     def load_channels(self):
         """Load all channel definitions as given in the selfuration
@@ -240,6 +243,8 @@ class GWSummConfigParser(ConfigParser):
                 trend.add(section)
             else:
                 raw.add(section)
+
+        channels = ChannelList()
         for group in [raw, trend]:
             try:
                 newchannels = get_channels(group)
@@ -264,3 +269,5 @@ class GWSummConfigParser(ConfigParser):
                             setattr(channel, key, eval(val.rstrip()))
                         except NameError:
                             setattr(channel, key, val.rstrip())
+                channels.append(channel)
+        return channels

@@ -46,6 +46,7 @@ from astropy import units
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
+from .html import (get_css, get_js)
 from .utils import (nat_sorted, split_channels, re_cchar)
 from .channels import get_channels
 
@@ -313,3 +314,25 @@ class GWSummConfigParser(ConfigParser):
             states.insert(0, all_)
 
         return states
+
+    def get_css(self, section='html'):
+        try:
+            css = [cval for (key, cval) in self.items('html') if
+                   re.match('css\d+', key)]
+        except NoSectionError:
+            css = get_css(ifo)
+        else:
+            if not css:
+                css = get_css(ifo)
+        return css
+
+    def get_javascript(self, section='html'):
+        try:
+            javascript = [jval for (key, jval) in self.items('html') if
+                          re.match('javascript\d+', key)]
+        except NoSectionError:
+            javascript = get_js()
+        else:
+            if not javascript:
+                javascript = get_js()
+        return javascript

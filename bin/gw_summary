@@ -69,7 +69,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import lal_ as lalpsd
 
-from gwsumm import (globalv, version, mode, html)
+from gwsumm import (globalv, version, mode)
 from gwsumm.config import *
 from gwsumm.channels import get_channels
 from gwsumm.segments import get_segments
@@ -535,22 +535,8 @@ for arch in archives:
 # -----------------------------------------------------------------------------
 # Read HTML configuration
 
-try:
-    css = [cval for (key, cval) in config.items('html') if
-           re.match('css\d+', key)]
-except NoSectionError:
-    css = html.get_css(ifo)
-else:
-    if not css:
-        css = html.get_css(ifo)
-try:
-    javascript = [jval for (key, jval) in config.items('html') if
-                  re.match('javascript\d+', key)]
-except NoSectionError:
-    javascript = html.get_js()
-else:
-    if not javascript:
-        javascript = html.get_js()
+css = config.get_css(section='html')
+javascript = config.get_javascript(section='html')
 
 # enable comments
 try:

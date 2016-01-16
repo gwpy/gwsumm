@@ -520,20 +520,11 @@ if opts.archive:
 
 # read daily archive for week/month/... mode
 if hasattr(opts, 'daily_archive') and opts.daily_archive:
+    # find daily archive files
     from gwsumm import archive
-    s = utc
-    e = tconvert(opts.gpsend)
-    while s < e:
-        daybase = mode.get_base(s, mode=mode.SUMMARY_MODE_DAY)
-        ds = tconvert(s)
-        s += datetime.timedelta(days=1)
-        de = tconvert(s)
-        archivedir = os.path.join(daybase, 'archive')
-        arch = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
-                            % (ifo, opts.daily_archive, ds, de-ds))
-        if os.path.isfile(arch):
-            archives.append(arch)
-    # don't read any actual data
+    archives.extend(archive.find_daily_archives(
+        opts.gpsstart, opts.gpsend, ifo, args.daily_archive, archivedir))
+    # then don't read any actual data
     cache['datacache'] = Cache()
 
 for arch in archives:

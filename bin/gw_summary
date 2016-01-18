@@ -465,7 +465,7 @@ Output directory: %s
        os.path.abspath(os.path.join(opts.output_dir, path))))
 
 # -- Finalise configuration
-vprint("Loading configuration...\n")
+vprint("\nLoading configuration...\n")
 plugins = config.load_plugins()
 if plugins:
     vprint("    Loaded %d plugins:\n" % len(plugins))
@@ -644,9 +644,10 @@ if not opts.no_html:
                      writehtml=not opts.no_html)
 
 # -----------------------------------------------------------------------------
-# Process all tabs
+# Read bulk data
 
 # XXX: bulk data reading could optimise things
+# XXX: but has never been used, so should remove (DMM 18/01/16)
 if opts.bulk_read and not opts.html_only:
     vprint("\n-------------------------------------------------\n")
     vprint("Reading all data in BULK...\n")
@@ -695,6 +696,9 @@ if opts.bulk_read and not opts.html_only:
         get_timeseries_dict(allsv, allseg,
                             config=config, nds=opts.nds, statevector=True,
                             multiprocess=opts.multiprocess, return_=False)
+
+# -----------------------------------------------------------------------------
+# Process all tabs
 
 for tab in alltabs:
     vprint("\n-------------------------------------------------\n")

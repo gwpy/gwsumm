@@ -73,7 +73,7 @@ from gwsumm import (globalv, version, mode)
 from gwsumm.config import *
 from gwsumm.channels import get_channels
 from gwsumm.segments import get_segments
-from gwsumm.tabs import get_tab
+from gwsumm.tabs import (TabList, get_tab)
 from gwsumm.utils import *
 from gwsumm.state import *
 from gwsumm.data import get_timeseries_dict
@@ -478,6 +478,13 @@ vprint("    Loaded %d channels\n" % len(channels))
 states = config.load_states()
 vprint("    Loaded %d states\n" % len(states))
 
+# read list of tabs
+tablist = TabList.from_ini(config, match=opts.process_tab,
+                           path=path, plotdir=plotdir)
+tablist.sort(reverse=True)
+tabs = tablist.get_hierarchy()
+vprint("    Loaded %d tabs [%d parents overall]\n" % (len(tablist), len(tabs)))
+
 # read caches
 cache = {}
 for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
@@ -556,53 +563,7 @@ else:
             ifobases[key.rsplit('-', 1)[0].title()] = val
 
 # -----------------------------------------------------------------------------
-# Read tabs
-
-# read all tabs
-alltabs = []
-for section in filter(lambda n: re.match('tab[-\s]', n),
-                      config.sections()):
-    if not opts.process_tab or section[4:] in opts.process_tab:
-        try:
-            type_ = config.get(section, 'type')
-        except NoOptionError:
-            type_ = 'default'
-        else:
-            if not type_.startswith('archived-'):
-                type_ = 'archived-%s' % type_
-        DataTab = get_tab('archived-data')
-        Tab = get_tab(type_)
-        if issubclass(Tab, DataTab):
-            tab = Tab.from_ini(config, section, plotdir=plotdir, path=path)
-        else:
-            tab = Tab.from_ini(config, section, path=path)
-        alltabs.append(tab)
-
-# sort tabs into hierarchical list
-tabs = {}
-# 1. Assume all tabs without parents are parents themselves
-for tab in filter(lambda tab: tab.parent is None, alltabs):
-    tabs[tab.name] = tab
-# 2. All remaining tabs without a defined parent define that parent
-# 3. Sort all tabs into their parent sets
-for tab in filter(lambda tab: tab.parent is not None, alltabs):
-    tabs.setdefault(tab.parent, get_tab('default')(tab.parent, *tab.span))
-    tab.parent = tabs[tab.parent]
-    tab.parent.add_child(tab)
-
-tabs = tabs.values()
-
-# sort tabs by 'Summary', then lower case only, then everything else
-_sort_tabs = lambda tab: (
-    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
-    tab.shortname == 'Summary' and 2 or
-    'ODC' in tab.shortname and 3 or
-    tab.shortname.islower() and tab.shortname.upper() or
-    tab.shortname.lower())
-tabs.sort(key=_sort_tabs)
-for tab in tabs:
-    tab.children.sort(key=_sort_tabs)
-alltabs.sort(key=_sort_tabs, reverse=True)
+# Write auxiliary pages
 
 # get URL from output directory
 if 'public_html' in os.getcwd():
@@ -654,7 +615,7 @@ if opts.bulk_read and not opts.html_only:
     allts = set()
     allsv = set()
     allflags = set()
-    for tab in alltabs:
+    for tab in tablist:
         snames = []
         for state in tab.states:
             snames.append(state.name)
@@ -700,7 +661,9 @@ if opts.bulk_read and not opts.html_only:
 # -----------------------------------------------------------------------------
 # Process all tabs
 
-for tab in alltabs:
+# TODO: consider re-working this loop as TabList.process_all
+
+for tab in tablist:
     vprint("\n-------------------------------------------------\n")
     if tab.parent:
         name = '%s/%s' % (tab.parent.name, tab.name)

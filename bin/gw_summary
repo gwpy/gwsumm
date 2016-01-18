@@ -440,6 +440,12 @@ if opts.multiprocess == 1:
 if opts.html_only:
     globalv.HTMLONLY = True
 
+# build directories
+mkdir(opts.output_dir)
+os.chdir(opts.output_dir)
+plotdir = os.path.join(path, 'plots')
+mkdir(plotdir)
+
 # -----------------------------------------------------------------------------
 # Setup
 
@@ -484,12 +490,6 @@ for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
         vprint("done [%d entries]\n" % len(cache[key]))
-
-# build directories
-mkdir(opts.output_dir)
-os.chdir(opts.output_dir)
-plotdir = os.path.join(path, 'plots')
-mkdir(plotdir)
 
 # -----------------------------------------------------------------------------
 # Read Archive

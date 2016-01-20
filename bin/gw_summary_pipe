@@ -402,6 +402,8 @@ if not opts.skip_html_wrapper:
 if not opts.html_wrapper_only:
     # add html opts
     datajob.add_opt('no-html', '')
+    if opts.archive:
+        datajob.add_condor_cmd('+SummaryNodeType', '"$(macroarchive)"')
     # configure each data node
     for i, configfile in enumerate(opts.config_file):
         node = GWSummaryDAGNode(datajob)

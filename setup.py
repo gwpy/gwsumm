@@ -260,6 +260,7 @@ setup(name=PACKAGENAME,
           'https://www.lsc-group.phys.uwm.edu/daswg/download/'
               'software/source/glue-1.46.tar.gz#egg=glue-1.46',
       ],
+      test_suite='gwsumm.tests',
       use_2to3=False,
       classifiers=[
           'Programming Language :: Python',

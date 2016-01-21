@@ -11,3 +11,4 @@
 /*.patch
 .nfs*
 *.swp
+/.cache/

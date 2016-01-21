@@ -10,3 +10,4 @@
 /docs/api
 /*.patch
 .nfs*
+*.swp

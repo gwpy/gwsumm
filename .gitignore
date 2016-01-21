@@ -9,3 +9,4 @@
 /docs/_generated
 /docs/api
 /*.patch
+.nfs*

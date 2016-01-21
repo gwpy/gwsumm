@@ -19,8 +19,13 @@
 """Thin wrapper around configparser
 """
 
+import os.path
+import re
 import sys
 from StringIO import StringIO
+from importlib import import_module
+
+from six.moves import http_client as httplib
 
 if sys.version_info[0] >= 3:
     from configparser import *
@@ -31,11 +36,33 @@ else:
     from ConfigParser import InterpolationMissingOptionError
     from ConfigParser import __all__ as _cp__all__
 
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
+from astropy import units
+
+from gwpy.detector import (Channel, ChannelList)
+from gwpy.time import tconvert
+
+from .html import (get_css, get_js)
+from .utils import (nat_sorted, split_channels, re_cchar)
+from .channels import get_channels
+
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 
 
 class GWSummConfigParser(ConfigParser):
+    # preserve case in options
     optionxform = str
+    # disable colon separator
+    OPTCRE = re.compile(
+        r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
+    # use OrderedDict for dict type
+    _dict = OrderedDict
+    # set interpolation match
+    _interpvar_re = re.compile(r"%\(([^)]+)\)s")
 
     def ndoptions(self, section, **kwargs):
         try:
@@ -60,6 +87,7 @@ class GWSummConfigParser(ConfigParser):
         for fp in filenames:
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)
+        self.files = map(os.path.abspath, readok)
         return readok
 
     @classmethod
@@ -78,3 +106,233 @@ class GWSummConfigParser(ConfigParser):
 
     def __repr__(self):
         return '<GWSummConfigParser()>'
+
+    def interpolate_section_names(self, **kwargs):
+        """Interpolate a specific key in a section name using val
+        """
+        for section in self.sections():
+            s = section
+            for key in self._interpvar_re.findall(section):
+                try:
+                    val = kwargs[key]
+                except KeyError:
+                    raise InterpolationMissingOptionError(
+                        '[%s]' % section, section, key, '%%(%s)s' % key)
+                s = section % {key: val}
+            self._sections[s] = self._sections.pop(section)
+
+    def set_date_options(self, start, end, section=DEFAULTSECT):
+        """Set datetime options in [DEFAULT] based on the given times
+
+        The following options are set
+
+        - `gps-start-time` - the integer GPS start time of this job
+        - `gps-end-time` - the integer GPS end time of this job
+        - `yyyy` - the four-digit year of the start date
+        - `mm` - the two-digit month of the start date
+        - `dd` - the two-digit day-of-month of the start date
+        - `yyyymm` - the six-digit year and month of the start date
+        - `yyyymmdd` - the eight-digit year-month-day of the start date
+        - `duration` - the duration of the job (seconds)
+
+        Additionally, if LAL is available, the following extra options
+        are also set
+
+        - `leap-seconds` - the number of leap seconds for the start date
+        - `gps-start-time-noleap` - the leap-corrected integer GPS start time
+        - `gps-end-time-noleap` - the leap-corrected integer GPS end time
+
+        """
+        utc = tconvert(start)
+        self.set(section, 'gps-start-time', str(int(start)))
+        self.set(section, 'gps-end-time', str(int(end)))
+        self.set(section, 'yyyy', utc.strftime('%Y'))
+        self.set(section, 'yy', utc.strftime('%y'))
+        self.set(section, 'mm', utc.strftime('%m'))
+        self.set(section, 'dd', utc.strftime('%d'))
+        self.set(section, 'yyyymm', utc.strftime('%Y%m'))
+        self.set(section, 'yyyymmdd', utc.strftime('%Y%m%d'))
+        self.set(section, 'duration', str(int(end - start)))
+        try:
+            from lal import GPSLeapSeconds as leap_seconds
+        except ImportError:
+            pass
+        else:
+            nleap = leap_seconds(int(start))
+            self.set(section, 'leap-seconds', str(nleap))
+            self.set(section, 'gps-start-time-noleap',
+                       str(int(start) - nleap))
+            self.set(section, 'gps-end-time-noleap', str(int(end) - nleap))
+
+    def finalize(self):
+        """Finalize this `GWSummConfigParser` by running all the loaders
+
+        This method is just a shortcut to run each of the following
+
+        .. autosummary::
+
+           ~GWSummConfigParser.load_plugins
+           ~GWSummConfigParser.load_units
+           ~GWSummConfigParser.load_channels
+           ~GWSummConfigParser.load_states
+
+        """
+        self.load_plugins()
+        self.load_units()
+        self.load_channels()
+        self.load_states()
+
+    def load_plugins(self):
+        """Load all plugin modules as defined in the [plugins] section
+        """
+        mods = []
+        try:
+            plugins = self.ndoptions('plugins')
+        except NoSectionError:
+            pass
+        else:
+            for plugin in plugins:
+                mods.append(import_module(plugin))
+        return mods
+
+    def load_units(self):
+        """Load all unit definitions as defined in the [units] section
+        """
+        try:
+            customunits = self.nditems('units')
+        except NoSectionError:
+            return []
+        else:
+            new_ = []
+            for unit, b in customunits:
+                if b.lower() == 'dimensionless':
+                    b = ''
+                new_.append(units.def_unit([unit], units.Unit(b)))
+            units.add_enabled_units(new_)
+            return zip(*new_)[1]
+
+    def load_channels(self):
+        """Load all channel definitions as given in the selfuration
+
+        Channels are loaded from sections named [channels-...] or
+        those sections whose name is a channel name in itself
+        """
+        channels_re = re.compile('channels[-\s]')
+        # parse channel grouns into individual sections
+        for section in filter(channels_re.match, self.sections()):
+            names = split_channels(self.get(section, 'channels'))
+            items = dict(self.nditems(section, raw=True))
+            items.pop('channels')
+            for name in names:
+                name = name.strip(' \n')
+                if not self.has_section(name):
+                    self.add_section(name)
+                for key, val in items.iteritems():
+                    if not self.has_option(name, key):
+                        self.set(name, key, val)
+
+        # read all channels
+        raw = set()
+        trend = set()
+        for section in self.sections():
+            try:
+                m = Channel.MATCH.match(section).groupdict()
+            except AttributeError:
+                continue
+            else:
+                if not m['ifo']:
+                    continue
+            if m['trend']:
+                trend.add(section)
+            else:
+                raw.add(section)
+
+        channels = ChannelList()
+        for group in [raw, trend]:
+            try:
+                newchannels = get_channels(group)
+            except httplib.HTTPException:
+                newchannels = []
+
+            # read custom channel definitions
+            for channel, section in zip(newchannels, group):
+                for key, val in nat_sorted(self.nditems(section),
+                                           key=lambda x: x[0]):
+                    key = re_cchar.sub('_', key.rstrip())
+                    if key.isdigit():
+                        if not hasattr(channel, 'bits'):
+                            channel.bits = []
+                        while len(channel.bits) < int(key):
+                            channel.bits.append(None)
+                        if val.startswith('r"') or val.startswith('r\''):
+                            val = eval(val)
+                        channel.bits.append(val)
+                    else:
+                        try:
+                            setattr(channel, key, eval(val.rstrip()))
+                        except NameError:
+                            setattr(channel, key, val.rstrip())
+                channels.append(channel)
+        return channels
+
+    def load_states(self, section='states'):
+        """Read and format a list of `SummaryState` definitions from the
+        given :class:`~configparser.ConfigParser`
+        """
+        from .state import (register_state, SummaryState,
+                            ALLSTATE, generate_all_state, get_state)
+        # parse the [states] section into individual state definitions
+        try:
+            states = dict(self.nditems(section))
+        except NoSectionError:
+            self.add_section(section)
+            states = {}
+        for state in states:
+            if not (self.has_section('state-%s' % state) or
+                    self.has_section('state %s' % state)):
+                section = 'state-%s' % state
+                self.add_section(section)
+                self.set(section, 'name', state)
+                self.set(section, 'definition', states[state])
+
+        # parse each state section into a new state
+        states = []
+        for section in self.sections():
+            if re.match('state[-\s]', section):
+                states.append(register_state(
+                    SummaryState.from_ini(self, section)))
+
+        # register All state
+        start = self.getint(section, 'gps-start-time')
+        end = self.getint(section, 'gps-end-time')
+        try:
+            all_ = generate_all_state(start, end)
+        except ValueError:
+            all_ = get_state(ALLSTATE)
+            pass
+        else:
+            states.insert(0, all_)
+
+        return states
+
+    def get_css(self, section='html'):
+        try:
+            css = [cval for (key, cval) in self.items('html') if
+                   re.match('css\d+', key)]
+        except NoSectionError:
+            css = get_css(ifo)
+        else:
+            if not css:
+                css = get_css(ifo)
+        return css
+
+    def get_javascript(self, section='html'):
+        try:
+            javascript = [jval for (key, jval) in self.items('html') if
+                          re.match('javascript\d+', key)]
+        except NoSectionError:
+            javascript = get_js()
+        else:
+            if not javascript:
+                javascript = get_js()
+        return javascript

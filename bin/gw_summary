@@ -42,10 +42,6 @@ import importlib
 
 from urlparse import urlparse
 
-warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS start')
-warnings.filterwarnings('ignore', 'TimeSeries.crop given GPS end')
-warnings.filterwarnings('ignore', category=RuntimeWarning)
-
 from dateutil.relativedelta import relativedelta
 
 try:
@@ -55,16 +51,9 @@ except ImportError:
 else:
     ROOT.PyConfig.IgnoreCommandLineOptions = True
 
+# set matplotlib backend
 from matplotlib import use
 use('Agg')
-
-# set matplotlib backend
-try:
-    from collections import OrderedDict
-except ImportError:
-    from astropy.utils import OrderedDict
-
-from astropy import units
 
 from glue.lal import Cache
 
@@ -80,21 +69,17 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import lal_ as lalpsd
 
-from gwsumm import (globalv, version, mode, html)
+from gwsumm import (globalv, version, mode)
 from gwsumm.config import *
 from gwsumm.channels import get_channels
 from gwsumm.segments import get_segments
-from gwsumm.tabs import get_tab
+from gwsumm.tabs import (TabList, get_tab)
 from gwsumm.utils import *
 from gwsumm.state import *
 from gwsumm.data import get_timeseries_dict
 
 __version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-# XXX HACK: disable colon separator in ConfigParser
-GWSummConfigParser.OPTCRE = re.compile(
-    r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
 
 # set defaults
 VERBOSE = False
@@ -389,13 +374,12 @@ if not opts.on_segdb_error in ['raise', 'warn', 'ignore']:
     parser.error("Invalid option --on-segdb-error='%s'" % opts.on_segdb_error)
 
 # read configuration file
-config = GWSummConfigParser(dict_type=OrderedDict)
+config = GWSummConfigParser()
 config.optionxform = str
 if opts.ifo:
     config.set(DEFAULTSECT, 'ifo', opts.ifo)
 config.set(DEFAULTSECT, 'user', getpass.getuser())
 config.read(opts.config_file)
-config.files = map(os.path.abspath, opts.config_file)
 
 try:
     ifo = config.get(DEFAULTSECT, 'ifo')
@@ -405,18 +389,10 @@ finally:
     globalv.IFO = ifo
 
 # interpolate section names
-for section in config.sections():
-    if section.startswith('%(ifo)s'):
-        if not ifo:
-            e =  InterpolationMissingOptionError(
-                     'ifo', 'DEFAULT', '%(ifo)s', section)
-            e.args = ('%s\n%s' % (str(e), "Please give --ifo on the command "
-                      "line, or specify 'ifo = XX' in the [DEFAULT] section "
-                      "of the INI file to use interpolation in [section] "
-                      "names"),)
-            raise e
-        s2 = section.replace('%(ifo)s', ifo)
-        config._sections[s2] = config._sections.pop(section)
+interp = {}
+if ifo:
+    interp['ifo'] = ifo
+config.interpolate_section_names(**interp)
 
 # double-check week mode matches calendar setting
 if opts.mode == 'week':
@@ -432,25 +408,11 @@ if opts.mode == 'week':
             raise parser.error(msg)
 
 # record times in ConfigParser
+config.set_date_options(opts.gpsstart, opts.gpsend, section=DEFAULTSECT)
+
+# convert times for convenience
 span = Segment(opts.gpsstart, opts.gpsend)
 utc = tconvert(opts.gpsstart)
-config.set(DEFAULTSECT, 'gps-start-time', str(int(opts.gpsstart)))
-config.set(DEFAULTSECT, 'gps-end-time', str(int(opts.gpsend)))
-config.set(DEFAULTSECT, 'yyyy', utc.strftime('%Y'))
-config.set(DEFAULTSECT, 'yy', utc.strftime('%y'))
-config.set(DEFAULTSECT, 'mm', utc.strftime('%m'))
-config.set(DEFAULTSECT, 'dd', utc.strftime('%d'))
-config.set(DEFAULTSECT, 'yyyymm', utc.strftime('%Y%m'))
-config.set(DEFAULTSECT, 'yyyymmdd', utc.strftime('%Y%m%d'))
-config.set(DEFAULTSECT, 'duration', str(int(opts.gpsend - opts.gpsstart)))
-if HASLAL:
-    nleap = lal.GPSLeapSeconds(int(opts.gpsstart))
-    config.set(DEFAULTSECT, 'leap-seconds', str(nleap))
-    config.set(DEFAULTSECT, 'gps-start-time-noleap',
-               str(int(opts.gpsstart) - nleap))
-    config.set(DEFAULTSECT, 'gps-end-time-noleap',
-               str(int(opts.gpsend) - nleap))
-
 starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')
 
@@ -478,6 +440,12 @@ if opts.multiprocess == 1:
 if opts.html_only:
     globalv.HTMLONLY = True
 
+# build directories
+mkdir(opts.output_dir)
+os.chdir(opts.output_dir)
+plotdir = os.path.join(path, 'plots')
+mkdir(plotdir)
+
 # -----------------------------------------------------------------------------
 # Setup
 
@@ -496,107 +464,39 @@ Output directory: %s
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, path))))
 
-# -- Load plugins
-# loading the module containing a plugin should 'register' the relevant
-# Plot, or Tab, so they are accessible downstream
-try:
-    plugins = config.ndoptions('plugins')
-except NoSectionError:
-    pass
-else:
-    for plugin in plugins:
-        importlib.import_module(plugin)
+# -- Finalise configuration
+vprint("\nLoading configuration...\n")
+plugins = config.load_plugins()
+if plugins:
+    vprint("    Loaded %d plugins:\n" % len(plugins))
+    for mod in plugins:
+        vprint("        %s" % mod)
+units = config.load_units()
+vprint("    Loaded %d units\n" % len(units))
+channels = config.load_channels()
+vprint("    Loaded %d channels\n" % len(channels))
+states = config.load_states()
+vprint("    Loaded %d states\n" % len(states))
 
-# Load custom units
-try:
-    customunits = config.nditems('units')
-except NoSectionError:
-    pass
-else:
-    new_ = []
-    for unit, b in customunits:
-        if b.lower() == 'dimensionless':
-            b = ''
-        new_.append(units.def_unit([unit], units.Unit(b)))
-    units.add_enabled_units(new_)
-
-if not opts.html_only:
-    # parse channel grouns into individual sections
-    for section in config.sections():
-        if re.match('channels[-\s]', section):
-            names = split_channels(config.get(section, 'channels'))
-            items = dict(config.nditems(section, raw=True))
-            items.pop('channels')
-            for name in names:
-                name = name.strip(' \n')
-                if not config.has_section(name):
-                    config.add_section(name)
-                for key, val in items.iteritems():
-                    if not config.has_option(name, key):
-                        config.set(name, key, val)
-
-    # read all channels
-    raw = set()
-    trend = set()
-    for section in config.sections():
-        try:
-            m = Channel.MATCH.match(section).groupdict()
-        except AttributeError:
-            continue
-        else:
-            if not m['ifo']:
-                continue
-        if m['trend']:
-            trend.add(section)
-        else:
-            raw.add(section)
-    for group in [raw, trend]:
-        try:
-            newchannels = get_channels(group)
-        except httplib.HTTPException:
-            newchannels = []
-
-        # read custom channel definitions
-        for channel, section in zip(newchannels, group):
-            for key, val in nat_sorted(config.nditems(section),
-                                       key=lambda x: x[0]):
-                key = re_cchar.sub('_', key.rstrip())
-                if key.isdigit():
-                    if not hasattr(channel, 'bits'):
-                        channel.bits = []
-                    while len(channel.bits) < int(key):
-                        channel.bits.append(None)
-                    if val.startswith('r"') or val.startswith('r\''):
-                        val = eval(val)
-                    channel.bits.append(val)
-                else:
-                    try:
-                        setattr(channel, key, eval(val.rstrip()))
-                    except NameError:
-                        setattr(channel, key, val.rstrip())
-
-# read states
-try:
-    load_states(config)
-except NoSectionError:
-    generate_all_state(*span)
+# read list of tabs
+tablist = TabList.from_ini(config, match=opts.process_tab,
+                           path=path, plotdir=plotdir)
+tablist.sort(reverse=True)
+tabs = tablist.get_hierarchy()
+vprint("    Loaded %d tabs [%d parents overall]\n" % (len(tablist), len(tabs)))
 
 # read caches
 cache = {}
 for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
                     [opts.data_cache, opts.event_cache, opts.segment_cache]):
     if var:
+        vprint("Reading %s from %d files... " % (key, len(var)))
         cache[key] = Cache()
         for fp in var:
             with open(fp, 'rb') as f:
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
-
-# build directories
-mkdir(opts.output_dir)
-os.chdir(opts.output_dir)
-plotdir = os.path.join(path, 'plots')
-mkdir(plotdir)
+        vprint("done [%d entries]\n" % len(cache[key]))
 
 # -----------------------------------------------------------------------------
 # Read Archive
@@ -627,20 +527,11 @@ if opts.archive:
 
 # read daily archive for week/month/... mode
 if hasattr(opts, 'daily_archive') and opts.daily_archive:
+    # find daily archive files
     from gwsumm import archive
-    s = utc
-    e = tconvert(opts.gpsend)
-    while s < e:
-        daybase = mode.get_base(s, mode=mode.SUMMARY_MODE_DAY)
-        ds = tconvert(s)
-        s += datetime.timedelta(days=1)
-        de = tconvert(s)
-        archivedir = os.path.join(daybase, 'archive')
-        arch = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
-                            % (ifo, opts.daily_archive, ds, de-ds))
-        if os.path.isfile(arch):
-            archives.append(arch)
-    # don't read any actual data
+    archives.extend(archive.find_daily_archives(
+        opts.gpsstart, opts.gpsend, ifo, args.daily_archive, archivedir))
+    # then don't read any actual data
     cache['datacache'] = Cache()
 
 for arch in archives:
@@ -651,22 +542,8 @@ for arch in archives:
 # -----------------------------------------------------------------------------
 # Read HTML configuration
 
-try:
-    css = [cval for (key, cval) in config.items('html') if
-           re.match('css\d+', key)]
-except NoSectionError:
-    css = html.get_css(ifo)
-else:
-    if not css:
-        css = html.get_css(ifo)
-try:
-    javascript = [jval for (key, jval) in config.items('html') if
-                  re.match('javascript\d+', key)]
-except NoSectionError:
-    javascript = html.get_js()
-else:
-    if not javascript:
-        javascript = html.get_js()
+css = config.get_css(section='html')
+javascript = config.get_javascript(section='html')
 
 # enable comments
 try:
@@ -686,53 +563,7 @@ else:
             ifobases[key.rsplit('-', 1)[0].title()] = val
 
 # -----------------------------------------------------------------------------
-# Read tabs
-
-# read all tabs
-alltabs = []
-for section in filter(lambda n: re.match('tab[-\s]', n),
-                      config.sections()):
-    if not opts.process_tab or section[4:] in opts.process_tab:
-        try:
-            type_ = config.get(section, 'type')
-        except NoOptionError:
-            type_ = 'default'
-        else:
-            if not type_.startswith('archived-'):
-                type_ = 'archived-%s' % type_
-        DataTab = get_tab('archived-data')
-        Tab = get_tab(type_)
-        if issubclass(Tab, DataTab):
-            tab = Tab.from_ini(config, section, plotdir=plotdir, path=path)
-        else:
-            tab = Tab.from_ini(config, section, path=path)
-        alltabs.append(tab)
-
-# sort tabs into hierarchical list
-tabs = {}
-# 1. Assume all tabs without parents are parents themselves
-for tab in filter(lambda tab: tab.parent is None, alltabs):
-    tabs[tab.name] = tab
-# 2. All remaining tabs without a defined parent define that parent
-# 3. Sort all tabs into their parent sets
-for tab in filter(lambda tab: tab.parent is not None, alltabs):
-    tabs.setdefault(tab.parent, get_tab('default')(tab.parent, *tab.span))
-    tab.parent = tabs[tab.parent]
-    tab.parent.add_child(tab)
-
-tabs = tabs.values()
-
-# sort tabs by 'Summary', then lower case only, then everything else
-_sort_tabs = lambda tab: (
-    (tab.shortname == 'Summary' and tab.parent is None) and 1 or
-    tab.shortname == 'Summary' and 2 or
-    'ODC' in tab.shortname and 3 or
-    tab.shortname.islower() and tab.shortname.upper() or
-    tab.shortname.lower())
-tabs.sort(key=_sort_tabs)
-for tab in tabs:
-    tab.children.sort(key=_sort_tabs)
-alltabs.sort(key=_sort_tabs, reverse=True)
+# Write auxiliary pages
 
 # get URL from output directory
 if 'public_html' in os.getcwd():
@@ -774,16 +605,17 @@ if not opts.no_html:
                      writehtml=not opts.no_html)
 
 # -----------------------------------------------------------------------------
-# Process all tabs
+# Read bulk data
 
 # XXX: bulk data reading could optimise things
+# XXX: but has never been used, so should remove (DMM 18/01/16)
 if opts.bulk_read and not opts.html_only:
     vprint("\n-------------------------------------------------\n")
     vprint("Reading all data in BULK...\n")
     allts = set()
     allsv = set()
     allflags = set()
-    for tab in alltabs:
+    for tab in tablist:
         snames = []
         for state in tab.states:
             snames.append(state.name)
@@ -826,7 +658,12 @@ if opts.bulk_read and not opts.html_only:
                             config=config, nds=opts.nds, statevector=True,
                             multiprocess=opts.multiprocess, return_=False)
 
-for tab in alltabs:
+# -----------------------------------------------------------------------------
+# Process all tabs
+
+# TODO: consider re-working this loop as TabList.process_all
+
+for tab in tablist:
     vprint("\n-------------------------------------------------\n")
     if tab.parent:
         name = '%s/%s' % (tab.parent.name, tab.name)

@@ -24,13 +24,15 @@ import re
 from urlparse import urlparse
 from shutil import copyfile
 
+from gwpy.utils.compat import OrderedDict
+
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
 from .. import (html, version, mode)
 from ..utils import (re_quote, re_cchar)
 from ..config import *
-from .registry import register_tab
+from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
@@ -862,3 +864,78 @@ class SummaryArchiveMixin(object):
         # combine and return
         return super(SummaryArchiveMixin, self).build_html_navbar(
             brand=brand_, **kwargs)
+
+
+# -- TabList -----------------------------------------------------------------
+
+class TabList(list):
+    """Custom `list` of `Tab` objects with sorting and parsing
+    """
+
+    def __init__(self, entries=[]):
+        super(TabList, self).__init__(entries)
+
+    def get_hierarchy(self):
+        parents = OrderedDict()
+        # 1. Assume all tabs without parents are parents themselves
+        for tab in filter(lambda tab: tab.parent is None, self):
+            parents[tab.name] = tab
+        # 2. All remaining tabs without a defined parent define that parent
+        # 3. Sort all tabs into their parent sets
+        for tab in filter(lambda tab: tab.parent is not None, self):
+            if not isinstance(tab.parent, Tab):
+                tab.parent = get_tab('default')(tab.parent, *tab.span)
+            parents.setdefault(tab.parent.name, tab.parent)
+            if tab not in tab.parent.children:
+                tab.parent.add_child(tab)
+        return parents.values()
+
+    @staticmethod
+    def _sortkey(tab):
+        if tab.shortname == 'Summary' and tab.parent is None:
+            return 1
+        elif tab.shortname == 'Summary':
+            return 2
+        elif 'ODC' in tab.shortname:
+            return 3
+        elif tab.shortname.islower():
+            return tab.shortname.upper()
+        else:
+            return tab.shortname.lower()
+
+    def sort(self, key=None, reverse=False):
+        """Sort this `TabList` in place
+        """
+        if key is None:
+            key = self._sortkey
+        hlist = self.get_hierarchy()
+        hlist.sort(key=key)
+        for tab in hlist:
+           tab.children.sort(key=key)
+        super(TabList, self).sort(key=key, reverse=reverse)
+
+    @classmethod
+    def from_ini(cls, config, tag='tab[_-]', match=[],
+                 path=os.curdir, plotdir='plots'):
+        if isinstance(tag, str):
+            tag = re.compile(tag)
+        tabs = cls()
+        for section in filter(tag.match, config.sections()):
+            # if user gave matches, test match and skip
+            if match and section[4:] not in match:
+                continue
+            # otherwise, get type and create instance of class
+            try:
+                type = config.get(section, 'type')
+            except NoOptionError:
+                type = 'default'
+            else:
+                if not type.startswith('archived-'):
+                    type = 'archived-%s' % type
+            Tab = get_tab(type)
+            if issubclass(Tab, get_tab('archived-data')):
+                tab = Tab.from_ini(config, section, plotdir=plotdir, path=path)
+            else:
+                tab = Tab.from_ini(config, section, path=path)
+            tabs.append(tab)
+        return tabs

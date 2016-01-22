@@ -5,8 +5,8 @@ sudo: false
 addons:
   apt:
     packages:
-      - python-numpy
-      - python-scipy
+      - libblas-dev
+      - liblapack-dev
       - python-m2crypto
 
 before_install:

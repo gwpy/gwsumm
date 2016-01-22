@@ -58,7 +58,7 @@ class ArchiveTests(unittest.TestCase):
         try:
             archive.write_data_archive(fname)
         finally:
-            if delete:
+            if delete and os.path.isfile(fname):
                 os.remove(fname)
         return fname
 

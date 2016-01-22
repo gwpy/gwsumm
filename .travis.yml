@@ -15,7 +15,8 @@ before_install:
   # build, install, and test nds2
   - . .travis/build-nds2.sh
   - ls "/home/travis/virtualenv/python2.7.9/lib/"
-  - ls "/home/travis/virtualenv/python2.7.9/lib/site-packages/"
+  - ls "/home/travis/virtualenv/python2.7.9/lib/python2.7/"
+  - ls "/home/travis/virtualenv/python2.7.9/lib/python2.7/site-packages/"
   - python -c "import nds2; print(nds2.__file__)"
   - pip install -q --upgrade pip
 

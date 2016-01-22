@@ -22,6 +22,9 @@
 
 import unittest
 
+from matplotlib import use
+use('agg')
+
 from .. import (plot, version)
 
 __version__ = version.version

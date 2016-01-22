@@ -10,6 +10,7 @@ addons:
       - libblas-dev
       - liblapack-dev
       - python-m2crypto
+      - swig
 
 before_install:
   # build, install, and test nds2

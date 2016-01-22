@@ -5,6 +5,8 @@ sudo: false
 addons:
   apt:
     packages:
+      libblas-dev
+      liblapack-dev
       python-numpy
       python-scipy
       python-m2crypto

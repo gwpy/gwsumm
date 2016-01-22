@@ -1,0 +1,32 @@
+language: python
+
+sudo: false
+
+addons:
+  apt:
+    packages:
+      - gcc
+      - gfortran
+      - libblas-dev
+      - liblapack-dev
+      - python-m2crypto
+
+before_install:
+  - pip install -q --upgrade pip
+
+install:
+  - pip install -r requirements.txt
+  - pip install -q coveralls "pytest>=2.8"
+  - python setup.py build
+
+script:
+  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" -m py.test -v gwsumm/
+  - pip install .
+
+after_success:
+  - coveralls
+
+cache:
+  apt: true
+  directories:
+    - $HOME/.cache/pip

@@ -14,6 +14,7 @@ addons:
       - liblapack-dev
       - python-m2crypto
       - swig
+      - libhdf5-serial-dev
 
 before_install:
   - . .travis/build-nds2.sh

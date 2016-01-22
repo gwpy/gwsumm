@@ -3,6 +3,7 @@ pykerberos
 m2crypto
 python-cjson
 h5py
+lxml
 http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz
 http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
 gwpy

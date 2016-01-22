@@ -251,6 +251,7 @@ setup(name=PACKAGENAME,
           'astropy',
           'gwpy',
           'h5py',
+          'lxml',
       ],
       install_requires=[
           'numpy >= 1.5',

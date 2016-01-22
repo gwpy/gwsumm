@@ -2,6 +2,13 @@ language: python
 
 sudo: false
 
+addons:
+  apt:
+    packages:
+      python-numpy
+      python-scipy
+      python-m2crypto
+
 before_install:
   - pip install -q --upgrade pip
 

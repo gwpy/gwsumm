@@ -1441,6 +1441,9 @@ def _clean_fftparams(fftparams, channel):
     for param in ['fftlength', 'overlap', 'stride']:
         if hasattr(channel, param):
             fftparams[param] = float(getattr(channel, param))
+        # if channel doesn't have parameter, set it at the earliest oppotunity
+        else:
+            setattr(channel, param, fftparams[param])
 
     # checks
     if fftparams['stride'] == 0:

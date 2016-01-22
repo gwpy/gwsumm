@@ -1408,10 +1408,12 @@ def _make_key(channels, fftparams, method=None, sampling=None):
     # parameters to append to channel names
     p = []
     p.append(method)
-    p.append(fftparams.get('stride', None))
     p.append(fftparams.get('window', None))
-    p.append(fftparams.get('fftlength', None))
-    p.append(fftparams.get('overlap', None))
+    for param in ['stride', 'fftlength', 'overlap']:
+        try:
+            p.append(float(fftparams[param]))
+        except KeyError:
+            p.append(None)
     p.append(sampling)
 
     # build string

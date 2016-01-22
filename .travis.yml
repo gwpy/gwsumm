@@ -1,0 +1,22 @@
+language: python
+
+sudo: false
+
+before_install:
+  - pip install -q --upgrade pip
+
+install:
+  - pip install -r requirements.txt
+  - pip install -q coveralls "pytest>=2.8"
+  - python setup.py build
+
+script:
+  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*,gwsumm/utils/sphinx/*" -m py.test -v gwsumm/
+  - pip install .
+
+after_success:
+  - coveralls
+
+cache:
+  directories:
+    - $HOME/.cache/pip

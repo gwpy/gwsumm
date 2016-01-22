@@ -244,6 +244,7 @@ setup(name=PACKAGENAME,
       data_files=[('etc', configs),
                   (os.path.join('share', PACKAGENAME, 'html'), htmlfiles)],
       requires=[
+          'decorator',
           'glue',
           'numpy',
           'matplotlib',

@@ -54,14 +54,14 @@ from ..utils import (vprint, re_quote)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
-Tab = get_tab('default')
+DataTab = get_tab('default')
 UTC = tz.gettz('UTC')
 REQUESTSTUB = '+request'
 NOMINALSTUB = '+nominal'
 MODE_COLORS = ['grey', 'magenta', 'red', 'saddlebrown']
 
 
-class GuardianTab(Tab):
+class GuardianTab(DataTab):
     """Summarises the data recorded by an Advanced LIGO Guardian node.
 
     Each guardian node controls and monitors state transitions for a
@@ -76,7 +76,7 @@ class GuardianTab(Tab):
     def from_ini(cls, config, section, plotdir='plots', **kwargs):
         """Define a new `GuardianTab`.
         """
-        new = super(Tab, cls).from_ini(config, section, **kwargs)
+        new = super(DataTab, cls).from_ini(config, section, **kwargs)
         if len(new.states) > 1 or new.states[0].name != ALLSTATE:
             raise ValueError("GuardianTab does not accept state selection")
         new.plots = []
@@ -337,7 +337,7 @@ class GuardianTab(Tab):
         page.div.close()
         page.div.close()
 
-        return super(Tab, self).write_state_html(state, plots=False,
+        return super(DataTab, self).write_state_html(state, plots=False,
                                                      pre=page)
 register_tab(GuardianTab)
 

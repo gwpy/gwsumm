@@ -5,6 +5,8 @@ sudo: false
 addons:
   apt:
     packages:
+      - gcc
+      - gfortran
       - libblas-dev
       - liblapack-dev
       - python-m2crypto

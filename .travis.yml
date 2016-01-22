@@ -11,7 +11,7 @@ install:
   - python setup.py build
 
 script:
-  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*,gwsumm/utils/sphinx/*" -m py.test -v gwsumm/
+  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" -m py.test -v gwsumm/
   - pip install .
 
 after_success:

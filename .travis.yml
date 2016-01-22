@@ -12,7 +12,9 @@ addons:
       - python-m2crypto
 
 before_install:
+  # build, install, and test nds2
   - . .travis/build-nds2.sh
+  - python -c "import nds2; print(nds2.__file__)"
   - pip install -q --upgrade pip
 
 install:

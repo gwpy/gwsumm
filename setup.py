@@ -250,6 +250,7 @@ setup(name=PACKAGENAME,
           'matplotlib',
           'astropy',
           'gwpy',
+          'h5py',
       ],
       install_requires=[
           'numpy >= 1.5',

@@ -1,5 +1,8 @@
 language: python
 
+virtualenv:
+  system_site_packages: true
+
 sudo: false
 
 addons:
@@ -10,8 +13,11 @@ addons:
       - libblas-dev
       - liblapack-dev
       - python-m2crypto
+      - swig
+      - libhdf5-serial-dev
 
 before_install:
+  - . .travis/build-nds2.sh
   - pip install -q --upgrade pip
 
 install:

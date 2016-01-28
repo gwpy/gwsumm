@@ -204,20 +204,15 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
     """
     archives = []
     s = from_gps(to_gps(start))
-    print(s)
     e = from_gps(to_gps(end))
-    print(e)
     while s < e:
         daybase = mode.get_base(s, mode=mode.SUMMARY_MODE_DAY)
         ds = to_gps(s)
-        print(s, ds)
         s += datetime.timedelta(days=1)
         de = to_gps(s)
-        print(s, de)
         archivedir = os.path.join(basedir, daybase, 'archive')
         arch = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
                             % (ifo, tag, ds, de-ds))
-        print(arch)
         if os.path.isfile(arch):
             archives.append(arch)
     return archives

@@ -536,7 +536,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                         if c.ndsname in filter_:
                             del c.filter
                 # read data
-                tsd = DictClass.read(segcache, qchannels, format='lcf',
+                tsd = DictClass.read(segcache, qchannels,
                                      start=segstart, end=segend, type=ctype,
                                      nproc=nproc, resample=qresample,
                                      verbose=verbose, **ioargs)

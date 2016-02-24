@@ -25,6 +25,8 @@ import hashlib
 import warnings
 from itertools import cycle
 
+import numpy
+
 from matplotlib.pyplot import subplots
 
 from astropy.units import Quantity
@@ -622,6 +624,8 @@ class TimeSeriesHistogramPlot(DataPlot):
                     (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
                 ax.plot([], **kwargs)
             else:
+                if isinstance(pargs.get('weights', None), (float, int)):
+                    pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
                 ax.hist(arr, **pargs)
 
         # customise plot

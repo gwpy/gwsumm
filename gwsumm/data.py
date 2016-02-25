@@ -1424,6 +1424,7 @@ def _make_key(channels, fftparams, method=None, sampling=None):
 
 def _clean_fftparams(fftparams, channel):
 
+    channel = get_channel(channel)
     # replace missing fftparams with defaults or values from given channel
 
     fftparams = fftparams.copy()

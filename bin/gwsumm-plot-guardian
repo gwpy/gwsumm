@@ -51,7 +51,7 @@ parser.add_argument('-i', '--ifo', default='L1')
 parser.add_argument('-t', '--epoch', type=to_gps,
                     help='Zero-time for plot, defaults to GPSSTART')
 parser.add_argument('-p', '--plot-params', action='append', default=[],
-                    help='extra plotting keyword argument --%{arg}=%{param}')
+                    help='extra plotting keyword argument')
 parser.add_argument('-m', '--multi-process', type=int, default=DEFAULT_NPROC,
                     dest='nproc',
                     help='number of processes to use, default: %(default)s')
@@ -103,7 +103,11 @@ tab.plots[0].pargs['epoch'] = args.epoch
 vprint("Processing:\n")
 tab.process(multiprocess=args.nproc)
 plotfile = tab.plots[0].outputfile
-os.rename(plotfile, args.output_file)
+try:
+    os.rename(plotfile, args.output_file)
+except OSError as e:
+    e.args = ('%s: %s' % (str(e), plotfile),)
+    raise e
 vprint('Plot saved to %s\n' % args.output_file)
 
 # crop and save archive

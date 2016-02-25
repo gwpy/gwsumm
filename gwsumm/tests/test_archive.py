@@ -23,12 +23,12 @@
 import sys
 import os
 import tempfile
-import unittest
 
 from numpy import testing as nptest
 
 from gwpy.timeseries import TimeSeries
 
+from .compat import unittest
 from ..version import version as __version__
 from .. import (archive, data, globalv)
 

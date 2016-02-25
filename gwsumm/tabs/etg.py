@@ -280,13 +280,13 @@ class EventTriggerTab(get_tab('default')):
             return
         super(EventTriggerTab, self).process_state(state, *args, **kwargs)
 
-    def write_state_html(self, state):
+    def write_state_html(self, state, pre=None):
         """Write the '#main' HTML content for this `EventTriggerTab`.
         """
+        page = html.markup.page()
         if self.error.get(state, None):
             level, message = self.error[state]
             # no segments, print warning
-            page = html.markup.page()
             page.div(class_='alert alert-%s' % level)
             page.p(message)
             page.p("If you believe this to be an error, please contact %s."
@@ -296,7 +296,11 @@ class EventTriggerTab(get_tab('default')):
             page.div.close()
         else:
             # otherwise, carry on...
-            page = self.scaffold_plots(state=state)
+            if pre is not None:
+                page.add(str(pre))
+            elif self.foreword:
+                page.add(str(self.foreword))
+            page.add(str(self.scaffold_plots(state=state)))
 
             # link full results
             if self.url:

@@ -37,6 +37,8 @@ from .mode import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+CIS_URL = 'https://cis.ligo.org'
+
 
 class ThreadChannelQuery(threading.Thread):
     """Threaded CIS `Channel` query.
@@ -106,13 +108,8 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         matches = list(Channel.MATCH.finditer(name))
         # match single raw channel
         if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-            try:
-                raise ValueError("")  # XXX: hacky removal of CIS query
-                new = Channel.query(name, timeout=timeout)
-            except (ValueError, urllib2.URLError, GSSError):
-                new = Channel(str(channel))
-            else:
-                new.name = str(channel)
+            new = Channel(str(channel))
+            new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
         # match single trend
         elif len(matches) == 1:
             # set default trend type based on mode

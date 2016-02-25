@@ -883,7 +883,9 @@ class TabList(list):
         # 2. All remaining tabs without a defined parent define that parent
         # 3. Sort all tabs into their parent sets
         for tab in filter(lambda tab: tab.parent is not None, self):
-            if not isinstance(tab.parent, Tab):
+            if tab.parent in parents:
+                tab.parent = parents[tab.parent]
+            elif not isinstance(tab.parent, Tab):
                 tab.parent = get_tab('default')(tab.parent, *tab.span)
             parents.setdefault(tab.parent.name, tab.parent)
             if tab not in tab.parent.children:

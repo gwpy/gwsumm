@@ -66,7 +66,7 @@ from gwpy.io import nds as ndsio
 from . import (globalv, version)
 from .mode import *
 from .utils import *
-from .channels import get_channel
+from .channels import (get_channel, update_missing_channel_params)
 
 OPERATOR = {
     '*': operator.mul,
@@ -545,6 +545,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if c.ndsname in filter_:
                         c.filter = filter_[c.ndsname]
             for (channel, data) in tsd.iteritems():
+                channel = update_missing_channel_params(data.channel)
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):
                     continue
@@ -1215,6 +1216,7 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
 def add_timeseries(timeseries, key=None, coalesce=True):
     """Add a `TimeSeries` to the global memory cache
     """
+    update_missing_channel_params(timeseries.channel)
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
     if isinstance(timeseries, StateVector):

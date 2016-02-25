@@ -37,6 +37,8 @@ from .mode import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 
+CIS_URL = 'https://cis.ligo.org'
+
 
 class ThreadChannelQuery(threading.Thread):
     """Threaded CIS `Channel` query.
@@ -106,13 +108,8 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         matches = list(Channel.MATCH.finditer(name))
         # match single raw channel
         if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-            try:
-                raise ValueError("")  # XXX: hacky removal of CIS query
-                new = Channel.query(name, timeout=timeout)
-            except (ValueError, urllib2.URLError, GSSError):
-                new = Channel(str(channel))
-            else:
-                new.name = str(channel)
+            new = Channel(str(channel))
+            new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
         # match single trend
         elif len(matches) == 1:
             # set default trend type based on mode
@@ -195,3 +192,26 @@ def get_channels(channels, **kwargs):
         else:
             result.append(c)
     return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
+
+
+def update_missing_channel_params(channel, **kwargs):
+    """Update empty channel parameters using the given input
+
+    This method will only set parameters in the channel if the target
+    parameter is `None`.
+
+    Parameters
+    ----------
+    channel : `str`, `~gwpy.detector.Channel`
+        channel to update
+    **kwargs
+        `(key, value)` pairs to set
+    """
+    target = get_channel(str(channel))
+    for param in ['unit', 'sample_rate', 'frametype']:
+        if getattr(target, param) is None:
+            setattr(target, param, getattr(channel, param))
+    for param in kwargs:
+        if getattr(target, param) is None:
+            setattr(target, param, kwargs[param])
+    return target

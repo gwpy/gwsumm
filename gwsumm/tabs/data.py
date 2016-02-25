@@ -43,7 +43,7 @@ from .. import (version, globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
-                    get_coherence_spectrograms, get_spectrum)
+                    get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
@@ -711,7 +711,7 @@ class DataTab(DataTabBase):
                      "data")
             headers = ['Channel', 'Type', 'Frametype', 'Sample rate', 'Units']
             data = []
-            for channel in channels:
+            for channel in sorted(channels, key=lambda x: str(x)):
                 channel = get_channel(channel)
                 # don't write combination meta-channels
                 parts = re_channel.findall(channel.ndsname)
@@ -719,6 +719,10 @@ class DataTab(DataTabBase):
                     continue
                 # format CIS url and type
                 ftype = channel.frametype or 'Unknown'
+                for desc, regex in FRAMETYPE_REGEX.iteritems():
+                    if regex.match(ftype):
+                        ftype += ' <small>[%s]</small>' % desc
+                        break
                 if re.search('.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
@@ -727,16 +731,19 @@ class DataTab(DataTabBase):
                     c2 = channel
                     ctype = 'Raw'
                 if c2.url:
-                    link = html.markup.oneliner.a(str(channel),
-                                                  href=c2.url,
+                    link = html.markup.oneliner.a(str(channel), href=c2.url,
                                                   target='_blank')
                 else:
                     link = str(channel)
 
                 # format sameple rate
-                if (channel.sample_rate is not None and
-                        isclose(channel.sample_rate.value, 1/60.)):
+                if channel.sample_rate is None:
+                    rate = 'Unknown'
+                elif isclose(channel.sample_rate.value, 1/60.):
                     rate = '1/60 %s' % channel.sample_rate.unit
+                elif channel.sample_rate.value.is_integer():
+                    rate = '{0}{1:s}'.format(int(channel.sample_rate.value),
+                                             channel.sample_rate._unitstr)
                 else:
                     rate = str(channel.sample_rate)
                 # format unit
@@ -755,7 +762,8 @@ class DataTab(DataTabBase):
             page.add(str(html.data_table(headers, data)))
 
         allflags = sorted(set([
-            (f, p) for plot in filter(lambda p: p.data == 'segments',
+            (f, p) for plot in filter(lambda p: p.data == 'segments' and
+                                                p.type != 'guardian',
                                       self.plots)
             for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
         if len(allflags):

@@ -66,13 +66,26 @@ from gwpy.io import nds as ndsio
 from . import (globalv, version)
 from .mode import *
 from .utils import *
-from .channels import get_channel
+from .channels import (get_channel, update_missing_channel_params)
 
 OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
     '/': operator.div,
+}
+
+FRAMETYPE_REGEX = {
+    'commissioning': re.compile('[A-Z][0-9]_C\Z'),
+    'science': re.compile('[A-Z][0-9]_R\Z'),
+    'second-trend': re.compile('[A-Z][0-9]_T\Z'),
+    'minute-trend': re.compile('[A-Z][0-9]_M\Z'),
+    'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
+    'calibrated h(t) version 1': re.compile('[A-Z][0-9]_HOFT_C01\Z'),
+    'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
+    'DMT SenseMon on GDS h(t)': re.compile('SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
+    'DMT SenseMon on front-end h(t)': re.compile(
+        'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -545,6 +558,7 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                     if c.ndsname in filter_:
                         c.filter = filter_[c.ndsname]
             for (channel, data) in tsd.iteritems():
+                channel = update_missing_channel_params(data.channel)
                 if (channel.ndsname in globalv.DATA and
                     data.span in globalv.DATA[channel.ndsname].segments):
                     continue
@@ -1215,6 +1229,7 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
 def add_timeseries(timeseries, key=None, coalesce=True):
     """Add a `TimeSeries` to the global memory cache
     """
+    update_missing_channel_params(timeseries.channel)
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
     if isinstance(timeseries, StateVector):

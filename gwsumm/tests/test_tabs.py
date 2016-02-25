@@ -20,10 +20,9 @@
 
 """
 
-import unittest
-
 from gwpy.detector import Channel
 
+from .compat import unittest
 from .. import (tabs, version)
 
 __version__ = version.version

@@ -511,20 +511,26 @@ class DataPlot(SummaryPlot):
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
-        if outputfile.endswith('.pdf'):
+        if not isinstance(outputfile, str):
+            extensions = [None]
+        elif outputfile.endswith('.pdf'):
             extensions = ['.pdf', '.png']
         else:
             extensions = [os.path.splitext(outputfile)[1]]
 
         for ext in extensions:
-            fp = '%s%s' % (os.path.splitext(outputfile)[0], ext)
+            try:
+                fp = '%s%s' % (os.path.splitext(outputfile)[0], ext)
+            except AttributeError:
+                fp = outputfile
             try:
                 self.plot.save(fp, **savekwargs)
             except (IOError, RuntimeError) as e:
                 warnings.warn("Caught %s: %s [retrying...]"
                              % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
-            vprint("        %s written\n" % fp)
+            if isinstance(fp, str):
+                vprint("        %s written\n" % fp)
         if close:
             self.plot.close()
         return outputfile

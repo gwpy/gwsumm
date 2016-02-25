@@ -117,33 +117,6 @@ class DataTab(DataTabBase):
         self.noplots = noplots
         self.subplots = []
 
-    @property
-    def states(self):
-        """The `list` of `states <gwsumm.state.SummaryState` for this `DataTab`
-        """
-        return self._states
-
-    @states.setter
-    def states(self, statelist):
-        self._states = []
-        for state in statelist:
-            self.add_state(state)
-
-    def add_state(self, state):
-        """Add a `SummaryState` to this `DataTab`
-
-        Parameters
-        ----------
-        state : `~gwsumm.state.SummaryState`, `str`
-            the `SummaryState` to add, or the key of a state that has been
-            registered
-        """
-        if isinstance(state, SummaryState):
-            self._states.append(state)
-        else:
-            self._states.append(get_state(state))
-        return self._states[-1]
-
     # -------------------------------------------
     # SummaryTab configuration parser
 
@@ -377,7 +350,8 @@ class DataTab(DataTabBase):
         self.finalize_states(
             config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'))
-        vprint("States finalised\n")
+        vprint("States finalised [%d total]\n" % len(self.states))
+        vprint("    Default state: %r\n" % str(self.defaultstate))
 
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])

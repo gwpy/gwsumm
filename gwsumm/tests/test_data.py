@@ -20,10 +20,9 @@
 
 """
 
-import unittest
-
 from gwpy.detector import Channel
 
+from .compat import unittest
 from .. import (data, version)
 
 __version__ = version.version
@@ -48,10 +47,12 @@ class DataTests(unittest.TestCase):
         self.assertEqual(data.find_frame_type(channel), 'H1_lldetchar')
 
     def test_make_key(self):
-        key = data._make_key('L1:TEST-CHANNEL', {'stride': 123.456},
+        key = data._make_key('L1:TEST-CHANNEL',
+                             {'stride': 123.456, 'window': 'test-window'},
                              method='test-method', sampling=654.321)
         self.assertEqual(
-            key, 'L1:TEST-CHANNEL;test-method;123.456;None;None;None;654.321')
+            key, 'L1:TEST-CHANNEL;test-method;test-window;123.456;'
+                 'None;None;654.321')
 
     def test_clean_fftparams(self):
         fftparams = data._clean_fftparams({}, 'L1:TEST-CHANNEL')
@@ -62,7 +63,7 @@ class DataTests(unittest.TestCase):
             {'window': 'median-mean', 'overlap': 0}, 'L1:TEST-CHANNEL')
         self.assertDictEqual(
             fftparams,
-            {'window': 'median-mean', 'fftlength': 1, 'overlap': 0,
-             'stride': 1.0})
+            {'window': 'median-mean', 'fftlength': 1.0, 'overlap': 0.5,
+             'stride': 2.0})
         self.assertRaises(ZeroDivisionError, data._clean_fftparams,
                           {'stride': 0}, None)

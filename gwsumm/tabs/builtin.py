@@ -24,7 +24,7 @@ from .registry import register_tab
 from ..plot import get_plot
 from ..utils import *
 from ..config import *
-from ..state import ALLSTATE
+from ..state import (ALLSTATE, SummaryState, get_state)
 from .. import html
 
 from gwsumm import version
@@ -566,13 +566,22 @@ class StateTab(PlotTab):
         return self._states
 
     @states.setter
-    def states(self, statelist):
+    def states(self, statelist, default=None):
         self._states = []
         for state in statelist:
-            self.add_state(state)
+            # allow default indication by trailing asterisk
+            if state == default:
+                default_ = True
+            elif (default is None and isinstance(state, str) and
+                    state.endswith('*')):
+                state = state[:-1]
+                default_ = True
+            else:
+                default_ = False
+            self.add_state(state, default=default_)
 
-    def add_state(self, state):
-        """Add a `SummaryState` to this `StateTab`.
+    def add_state(self, state, default=False):
+        """Add a `SummaryState` to this tab
 
         Parameters
         ----------
@@ -581,7 +590,23 @@ class StateTab(PlotTab):
         register : `bool`, default: `False`
             automatically register all new states
         """
+        if not isinstance(state, SummaryState):
+            state = get_state(state)
         self._states.append(state)
+        if default:
+            self.defaultstate = state
+
+    @property
+    def defaultstate(self):
+        try:
+            return self._defaultstate
+        except AttributeError:
+            self._defaultstate = self.states[0]
+            return self._defaultstate
+
+    @defaultstate.setter
+    def defaultstate(self, state):
+        self._defaultstate = state
 
     @property
     def frames(self):
@@ -646,8 +671,9 @@ class StateTab(PlotTab):
 
         # build state switch
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
+            default = self.states.index(self.defaultstate)
             brand_.add(str(html.state_switcher(
-                zip(self.states, self.frames), 0)))
+                zip(self.states, self.frames), default)))
         # build interferometer cross-links
         if ifo is not None:
             brand_.add(str(html.base_map_dropdown(ifo, id_='ifos', **ifomap)))
@@ -734,10 +760,11 @@ class StateTab(PlotTab):
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
         """
+        default = self.states.index(self.defaultstate)
         return super(PlotTab, self).write_html(
-            self.frames[0], title=title, subtitle=subtitle, tabs=tabs, ifo=ifo,
-            ifomap=ifomap, brand=brand, css=css, js=js, about=about,
-            footer=footer, **inargs)
+            self.frames[default], title=title, subtitle=subtitle,
+            tabs=tabs, ifo=ifo, ifomap=ifomap, brand=brand, css=css, js=js,
+            about=about, footer=footer, **inargs)
 
 register_tab(StateTab)
 

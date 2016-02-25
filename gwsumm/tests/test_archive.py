@@ -23,6 +23,7 @@
 import sys
 import os
 import tempfile
+from functools import wraps
 
 from numpy import testing as nptest
 
@@ -30,15 +31,17 @@ from gwpy.timeseries import TimeSeries
 
 from .compat import unittest
 from ..version import version as __version__
-from .. import (archive, data, globalv)
+from .. import (archive, data, globalv, channels)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TEST_DATA = TimeSeries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], epoch=100,
                        unit='meter', sample_rate=1, channel='X1:TEST-CHANNEL',
                        name='TEST DATA')
+TEST_DATA.channel = channels.get_channel(TEST_DATA.channel)
 
 def empty_globalv_DATA(f):
+    @wraps(f)
     def wrapped_f(*args, **kwargs):
         _data = globalv.DATA
         globalv.DATA = type(globalv.DATA)()

@@ -209,7 +209,7 @@ class GWSummConfigParser(ConfigParser):
                     b = ''
                 new_.append(units.def_unit([unit], units.Unit(b)))
             units.add_enabled_units(new_)
-            return zip(*new_)[1]
+            return new_
 
     def load_channels(self):
         """Load all channel definitions as given in the selfuration

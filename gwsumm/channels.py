@@ -192,3 +192,26 @@ def get_channels(channels, **kwargs):
         else:
             result.append(c)
     return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
+
+
+def update_missing_channel_params(channel, **kwargs):
+    """Update empty channel parameters using the given input
+
+    This method will only set parameters in the channel if the target
+    parameter is `None`.
+
+    Parameters
+    ----------
+    channel : `str`, `~gwpy.detector.Channel`
+        channel to update
+    **kwargs
+        `(key, value)` pairs to set
+    """
+    target = get_channel(str(channel))
+    for param in ['unit', 'sample_rate', 'frametype']:
+        if getattr(target, param) is None:
+            setattr(target, param, getattr(channel, param))
+    for param in kwargs:
+        if getattr(target, param) is None:
+            setattr(target, param, kwargs[param])
+    return target

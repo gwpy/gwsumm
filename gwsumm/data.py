@@ -83,6 +83,9 @@ FRAMETYPE_REGEX = {
     'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
     'calibrated h(t) version 1': re.compile('[A-Z][0-9]_HOFT_C01\Z'),
     'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
+    'DMT SenseMon on GDS h(t)': re.compile('SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
+    'DMT SenseMon on front-end h(t)': re.compile(
+        'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

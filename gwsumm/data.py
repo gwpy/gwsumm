@@ -75,6 +75,16 @@ OPERATOR = {
     '/': operator.div,
 }
 
+FRAMETYPE_REGEX = {
+    'commissioning': re.compile('[A-Z][0-9]_C\Z'),
+    'science': re.compile('[A-Z][0-9]_R\Z'),
+    'second-trend': re.compile('[A-Z][0-9]_T\Z'),
+    'minute-trend': re.compile('[A-Z][0-9]_M\Z'),
+    'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
+    'calibrated h(t) version 1': re.compile('[A-Z][0-9]_HOFT_C01\Z'),
+    'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
+}
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __version__ = version.version
 

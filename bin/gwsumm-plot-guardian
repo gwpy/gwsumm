@@ -103,6 +103,9 @@ tab.plots[0].pargs['epoch'] = args.epoch
 vprint("Processing:\n")
 tab.process(multiprocess=args.nproc)
 plotfile = tab.plots[0].outputfile
+for tag in ['SEGMENT_PIE', 'SEGMENT_BAR']:
+    if os.path.isfile(plotfile.replace('SEGMENTS', tag)):
+        os.remove(plotfile.replace('SEGMENTS', tag))
 try:
     os.rename(plotfile, args.output_file)
 except OSError as e:

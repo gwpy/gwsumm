@@ -270,7 +270,6 @@ class EventTriggerTab(get_tab('default')):
         try:
             super(EventTriggerTab, self).process(*args, **kwargs)
         except IOError as e:
-            warn('Caught %s: %s' % (type(e).__name__, str(e)))
             msg = "GWSumm failed to process these data.<pre>%s</pre>" % str(e)
             for state in self.states:
                 self.error[state] = ( 'danger', msg)

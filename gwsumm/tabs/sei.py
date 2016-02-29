@@ -507,8 +507,11 @@ class SeiWatchDogPlot(get_plot('data')):
             conn = GWDataFindHTTPConnection()
             cache = conn.find_frame_urls(self.ifo[0], '%s_C' % self.ifo,
                                          self.start, self.end, urltype='file')
-            data = TimeSeriesDict.read(cache, self.chanlist, start=start,
-                                       end=end, nproc=self.nproc)
+            if len(cache) == 0:
+                data = {}
+            else:
+                data = TimeSeriesDict.read(cache, self.chanlist, start=start,
+                                           end=end, nproc=self.nproc)
 
         # make plot
         plot, axes = subplots(nrows=self.geometry[0], ncols=self.geometry[1],
@@ -519,7 +522,11 @@ class SeiWatchDogPlot(get_plot('data')):
         for channel, ax in zip(self.chanlist, axes.flat):
             ax.set_epoch(self.gpstime)
             # plot data
-            ax.plot(data[channel])
+            try:
+                ax.plot(data[channel])
+            except KeyError:
+                ax.text(self.gpstime, 0.5, "No data", va='center', ha='center',
+                        transform=ax.transData)
             # plot trip indicator
             ylim = ax.get_ylim()
             ax.plot([self.gpstime, self.gpstime], ylim, linewidth=0.5,

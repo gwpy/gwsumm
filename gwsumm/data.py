@@ -1281,7 +1281,10 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
             method_ = format
         else:
             method_ = method
-        keys = ['%s,%s' % (channel.ndsname, method_) for channel in qchannels]
+        keys = []
+        for channel in qchannels:
+            fftparams_ = _clean_fftparams(fftparams, channel)
+            keys.append(_make_key(channel, fftparams, method=method))
         havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))
         new = segments - havesegs

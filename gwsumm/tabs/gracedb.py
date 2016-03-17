@@ -19,8 +19,6 @@
 """Custom `SummaryTab` for the output of the FScan algorithm.
 """
 
-from ligo.gracedb.rest import GraceDb
-
 from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
@@ -87,6 +85,12 @@ class GraceDbTab(get_tab('default')):
         return super(GraceDbTab, cls).from_ini(config, section, **kwargs)
 
     def process(self, config=GWSummConfigParser(), **kwargs):
+        try:
+            from ligo.gracedb.rest import GraceDb
+        except ImportError as e:
+            e.args = ('%s, this module is required to generate a GraceDbTab'
+                      % str(e),)
+            raise
         # query gracedb
         service_url = '%s/api/' % self.url
         connection = GraceDb(service_url=service_url)

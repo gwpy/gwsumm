@@ -27,7 +27,16 @@ from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
 from gwpy.detector import Channel
-from gwpy.io import nds as ndsio
+
+try:
+    from gwpy.io.nds import NDS2_CHANNEL_TYPE
+except ImportError:
+    NDS2_TYPES = [
+        'm-trend', 'online', 'raw', 'rds', 'reduced',
+        's-trend', 'static', 'test-pt',
+    ]
+else:
+    NDS2_TYPES = NDS2_CHANNEL_TYPE.keys()
 
 from . import globalv
 
@@ -143,7 +152,7 @@ def split_channels(channelstring):
                 out.append(line)
                 continue
         # check for channel name with optional nds type
-        for nds2type in ndsio.NDS2_CHANNEL_TYPE.keys() + ['']:
+        for nds2type in NDS2_TYPES + ['']:
             if nds2type and ',%s' % nds2type in channelstring:
                 try:
                     channel, ctype, channelstring = channelstring.split(',', 2)

@@ -1,3 +1,2 @@
 include LICENSE README.rst MANIFEST.in
-include vcs.py
 include ez_setup.py

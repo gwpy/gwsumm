@@ -31,11 +31,10 @@ from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
 from gwpy.segments import DataQualityFlag
 
-from . import (globalv, mode, version)
+from . import (globalv, mode)
 from .data import (get_channel, add_timeseries, add_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 re_rate = re.compile('_EVENT_RATE_')
 

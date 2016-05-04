@@ -33,10 +33,9 @@ from glue import (datafind, pipeline)
 
 from gwpy.io import kerberos as gwkerberos
 
-from gwsumm import version
+from gwsumm import __version__
 from gwsumm.utils import (mkdir, which)
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 

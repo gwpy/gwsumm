@@ -30,7 +30,6 @@ from numpy import testing as nptest
 from gwpy.timeseries import TimeSeries
 
 from .compat import unittest
-from ..version import version as __version__
 from .. import (archive, data, globalv, channels)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

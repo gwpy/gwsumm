@@ -23,7 +23,6 @@
 from .compat import unittest
 from .. import (globalv, channels)
 from ..mode import set_mode
-from ..version import version as __version__
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

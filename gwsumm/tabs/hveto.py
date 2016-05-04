@@ -34,7 +34,7 @@ from gwpy.segments import (SegmentList, DataQualityFlag)
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, version, globalv)
+from .. import (html, globalv)
 from ..mode import SUMMARY_MODE_DAY
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..channels import get_channel
@@ -45,7 +45,6 @@ from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)

@@ -35,7 +35,7 @@ from gwpy.spectrum import Spectrum
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 
-from .. import (globalv, mode, version)
+from .. import (globalv, mode)
 from ..utils import (re_quote, re_cchar, split_channels)
 from ..data import (get_channel, get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum, get_coherence_spectrum,
@@ -45,7 +45,6 @@ from .registry import (get_plot, register_plot)
 from .mixins import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 DataPlot = get_plot('data')
 GREEN = (0.2, 0.8, 0.2)

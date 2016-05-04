@@ -40,10 +40,9 @@ from gwpy.table.lsctables import SnglBurstTable
 from gwpy.table.io import trigfind
 from gwpy.time import to_gps
 
-from gwsumm import version
+from gwsumm import __version__
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 # -----------------------------------------------------------------------------

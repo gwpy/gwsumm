@@ -44,14 +44,13 @@ from gwpy.plotter import TimeSeriesPlot
 from gwpy.segments import (Segment, SegmentList)
 
 from .registry import (get_tab, register_tab)
-from .. import (globalv, version, html)
+from .. import (globalv, html)
 from ..config import (NoOptionError, GWSummConfigParser)
 from ..data import (get_timeseries_dict, get_channel)
 from ..plot.registry import (get_plot, register_plot)
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 base = get_tab('default')
 HAMs = ['HAM%d' % i for i in range(1, 7)]

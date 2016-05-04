@@ -31,11 +31,10 @@ except ImportError:
 
 from gwpy.detector import Channel
 
-from . import (globalv, version)
+from . import globalv
 from .mode import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 CIS_URL = 'https://cis.ligo.org'
 

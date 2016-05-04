@@ -21,10 +21,7 @@
 
 from gwpy.plotter.table import get_column_string
 
-from .. import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 COLUMN_LABEL = {
     'peal_frequency': r"Frequency [Hz]",

@@ -24,9 +24,8 @@ from matplotlib import use
 use('agg')
 
 from .compat import unittest
-from .. import (plot, version)
+from .. import plot
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 

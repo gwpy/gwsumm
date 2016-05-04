@@ -63,7 +63,7 @@ from gwpy.spectrum import Spectrum
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
 
-from . import (globalv, version)
+from . import globalv
 from .mode import *
 from .utils import *
 from .channels import (get_channel, update_missing_channel_params)
@@ -89,7 +89,6 @@ FRAMETYPE_REGEX = {
 }
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 # -----------------------------------------------------------------------------

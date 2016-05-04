@@ -69,7 +69,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
 from gwpy.spectrum import lal_ as lalpsd
 
-from gwsumm import (globalv, version, mode)
+from gwsumm import (globalv, mode, __version__)
 from gwsumm.config import *
 from gwsumm.channels import get_channels
 from gwsumm.segments import get_segments
@@ -78,7 +78,6 @@ from gwsumm.utils import *
 from gwsumm.state import *
 from gwsumm.data import get_timeseries_dict
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # set defaults

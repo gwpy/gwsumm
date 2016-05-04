@@ -33,12 +33,11 @@ from gwpy.utils.compat import OrderedDict
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
                            SegmentList, Segment)
 
-from . import (globalv, version)
+from . import globalv
 from .config import DEFAULTSECT
 from .utils import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 SEGDB_URLS = [
     'https://segdb.ligo.caltech.edu',

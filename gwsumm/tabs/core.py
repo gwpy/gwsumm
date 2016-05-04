@@ -29,13 +29,12 @@ from gwpy.utils.compat import OrderedDict
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from .. import (html, version, mode)
+from .. import (html, mode)
 from ..utils import (re_quote, re_cchar)
 from ..config import *
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class Tab(object):

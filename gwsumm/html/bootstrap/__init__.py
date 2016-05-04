@@ -24,9 +24,7 @@ import getpass
 import datetime
 import os.path
 
-from ... import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 from .. import markup
 from ..utils import highlight_syntax

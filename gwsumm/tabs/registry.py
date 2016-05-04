@@ -24,10 +24,9 @@ configuration INI files
 
 import re
 
-from .. import version
 from ..utils import re_quote
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 __all__ = ['register_tab', 'get_tab']
 

@@ -29,7 +29,7 @@ from glue.lal import Cache
 from gwpy.time import from_gps
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
-from .. import (version, html)
+from .. import html
 from ..config import NoOptionError
 from ..data import get_channel
 from ..state import (get_state, ALLSTATE)
@@ -39,7 +39,6 @@ from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class EventTriggerTab(get_tab('default')):

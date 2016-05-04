@@ -34,11 +34,16 @@ from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.io.cache import cache_segments
 from gwpy.table import lsctables
-from gwpy.table.io import trigfind
+
 from gwpy.time import to_gps
 
 from gwpy.table.utils import (get_table_column, get_row_value)
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
+
+try:
+    import trigfind
+except ImportError:
+    from gwpy.table.io import trigfind
 
 from . import globalv
 from .utils import (re_cchar, vprint)
@@ -207,20 +212,18 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
             if cache is None and etg.lower() == 'hacr':
                 raise NotImplementedError("HACR parsing has not been "
                                           "implemented.")
-            if cache is None and re.match('dmt(.*)omega', etg.lower()):
-                segcache = find_dmt_omega(channel, segment[0], segment[1])
-                kwargs['format'] = 'ligolw'
-            elif cache is None and etg.lower() in ['kw', 'kleinewelle']:
-                segcache = find_kw(channel, segment[0], segment[1])
-                kwargs['format'] = 'ligolw'
+            if cache is None and etg.lower() in ['kw', 'kleinewelle']:
                 kwargs['filt'] = lambda t: (
                     float(get_row_value(t, 'time')) in segment and
                     t.channel == str(channel))
-            elif cache is None:
+            if cache is None:
                 segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                       segment[0],
                                                       segment[1])
-                kwargs['format'] = 'ligolw'
+                if etg.lower() == 'omega':
+                    kwargs['format'] = 'omega'
+                else:
+                    kwargs['format'] = 'ligolw'
             elif isinstance(cache, Cache):
                 segcache = cache.sieve(segment=segment)
             else:
@@ -265,67 +268,3 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         return out
     else:
         return
-
-
-def find_dmt_omega(channel, start, end, base=None):
-    """Find DMT-Omega trigger XML files
-    """
-    span = Segment(to_gps(start), to_gps(end))
-    channel = get_channel(channel)
-    ifo = channel.ifo
-    if base is None and channel.name.split(':', 1)[-1] == 'GDS-CALIB_STRAIN':
-        base = '/gds-%s/dmt/triggers/%s-HOFT_Omega' % (
-            ifo.lower(), ifo[0].upper())
-    elif base is None:
-        raise NotImplementedError("This method doesn't know how to locate DMT "
-                                  "Omega trigger files for %r" % str(channel))
-    gps5 = int('%.5s' % start)
-    end5 = int('%.5s' % end)
-    out = Cache()
-    append = out.append
-    while gps5 <= end5:
-        trigglob = os.path.join(
-            base, str(gps5),
-            '%s-%s_%s_%s_OmegaC-*-*.xml' % (
-                ifo, channel.system, channel.subsystem, channel.signal))
-        found = glob.glob(trigglob)
-        for f in found:
-            ce = CacheEntry.from_T050017(f)
-            if ce.segment.intersects(span):
-                append(ce)
-        gps5 += 1
-    out.sort(key=lambda e: e.path)
-    vprint("    Found %d files for %s (DMT-Omega)\n"
-           % (len(out), channel.ndsname))
-    return out
-
-
-def find_kw(channel, start, end, base=None):
-    """Find KW trigger XML files
-    """
-    span = Segment(to_gps(start), to_gps(end))
-    channel = get_channel(channel)
-    ifo = channel.ifo
-    if base is None and channel.name.split(':', 1)[-1] == 'GDS-CALIB_STRAIN':
-        tag = '%s-KW_HOFT' % ifo[0].upper()
-        base = '/gds-%s/dmt/triggers/%s' % (ifo.lower(), tag)
-    elif base is None:
-        tag = '%s-KW_TRIGGERS' % ifo[0].upper()
-        base = '/gds-%s/dmt/triggers/%s' % (ifo.lower(), tag)
-    gps5 = int('%.5s' % start)
-    end5 = int('%.5s' % end)
-    out = Cache()
-    append = out.append
-    while gps5 <= end5:
-        trigglob = os.path.join(
-            base, '%s-%d' % (tag, gps5), '%s-*-*.xml' % tag)
-        found = glob.glob(trigglob)
-        for f in found:
-            ce = CacheEntry.from_T050017(f)
-            if ce.segment.intersects(span):
-                append(ce)
-        gps5 += 1
-    out.sort(key=lambda e: e.path)
-    vprint("    Found %d files for %s (KW)\n"
-           % (len(out), channel.ndsname))
-    return out

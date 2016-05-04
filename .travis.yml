@@ -21,6 +21,7 @@ before_install:
   - pip install -q --upgrade pip
 
 install:
+  - pip install `grep "/glue-" requirements.txt`  # install glue first
   - pip install -r requirements.txt
   - pip install -q coveralls "pytest>=2.8"
   - python setup.py build

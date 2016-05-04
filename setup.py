@@ -67,6 +67,7 @@ install_requires = [
     'matplotlib>=1.3.0',
     'astropy>=1.0',
     'gwpy>=0.1',
+    'trigfind>=0.2.1',
 ]
 requires = [
     'decorator',
@@ -122,6 +123,7 @@ setup(name=DISTNAME,
       dependency_links=[
           'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
           'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
+          'https://github.com/ligovirgo/trigfind/archive/v0.2.1.tar.gz#egg=trigfind-0.2.1',
       ],
       data_files=data_files,
       use_2to3=True,

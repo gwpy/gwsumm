@@ -104,7 +104,7 @@ scripts = glob.glob(os.path.join('bin', '*'))
 
 setup(name=DISTNAME,
       provides=[PACKAGENAME],
-      version=None,
+      version=__version__,
       description=None,
       long_description=None,
       author=AUTHOR,

@@ -23,12 +23,11 @@ from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, version, globalv)
+from .. import (html, globalv)
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..utils import (re_quote, vprint)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 LABELS = {
     'ADVOK': 'success',

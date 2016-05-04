@@ -19,11 +19,10 @@
 """Registry for `states <SummaryState>`.
 """
 
-from .. import (globalv, version)
+from .. import globalv
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 __all__ = ['register_state', 'get_state', 'get_states']
 

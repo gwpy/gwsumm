@@ -31,13 +31,11 @@ try:
 except:
     from ordereddict import OrderedDict
 
-from .. import version
 from .html5 import *
 from .bootstrap import *
 from . import markup
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # ----------------------------------------------------------------------------
 # Collect CSS and JS scripts

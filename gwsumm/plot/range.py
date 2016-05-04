@@ -30,14 +30,13 @@ import numpy
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
-from .. import (globalv, version)
+from .. import globalv
 from .registry import (get_plot, register_plot)
 from ..data import (get_range_channel, get_range, get_timeseries)
 from ..segments import get_segments
 from ..utils import split_channels
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class RangePlotMixin(object):

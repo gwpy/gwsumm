@@ -39,7 +39,7 @@ from astropy.time import Time
 
 from gwpy.segments import DataQualityFlag
 
-from .. import (version, globalv, html)
+from .. import (globalv, html)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
@@ -53,7 +53,6 @@ from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, count_free_cores)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 class DataTabBase(get_tab('archived-state')):

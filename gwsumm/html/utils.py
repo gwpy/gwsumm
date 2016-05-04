@@ -21,10 +21,7 @@
 
 import subprocess
 
-from gwsumm import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 
 def highlight_syntax(filepath, format_):

@@ -33,14 +33,13 @@ from gwpy.plotter import SegmentPlot
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import ALLSTATE
 from .registry import (get_tab, register_tab)
-from .. import (globalv, version, html)
+from .. import (globalv, html)
 from ..data import get_timeseries
 from ..segments import get_segments
 from ..plot.registry import (get_plot, register_plot)
 from ..utils import vprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 ParentTab = get_tab('default')
 

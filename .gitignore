@@ -12,3 +12,4 @@
 .nfs*
 *.swp
 /.cache/
+/.eggs/

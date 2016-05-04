@@ -57,10 +57,7 @@ rcParams.update({
 if '1.5' <= mpl_version < '2.0':
     rcParams['image.cmap'] = 'viridis'
 
-from gwsumm import version
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 from .registry import *
 from .utils import *

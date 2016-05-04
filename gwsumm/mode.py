@@ -21,10 +21,9 @@
 
 import os.path
 
-from . import (globalv, version)
+from . import globalv
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 # set mode enum
 SUMMARY_MODE_DAY = 0

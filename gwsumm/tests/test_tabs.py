@@ -23,9 +23,8 @@
 from gwpy.detector import Channel
 
 from .compat import unittest
-from .. import (tabs, version)
+from .. import tabs
 
-__version__ = version.version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 

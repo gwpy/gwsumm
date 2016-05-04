@@ -25,7 +25,6 @@ import datetime
 
 from .compat import unittest
 from .. import (globalv, mode)
-from ..version import version as __version__
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

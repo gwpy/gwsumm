@@ -38,7 +38,7 @@ from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 from gwpy.time import (from_gps, to_gps)
 
-from .. import (globalv, mode, version)
+from .. import globalv, mode
 from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv)
 from ..data import (get_channel, get_timeseries)
@@ -49,7 +49,6 @@ from .registry import (get_plot, register_plot)
 from .mixins import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TimeSeriesDataPlot = get_plot('timeseries')
 GREEN = (0.2, 0.8, 0.2)

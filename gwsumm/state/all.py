@@ -24,13 +24,11 @@ the full analysis interval.
 
 from gwpy.segments import (Segment, SegmentList)
 
-from .. import version
 from ..globalv import NOW
 from .core import SummaryState
 from .registry import register_state
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 ALLSTATE = 'All'
 

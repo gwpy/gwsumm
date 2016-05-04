@@ -33,7 +33,7 @@ from gwpy.time import from_gps
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
-from .. import (version, html, globalv)
+from .. import (html, globalv)
 from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..data import find_cache_segments
 from ..triggers import (get_triggers, register_etg_table)
@@ -43,7 +43,6 @@ from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 base = get_tab('default')
 

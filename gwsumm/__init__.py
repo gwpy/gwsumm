@@ -20,6 +20,10 @@
 
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-from .version import version as __version__
 from . import globalv
+from ._version import get_versions
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__version__ = get_versions()['version']
+
+del get_versions

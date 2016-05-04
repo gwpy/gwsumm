@@ -27,9 +27,7 @@ from ..config import *
 from ..state import (ALLSTATE, SummaryState, get_state)
 from .. import html
 
-from gwsumm import version
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 SummaryPlot = get_plot(None)
 DataPlot = get_plot('data')

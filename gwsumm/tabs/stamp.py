@@ -29,14 +29,13 @@ from numpy import loadtxt
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, version, globalv)
+from .. import (html, globalv)
 from .. plot import get_plot
 from ..mode import SUMMARY_MODE_DAY
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import (ALLSTATE, SummaryState)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)

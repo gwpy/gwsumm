@@ -34,14 +34,13 @@ from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
-from .. import (globalv, version)
+from .. import globalv
 from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, add_timeseries)
 from ..triggers import get_triggers
 from .registry import (get_plot, register_plot)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = version.version
 
 TimeSeriesDataPlot = get_plot('timeseries')
 

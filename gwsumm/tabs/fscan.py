@@ -222,7 +222,7 @@ class FscanTab(base):
                     page.div(class_="col-md-6")
                     page.a(href=p.href, class_="fancybox plot",
                            **{'data-fancybox-group': 1})
-                    page.img(src=p.href)
+                    page.img(class_='img-responsive', src=p.href)
                     page.a.close()
                     page.div.close()
                 page.div.close()

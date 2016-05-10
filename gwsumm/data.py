@@ -59,7 +59,10 @@ except ImportError:
     from gwpy.timeseries import (TimeSeries, TimeSeriesList, TimeSeriesDict,
                                  StateVector, StateVectorDict)
     StateVectorList = TimeSeriesList
-from gwpy.spectrum import Spectrum
+try:
+    from gwpy.frequencyseries import FrequencySeries
+except ImportError:
+    from gwpy.spectrum import Spectrum as FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
 
@@ -1117,8 +1120,8 @@ def get_spectrum(channel, segments, config=ConfigParser(), cache=None,
         try:
             globalv.SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):
-            globalv.SPECTRUM[name] = Spectrum([], channel=channel, f0=0, df=1,
-                                              unit=units.Unit(''))
+            globalv.SPECTRUM[name] = FrequencySeries([], channel=channel, f0=0,
+                                                     df=1, unit=units.Unit(''))
             globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
             globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
         else:
@@ -1187,27 +1190,23 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
             Cxy = cdict['Cxy'].percentile(50)
             Cxx = cdict['Cxx'].percentile(50)
             Cyy = cdict['Cyy'].percentile(50)
-            globalv.COHERENCE_SPECTRUM[name] = Spectrum(
-                                                   abs(Cxy)**2 / Cxx / Cyy,
-                                                   f0=Cxx.f0, df=Cxx.df)
+            globalv.COHERENCE_SPECTRUM[name] = FrequencySeries(
+                abs(Cxy)**2 / Cxx / Cyy, f0=Cxx.f0, df=Cxx.df)
         except (ValueError, IndexError):
-            globalv.COHERENCE_SPECTRUM[name] = Spectrum([], channel=channel1,
-                                                        f0=0, df=1,
-                                                        unit=units.Unit(''))
+            globalv.COHERENCE_SPECTRUM[name] = FrequencySeries(
+                [], channel=channel1, f0=0, df=1, unit=units.Unit(''))
             globalv.COHERENCE_SPECTRUM[cmin] = globalv.COHERENCE_SPECTRUM[name]
             globalv.COHERENCE_SPECTRUM[cmax] = globalv.COHERENCE_SPECTRUM[name]
         else:
             # FIXME: how to calculate percentiles correctly?
-            globalv.COHERENCE_SPECTRUM[cmin] = Spectrum(
-                                       abs(cdict['Cxy'].percentile(5))**2 /
-                                       cdict['Cxx'].percentile(95) /
-                                       cdict['Cyy'].percentile(95), f0=Cxx.f0,
-                                       df=Cxx.df)
-            globalv.COHERENCE_SPECTRUM[cmax] = Spectrum(
-                                       abs(cdict['Cxy'].percentile(95))**2 /
-                                       cdict['Cxx'].percentile(5) /
-                                       cdict['Cyy'].percentile(5), f0=Cxx.f0,
-                                       df=Cxx.df)
+            globalv.COHERENCE_SPECTRUM[cmin] = FrequencySeries(
+                abs(cdict['Cxy'].percentile(5))**2 /
+                    cdict['Cxx'].percentile(95) /
+                    cdict['Cyy'].percentile(95), f0=Cxx.f0, df=Cxx.df)
+            globalv.COHERENCE_SPECTRUM[cmax] = FrequencySeries(
+                abs(cdict['Cxy'].percentile(95))**2 /
+                    cdict['Cxx'].percentile(5) /
+                    cdict['Cyy'].percentile(5), f0=Cxx.f0, df=Cxx.df)
 
         # set the spectrum's name manually; this will be used for the legend
         globalv.COHERENCE_SPECTRUM[name].name = (
@@ -1398,7 +1397,7 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
                             epoch=sg.epoch, dx=sg.dx, channel=key)
             for i in range(sg.shape[0]):
                 psd = sg[i]
-                psd = Spectrum(psd.value, f0=psd.x0, df=psd.dx)
+                psd = FrequencySeries(psd.value, f0=psd.x0, df=psd.dx)
                 ts[i] = range_func(psd, **rangekwargs)
             add_timeseries(ts, key=key)
 

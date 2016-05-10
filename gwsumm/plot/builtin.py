@@ -31,7 +31,10 @@ from matplotlib.pyplot import subplots
 
 from astropy.units import Quantity
 
-from gwpy.spectrum import Spectrum
+try:
+    from gwpy.frequencyseries import FrequencySeries
+except ImportError:
+    from gwpy.spectrum import Spectrum as FrequencySeries
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 
@@ -378,7 +381,7 @@ class SpectrumDataPlot(DataPlot):
     def _process(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = SpectrumPlot(
+        plot = self.plot = FrequencySeriesPlot(
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
@@ -464,14 +467,14 @@ class SpectrumDataPlot(DataPlot):
             if 'source' in ref:
                 source = ref.pop('source')
                 try:
-                    refspec = Spectrum.read(source)
+                    refspec = FrequencySeries.read(source)
                 except IOError as e:
                     warnings.warn('IOError: %s' % str(e))
                 except Exception as e:
                     # hack for old versions of GWpy
                     # TODO: remove me when GWSumm requires GWpy > 0.1
                     if 'Format could not be identified' in str(e):
-                        refspec = Spectrum.read(source, format='dat')
+                        refspec = FrequencySeries.read(source, format='dat')
                     else:
                         raise
                 else:
@@ -806,7 +809,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     def _process(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = SpectrumPlot(
+        plot = self.plot = FrequencySeriesPlot(
             figsize=self.pargs.pop('figsize', [12, 6]))
         ax = plot.gca()
 
@@ -885,14 +888,14 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             if 'source' in ref:
                 source = ref.pop('source')
                 try:
-                    refspec = Spectrum.read(source)
+                    refspec = FrequencySeries.read(source)
                 except IOError as e:
                     warnings.warn('IOError: %s' % str(e))
                 except Exception as e:
                     # hack for old versions of GWpy
                     # TODO: remove me when GWSumm requires GWpy > 0.1
                     if 'Format could not be identified' in str(e):
-                        refspec = Spectrum.read(source, format='dat')
+                        refspec = FrequencySeries.read(source, format='dat')
                     else:
                         raise
                 else:

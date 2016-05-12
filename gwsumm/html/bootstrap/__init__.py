@@ -89,7 +89,7 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     return page
 
 
-def navbar(links, class_='navbar navbar-fixed-top navbar-ifo',
+def navbar(links, class_='navbar navbar-fixed-top',
            brand=None, dropdown_class=[''], collapse=True):
     """Construct a navigation bar in bootstrap format.
 

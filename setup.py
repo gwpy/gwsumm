@@ -65,6 +65,7 @@ setup_requires = [
     'setuptools',
     'pytest-runner',
     'libsass',
+    'jsmin',
 ]
 install_requires = [
     'numpy>=1.5',

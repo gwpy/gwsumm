@@ -40,48 +40,41 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 # ----------------------------------------------------------------------------
 # Collect CSS and JS scripts
 
-sharedir = os.path.join(os.path.split(__file__)[0], os.path.pardir,
-                        os.path.pardir, 'share', 'gwsumm', 'html')
+STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
 
-JS = OrderedDict([
-    ('jquery', [
-        '//code.jquery.com/jquery-1.11.0.min.js',
-        '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.4.0/moment.min.js']),
-    ('bootstrap', BOOTSTRAPJS),
-    ('fancybox', ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
-              'jquery.fancybox.pack.js']),
-    ('datepicker', [
-        os.path.normpath(os.path.join(sharedir, 'datepicker.js'))]),
-    ('gwsumm', [os.path.normpath(os.path.join(sharedir, 'gwsumm.js'))]),
-])
+JS = OrderedDict()
+JS['jquery'] = '//code.jquery.com/jquery-1.12.3.min.js'
+JS['moment'] = (
+    '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js')
+JS['bootstrap'] = BOOTSTRAP_JS
+JS['fancybox'] = (
+    '//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js')
+JS['datepicker'] = (
+    '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+    '1.6.0/js/bootstrap-datepicker.min.js')
+JS['gwsumm'] = os.path.join(STATICDIR, 'gwsumm.min.js')
 
-CSS = OrderedDict([
-    ('bootstrap', BOOTSTRAPCSS),
-    ('fancybox', ['//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/'
-              'jquery.fancybox.css']),
-    ('datepicker',
-        [os.path.normpath(os.path.join(sharedir, 'datepicker.css'))]),
-])
+CSS = OrderedDict()
+CSS['bootstrap'] = BOOTSTRAP_CSS
+CSS['fancybox'] = (
+    '//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css')
+CSS['datepicker'] = (
+    '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+    '1.6.0/css/bootstrap-datepicker.min.css')
+CSS['bootstrap-ligo'] = os.path.join(STATICDIR, 'bootstrap-ligo.min.css')
+CSS['gwsumm'] = os.path.join(STATICDIR, 'gwsumm.min.css')
 
 
-def get_css(ifo='All'):
-    """Return a list of CSS files to link in the HTML <head>
+def get_css():
+    """Return a `dict` of CSS files to link in the HTML <head>
     """
-    ifocss = get_ifo_css(ifo)
-    return [cssf for csslist in CSS.values() + [ifocss] for cssf in csslist]
+    return CSS
 
 
 def get_js():
-    """Return a list of javascript files to link in the HTML <head>
+    """Return a `dict` of javascript files to link in the HTML <head>
     """
-    return [jsf for jslist in JS.values() for jsf in jslist]
-
-
-def get_ifo_css(ifo):
-    """Return the path to the specific CSS file for an interferometer
-    """
-    return [os.path.normpath(os.path.join(
-        sharedir, 'gwsumm-%s.css' % str(ifo).lower()))]
+    return JS
 
 
 # ----------------------------------------------------------------------------

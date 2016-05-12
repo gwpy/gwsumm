@@ -27,9 +27,12 @@ if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
 
 import glob
-import os.path
+import os
 
-from setuptools import (setup, find_packages)
+from distutils import log
+from setuptools import (Command, setup, find_packages)
+from setuptools.command.egg_info import egg_info
+from setuptools.command.build_py import build_py
 
 # set basic metadata
 PACKAGENAME = 'gwsumm'
@@ -61,6 +64,7 @@ else:
 setup_requires = [
     'setuptools',
     'pytest-runner',
+    'libsass',
 ]
 install_requires = [
     'numpy>=1.5',
@@ -90,12 +94,113 @@ extras_require = {
 
 # -- data files ---------------------------------------------------------------
 
+JAVASCRIPT_SOURCES = [
+    f for f in glob.glob(os.path.join('share', 'js', '*.js')) + (
+               glob.glob(os.path.join('bootstrap-ligo', 'js', '*.js')))
+    if not f.endswith('.min.js')]
+CSS_SOURCES = glob.glob(os.path.join('share', 'sass', '[!_]*.scss')) + (
+    glob.glob(os.path.join('bootstrap-ligo', 'css', '[!_]*.scss')))
+
+
+class BuildHtmlFiles(Command):
+    """Compile SASS sources into CSS and minify javascript
+    """
+    description = 'Compile SASS into CSS and minify JS'
+    user_options = [
+        ('output-style=', None, 'CSS output style'),
+    ]
+
+    def initialize_options(self):
+        self.output_style = 'compressed'
+
+    def finalize_options(self):
+        pass
+
+    @property
+    def staticdir(self):
+        try:
+            return self._static
+        except AttributeError:
+            self._static = os.path.join(PACKAGENAME, 'html', 'static')
+            if not os.path.isdir(self._static):
+                os.makedirs(self._static)
+                log.info('created static dir in %s' % self._static)
+        return self._static
+
+    @property
+    def staticpackage(self):
+        return self.staticdir.replace(os.path.sep, '.')
+
+    def minify_js(self):
+        jsdir = os.path.join('share', 'js')
+        log.info('minifying js under %s' % jsdir)
+        for jsfile in JAVASCRIPT_SOURCES:
+            filename = os.path.basename(jsfile)
+            target = os.path.join(
+                self.staticdir, '%s.min.js' % os.path.splitext(filename)[0])
+            self.minify(jsfile, target)
+
+    def minify(self, source, target):
+        import jsmin
+        js = jsmin.jsmin(open(source).read())
+        with open(target, 'w') as f:
+            f.write(js)
+        log.info('minified js written to %s' % target)
+
+    def compile_sass(self):
+        sassdir = os.path.join('share', 'sass')
+        log.info('compiling SASS under %s to CSS' % sassdir)
+        for sassfile in CSS_SOURCES:
+            filename = os.path.basename(sassfile)
+            target = os.path.join(
+                self.staticdir, '%s.min.css' % os.path.splitext(filename)[0])
+            self.compile(sassfile, target)
+
+    def compile(self, source, target):
+        import sass
+        print(source, target)
+        css = sass.compile(filename=source, output_style=self.output_style)
+        with open(target, 'w') as f:
+            f.write(css)
+        log.info('%s CSS written to %s' % (self.output_style, target))
+
+    def run(self):
+        self.compile_sass()
+        self.minify_js()
+        if self.staticpackage not in self.distribution.packages:
+            self.distribution.packages.append(self.staticpackage)
+            log.info("added %s to package list" % self.staticpackage)
+
+cmdclass['build_html_files'] = BuildHtmlFiles
+
+old_build_py = cmdclass.pop('build_py', build_py)
+
+
+class BuildPyWithHtmlFiles(old_build_py):
+    """Custom build_py that compiles SASS+JS sources as well
+    """
+    def run(self):
+        self.run_command('build_html_files')
+        old_build_py.run(self)
+
+cmdclass['build_py'] = BuildPyWithHtmlFiles
+
+old_egg_info = cmdclass.pop('egg_info', egg_info)
+
+
+class EggInfoWithHtmlFiles(old_egg_info):
+    """Custom egg_info that compiles SASS+JS sources as well
+    """
+    def run(self):
+        self.run_command('build_html_files')
+        old_egg_info.run(self)
+
+cmdclass['egg_info'] = EggInfoWithHtmlFiles
+
+# configuration files
 data_files = [
-    ('etc',
+    (os.path.join('etc', PACKAGENAME, 'configuration'),
         glob.glob(os.path.join('share', '*.ini'))),
-    (os.path.join('share', PACKAGENAME, 'html'),
-        glob.glob(os.path.join('share', 'css', '*.css')) +
-        glob.glob(os.path.join('share', 'js', '*.js'))),
 ]
 
 # -- run setup ----------------------------------------------------------------

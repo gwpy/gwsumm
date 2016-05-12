@@ -316,23 +316,41 @@ class GWSummConfigParser(ConfigParser):
         return states
 
     def get_css(self, section='html'):
+        # get critical CSS
+        css = get_css()
+        for key in css:
+            try:
+                css[key] = self.get(section, '%s-css' % key)
+            except NoSectionError:
+                return []
+            except NoOptionError:
+                continue
+        files = css.values()
+        # get extra CSS
         try:
-            css = [cval for (key, cval) in self.items('html') if
-                   re.match('css\d+', key)]
-        except NoSectionError:
-            css = get_css(ifo)
+            extras = self.get(section, 'extra-css')
+        except NoOptionError:
+            return files
         else:
-            if not css:
-                css = get_css(ifo)
-        return css
+            files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))
+        return files
 
     def get_javascript(self, section='html'):
+        # get critical JS
+        js = get_js()
+        for key in js:
+            try:
+                js[key] = self.get(section, '%s-js' % key)
+            except NoSectionError:
+                break
+            except NoOptionError:
+                continue
+        files = js.values()
+        # get extra CSS
         try:
-            javascript = [jval for (key, jval) in self.items('html') if
-                          re.match('javascript\d+', key)]
-        except NoSectionError:
-            javascript = get_js()
+            extras = self.get(section, 'extra-js')
+        except NoOptionError:
+            return files
         else:
-            if not javascript:
-                javascript = get_js()
-        return javascript
+            files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))
+        return files

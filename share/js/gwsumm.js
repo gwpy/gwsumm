@@ -19,9 +19,9 @@
 
 /* ------------------------------------------------------------------------- */
 /* Calendar links                                                            */
-var re_dayurl = new RegExp('day\/\\d{8}\/')
-var re_monthurl = new RegExp('month\/\\d{6}\/')
-var re_yearurl = new RegExp('year\/\\d{4}\/')
+var re_dayurl = new RegExp('day\/\\d{8}\/');
+var re_monthurl = new RegExp('month\/\\d{6}\/');
+var re_yearurl = new RegExp('year\/\\d{4}\/');
 
 function findDateFormat() {
     var url = window.location.href;
@@ -63,13 +63,13 @@ function stepDate(step) {
     var date = getPageDate();
     var newdate = date.add(dateformat, step);
     if (dateformat == 'day') {
-        move_to_date({type: 'moveDate', date: newdate});
+        move_to_date({type: 'changeDate', date: newdate});
     }
     else if (dateformat == 'month') {
-        move_to_date({type: 'moveMonth', date: newdate});
+        move_to_date({type: 'changeMonth', date: newdate});
     }
     else if (dateformat == 'year') {
-        move_to_date({type: 'moveYear', date: newdate});
+        move_to_date({type: 'changeYear', date: newdate});
     }
 }
 
@@ -78,7 +78,7 @@ $.fn.load_state = function loadState(page) {
     if ($(this).attr('id') == undefined) {
         return
     }
-    $('#content').load(page);
+    $('#main').load(page);
     $(this).set_state();
 }
 
@@ -104,15 +104,15 @@ function move_to_date(ev) {
     var url = window.location.href;
     var date = moment(ev.date);
     // find new date format
-    if (ev.type == 'moveDate') {
+    if (ev.type == 'changeDate') {
         var newformat = 'day/' + date.format('YYYYMMDD') + '/';
         var dispdate = date.format('MMMM Do YYYY');
     }
-    else if (ev.type == 'moveMonth') {
+    else if (ev.type == 'changeMonth') {
         var newformat = 'month/' + date.format('YYYYMM') + '/';
         var dispdate = date.format('MMMM YYYY');
     }
-    else if (ev.type == 'moveYear') {
+    else if (ev.type == 'changeYear') {
         var newformat = 'year/' + date.format('YYYY') + '/';
         var dispdate = date.format('YYYY');
     }
@@ -133,14 +133,6 @@ function move_to_date(ev) {
     else {
         alert("ERROR: Cannot format new date. If the problem persists, please report this at https://github.com/gwpy/gwsumm/issues/");
     }
-    /*$.ajax({
-        type: 'HEAD',
-        url : newurl,
-        success: function(){window.location = newurl},
-        error: function(){alert('No page found for ' + dispdate +
-                                '. Please report unexpected problems to '+
-                                'detchar+code@ligo.org.')}});
-    */
     window.location = newurl;
 }
 
@@ -149,50 +141,24 @@ function reset_width_on_resize() {
     $('#nav').width($("#nav").width());
 }
 
-// get basename of URL
-function baseName(str) {
-   base = new String(str).substring(str.lastIndexOf('/') + 1);
-   return base; 
-}
-
-// add startsWith method
-if (typeof String.prototype.startsWith != 'function') {
-  String.prototype.startsWith = function (str){
-    return this.slice(0, str.length) == str;
-  };
-}
-
-function refreshImage() {
-  var suffix = Math.floor((Math.random() * 10000) + 1);
-  $('img').each(function() {
-    var src = $(this).attr('src').split('?')[0];
-    $(this).attr('src', src + "?" + suffix);
-  });
-}
-
-function resizeFancyboxIframe() {
-  var width = Math.min(1200, $(".fancybox-skin").width());
-  // XXX: FIXME: this isn't finished yet
-  if (width > document.body.clientWidth ) {
-    $(".fancybox-iframe").width(width - 40);
-  } else {
-    $(".fancybox-iframe").width(width);
-  }
-  $(".fancybox-wrap").width(width + 30);
-
-  // set heights as half width
-  $(".fancybox-iframe").height(parseInt($(".fancybox-iframe").width() * 0.5));
-  $(".fancybox-wrap").height(parseInt($(".fancybox-wrap").width() * 0.5));
-}
 
 /* ------------------------------------------------------------------------- */
 /* Document ready and loaded                                                  */
 
 // When document is ready, run this stuff:
 $(window).load(function() {
+    // Set the sticky navigation bar
+    //$(function() {
+    //    $('#nav-wrapper').height($("#nav").height());
+    //    $('#nav').width($("#nav").width());
+    //    $('#nav').affix({
+    //        offset: { top: $('#nav').offset().top }
+    //    });
+    //});
+
     // define inter-IFO links
     var thisbase = document.getElementsByTagName('base')[0].href;
-    $('a.ifo-switch').each(function() {
+    $('[data-new-base]').each(function() {
         var newbase = $(this).data('new-base') + '/';
         $(this).attr('href', window.location.href.replace(thisbase, newbase));
     });
@@ -203,9 +169,9 @@ $(window).load(function() {
         endDate: moment().utc().format('DD/MM/YYYY'),
         todayHighlight: true,
         todayBtn: "linked"
-        }).on('moveDate', move_to_date)
-              .on('moveMonth', move_to_date)
-              .on('moveYear', move_to_date);
+    }).on('changeDate', move_to_date)
+      .on('changeMonth', move_to_date)
+      .on('changeYear', move_to_date);
 
     // load correct run type
     if (location.hash.length > 1) {
@@ -215,15 +181,9 @@ $(window).load(function() {
     }
 
     // load the fancybox
-    $(".fancybox").fancybox({
-        nextEffect: 'none',
-        prevEffect: 'none',
-        width: 1200,
-        iframe: {scrolling: 'no'},
-        scrolling: 'no',
-        beforeShow: function() {resizeFancyboxIframe()},
-        helpers: {overlay: {locked: false}}
-    });
+    $(".fancybox").fancybox({nextEffect: 'none',
+                             prevEffect: 'none',
+                             helpers: {overlay: {locked: false}}});
 
     $('.dropdown-toggle').on('click', function() {
         var target = $(this).nextAll('.dropdown-menu');
@@ -235,22 +195,6 @@ $(window).load(function() {
             target.addClass('pull-right');
         }
     });
-
-    $(".fancybox-stamp").fancybox({
-                    autoSize: false,
-                    autoDimensions: false,
-                    width: 1000,
-                    height: 500,
-                    fitToView: false,
-                    showNavArrows: false,
-                    padding: 0,
-                    title: this.title,
-                    href: $(this).attr('href'),
-                    scrolling: 'no',
-                    type: 'iframe'
-                });
-
-
 
 })
 

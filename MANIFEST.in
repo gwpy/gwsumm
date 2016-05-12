@@ -2,3 +2,5 @@ include LICENSE README.rst MANIFEST.in
 include ez_setup.py
 include versioneer.py
 include gwsumm/_version.py
+recursive-include gwsumm/html/static *.min.css *.min.js
+recursive-include share *.ini

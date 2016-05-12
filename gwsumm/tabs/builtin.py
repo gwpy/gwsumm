@@ -676,7 +676,7 @@ class StateTab(PlotTab):
         # build interferometer cross-links
         if ifo is not None:
             brand_.add(str(html.base_map_dropdown(ifo, id_='ifos', **ifomap)))
-            class_ = 'navbar navbar-fixed-top navbar-ifo'
+            class_ = 'navbar navbar-fixed-top navbar-%s' % ifo.lower()
         else:
             class_ = 'navbar navbar-fixed-top'
         # build HTML brand

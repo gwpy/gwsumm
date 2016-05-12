@@ -32,11 +32,10 @@ from ...mode import *
 from ...utils import re_cchar
 
 # set resources
-BOOTSTRAPCSS = [
-    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css']
-BOOTSTRAPJS = [
-    '//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js']
-
+BOOTSTRAP_VERSION = "3.3.6"
+BOOTSTRAP_CDN = '//netdna.bootstrapcdn.com/bootstrap/%s' % BOOTSTRAP_VERSION
+BOOTSTRAP_CSS = '%s/css/bootstrap.min.css' % BOOTSTRAP_CDN
+BOOTSTRAP_JS = '%s/js/bootstrap.min.js' % BOOTSTRAP_CDN
 
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}
@@ -90,7 +89,7 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     return page
 
 
-def navbar(links, class_='navbar navbar-fixed-top navbar-ifo',
+def navbar(links, class_='navbar navbar-fixed-top',
            brand=None, dropdown_class=[''], collapse=True):
     """Construct a navigation bar in bootstrap format.
 

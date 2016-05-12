@@ -13,3 +13,7 @@
 *.swp
 /.cache/
 /.eggs/
+/*.egg
+/share/css/
+.sass-cache
+/gwsumm/html/static/

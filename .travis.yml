@@ -36,8 +36,8 @@ install:
 
 script:
   - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" -m py.test -v gwsumm/
-  - coverage run --apend --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary` --help
-  - coverage run --apend --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary_pipe` --help
+  - coverage run --append --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary` --help
+  - coverage run --append --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary_pipe` --help
 
 after_success:
   - coveralls

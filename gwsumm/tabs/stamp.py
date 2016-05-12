@@ -117,7 +117,7 @@ class StampPEMTab(base):
 
         else:
             page.add(str(self.scaffold_plots(
-                aclass='fancybox fancybox-stamp plot',
+                aclass='fancybox-stamp plot',
                 **{'data-fancybox-type': 'iframe'})))
             page.hr(class_='row-divider')
 

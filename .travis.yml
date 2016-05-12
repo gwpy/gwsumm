@@ -1,39 +1,47 @@
 language: python
 
-virtualenv:
-  system_site_packages: true
-
-sudo: false
-
 addons:
   apt:
     packages:
-      - gcc
-      - gfortran
-      - libblas-dev
-      - liblapack-dev
-      - python-m2crypto
-      - swig
+      - gcc  # nds2
+      - gfortran  # numpy/scipy
+      - libblas-dev  # numpy/scipy
+      - liblapack-dev  # numpy/scipy
+      - swig  # m2crypto
       - libhdf5-serial-dev
+
+matrix:
+  include:
+    - python: 2.6
+    - python: 2.7
+      env: PRE=""
+    - python: 3.5
+    - python: nightly
+    - python: 2.7
+      env: PRE="--pre"
+  allow_failures:
+    - python: 3.5
+    - python: nightly
+    - python: 2.7
+      env: PRE="--pre"
 
 before_install:
   - . .travis/build-nds2.sh
   - pip install -q --upgrade pip
+  - pip install ${PRE} -r requirements.txt
+  - pip install ${PRE} -q coveralls pytest unittest2
 
 install:
-  - pip install `grep "/glue-" requirements.txt`  # install glue first
-  - pip install -r requirements.txt
-  - pip install -q coveralls "pytest>=2.8"
-  - python setup.py build
+  - pip install .
 
 script:
   - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" -m py.test -v gwsumm/
-  - pip install .
+  - coverage run --apend --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary` --help
+  - coverage run --apend --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary_pipe` --help
 
 after_success:
   - coveralls
 
 cache:
   apt: true
-  directories:
-    - $HOME/.cache/pip
+  pip: true

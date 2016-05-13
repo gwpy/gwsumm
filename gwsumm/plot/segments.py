@@ -530,8 +530,8 @@ class DutyDataPlot(SegmentDataPlot):
         duty = numpy.zeros(len(bins))
         mean = numpy.zeros(len(bins))
         for i in range(len(bins)):
-            bin = SegmentList([Segment(self.start + sum(bins[:i]),
-                                       self.start + sum(bins[:i+1]))])
+            bin = SegmentList([Segment(float(self.start) + sum(bins[:i]),
+                                       float(self.start) + sum(bins[:i+1]))])
             d = float(abs(segments & bin))
             if normalized:
                 d *= normalized / float(bins[i])

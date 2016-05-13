@@ -20,16 +20,22 @@
 
 """
 
+import os.path
+
+import pytest
+
 from gwpy.detector import Channel
 
+from gwsumm import tabs
+from gwsumm.plot import SummaryPlot
+
 from .compat import unittest
-from .. import tabs
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-class TabTests(unittest.TestCase):
-    """`TestCase` for the `gwsumm.tabs` module
+class TabRegistryTestCase(unittest.TestCase):
+    """`TestCase` for the `gwsumm.tabs` registry
     """
     def test_registry(self):
         # test get
@@ -48,3 +54,117 @@ class TabTests(unittest.TestCase):
         self.assertIs(tabs.get_tab('test'), TestTab)
         tabs.register_tab(TestTab, name='test-with-name')
         self.assertIs(tabs.get_tab('test-with-name'), TestTab)
+
+# -- test tab classes ---------------------------------------------------------
+
+
+class TabTestCase(unittest.TestCase):
+    TYPE = 'basic'
+    DEFAULT_ARGS = ['Test']
+
+    @classmethod
+    def setUpClass(cls):
+        cls.TAB = tabs.get_tab(cls.TYPE)
+
+    def _create(self, *args, **kwargs):
+        args = list(args)
+        while len(args) < len(self.DEFAULT_ARGS):
+            args.append(self.DEFAULT_ARGS[len(args)])
+        print(args)
+        return self.TAB(*args, **kwargs)
+
+    def test_init(self):
+        self._test_init('Test')
+
+    def _test_init(self, *args, **kwargs):
+        if len(args) == 0:
+           args = self.DEFAULT_ARGS
+        # test basic creation and defaults
+        tab = self._create(*args, **kwargs)
+        self.assertEqual(tab.type, self.TYPE)
+        self.assertEqual(tab.name, args[0])
+        self.assertEqual(tab.shortname, kwargs.pop('shortname', tab.name))
+        self.assertEqual(tab.children, kwargs.pop('children', []))
+        self.assertEqual(tab.parent, kwargs.pop('parent', None))
+        self.assertEqual(tab.group, kwargs.pop('group', None))
+        self.assertEqual(tab.path, kwargs.pop('path', os.path.curdir))
+        self.assertEqual(tab.hidden, kwargs.pop('hidden', False))
+        return tab
+
+    def test_shortname(self):
+        tab = self._create()
+        self.assertEqual(tab.shortname, tab.name)
+        tab = self._create('Test', shortname='ShortTest')
+        self.assertEqual(tab.shortname, 'ShortTest')
+
+    def test_index(self):
+        tab = self._create()
+        self.assertEqual(tab.index, os.path.join('test', 'index.html'))
+        tab2 = self._create('Parent')
+        del tab.index
+        tab.set_parent(tab2)
+        self.assertEqual(tab.index,
+                         os.path.join('parent', 'test', 'index.html'))
+
+
+class ArchivedTabMixin(object):
+    @classmethod
+    def setUpClass(cls):
+        cls.TYPE = 'archived-%s' % cls.TYPE
+        super(ArchivedTabMixin, cls).setUpClass()
+        cls.DEFAULT_ARGS += [0, 1000]
+
+    def _test_init(self, *args, **kwargs):
+        tab = super(ArchivedTabMixin, self)._test_init(*args, **kwargs)
+        self.assertTupleEqual(tab.span, tuple(self.DEFAULT_ARGS[-2:]))
+        return tab
+
+
+# -- external tab
+
+class ExternalTabTestCase(TabTestCase):
+    TYPE = 'external'
+    DEFAULT_ARGS = ['Test', '//test.com']
+
+    def test_init(self):
+        tab = self._test_init()
+        self.assertEqual(tab.url, '//test.com')
+
+
+class ArchivedExternalTabTestCase(ArchivedTabMixin, ExternalTabTestCase):
+    pass
+
+
+# -- plot tab
+
+class PlotTabTestCase(TabTestCase):
+    TYPE = 'plots'
+
+    def test_init(self):
+        plots = ['test.png']
+        tab = self._test_init('Test', plots=plots)
+        self.assertListEqual(tab.plots, map(SummaryPlot, plots))
+        self.assertIsNone(tab.layout)
+
+    def test_add_plot(self):
+        tab = self._create()
+        before = tab.plots[:]
+        plot = 'test.png'
+        tab.add_plot(plot)
+        self.assertListEqual(tab.plots, before + [SummaryPlot(href=plot)])
+
+    def test_layout(self):
+        tab = self._create()
+        tab.set_layout(1)
+        self.assertListEqual(tab.layout, [1])
+        tab.set_layout((1, 2))
+        self.assertListEqual(tab.layout, [1, 2])
+        tab.set_layout((1, (1, 2)))
+        self.assertListEqual(tab.layout, [1, (1, 2)])
+        self.assertRaises(ValueError, tab.set_layout, 'test')
+        self.assertRaises(ValueError, tab.set_layout, [1, (1, 2, 1)])
+        with pytest.warns(DeprecationWarning):
+            tab.layout = [1]
+
+class ArchivedPlotTabTestCase(ArchivedTabMixin, PlotTabTestCase):
+    pass

@@ -62,7 +62,6 @@ else:
 # -- dependencies -------------------------------------------------------------
 
 setup_requires = [
-    'setuptools',
     'pytest-runner',
     'libsass',
     'jsmin',

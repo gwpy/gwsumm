@@ -9,3 +9,6 @@ http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
 gwpy
 libsass
 jsmin
+pytest>=2.8
+unittest2
+coveralls

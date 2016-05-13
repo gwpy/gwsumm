@@ -198,6 +198,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # read new triggers
     query &= (abs(new) != 0)
     if query:
+        ntrigs = 0
+        vprint("    Grabbing %s triggers for %s... " % (etg, str(channel)))
         # store read kwargs
         kwargs = {'columns': columns}
 
@@ -247,6 +249,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 kwargs['contenthandler'] = contenthandler
             table = TableClass.read(segcache, **kwargs)
             globalv.TRIGGERS[key].extend(table)
+            ntrigs += len(table)
             try:
                 csegs = cache_segments(segcache)
             except AttributeError:
@@ -257,7 +260,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 globalv.TRIGGERS[key].segments = csegs
             finally:
                 globalv.TRIGGERS[key].segments.coalesce()
-            vprint('\r')
+        vprint("%d events read\n" % ntrigs)
 
     # work out time function
     if return_:

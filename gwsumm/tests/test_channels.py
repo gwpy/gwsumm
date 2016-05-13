@@ -20,9 +20,9 @@
 
 """
 
-from .compat import unittest
-from .. import (globalv, channels)
-from ..mode import set_mode
+from compat import unittest
+from gwsumm import (globalv, channels)
+from gwsumm.mode import set_mode
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

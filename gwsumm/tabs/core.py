@@ -205,6 +205,10 @@ class Tab(object):
     def index(self, p):
         self._index = p
 
+    @index.deleter
+    def index(self):
+        self._index = None
+
     @property
     def href(self):
         """HTML href (relative to the :attr:`~Tab.path`) for this tab

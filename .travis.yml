@@ -29,7 +29,7 @@ before_install:
   - . .travis/build-nds2.sh
   - pip install -q --upgrade pip
   - pip install ${PRE} -r requirements.txt
-  - pip install ${PRE} -q coveralls pytest unittest2
+  - pip install ${PRE} -q coveralls pytest pytest-runner unittest2
 
 install:
   - pip install .

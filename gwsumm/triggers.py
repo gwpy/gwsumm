@@ -22,6 +22,7 @@
 import os.path
 import glob
 import re
+import warnings
 try:
     from configparser import (ConfigParser, NoSectionError, NoOptionError)
 except ImportError:
@@ -197,6 +198,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     # read new triggers
     query &= (abs(new) != 0)
     if query:
+        ntrigs = 0
+        vprint("    Grabbing %s triggers for %s... " % (etg, str(channel)))
         # store read kwargs
         kwargs = {'columns': columns}
 
@@ -217,9 +220,13 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                     float(get_row_value(t, 'time')) in segment and
                     t.channel == str(channel))
             if cache is None:
-                segcache = trigfind.find_trigger_urls(str(channel), etg,
-                                                      segment[0],
-                                                      segment[1])
+                try:
+                    segcache = trigfind.find_trigger_urls(str(channel), etg,
+                                                          segment[0],
+                                                          segment[1])
+                except ValueError as e:
+                    warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
+                    continue
                 if etg.lower() == 'omega':
                     kwargs['format'] = 'omega'
                 else:
@@ -242,6 +249,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 kwargs['contenthandler'] = contenthandler
             table = TableClass.read(segcache, **kwargs)
             globalv.TRIGGERS[key].extend(table)
+            ntrigs += len(table)
             try:
                 csegs = cache_segments(segcache)
             except AttributeError:
@@ -252,7 +260,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 globalv.TRIGGERS[key].segments = csegs
             finally:
                 globalv.TRIGGERS[key].segments.coalesce()
-            vprint('\r')
+        vprint("%d events read\n" % ntrigs)
 
     # work out time function
     if return_:

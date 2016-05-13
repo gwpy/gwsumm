@@ -62,7 +62,6 @@ else:
 # -- dependencies -------------------------------------------------------------
 
 setup_requires = [
-    'setuptools',
     'pytest-runner',
     'libsass',
     'jsmin',
@@ -84,7 +83,7 @@ requires = [
     'h5py',
 ]
 tests_require = [
-    'pytest'
+    'pytest>=2.8'
 ]
 if sys.version < (2.7):
     tests_require.append('unittest2')

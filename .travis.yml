@@ -29,13 +29,13 @@ before_install:
   - . .travis/build-nds2.sh
   - pip install -q --upgrade pip
   - pip install ${PRE} -r requirements.txt
-  - pip install ${PRE} -q coveralls pytest unittest2
+  - pip install ${PRE} -q coveralls "pytest>=2.8" pytest-runner unittest2
 
 install:
   - pip install .
 
 script:
-  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" -m py.test -v gwsumm/
+  - coverage run --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" ./setup.py test
   - coverage run --append --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary` --help
   - coverage run --append --source=gwsumm --omit="gwsumm/tests/*,gwsumm/*version*" `which gw_summary_pipe` --help
 

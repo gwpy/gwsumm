@@ -19,6 +19,8 @@
 """This module defines a number of `Tab` subclasses.
 """
 
+import warnings
+
 from .core import (Tab, SummaryArchiveMixin)
 from .registry import register_tab
 from ..plot import get_plot
@@ -216,7 +218,7 @@ class PlotTab(Tab):
         self.plots = []
         for p in plots:
             self.add_plot(p)
-        self.layout = layout
+        self.set_layout(layout)
         self.foreword = foreword
         self.afterword = afterword
 
@@ -234,9 +236,67 @@ class PlotTab(Tab):
 
     @layout.setter
     def layout(self, l):
-        if isinstance(l, (str, unicode)):
-            l = eval(l)
-        self._layout = l
+        warnings.warn("Use of `Tab.layout = ...` has been deprecated, "
+                      "please switch to using `Tab.set_layout(...)`",
+                      DeprecationWarning)
+        self.set_layout(l)
+
+    def set_layout(self, l):
+        """Set the plot scaffolding layout for this tab
+
+        Parameters
+        ----------
+        l : `int`, `list` of `int`
+            the desired scaffold layout, one of
+
+            - an `int`, indicating the number of plots on every row, or
+            - a `list`, indicating the number of plots on each row, with
+              the final `int` repeated for any remaining rows; each entry
+              should be an `int` or a pair of `int` indicating the
+              number of plots on this row AND the desired the scaling of
+              this row, see the examples...
+
+        Examples
+        --------
+        To layout 2 plots on each row
+
+        >>> tab.set_layout(2)
+
+        or
+
+        >>> tab.set_layout([2])
+
+        To layout 2 plots on the first row, and 3 on all other rows
+
+        >>> tab.set_layout((2, 3))
+
+        To layout 2 plots on the first row, and 1 on the second row BUT
+        have it the same size as plots on a 2-plot row
+
+        >>> tab.set_layout((2, (1, 2))
+        """
+        # shortcut None
+        if l is None:
+            self._layout = None
+            return
+        # parse a single int
+        if isinstance(l, int) or (isinstance(l, str) and l.isdigit()):
+            self._layout = [int(l)]
+            return
+        # otherwise parse as a list of ints or pairs of ints
+        if isinstance(l, str):
+            l = l.split(',')
+        self._layout = []
+        for e in l:
+            if isinstance(e, int):
+                self._layout.append(e)
+                continue
+            if isinstance(e, str):
+                e = e.strip('([').rstrip(')]').split(',')
+            if not isinstance(e, (list, tuple)) or not len(e) == 2:
+                raise ValueError("Cannot parse layout element %r (%s)"
+                                 % (e, type(e)))
+            self._layout.append(tuple(map(int, e)))
 
     @property
     def foreword(self):

@@ -96,7 +96,7 @@ class Tab(object):
         self.shortname = shortname
         # structure
         self._children = []
-        self.parent = parent
+        self.set_parent(parent)
         self.children = children
         self.group = group
         # HTML format
@@ -149,6 +149,16 @@ class Tab(object):
 
     @parent.setter
     def parent(self, p):
+        self.set_parent(p)
+
+    def set_parent(self, p):
+        """Set the parent `Tab` for this tab
+
+        Parameters
+        ----------
+        p : `Tab`
+            the parent tab for this one
+        """
         if p and self._children:
             raise ValueError("A tab cannot have both a parent, and a "
                              "set of children.")
@@ -194,6 +204,10 @@ class Tab(object):
     @index.setter
     def index(self, p):
         self._index = p
+
+    @index.deleter
+    def index(self):
+        self._index = None
 
     @property
     def href(self):
@@ -883,9 +897,9 @@ class TabList(list):
         # 3. Sort all tabs into their parent sets
         for tab in filter(lambda tab: tab.parent is not None, self):
             if tab.parent in parents:
-                tab.parent = parents[tab.parent]
+                tab.set_parent(parents[tab.parent])
             elif not isinstance(tab.parent, Tab):
-                tab.parent = get_tab('default')(tab.parent, *tab.span)
+                tab.set_parent(get_tab('default')(tab.parent, *tab.span))
             parents.setdefault(tab.parent.name, tab.parent)
             if tab not in tab.parent.children:
                 tab.parent.add_child(tab)
@@ -939,4 +953,5 @@ class TabList(list):
             else:
                 tab = Tab.from_ini(config, section, path=path)
             tabs.append(tab)
+        tabs.get_hierarchy()  # call this to resolve map parent names to tabs
         return tabs

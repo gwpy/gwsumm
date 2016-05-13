@@ -29,8 +29,8 @@ from numpy import testing as nptest
 
 from gwpy.timeseries import TimeSeries
 
-from .compat import unittest
-from .. import (archive, data, globalv, channels)
+from compat import unittest
+from gwsumm import (archive, data, globalv, channels)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

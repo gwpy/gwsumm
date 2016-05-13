@@ -17,3 +17,4 @@
 /share/css/
 .sass-cache
 /gwsumm/html/static/
+/.coverage

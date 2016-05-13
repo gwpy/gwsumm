@@ -22,8 +22,8 @@
 
 from gwpy.detector import Channel
 
-from .compat import unittest
-from .. import data
+from compat import unittest
+from gwsumm import data
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

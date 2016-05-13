@@ -24,6 +24,8 @@ import os.path
 import re
 from StringIO import StringIO
 
+from lxml import etree
+
 from gwpy.plotter.tex import label_to_latex
 
 re_bit_label = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
@@ -96,7 +98,6 @@ class SvgMixin(object):
         pass
 
     def finalize_svg(self, tree, outputfile, script=None):
-        from lxml import etree
         if script:
             tree.insert(0, etree.XML(script))
         etree.ElementTree(tree).write(outputfile)
@@ -109,7 +110,6 @@ class SvgMixin(object):
 
 class DataLabelSvgMixin(SvgMixin):
     def process_svg(self, outputfile):
-        from lxml import etree
         for ax in self.plot.axes:
             for line in ax.lines:
                 line.set_rasterized(True)

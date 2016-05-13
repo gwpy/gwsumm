@@ -953,4 +953,5 @@ class TabList(list):
             else:
                 tab = Tab.from_ini(config, section, path=path)
             tabs.append(tab)
+        tabs.get_hierarchy()  # call this to resolve map parent names to tabs
         return tabs

@@ -52,6 +52,7 @@ JS['fancybox'] = (
 JS['datepicker'] = (
     '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
     '1.6.0/js/bootstrap-datepicker.min.js')
+JS['bootstrap-ligo'] = os.path.join(STATICDIR, 'bootstrap-ligo.min.js')
 JS['gwsumm'] = os.path.join(STATICDIR, 'gwsumm.min.js')
 
 CSS = OrderedDict()

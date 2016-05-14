@@ -605,7 +605,6 @@ class DataTab(DataTabBase):
         """
         page = html.markup.page()
         page.div(id_='main')
-        page.div(class_='container')
         page.div('', id_='content')
         page.add(str(html.load(frame, id_='content')))
         if globalv.HTML_COMMENTS_NAME:
@@ -617,7 +616,6 @@ class DataTab(DataTabBase):
             page.h1('Comments')
             page.add(str(html.comments_box(
                 globalv.HTML_COMMENTS_NAME, identifier=id_)))
-        page.div.close()
         page.div.close()
         return page
 

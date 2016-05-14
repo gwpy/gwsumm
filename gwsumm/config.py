@@ -94,6 +94,9 @@ class GWSummConfigParser(ConfigParser):
     def from_configparser(cls, cp):
         """Copy an existing :class:`~ConfigParser.ConfigParser`.
         """
+        # if its already what we need, just return this instance
+        if isinstance(cp, cls):
+           return cp
         # set up temporary buffer
         buf = StringIO()
         # write to buffer

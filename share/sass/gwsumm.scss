@@ -2,27 +2,29 @@
  * gwsumm.scss - CSS extensions for bootstrap-ligo.css
  */
 
-// custom nav-bar elements
+body {
+		background-color: #eee;
+}
+
 .navbar {
 		// map page to another IFO
 		.base-map {
 				padding-right: 5px;
 				margin-right: 10px;
-				//margin-right: 10px;
 				.dropdown-menu {
-						//margin-left: -15px;
-						min-width: 54px;
+						min-width: 44px;
 						width: 100%;
 						a {
-								padding-left: 16px;
+								padding-left: 12px;
 								cursor: pointer;
 						}
-						@media (min-width: 1200px) {
+						@media (min-width: 768px) {
 								margin-left: -15px;
+								min-width: 52px;
+								a {
+										padding-left: 16px;
+								}
 						}
-				}
-				@media (max-width: 1199px) {
-						margin-right: -5px;
 				}
 		}
 
@@ -33,9 +35,8 @@
 						padding-right: 20px;
 						white-space: normal;;
 				}
-				@media (min-width: 1200px) {
+				@media (min-width: 768px) {
 						position: absolute;
-						float: right;
 						right: 0;
 				}
 		}

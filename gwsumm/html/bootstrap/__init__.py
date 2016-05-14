@@ -315,7 +315,8 @@ def wrap_content(page):
     return out
 
 
-def footer(user=True, about=None, issues=True, content=None, span=12):
+def footer(user=True, about=None, issues=True, content=None, span=12,
+           class_='footer'):
     """Construct a footer with the given HTML content
 
     Parameters
@@ -341,7 +342,7 @@ def footer(user=True, about=None, issues=True, content=None, span=12):
             </footer>
     """
     page = markup.page(twotags=['footer'])
-    page.FOOTER()
+    page.FOOTER(class_=class_)
     page.div(class_='container')
     page.div(class_='row')
     page.div(class_='col-md-%d' % span)

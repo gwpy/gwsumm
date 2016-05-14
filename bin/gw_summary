@@ -248,6 +248,9 @@ def add_output_options(parser_):
                           default=False,
                           help="Generate inner HTML and contents only, not "
                                "supporting HTML")
+    outopts.add_argument('-N', '--no-htaccess', action='store_true',
+                         default=False, help='don\'t create a .htaccess file '
+                                             'to customise 404 errors')
 
 
 # define hierarchichal archiving choise
@@ -581,7 +584,7 @@ else:
     base = None
 
 # write 404 error page
-if not opts.no_html and urlbase:
+if not opts.no_htaccess and not opts.no_html and urlbase:
     top = os.path.join(urlbase, path)
     four0four = get_tab('404')(span[0], span[1], parent=None, path=path,
                                index=os.path.join(path, '404.html'))

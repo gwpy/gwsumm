@@ -24,7 +24,7 @@ import os.path
 import re
 from StringIO import StringIO
 
-from xml.etree import ElementTree as etree
+from lxml import etree
 
 from gwpy.plotter.tex import label_to_latex
 

@@ -469,7 +469,6 @@ class Tab(object):
         initargs.setdefault('metainfo', html.META)
         self.page = html.markup.page()
         self.page.init(css=css, script=js, title=title, base=base, **initargs)
-        self.page.div(id_='wrap')
         return self.page
 
     def finalize_html_page(self, user=True, issues=True, about=None,
@@ -507,8 +506,6 @@ class Tab(object):
         if not self.page:
             raise RuntimeError("Cannot finalize HTML page before intialising "
                                "one")
-        # close #wrap div
-        self.page.div.close()
         # add footer
         self.page.add(str(html.footer(user=user, issues=issues, about=about,
                                       content=content)))
@@ -571,8 +568,7 @@ class Tab(object):
             brand_.div(str(brand), class_='navbar-brand')
         # combine and return
         return html.navbar(self._build_nav_links(tabs), class_=class_,
-                           brand=brand_,
-                           dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
+                           brand=brand_)
 
     def _build_nav_links(self, tabs):
         """Construct the ordered list of tabs to write into the navbar
@@ -663,9 +659,7 @@ class Tab(object):
         """
         page = html.markup.page()
         page.div(id_='main')
-        page.div(class_='container')
         page.div(str(content), id_='content')
-        page.div.close()
         page.div.close()
         return page
 
@@ -722,12 +716,17 @@ class Tab(object):
         # add navigation
         self.page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
                                                  tabs=tabs, brand=brand)))
+        # -- open main page container
+        self.page.div(class_='container')
+
         # add banner
         self.page.add(str(self.build_html_banner(title=title,
                                                  subtitle=subtitle)))
 
         # add #main content
         self.page.add(str(self.build_html_content(maincontent)))
+
+        self.page.div.close()  # container
         # close page and write
         self.finalize_html_page(about=about, content=footer)
         with open(self.index, 'w') as fobj:

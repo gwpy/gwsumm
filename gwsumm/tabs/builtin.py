@@ -747,8 +747,7 @@ class StateTab(PlotTab):
 
         # combine and return
         return html.navbar(self._build_nav_links(tabs), brand=brand_,
-                           class_=class_,
-                           dropdown_class=['hidden-xs visible-lg', 'hidden-lg'])
+                           class_=class_)
 
     @staticmethod
     def build_html_content(frame):

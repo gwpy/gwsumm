@@ -74,7 +74,6 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     """
     page = markup.page()
     page.div(class_='banner')
-    page.div(class_='container')
     if titleclass is None:
         page.h1(str(title))
     else:
@@ -84,13 +83,12 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     elif subtitle is not None:
         page.p(subtitle)
     page.div.close()
-    page.div.close()
 
     return page
 
 
 def navbar(links, class_='navbar navbar-fixed-top',
-           brand=None, dropdown_class=[''], collapse=True):
+           brand=None, collapse=True):
     """Construct a navigation bar in bootstrap format.
 
     Parameters
@@ -133,29 +131,23 @@ def navbar(links, class_='navbar navbar-fixed-top',
 
     # ---- collapsable part (<nav>) ----
 
-    # build dropdown menus
-    #    - this model allows for multiple copies of the menus to be written
-    #      for multiple screen sizes
-    if isinstance(dropdown_class, (str, unicode)):
-        dropdown_class = [dropdown_class]
     if links:
-        for ddclass in dropdown_class:
-            page.ul(class_='nav navbar-nav %s' % ddclass)
-            for i, link in enumerate(links):
-                if (isinstance(link, (list, tuple)) and
-                        isinstance(link[1], basestring)):
-                    page.li()
-                    text, link = link
-                    page.a(text, href=link)
-                elif (isinstance(link, (list, tuple)) and
-                      isinstance(link[1], (list, tuple))):
-                    page.li(class_='dropdown')
-                    page.add(str(dropdown(*link)))
-                else:
-                    page.li()
-                    page.add(str(link))
-                page.li.close()
-            page.ul.close()
+        page.ul(class_='nav navbar-nav')
+        for i, link in enumerate(links):
+            if (isinstance(link, (list, tuple)) and
+                    isinstance(link[1], basestring)):
+                page.li()
+                text, link = link
+                page.a(text, href=link)
+            elif (isinstance(link, (list, tuple)) and
+                  isinstance(link[1], (list, tuple))):
+                page.li(class_='dropdown')
+                page.add(str(dropdown(*link)))
+            else:
+                page.li()
+                page.add(str(link))
+            page.li.close()
+        page.ul.close()
 
     page.nav.close()
     page.div.close()
@@ -389,7 +381,7 @@ def state_switcher(states, default=0):
                onclick='$(this).load_state(\'%s\');' % href)
         page.li.close()
     page.ul.close()
-    page.div.close()
+    page.div.close()  # btn-group
     return page
 
 

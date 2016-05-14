@@ -81,6 +81,7 @@ requires = [
     'astropy',
     'gwpy',
     'h5py',
+    'lxml',
 ]
 tests_require = [
     'pytest>=2.8'

@@ -205,7 +205,7 @@ popts = sharedopts.add_argument_group("Process options",
                                       "processed.")
 popts.add_argument('--nds', action='store_true', default='guess',
                    help='use NDS as the data source')
-popts.add_argument('--multi-process', action='store', type=int,
+popts.add_argument('-j', '--multi-process', action='store', type=int,
                    default=1, dest='multiprocess', metavar='N',
                    help="use a maximum of N parallel processes at any time")
 popts.add_argument('-b', '--bulk-read', action='store_true', default=False,

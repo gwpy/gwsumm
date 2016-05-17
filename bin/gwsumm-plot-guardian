@@ -12,6 +12,9 @@ from multiprocessing import cpu_count
 
 from collections import OrderedDict
 
+from matplotlib import use
+use('agg')
+
 from gwpy.time import to_gps
 
 from gwsumm import globalv
@@ -96,6 +99,7 @@ if args.archive or args.read_only_archive:
 
 # make tab
 tab = GuardianTab.from_ini(config, sec, path='.', plotdir='.')
+tab.plots = tab.plots[:1]
 tab.plots[0].pargs.update(params)
 tab.plots[0].pargs['epoch'] = args.epoch
 
@@ -103,13 +107,7 @@ tab.plots[0].pargs['epoch'] = args.epoch
 vprint("Processing:\n")
 tab.process(multiprocess=args.nproc)
 plotfile = tab.plots[0].outputfile
-for tag in ['SEGMENT_PIE', 'SEGMENT_BAR']:
-    if os.path.isfile(plotfile.replace('SEGMENTS', tag)):
-        os.remove(plotfile.replace('SEGMENTS', tag))
-try:
-    os.rename(plotfile, args.output_file)
-except OSError as e:
-    tab.process(multiprocess=1)
+os.rename(plotfile, args.output_file)
 vprint('Plot saved to %s\n' % args.output_file)
 
 # crop and save archive

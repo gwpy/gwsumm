@@ -204,7 +204,7 @@ def get_default_ifo(fqdn=getfqdn()):
     ValueError
         if not default interferometer prefix can be parsed
     """
-    if '.uni-hannover.' in fqdn:
+    if '.uni-hannover.' in fqdn or '.atlas.' in fqdn:
         return 'G1'
     elif '.ligo-wa.' in fqdn:
         return 'H1'

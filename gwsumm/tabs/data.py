@@ -713,7 +713,7 @@ class DataTab(DataTabBase):
                     if regex.match(ftype):
                         ftype += ' <small>[%s]</small>' % desc
                         break
-                if re.search('.[a-z]+\Z', channel.name):
+                if re.search('\.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
                     ctype = ctype in ['rms'] and ctype.upper() or ctype.title()

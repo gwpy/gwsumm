@@ -25,6 +25,10 @@ import sys
 from StringIO import StringIO
 from importlib import import_module
 
+# import these for evaluating lambda expressions in the configuration file
+import math
+import numpy
+
 from six.moves import http_client as httplib
 
 if sys.version_info[0] >= 3:

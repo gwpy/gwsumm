@@ -295,7 +295,11 @@ The following channel configuration options are understood for a `DataTab`:
 
 ==================  ===========================================================
 channels            comma-separated list of channels to configure
-frametype           GWF type code to query for data frames
+frametype           GWF type code to query for data frames. Use a bar-separated
+                    part to specify a string to match frame URLS for, e.g.
+                    ``frametype = T|RDS9`` will find `T`-type frame files whose
+                    full URLs contain the string `RDS9` (looking at you
+                    GEO-600)
 resample            number of samples per second at which to resample data
 unit                physical unit of the data (after any filtering)
 filter              time-domain filter to apply. Should be of the form \

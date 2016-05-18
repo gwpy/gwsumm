@@ -161,6 +161,12 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
     if gpsend <= gpsstart:
         return Cache()
 
+    # parse match
+    try:
+        frametype, match = frametype.split('|', 1)
+    except ValueError:
+        match = None
+
     def _query():
         if cert is not None:
             dfconn = datafind.GWDataFindHTTPSConnection(
@@ -168,7 +174,8 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=ConfigParser(),
         else:
             dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
         return dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart,
-                                      gpsend, urltype=urltype, on_gaps=gaps)
+                                      gpsend, urltype=urltype, on_gaps=gaps,
+                                      match=match)
     try:
         cache = _query()
     except RuntimeError as e:

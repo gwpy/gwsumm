@@ -29,14 +29,30 @@ try:
 except ImportError:
     GSSError = None
 
+try:
+    from gwpy.io.nds import NDS2_CHANNEL_TYPE
+except ImportError:
+    NDS2_TYPES = [
+        'm-trend', 'online', 'raw', 'rds', 'reduced',
+        's-trend', 'static', 'test-pt',
+    ]
+else:
+    NDS2_TYPES = NDS2_CHANNEL_TYPE.keys()
+
 from gwpy.detector import Channel
 
 from . import globalv
 from .mode import *
+from .utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 CIS_URL = 'https://cis.ligo.org'
+
+re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
+                         '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
+                         '(?:\.[a-z]+)?'  # trend type
+                         '(?:,[a-z-]+)?')  # NDS channel type
 
 
 class ThreadChannelQuery(threading.Thread):
@@ -214,3 +230,53 @@ def update_missing_channel_params(channel, **kwargs):
         if getattr(target, param) is None:
             setattr(target, param, kwargs[param])
     return target
+
+
+def split(channelstring):
+    """Split a comma-separated list of channels that may, or may not
+    contain NDS2 channel types as well
+    """
+    out = []
+    channelstring = re_quote.sub('', channelstring)
+    while True:
+        channelstring = channelstring.strip('\' \n')
+        if ',' not in channelstring:
+            break
+        # check for complete line without NDS type
+        line = channelstring.split('\n')[0].rstrip('\', \n')
+        if not ',' in line:
+            try:
+                channelstring = channelstring.split('\n', 1)[1]
+            except IndexError:
+                pass
+            else:
+                out.append(line)
+                continue
+        # check for channel name with optional nds type
+        for nds2type in NDS2_TYPES + ['']:
+            if nds2type and ',%s' % nds2type in channelstring:
+                try:
+                    channel, ctype, channelstring = channelstring.split(',', 2)
+                except ValueError:
+                    channel, ctype = channelstring.split(',')
+                    channelstring = ''
+                out.append('%s,%s' % (channel, ctype))
+                break
+            elif nds2type == '' and ',' in channelstring:
+                channel, channelstring = channelstring.split(',', 1)
+                out.append(channel)
+                break
+    if channelstring:
+        out.append(channelstring)
+    return out
+
+
+def split_combination(channelstring):
+    """Split a math-combination of channels
+    """
+    channel = Channel(channelstring)
+    chanstrs = re_channel.findall(channel.ndsname)
+    if channel.ifo == 'G1':
+        return channel.ndsname.split(' ')
+    else:
+        return re_channel.findall(channel.ndsname)

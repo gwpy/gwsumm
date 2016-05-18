@@ -40,6 +40,8 @@ from astropy.time import Time
 from gwpy.segments import DataQualityFlag
 
 from .. import (globalv, html)
+from ..channels import (re_channel,
+                        split_combination as split_channel_combination)
 from ..config import *
 from ..mode import (get_mode, MODE_ENUM)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
@@ -48,7 +50,7 @@ from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_channel, re_flagdiv, vprint, count_free_cores)
+from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores)
 
 from .registry import (get_tab, register_tab)
 
@@ -702,7 +704,7 @@ class DataTab(DataTabBase):
             for channel in sorted(channels, key=lambda x: str(x)):
                 channel = get_channel(channel)
                 # don't write combination meta-channels
-                parts = re_channel.findall(channel.ndsname)
+                parts = split_channel_combination(channel.ndsname)
                 if len(parts) != 1 or len(parts[0]) != len(channel.ndsname):
                     continue
                 # format CIS url and type

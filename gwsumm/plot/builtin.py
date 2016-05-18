@@ -39,7 +39,8 @@ from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 
 from .. import (globalv, mode)
-from ..utils import (re_quote, re_cchar, split_channels)
+from ..utils import re_quote, re_cchar
+from ..channels import split as split_channels
 from ..data import (get_channel, get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum, get_coherence_spectrum,
                     add_timeseries)

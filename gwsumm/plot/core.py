@@ -40,8 +40,8 @@ from gwpy.plotter.utils import rUNDERSCORE
 from . import rcParams
 from .registry import register_plot
 from .. import globalv
-from ..channels import get_channel
-from ..utils import (vprint, split_channels)
+from ..channels import (get_channel, split as split_channels)
+from ..utils import vprint
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
@@ -421,7 +421,10 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = []
         for c in all_:
-            name = c.texname.rsplit('.', 1)[0]
+            if c.ifo == 'G1' and re.search('-(av|min|max)\Z', c.texname):
+                name = c.texname.rsplit('-', 1)[0]
+            else:
+                name = c.texname.rsplit('.', 1)[0]
             if ' ' in c.texname:
                 out.append((c.texname, [c]))
             else:
@@ -431,7 +434,7 @@ class DataPlot(SummaryPlot):
                     out.append((name, [c]))
                 else:
                     out[id_][1].append(c)
-        order = ['rms', 'mean', 'min', 'max']
+        order = ['rms', 'mean', 'av', 'min', 'max']
         for channel, clist in out:
             clist.sort(key=lambda c: c.name.split('.')[-1] in order and
                                         order.index(c.name.split('.')[-1])+1 or

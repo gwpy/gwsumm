@@ -26,27 +26,11 @@ import re
 from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
-from gwpy.detector import Channel
-
-try:
-    from gwpy.io.nds import NDS2_CHANNEL_TYPE
-except ImportError:
-    NDS2_TYPES = [
-        'm-trend', 'online', 'raw', 'rds', 'reduced',
-        's-trend', 'static', 'test-pt',
-    ]
-else:
-    NDS2_TYPES = NDS2_CHANNEL_TYPE.keys()
-
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
-re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
-                         '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
-                         '(?:\.[a-z]+)?'  # trend type
-                         '(?:,[a-z-]+)?')  # NDS channel type
 
 # define some colours
 WARNC = '\033[93m'
@@ -129,45 +113,6 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-
-
-def split_channels(channelstring):
-    """Split a comma-separated list of channels that may, or may not
-    contain NDS2 channel types as well
-    """
-    out = []
-    channelstring = re_quote.sub('', channelstring)
-    while True:
-        channelstring = channelstring.strip('\' \n')
-        if ',' not in channelstring:
-            break
-        # check for complete line without NDS type
-        line = channelstring.split('\n')[0].rstrip('\', \n')
-        if not ',' in line:
-            try:
-                channelstring = channelstring.split('\n', 1)[1]
-            except IndexError:
-                pass
-            else:
-                out.append(line)
-                continue
-        # check for channel name with optional nds type
-        for nds2type in NDS2_TYPES + ['']:
-            if nds2type and ',%s' % nds2type in channelstring:
-                try:
-                    channel, ctype, channelstring = channelstring.split(',', 2)
-                except ValueError:
-                    channel, ctype = channelstring.split(',')
-                    channelstring = ''
-                out.append('%s,%s' % (channel, ctype))
-                break
-            elif nds2type == '' and ',' in channelstring:
-                channel, channelstring = channelstring.split(',', 1)
-                out.append(channel)
-                break
-    if channelstring:
-        out.append(channelstring)
-    return out
 
 
 def count_free_cores(max=cpu_count()):

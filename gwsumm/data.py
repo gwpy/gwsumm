@@ -69,7 +69,8 @@ from gwpy.io import nds as ndsio
 from . import globalv
 from .mode import *
 from .utils import *
-from .channels import (get_channel, update_missing_channel_params)
+from .channels import (get_channel, update_missing_channel_params,
+                       split_combination as split_channel_combination)
 
 OPERATOR = {
     '*': operator.mul,
@@ -287,11 +288,8 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
             frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
-            allchannels = set([
-                c for group in
-                    map(lambda x: re_channel.findall(Channel(x).ndsname),
-                        channels)
-                for c in group])
+            allchannels = set([c for group in
+                map(split_channel_combination, channels) for c in group])
             for channel in allchannels:
                 channel = get_channel(channel)
                 ifo = channel.ifo
@@ -313,7 +311,7 @@ def get_timeseries_dict(channels, segments, config=ConfigParser(),
         out = OrderedDict()
         for channel in channels:
             channel = Channel(channel)
-            chanstrs = re_channel.findall(channel.ndsname)
+            chanstrs = split_channel_combination(channel)
             chans = map(get_channel, chanstrs)
             tsdict = _get_timeseries_dict(chans, segments, config=config,
                                           query=False, statevector=statevector,

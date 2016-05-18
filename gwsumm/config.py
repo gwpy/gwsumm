@@ -47,8 +47,8 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
-from .utils import (nat_sorted, split_channels, re_cchar)
-from .channels import get_channels
+from .utils import (nat_sorted, re_cchar)
+from .channels import (get_channels, split as split_channels)
 
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
 

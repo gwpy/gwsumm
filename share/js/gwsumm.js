@@ -178,9 +178,7 @@ $(window).load(function() {
     endDate: moment().utc().format('DD/MM/YYYY'),
     todayHighlight: true,
     todayBtn: "linked"
-  }).on('changeDate', move_to_date)
-    .on('changeMonth', move_to_date)
-    .on('changeYear', move_to_date);
+  }).on('changeDate', move_to_date);
 
   // load correct run type
   if (location.hash.length > 1) {

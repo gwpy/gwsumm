@@ -57,7 +57,7 @@ class StampPEMTab(base):
         """
         # parse generic configuration
         new = super(StampPEMTab, cls).from_ini(config, section, **kwargs)
-        new.layout = [2]
+        new.set_layout([2])
 
         # work out day directory and url
         new.directory = os.path.normpath(config.get(section, 'base-directory'))

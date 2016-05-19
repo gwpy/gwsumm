@@ -62,7 +62,7 @@ class FscanTab(base):
 
         # parse generic configuration
         new = super(FscanTab, cls).from_ini(config, section, **kwargs)
-        new.layout = [2]
+        new.set_layout([2])
 
         # work out day directory and url
         new.channel = config.get(section, 'channel')

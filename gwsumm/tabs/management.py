@@ -65,7 +65,7 @@ class AccountingTab(ParentTab):
         # -----------
         # build plots
 
-        new.layout = [2,2]
+        new.set_layout([2, 2])
         new.segmenttag = '%s:%%s' % (new.channel)
         tag = new.channel.split(':', 1)[-1].replace('-', '_')
 

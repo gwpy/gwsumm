@@ -105,7 +105,7 @@ class GuardianTab(DataTab):
 
         # -- build plots ------------------------
 
-        new.layout = [1, 2]
+        new.set_layout([1, 2])
         grdidxs = dict((state, idx) for idx, state in
                        new.grdstates.iteritems())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)

@@ -67,7 +67,7 @@ else:
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.time import (tconvert, to_gps, Time)
-from gwpy.spectrum import lal_ as lalpsd
+from gwpy.frequencyseries import lal_ as lalpsd
 
 from gwsumm import (globalv, mode, __version__)
 from gwsumm.config import *

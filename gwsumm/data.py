@@ -582,7 +582,13 @@ def _get_timeseries_dict(channels, segments, config=ConfigParser(),
                 else:
                     # filter with function
                     if callable(filt):
-                        data = filt(data)
+                        try:
+                            data = filt(data)
+                        except TypeError as e:
+                            if 'Can only apply' in str(e):
+                                data.value[:] = filt(data.value)
+                            else:
+                                raise
                     # filter with gain
                     elif (isinstance(filt, tuple) and len(filt) == 3 and
                               len(filt[0] + filt[1]) == 0):

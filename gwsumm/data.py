@@ -69,7 +69,7 @@ from gwpy.io import nds as ndsio
 from . import globalv
 from .mode import *
 from .utils import *
-from .channels import (get_channel, update_missing_channel_params,
+from .channels import (get_channel, update_missing_channel_params, re_channel,
                        split_combination as split_channel_combination)
 
 OPERATOR = {
@@ -676,7 +676,7 @@ def get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
 
     # read data for all sub-channels
     specs = []
-    channels = re_channel.findall(channel.ndsname)
+    channels = split_channel_combination(channel)
     for c in channels:
         specs.append(_get_spectrogram(c, segments, config=config, cache=cache,
                                       query=query, nds=nds, format=format,
@@ -1282,10 +1282,10 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
     channels = map(get_channel, channels)
     # get timeseries data in bulk
     if query:
-        qchannels = map(
-            get_channel, set(c2 for c in
-                map(lambda x: re_channel.findall(x.ndsname), channels)
-                for c2 in c))
+        qchannels = map(get_channel,
+                        set([c for group in
+                             map(split_channel_combination, channels)
+                             for c in group]))
         if format in ['rayleigh']:
             method_ = format
         else:
@@ -1328,11 +1328,10 @@ def get_coherence_spectrograms(channel_pairs, segments, config=ConfigParser(),
 
     # get timeseries data in bulk
     if query:
-        qchannels = map(
-            get_channel, set(
-                c2 for c in
-                map(lambda x: re_channel.findall(x.ndsname), channels)
-                for c2 in c))
+        qchannels = map(get_channel,
+                        set([c for group in
+                             map(split_channel_combination, channels)
+                             for c in group]))
         keys = [channel.ndsname for channel in qchannels]
         havesegs = reduce(operator.and_, (globalv.COHERENCE_SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))

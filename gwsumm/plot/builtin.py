@@ -120,7 +120,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         return super(TimeSeriesDataPlot, self).finalize(
                    outputfile=outputfile, close=close, **savekwargs)
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
         """
         (plot, axes) = self.init_plot()
@@ -254,7 +254,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     def pid(self):
         del self._pid
 
-    def process(self):
+    def draw(self):
         # initialise
         (plot, axes) = self.init_plot()
         ax = axes[0]
@@ -370,16 +370,16 @@ class SpectrumDataPlot(DataPlot):
                 'no_percentiles': False,
                 'reference_linestyle': '--'}
 
-    def process(self):
+    def draw(self):
         pargs = self.pargs.copy()
         try:
-            self._process()
+            self._draw()
         except OverflowError:
             self.pargs = pargs
             self.pargs['alpha'] = 0.0
-            self._process()
+            self._draw()
 
-    def _process(self):
+    def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
         plot = self.plot = FrequencySeriesPlot(
@@ -583,7 +583,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                  histargs.setdefault('alpha', 0.7)
         return kwargs
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         """Get data and generate the figure.
         """
         # get plot and axes
@@ -714,7 +714,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                  }
         return kwargs
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         """Get data and generate the figure.
         """
         # get histogram parameters
@@ -807,7 +807,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
                 varargs[key] = self.pargs.pop(key)
         return varargs
 
-    def _process(self):
+    def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
         plot = self.plot = FrequencySeriesPlot(

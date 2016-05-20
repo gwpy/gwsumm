@@ -137,7 +137,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             return super(TimeSeriesDataPlot, self).finalize(
                        outputfile=outputfile, close=close, **savekwargs)
 
-    def process(self):
+    def draw(self):
         # get columns
         xcolumn, ycolumn, ccolumn = self.columns
 
@@ -303,7 +303,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
     type = 'trigger-timeseries'
     data = 'triggers'
 
-    def process(self):
+    def draw(self):
         """Read in all necessary data, and generate the figure.
         """
         (plot, axes) = self.init_plot()
@@ -410,7 +410,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
         ax.grid(True, which='both')
         return self.plot, ax
 
-    def process(self):
+    def draw(self):
         """Get data and generate the figure.
         """
         # get histogram parameters
@@ -533,7 +533,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
     def pid(self, id_):
         self._pid = str(id_)
 
-    def process(self):
+    def draw(self):
         """Read in all necessary data, and generate the figure.
         """
 
@@ -595,7 +595,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         channels = self.channels
         outputfile = self.outputfile
         self.channels = keys
-        out = super(TriggerRateDataPlot, self).process(outputfile=outputfile)
+        out = super(TriggerRateDataPlot, self).draw(outputfile=outputfile)
         self.channels = channels
         return out
 

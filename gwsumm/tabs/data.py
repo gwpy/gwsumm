@@ -225,7 +225,7 @@ class DataTab(DataTabBase):
             mods = {}
             for key, val in cp.nditems(section):
                 if key.startswith('%d-' % index):
-                    opt = re_cchar.sub('_', key.split('-', 1)[1].lower())
+                    opt = key.split('-', 1)[1]
                     try:
                         mods[opt] = eval(val)
                     except (NameError, SyntaxError):
@@ -265,8 +265,8 @@ class DataTab(DataTabBase):
                 type_ = None
                 PlotClass = get_plot(pdef)
             # if the plot definition declares multiple states
-            if 'all_states' in mods:
-                mods.setdefault('all_data', True)
+            if 'all-states' in mods:
+                mods.setdefault('all-data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
                                               state=None, outdir=plotdir,

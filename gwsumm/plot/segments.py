@@ -191,7 +191,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             else:
                 return GREEN, 'red'
 
-    def process(self):
+    def draw(self):
         # get labelsize
         _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
@@ -339,7 +339,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             labels.append(None)
         return labels
 
-    def process(self):
+    def draw(self):
         # make font size smaller
         _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
@@ -541,7 +541,7 @@ class DutyDataPlot(SegmentDataPlot):
             duty = duty.cumsum()
         return duty, mean
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         sep = self.pargs.pop('sep', False)
         if sep:
             if self.pargs.get('side_by_side'):
@@ -758,7 +758,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
                     self._pid + str(self.pargs['bits'])).hexdigest()[:6]
             return self.pid
 
-    def process(self):
+    def draw(self):
         # make font size smaller
         _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
@@ -928,7 +928,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 wedgeargs[key[6:]] = self.pargs.pop(key)
         return wedgeargs
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         (plot, axes) = self.init_plot(plot=Plot)
         ax = axes[0]
 
@@ -1083,7 +1083,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         'legend-fontsize': 24,
     })
 
-    def process(self):
+    def draw(self):
         # get segments
         if self.state and not self.all_data:
             valid = self.state.active
@@ -1122,7 +1122,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         flags_ = self.flags
         outputfile = self.outputfile
         self.flags = networkflags
-        out = super(NetworkDutyPiePlot, self).process(outputfile=outputfile)
+        out = super(NetworkDutyPiePlot, self).draw(outputfile=outputfile)
         self.flags = flags_
         return out
 
@@ -1155,7 +1155,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         axes = [self.plot.gca()]
         return self.plot, axes
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         (plot, axes) = self.init_plot(plot=Plot)
         ax = axes[0]
 
@@ -1249,7 +1249,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 'bottom': 0,
                 'rwidth': 1}
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         # make axes
         (plot, axes) = self.init_plot()
 

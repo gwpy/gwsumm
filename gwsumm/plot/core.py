@@ -33,6 +33,8 @@ try:
 except ImportError:
     from astropy.utils import OrderedDict
 
+from matplotlib import rc_context
+
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter.utils import rUNDERSCORE
@@ -201,6 +203,7 @@ class DataPlot(SummaryPlot):
         self.all_data = all_data
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
+        self.parse_rcParams(self.pargs)
         self.plot = None
         self.read = read
         self.fileformat = fileformat
@@ -399,6 +402,15 @@ class DataPlot(SummaryPlot):
             labels.append(None)
         return labels
 
+    def parse_rcParams(self, params):
+        """Parse matplotlib rcParams settings from a dict of plot params
+        """
+        self.rcParams = {}
+        for key in params.keys():
+            if key in rcParams:
+                self.rcParams[key] = params.pop(key)
+        return self.rcParams
+
     def add_channel(self, channel):
         self._channels.append(channel)
 
@@ -450,10 +462,6 @@ class DataPlot(SummaryPlot):
             params = dict(config.nditems(section))
         except AttributeError:
             params = dict(config.items(section))
-        for key in params:
-            key2 = re_cchar.sub('_', key)
-            if key != key2:
-                params[key2] = params.pop(key)
 
         # get and check type
         ptype = re.sub('[\'\"]', '', params.pop('type'))
@@ -466,6 +474,10 @@ class DataPlot(SummaryPlot):
             channels = params.pop('channels', [])
         if isinstance(channels, (unicode, str)):
             channels = split_channels(channels)
+        # parse specific parameters
+        if 'all-data' in params:
+            params['all_data'] = params.pop('all-data')
+
         # parse other parameters
         for key, val in params.iteritems():
             try:
@@ -480,7 +492,13 @@ class DataPlot(SummaryPlot):
         # format and return
         return cls(channels, start, end, **params)
 
-    def process(self):
+    # -- figure processing ----------------------------------------------------
+
+    def process(self, outputfile=None, close=True):
+        with rc_context(rc=self.rcParams):
+            return self.draw()
+
+    def draw(self):
         """Process all data and generate the output file for this
         `SummaryPlot`.
 

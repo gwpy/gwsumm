@@ -87,14 +87,14 @@ class SvgMixin(object):
             outputfile = self.outputfile
         # make SVG
         if outputfile.endswith('.svg'):
-            self.process_svg(outputfile)
-        # or process as normal
+            self.draw_svg(outputfile)
+        # or continue as normal
         else:
             return super(SvgMixin, self).finalize(
                 outputfile=outputfile, close=close, **savekwargs)
 
     @abc.abstractmethod
-    def process_svg(self, outputfile):
+    def draw_svg(self, outputfile):
         pass
 
     def finalize_svg(self, tree, outputfile, script=None):
@@ -109,7 +109,7 @@ class SvgMixin(object):
 
 
 class DataLabelSvgMixin(SvgMixin):
-    def process_svg(self, outputfile):
+    def draw_svg(self, outputfile):
         for ax in self.plot.axes:
             for line in ax.lines:
                 line.set_rasterized(True)
@@ -169,7 +169,7 @@ class DataLabelSvgMixin(SvgMixin):
 
 
 class SegmentLabelSvgMixin(SvgMixin):
-    def process_svg(self, outputfile):
+    def draw_svg(self, outputfile):
         # render image
         super(SvgMixin, self).finalize(outputfile=StringIO(), close=False)
         ax = self.plot.axes[0]

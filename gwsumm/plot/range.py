@@ -63,7 +63,7 @@ class RangePlotMixin(object):
                 value = [value]*len(self.channels)
             self.rangeparams[key] = value
 
-    def process(self):
+    def draw(self):
         """Read in all necessary data, and generate the figure.
         """
         # generate data
@@ -86,7 +86,7 @@ class RangePlotMixin(object):
         channels = self.channels
         outputfile = self.outputfile
         self.channels = keys
-        out = super(RangePlotMixin, self).process(outputfile=outputfile)
+        out = super(RangePlotMixin, self).draw(outputfile=outputfile)
         self.channels = channels
         return out
 
@@ -168,7 +168,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         ts[:] = livetime(ts.times.value) * ts.unit
         return (4/3. * pi * ts * range ** 3).to('Mpc^3 year')
 
-    def process(self, outputfile=None):
+    def draw(self, outputfile=None):
         """Generate the figure for this plot
         """
         plot, axes = self.init_plot()

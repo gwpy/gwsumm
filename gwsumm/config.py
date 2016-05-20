@@ -328,10 +328,15 @@ class GWSummConfigParser(ConfigParser):
         """Load custom `matplotlib.rcParams` for plots in this analysis
         """
         try:
-            new = self.nditems(section)
+            new = dict(self.nditems(section))
         except NoSectionError:
             return []
         else:
+            for key, value in new.items():
+                try:
+                    new[key] = eval(value)
+                except (SyntaxError, NameError):
+                    new[key] = value
             rcParams.update(new)
             return new
 

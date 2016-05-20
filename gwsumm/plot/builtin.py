@@ -367,7 +367,7 @@ class SpectrumDataPlot(DataPlot):
                 'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
-                'no_percentiles': False,
+                'no-percentiles': False,
                 'reference_linestyle': '--'}
 
     def draw(self):
@@ -399,7 +399,7 @@ class SpectrumDataPlot(DataPlot):
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
         use_percentiles = str(
-            self.pargs.pop('no_percentiles')).lower() == 'false'
+            self.pargs.pop('no-percentiles')).lower() == 'false'
 
         # parse plotting arguments
         plotargs = self.parse_plot_kwargs()
@@ -528,7 +528,7 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
                 'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
-                'no_percentiles': False,
+                'no-percentiles': False,
                 'reference_linestyle': '--'}
 
     # override this to allow us to set the legend manually
@@ -788,7 +788,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     defaults = {
         'logx': True,
         'logy': True,
-        'reference_linestyle': '--',
+        'reference-linestyle': '--',
         'log': True,
         'nbins': 100,
     }
@@ -964,7 +964,7 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
                 'logy': True,
                 'alpha': 0.1,
                 'zorder': 1,
-                'no_percentiles': True,
-                'reference_linestyle': '--'}
+                'no-percentiles': True,
+                'reference-linestyle': '--'}
 
 register_plot(RayleighSpectrumDataPlot)

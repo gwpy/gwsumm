@@ -479,6 +479,8 @@ channels = config.load_channels()
 vprint("    Loaded %d channels\n" % len(channels))
 states = config.load_states()
 vprint("    Loaded %d states\n" % len(states))
+rcp = config.load_rcParams()
+vprint("    Loaded %d rcParams\n" % len(rcp))
 
 # read list of tabs
 tablist = TabList.from_ini(config, match=opts.process_tab,

@@ -45,6 +45,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from matplotlib import rcParams
+
 from astropy import units
 
 from gwpy.detector import (Channel, ChannelList)
@@ -321,6 +323,17 @@ class GWSummConfigParser(ConfigParser):
             states.insert(0, all_)
 
         return states
+
+    def load_rcParams(self, section='rcParams'):
+        """Load custom `matplotlib.rcParams` for plots in this analysis
+        """
+        try:
+            new = self.nditems(section)
+        except NoSectionError:
+            return []
+        else:
+            rcParams.update(new)
+            return new
 
     def get_css(self, section='html'):
         # get critical CSS

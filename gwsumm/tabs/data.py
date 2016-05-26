@@ -479,13 +479,12 @@ class DataTab(DataTabBase):
                              multiprocess=multiprocess, **fp2)
 
         if len(csgchannels):
-
             if (len(csgchannels)%2 != 0):
-                raise ValueError('Error processing coherence spectrograms: you must supply'
-                                 'exactly 2 channels for each spectrogram.')
-
-            vprint("    %d channel pairs identified for Coherence Spectrogram\n"
-                   % (len(csgchannels)/2))
+                raise ValueError("Error processing coherence spectrograms: "
+                                 "you must supply exactly 2 channels for "
+                                 "each spectrogram.")
+            vprint("    %d channel pairs identified for Coherence "
+                   "Spectrogram\n" % (len(csgchannels)/2))
 
             get_coherence_spectrograms(csgchannels, state, config=config, nds=nds,
                                        multiprocess=multiprocess, return_=False,

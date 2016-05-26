@@ -421,10 +421,10 @@ class SpectrumDataPlot(DataPlot):
         else:
             iterator = zip(self.channels, plotargs)
 
-        for tuple in iterator:
-            channel = tuple[0]
-            channel2 = tuple[1]
-            pargs = tuple[-1]
+        for chantuple in iterator:
+            channel = chantuple[0]
+            channel2 = chantuple[1]
+            pargs = chantuple[-1]
 
             if self.state and not self.all_data:
                 valid = self.state

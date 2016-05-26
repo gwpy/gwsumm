@@ -521,7 +521,7 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     """Coherence pectrum plot for a `SummaryTab`
     """
     type = 'coherence-spectrum'
-    data = 'coherence-spectrum'
+    data = 'coherence-spectrogram'
     defaults = {'logx': True,
                 'logy': False,
                 'format': None,

@@ -1195,9 +1195,9 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
 
         # average spectrograms to get PSDs and CSD
         try:
-            Cxy = cdict['Cxy'].mean(axis=0)
-            Cxx = cdict['Cxx'].mean(axis=0)
-            Cyy = cdict['Cyy'].mean(axis=0)
+            Cxy = complex_percentile(cdict['Cxy'], 50)
+            Cxx = cdict['Cxx'].percentile(50)
+            Cyy = cdict['Cyy'].percentile(50)
             globalv.COHERENCE_SPECTRUM[name] = FrequencySeries(
                 numpy.abs(Cxy)**2 / Cxx / Cyy, f0=Cxx.f0, df=Cxx.df)
         except (ValueError, IndexError):
@@ -1208,11 +1208,11 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
         else:
             # FIXME: how to calculate percentiles correctly?
             globalv.COHERENCE_SPECTRUM[cmin] = FrequencySeries(
-                abs(cdict['Cxy'].percentile(5))**2 /
+                abs(complex_percentile(cdict['Cxy'], 5))**2 /
                     cdict['Cxx'].percentile(95) /
                     cdict['Cyy'].percentile(95), f0=Cxx.f0, df=Cxx.df)
             globalv.COHERENCE_SPECTRUM[cmax] = FrequencySeries(
-                abs(cdict['Cxy'].percentile(95))**2 /
+                abs(complex_percentile(cdict['Cxy'], 95))**2 /
                     cdict['Cxx'].percentile(5) /
                     cdict['Cyy'].percentile(5), f0=Cxx.f0, df=Cxx.df)
 
@@ -1496,3 +1496,9 @@ def _get_from_list(serieslist, segment):
             return series.crop(segment)
     raise ValueError("Cannot crop series for segment %d from list"
                      % str(segment))
+
+
+def complex_percentile(array, percentile):
+    re = array.real.percentile(percentile)
+    im = array.imag.percentile(percentile) * 1j
+    return re + im

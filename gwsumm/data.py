@@ -869,14 +869,22 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
     channel2 = get_channel(channel_pair[1])
 
     # clean fftparams dict using channel 1 default values
-    fftparams = _clean_fftparams(fftparams, channel1)
+    fftparams = _clean_fftparams(fftparams, channel1, method='welch')
 
     # key used to store the coherence spectrogram in globalv
     key = _make_key(channel_pair, fftparams)
 
-    # check how much of the coherence spectrogram still needs to be calculated
-    new = segments - globalv.COHERENCE_SPECTROGRAMS.get(
-              key, SpectrogramList()).segments
+    # work out what new segments are needed
+    # need to truncate to segments of integer numbers of strides
+    stride = float(fftparams.pop('stride'))
+    new = type(segments)()
+    for seg in segments - globalv.COHERENCE_SPECTROGRAMS.get(
+            key, SpectrogramList()).segments:
+        dur = float(abs(seg))
+        if dur < stride:
+            continue
+        dur = dur // stride * stride
+        new.append(type(seg)(seg[0], seg[0]+dur))
 
     # get processes
     if multiprocess is True:
@@ -923,7 +931,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
         intersection = None
 
         # loop over components needed to calculate coherence
-        stride = float(fftparams.pop('stride'))
         for comp in components:
 
             # key used to store this component in globalv (incl sample rate)
@@ -943,17 +950,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
             # get data if there are new segments
             if abs(req) != 0:
-
-                # get time-series data
-                if stride is not None:
-                    tmp = type(req)()
-                    for s in req:
-                        if abs(s) < stride:
-                            continue
-                        else:
-                            d = float(abs(s))
-                            tmp.append(type(s)(s[0], s[0]+d//stride * stride))
-                    req = tmp
 
                 # calculate intersection of segments lazily
                 # this should occur on first pass (Cxy)
@@ -1029,7 +1025,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
                     if filter_:
                         specgram = (specgram**(1/2.)).filter(*filter_,
                                                              inplace=True) ** 2
-
                     globalv.COHERENCE_COMPONENTS[ckey].append(specgram)
                     globalv.COHERENCE_COMPONENTS[ckey].coalesce()
 
@@ -1038,12 +1033,14 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-    # calculate coherence from the components and store in globalv
-    for (cxy, cxx, cyy) in izip(
-            *[globalv.COHERENCE_COMPONENTS[ck] for ck in ckeys]):
-        csg = abs(cxy)**2 / cxx / cyy
-        globalv.COHERENCE_SPECTROGRAMS[key].append(csg)
-        globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
+        # calculate coherence from the components and store in globalv
+        for seg in new:
+            cxy, cxx, cyy = [
+                _get_from_list(globalv.COHERENCE_COMPONENTS[ck], seg) for
+                ck in ckeys]
+            csg = abs(cxy)**2 / cxx / cyy
+            globalv.COHERENCE_SPECTROGRAMS[key].append(csg)
+            globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
 
     if not return_:
         return
@@ -1187,11 +1184,11 @@ def get_coherence_spectrum(channel_pair, segments, config=ConfigParser(),
 
         # average spectrograms to get PSDs and CSD
         try:
-            Cxy = cdict['Cxy'].percentile(50)
-            Cxx = cdict['Cxx'].percentile(50)
-            Cyy = cdict['Cyy'].percentile(50)
+            Cxy = cdict['Cxy'].mean(axis=0)
+            Cxx = cdict['Cxx'].mean(axis=0)
+            Cyy = cdict['Cyy'].mean(axis=0)
             globalv.COHERENCE_SPECTRUM[name] = FrequencySeries(
-                abs(Cxy)**2 / Cxx / Cyy, f0=Cxx.f0, df=Cxx.df)
+                numpy.abs(Cxy)**2 / Cxx / Cyy, f0=Cxx.f0, df=Cxx.df)
         except (ValueError, IndexError):
             globalv.COHERENCE_SPECTRUM[name] = FrequencySeries(
                 [], channel=channel1, f0=0, df=1, unit=units.Unit(''))
@@ -1476,3 +1473,16 @@ def _clean_fftparams(fftparams, channel, **defaults):
         raise ZeroDivisionError("FFT length is 0")
 
     return out
+
+
+def _get_from_list(serieslist, segment):
+    """Internal function to crop a series from a serieslist
+
+    Should only be used in situations where the existence of the target
+    data within the list is guaranteed
+    """
+    for series in serieslist:
+        if segment in series.span:
+            return series.crop(segment)
+    raise ValueError("Cannot crop series for segment %d from list"
+                     % str(segment))

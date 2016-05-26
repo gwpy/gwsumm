@@ -422,10 +422,10 @@ class SpectrumDataPlot(DataPlot):
         else:
             iterator = zip(self.channels, plotargs)
 
-        for tuple in iterator:
-            channel = tuple[0]
-            channel2 = tuple[1]
-            pargs = tuple[-1]
+        for chantuple in iterator:
+            channel = chantuple[0]
+            channel2 = chantuple[1]
+            pargs = chantuple[-1]
 
             if self.state and not self.all_data:
                 valid = self.state
@@ -522,7 +522,7 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     """Coherence pectrum plot for a `SummaryTab`
     """
     type = 'coherence-spectrum'
-    data = 'coherence-spectrum'
+    data = 'coherence-spectrogram'
     defaults = {'logx': True,
                 'logy': False,
                 'format': None,
@@ -534,6 +534,16 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     # override this to allow us to set the legend manually
     def _parse_labels(self, defaults=None):
         return self.pargs.pop('labels', defaults)
+
+    def get_channel_groups(self):
+        """Hi-jacked method to return pairs of channels
+
+        For the `CoherenceSpectrumDataPlot` this method is only used in
+        determining how to separate lists of plotting argument given by
+        the user.
+        """
+        all_ = self.allchannels
+        return [(all_[i], all_[i:i+2]) for i in range(0, len(all_), 2)]
 
 register_plot(CoherenceSpectrumDataPlot)
 

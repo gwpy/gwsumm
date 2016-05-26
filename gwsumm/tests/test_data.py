@@ -57,12 +57,13 @@ class DataTests(unittest.TestCase):
         fftparams = data._clean_fftparams({}, 'L1:TEST-CHANNEL')
         self.assertDictEqual(
             fftparams,
-            {'window': None, 'fftlength': 1, 'overlap': 0.5, 'stride': 2.0})
+            {'window': None, 'fftlength': 1, 'overlap': 0.5, 'stride': 2.0,
+             'method': 'median-mean'})
         fftparams = data._clean_fftparams(
-            {'window': 'median-mean', 'overlap': 0}, 'L1:TEST-CHANNEL')
+            {'window': 'hanning', 'overlap': 0}, 'L1:TEST-CHANNEL')
         self.assertDictEqual(
             fftparams,
-            {'window': 'median-mean', 'fftlength': 1.0, 'overlap': 0.5,
-             'stride': 2.0})
+            {'window': 'hanning', 'fftlength': 1.0, 'overlap': 0.5,
+             'stride': 2.0, 'method': 'median-mean'})
         self.assertRaises(ZeroDivisionError, data._clean_fftparams,
                           {'stride': 0}, None)

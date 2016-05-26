@@ -461,10 +461,11 @@ class DataTab(DataTabBase):
         raychannels = self.get_channels('rayleigh-spectrogram',
                                         'rayleigh-spectrum',
                                         all_data=all_data, read=True)
-        # for coherence spectrograms, we need all pairs of channels, not just the unique ones
+        # for coherence spectrograms, we need all pairs of channels,
+        # not just the unique ones
         csgchannels = self.get_channels('coherence-spectrogram',
                                         all_data=all_data, read=True,
-                                        unique=False)
+                                        unique=False, state=state)
 
         if len(sgchannels):
             vprint("    %d channels identified for Spectrogram\n"
@@ -480,13 +481,12 @@ class DataTab(DataTabBase):
                              multiprocess=multiprocess, **fp2)
 
         if len(csgchannels):
-
             if (len(csgchannels)%2 != 0):
-                raise ValueError('Error processing coherence spectrograms: you must supply'
-                                 'exactly 2 channels for each spectrogram.')
-
-            vprint("    %d channel pairs identified for Coherence Spectrogram\n"
-                   % (len(csgchannels)/2))
+                raise ValueError("Error processing coherence spectrograms: "
+                                 "you must supply exactly 2 channels for "
+                                 "each spectrogram.")
+            vprint("    %d channel pairs identified for Coherence "
+                   "Spectrogram\n" % (len(csgchannels)/2))
 
             get_coherence_spectrograms(csgchannels, state, config=config, nds=nds,
                                        multiprocess=multiprocess, return_=False,

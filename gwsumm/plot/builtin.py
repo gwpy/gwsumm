@@ -534,6 +534,16 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     def _parse_labels(self, defaults=None):
         return self.pargs.pop('labels', defaults)
 
+    def get_channel_groups(self):
+        """Hi-jacked method to return pairs of channels
+
+        For the `CoherenceSpectrumDataPlot` this method is only used in
+        determining how to separate lists of plotting argument given by
+        the user.
+        """
+        all_ = self.allchannels
+        return [(all_[i], all_[i:i+2]) for i in range(0, len(all_), 2)]
+
 register_plot(CoherenceSpectrumDataPlot)
 
 

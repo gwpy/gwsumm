@@ -459,10 +459,11 @@ class DataTab(DataTabBase):
         raychannels = self.get_channels('rayleigh-spectrogram',
                                         'rayleigh-spectrum',
                                         all_data=all_data, read=True)
-        # for coherence spectrograms, we need all pairs of channels, not just the unique ones
+        # for coherence spectrograms, we need all pairs of channels,
+        # not just the unique ones
         csgchannels = self.get_channels('coherence-spectrogram',
                                         all_data=all_data, read=True,
-                                        unique=False)
+                                        unique=False, state=state)
 
         if len(sgchannels):
             vprint("    %d channels identified for Spectrogram\n"

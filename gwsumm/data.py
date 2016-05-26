@@ -1438,36 +1438,41 @@ def _make_key(channels, fftparams, method=None, sampling=None):
     return key
 
 
-def _clean_fftparams(fftparams, channel):
+def _clean_fftparams(fftparams, channel, **defaults):
 
     channel = get_channel(channel)
     # replace missing fftparams with defaults or values from given channel
 
-    fftparams = fftparams.copy()
-
     # set defaults
-    fftparams.setdefault('window', None)
-    fftparams.setdefault('fftlength', 1)
-    fftparams.setdefault('overlap', 0.5)
-    if fftparams['overlap'] != 0:
-        fftparams.setdefault('stride', ceil(fftparams['fftlength'] * 1.5))
+    out = {
+        'window': None,
+        'fftlength': 1,
+        'overlap': .5,
+        'method': 'median-mean'
+    }
+    out.update(defaults)
+    out.update(fftparams)
+    if out['overlap'] != 0:
+        out.setdefault('stride', ceil(out['fftlength'] * 1.5))
     else:
-        fftparams.setdefault('stride', fftparams['fftlength'])
+        out.setdefault('stride', out['fftlength'])
+
 
     # channel values take precedence
-    if hasattr(channel, 'window'):
-        fftparams['window'] = getattr(channel, 'window')
+    for param in ['window', 'method']:
+        if hasattr(channel, param):
+            out[param] = getattr(channel, param)
     for param in ['fftlength', 'overlap', 'stride']:
         if hasattr(channel, param):
-            fftparams[param] = float(getattr(channel, param))
+            out[param] = float(getattr(channel, param))
         # if channel doesn't have parameter, set it at the earliest oppotunity
         else:
-            setattr(channel, param, fftparams[param])
+            setattr(channel, param, out[param])
 
     # checks
-    if fftparams['stride'] == 0:
-        raise ZeroDivisionError("Coherence spectrogram stride is 0")
-    elif fftparams['fftlength'] == 0:
+    if out['stride'] == 0:
+        raise ZeroDivisionError("Spectrogram stride is 0")
+    elif out['fftlength'] == 0:
         raise ZeroDivisionError("FFT length is 0")
 
-    return fftparams
+    return out

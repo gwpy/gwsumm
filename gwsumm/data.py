@@ -1249,15 +1249,20 @@ def add_timeseries(timeseries, key=None, coalesce=True):
         globalv.DATA[key].coalesce()
 
 
-def add_spectrogram(specgram, key=None, coalesce=True):
+def add_spectrogram(specgram, key=None, coalesce=True,
+                    coherence_component=False):
     """Add a `Spectrogram` to the global memory cache
     """
     if key is None:
         key = specgram.name or str(specgram.channel)
-    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
-    globalv.SPECTROGRAMS[key].append(specgram)
+    if coherence_component:
+        gdict = globalv.COHERENCE_COMPONENTS
+    else:
+        gdict = globalv.SPECTROGRAMS
+    gdict.setdefault(key, SpectrogramList())
+    gdict[key].append(specgram)
     if coalesce:
-        globalv.SPECTROGRAMS[key].coalesce()
+        gdict[key].coalesce()
 
 
 def add_coherence_spectrogram(specgram, key=None, coalesce=True):

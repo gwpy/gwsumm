@@ -741,7 +741,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     fftparams = _clean_fftparams(fftparams, channel)
 
     # key used to store the coherence spectrogram in globalv
-    key = _make_key(channel, fftparams, method=method)
+    key = make_globalv_key(channel, fftparams, method=method)
 
     # extract spectrogram stride from dict
     stride = float(fftparams.pop('stride'))

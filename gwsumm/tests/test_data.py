@@ -45,10 +45,10 @@ class DataTests(unittest.TestCase):
         channel = Channel('H1:TEST-CHANNEL.rms,online')
         self.assertEqual(data.find_frame_type(channel), 'H1_lldetchar')
 
-    def test_make_key(self):
-        key = data._make_key('L1:TEST-CHANNEL',
-                             {'stride': 123.456, 'window': 'test-window'},
-                             method='test-method', sampling=654.321)
+    def test_make_globalv_key(self):
+        key = data.make_globalv_key(
+            'L1:TEST-CHANNEL', {'stride': 123.456, 'window': 'test-window'},
+            method='test-method', sampling=654.321)
         self.assertEqual(
             key, 'L1:TEST-CHANNEL;test-method;test-window;123.456;'
                  'None;None;654.321')

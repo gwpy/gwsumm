@@ -741,7 +741,7 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     fftparams = _clean_fftparams(fftparams, channel)
 
     # key used to store the coherence spectrogram in globalv
-    key = _make_key(channel, fftparams, method=method)
+    key = make_globalv_key(channel, fftparams, method=method)
 
     # extract spectrogram stride from dict
     stride = float(fftparams.pop('stride'))
@@ -883,13 +883,13 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
     fftparams = _clean_fftparams(fftparams, channel1, method='welch')
 
     # key used to store the coherence spectrogram in globalv
-    key = _make_key(channel_pair, fftparams)
+    key = make_globalv_key(channel_pair, fftparams)
 
     # work out what new segments are needed
     # need to truncate to segments of integer numbers of strides
     stride = float(fftparams.pop('stride'))
     new = type(segments)()
-    for seg in segments - globalv.COHERENCE_SPECTROGRAMS.get(
+    for seg in segments - globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments:
         dur = float(abs(seg))
         if dur < stride:
@@ -906,7 +906,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
         nproc = multiprocess
 
     # if there are no existing spectrogram, initialize as a list
-    globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
+    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     # XXX HACK: use dummy timeseries to find lower sampling rate
     if len(segments) > 0:
@@ -925,9 +925,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
     # keys used to store component spectrograms in globalv
     components = ('Cxy', 'Cxx', 'Cyy')
-    ckeys = [_make_key([channel1, channel2], fftparams, sampling=sampling),
-             _make_key(channel1, fftparams, sampling=sampling),
-             _make_key(channel2, fftparams, sampling=sampling)]
+    ckeys = [
+        make_globalv_key([channel1, channel2], fftparams, sampling=sampling),
+        make_globalv_key(channel1, fftparams, sampling=sampling),
+        make_globalv_key(channel2, fftparams, sampling=sampling),
+    ]
 
     # initialize component lists if they don't exist yet
     for ck in ckeys:
@@ -1050,8 +1052,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
                 _get_from_list(globalv.COHERENCE_COMPONENTS[ck], seg) for
                 ck in ckeys]
             csg = abs(cxy)**2 / cxx / cyy
-            globalv.COHERENCE_SPECTROGRAMS[key].append(csg)
-            globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
+            globalv.SPECTROGRAMS[key].append(csg)
+            globalv.SPECTROGRAMS[key].coalesce()
 
     if not return_:
         return
@@ -1080,7 +1082,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
         # return list of coherence spectrograms
         out = SpectrogramList()
-        for specgram in globalv.COHERENCE_SPECTROGRAMS[key]:
+        for specgram in globalv.SPECTROGRAMS[key]:
             for seg in segments:
                 if abs(seg) < specgram.dt.value:
                     continue
@@ -1247,15 +1249,20 @@ def add_timeseries(timeseries, key=None, coalesce=True):
         globalv.DATA[key].coalesce()
 
 
-def add_spectrogram(specgram, key=None, coalesce=True):
+def add_spectrogram(specgram, key=None, coalesce=True,
+                    coherence_component=False):
     """Add a `Spectrogram` to the global memory cache
     """
     if key is None:
         key = specgram.name or str(specgram.channel)
-    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
-    globalv.SPECTROGRAMS[key].append(specgram)
+    if coherence_component:
+        gdict = globalv.COHERENCE_COMPONENTS
+    else:
+        gdict = globalv.SPECTROGRAMS
+    gdict.setdefault(key, SpectrogramList())
+    gdict[key].append(specgram)
     if coalesce:
-        globalv.SPECTROGRAMS[key].coalesce()
+        gdict[key].coalesce()
 
 
 def add_coherence_spectrogram(specgram, key=None, coalesce=True):
@@ -1263,10 +1270,10 @@ def add_coherence_spectrogram(specgram, key=None, coalesce=True):
     """
     if key is None:
         key = specgram.name or str(specgram.channel)
-    globalv.COHERENCE_SPECTROGRAMS.setdefault(key, SpectrogramList())
-    globalv.COHERENCE_SPECTROGRAMS[key].append(specgram)
+    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
+    globalv.SPECTROGRAMS[key].append(specgram)
     if coalesce:
-        globalv.COHERENCE_SPECTROGRAMS[key].coalesce()
+        globalv.SPECTROGRAMS[key].coalesce()
 
 
 @use_segmentlist
@@ -1290,7 +1297,7 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
         keys = []
         for channel in qchannels:
             fftparams_ = _clean_fftparams(fftparams, channel)
-            keys.append(_make_key(channel, fftparams_, method=method))
+            keys.append(make_globalv_key(channel, fftparams_, method=method))
         havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))
         new = segments - havesegs
@@ -1322,16 +1329,21 @@ def get_coherence_spectrograms(channel_pairs, segments, config=ConfigParser(),
     """
 
     channels = map(get_channel, channel_pairs)
+    pairs = zip(channels[0::2], channels[1::2])
 
     # get timeseries data in bulk
     if query:
-        qchannels = map(get_channel,
-                        set([c for group in
-                             map(split_channel_combination, channels)
-                             for c in group]))
-        keys = [channel.ndsname for channel in qchannels]
-        havesegs = reduce(operator.and_, (globalv.COHERENCE_SPECTROGRAMS.get(
-            key, SpectrogramList()).segments for key in keys))
+        qchannels = []
+        havesegs = []
+        for c1, c2 in pairs:
+            c1 = get_channel(c1)
+            c2 = get_channel(c2)
+            fftparams_ = _clean_fftparams(fftparams, c1, method='welch')
+            key = make_globalv_key((c1, c2), fftparams_)
+            qchannels.extend((c1, c2))
+            havesegs.append(globalv.SPECTROGRAMS.get(
+                key, SpectrogramList()).segments)
+        havesegs = reduce(operator.and_, havesegs)
         new = segments - havesegs
         strides = set([getattr(c, 'stride', 0) for c in qchannels])
         if len(strides) == 1:
@@ -1344,12 +1356,11 @@ def get_coherence_spectrograms(channel_pairs, segments, config=ConfigParser(),
     # loop over channels and generate spectrograms
     out = OrderedDict()
 
-    for channel_pair in zip(channels[0::2], channels[1::2]):
-        out[channel] = get_coherence_spectrogram(
-                            channel_pair, segments, config=config, cache=cache,
-                            query=query, nds=nds, multiprocess=multiprocess,
-                            return_=return_, datafind_error=datafind_error,
-                            **fftparams)
+    for channel_pair in pairs:
+        out[channel_pair] = get_coherence_spectrogram(
+            channel_pair, segments, config=config, cache=cache, query=query,
+            nds=nds, multiprocess=multiprocess, return_=return_,
+            datafind_error=datafind_error, **fftparams)
     return out
 
 
@@ -1412,10 +1423,9 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
         return get_timeseries(key, segments, query=False)
 
 
-def _make_key(channels, fftparams, method=None, sampling=None):
-
-    # generate the key string used to store spectrograms in `globalv`
-
+def make_globalv_key(channels, fftparams, method=None, sampling=None):
+    """Generate a unique key for storing data in a globalv `dict`
+    """
     # foundation is channel name(s), input is a single channel or a list
     if isinstance(channels, basestring):
         key = channels

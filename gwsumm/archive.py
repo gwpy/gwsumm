@@ -91,16 +91,19 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
 
             # record all spectrogram data
             if spectrogram:
-                group = h5file.create_group('spectrogram')
-                # loop over channels
-                for key, speclist in globalv.SPECTROGRAMS.iteritems():
-                    # loop over time-series
-                    for spec in speclist:
-                        name = '%s,%s' % (key, spec.epoch.gps)
-                        try:
-                            spec.write(group, name=name, format='hdf')
-                        except ValueError:
-                            continue
+                for tag, gdict in zip(
+                        ['spectrogram', 'coherence-components'],
+                        [globalv.SPECTROGRAMS, globalv.COHERENCE_COMPONENTS]):
+                    group = h5file.create_group(tag)
+                    # loop over channels
+                    for key, speclist in gdict.iteritems():
+                        # loop over time-series
+                        for spec in speclist:
+                            name = '%s,%s' % (key, spec.epoch.gps)
+                            try:
+                                spec.write(group, name=name, format='hdf')
+                            except ValueError as e:
+                                warnings.warn(str(e))
 
             # record all segment data
             if segments:
@@ -160,15 +163,18 @@ def read_data_archive(sourcefile):
             add_timeseries(sv, key=sv.channel.ndsname)
 
         # read all spectrogram data
-        try:
-            group = h5file['spectrogram']
-        except KeyError:
-            group = dict()
-        for key, dataset in group.iteritems():
-            key = key.rsplit(',', 1)[0]
-            spec = Spectrogram.read(dataset, format='hdf')
-            spec.channel = get_channel(spec.channel)
-            add_spectrogram(spec, key=key)
+        for tag in ['spectrogram', 'coherence-components']:
+            try:
+                group = h5file[tag]
+            except KeyError:
+                group = dict()
+            for key, dataset in group.iteritems():
+                key = key.rsplit(',', 1)[0]
+                spec = Spectrogram.read(dataset, format='hdf')
+                spec.channel = get_channel(spec.channel)
+                add_spectrogram(
+                    spec, key=key,
+                    coherence_component=tag == 'coherence-components')
 
         try:
             group = h5file['segments']

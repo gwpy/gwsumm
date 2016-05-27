@@ -925,9 +925,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=ConfigParser(),
 
     # keys used to store component spectrograms in globalv
     components = ('Cxy', 'Cxx', 'Cyy')
-    ckeys = [_make_key([channel1, channel2], fftparams, sampling=sampling),
-             _make_key(channel1, fftparams, sampling=sampling),
-             _make_key(channel2, fftparams, sampling=sampling)]
+    ckeys = [
+        make_globalv_key([channel1, channel2], fftparams, sampling=sampling),
+        make_globalv_key(channel1, fftparams, sampling=sampling),
+        make_globalv_key(channel2, fftparams, sampling=sampling),
+    ]
 
     # initialize component lists if they don't exist yet
     for ck in ckeys:
@@ -1290,7 +1292,7 @@ def get_spectrograms(channels, segments, config=ConfigParser(), cache=None,
         keys = []
         for channel in qchannels:
             fftparams_ = _clean_fftparams(fftparams, channel)
-            keys.append(_make_key(channel, fftparams_, method=method))
+            keys.append(make_globalv_key(channel, fftparams_, method=method))
         havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments for key in keys))
         new = segments - havesegs
@@ -1412,10 +1414,9 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
         return get_timeseries(key, segments, query=False)
 
 
-def _make_key(channels, fftparams, method=None, sampling=None):
-
-    # generate the key string used to store spectrograms in `globalv`
-
+def make_globalv_key(channels, fftparams, method=None, sampling=None):
+    """Generate a unique key for storing data in a globalv `dict`
+    """
     # foundation is channel name(s), input is a single channel or a list
     if isinstance(channels, basestring):
         key = channels

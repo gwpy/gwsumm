@@ -94,14 +94,18 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     Channel : :class:`~gwpy.detector.channel.Channel`
         new channel.
     """
-    if ' ' in str(channel):
+    nchans = len(re_channel.findall(str(channel)))
+    if nchans > 1:
         name = str(channel)
         try:
             type_ = Channel.MATCH.match(name).groupdict()['type']
         except AttributeError:
             type_ = None
-        found = globalv.CHANNELS.sieve(name=name.replace('*', '\*'),
-                                       exact_match=True)
+        # handle special characters in channel name
+        rename = name
+        for cchar in ['+', '*', '^', '|']:
+            rename = rename.replace(cchar, '\%s' % cchar)
+        found = globalv.CHANNELS.sieve(name=rename, exact_match=True)
     elif ',' in str(channel):
         name, type_ = str(channel).rsplit(',', 1)
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
@@ -170,7 +174,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             return get_channel(new)
         except RuntimeError as e:
             if 'maximum recursion depth' in str(e):
-                raise RuntimeError("Recursion error while access channel "
+                raise RuntimeError("Recursion error while accessing channel "
                                    "information for %s" % str(channel))
             else:
                 raise

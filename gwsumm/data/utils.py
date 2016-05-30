@@ -203,9 +203,9 @@ def get_fftparams(channel, **defaults):
             pass
 
     # set stride to something sensible
-    if not fftparams.stride and fftparams.overlap:
+    if fftparams.stride is None and fftparams.overlap:
         fftparams.stride = fftparams.fftlength * 1.5
-    elif not fftparams.stride:
+    elif fftparams.stride is None:
         fftparams.stride = fftparams.fftlength
 
     # sanity check parameters

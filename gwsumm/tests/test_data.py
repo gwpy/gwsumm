@@ -20,10 +20,13 @@
 
 """
 
+import operator
+
 from gwpy.detector import Channel
 
 from compat import unittest
 from gwsumm import data
+from gwsumm.data import (utils, mathutils)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -46,24 +49,32 @@ class DataTests(unittest.TestCase):
         self.assertEqual(data.find_frame_type(channel), 'H1_lldetchar')
 
     def test_make_globalv_key(self):
-        key = data.make_globalv_key(
-            'L1:TEST-CHANNEL', {'stride': 123.456, 'window': 'test-window'},
-            method='test-method', sampling=654.321)
+        fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
+            stride=123.456, window='test-window', method='test-method')
+        key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
         self.assertEqual(
-            key, 'L1:TEST-CHANNEL;test-method;test-window;123.456;'
-                 'None;None;654.321')
+            key, 'L1:TEST-CHANNEL;test-method;;;test-window;123.456')
 
-    def test_clean_fftparams(self):
-        fftparams = data._clean_fftparams({}, 'L1:TEST-CHANNEL')
-        self.assertDictEqual(
-            fftparams,
-            {'window': None, 'fftlength': 1, 'overlap': 0.5, 'stride': 2.0,
-             'method': 'median-mean'})
-        fftparams = data._clean_fftparams(
-            {'window': 'hanning', 'overlap': 0}, 'L1:TEST-CHANNEL')
-        self.assertDictEqual(
-            fftparams,
-            {'window': 'hanning', 'fftlength': 1.0, 'overlap': 0.5,
-             'stride': 2.0, 'method': 'median-mean'})
-        self.assertRaises(ZeroDivisionError, data._clean_fftparams,
-                          {'stride': 0}, None)
+    def test_get_fftparams(self):
+        fftparams = utils.get_fftparams('L1:TEST-CHANNEL')
+        self.assertIsInstance(fftparams, utils.FftParams)
+        for key in utils.FFT_PARAMS.keys():
+            self.assertIsNone(getattr(fftparams, key))
+        fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
+                                        overlap=0)
+        self.assertEqual(fftparams.window, 'hanning')
+        self.assertEqual(fftparams.overlap, 0)
+        self.assertRaises(ZeroDivisionError, utils.get_fftparams,
+                          None, stride=0)
+
+    def test_parse_math_definition(self):
+        chans, operators = mathutils.parse_math_definition(
+            "L1:TEST*2 + L1:TEST2^5")
+        self.assertEqual(len(chans), 2)
+        self.assertListEqual(operators, [operator.add])
+        self.assertIsInstance(chans[0], tuple)
+        self.assertEqual(chans[0][0], 'L1:TEST')
+        self.assertTupleEqual(chans[0][1], (operator.mul, 2))
+        self.assertIsInstance(chans[1], tuple)
+        self.assertEqual(chans[1][0], 'L1:TEST2')
+        self.assertTupleEqual(chans[1][1], (operator.pow, 5))

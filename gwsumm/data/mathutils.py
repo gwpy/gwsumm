@@ -92,7 +92,7 @@ def parse_math_definition(definition):
                              "in definition %r" % definition)
         if c is not None:  # if between channels, find the combiner
             operators.append(get_operator(mathstr[-1]))
-            mathstr = mathstr[:-1]
+            mathstr = mathstr[:-1].strip()
         try:  # then parse some math to apply to the current channel
             cop = re_math.match(mathstr).groupdict()
         except AttributeError:

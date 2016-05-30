@@ -487,10 +487,12 @@ class DataTab(DataTabBase):
                                  "each spectrogram.")
             vprint("    %d channel pairs identified for Coherence "
                    "Spectrogram\n" % (len(csgchannels)/2))
+            fp2 = fftparams.copy()
+            fp2['method'] = 'welch'
             get_coherence_spectrograms(
                 csgchannels, state, config=config, nds=nds,
                 multiprocess=multiprocess, return_=False, cache=datacache,
-                datafind_error=datafind_error, **fftparams)
+                datafind_error=datafind_error, **fp2)
 
         # --------------------------------------------------------------------
         # process spectra

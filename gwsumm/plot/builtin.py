@@ -398,6 +398,10 @@ class SpectrumDataPlot(DataPlot):
 
         # get spectrum format: 'amplitude' or 'power'
         sdform = self.pargs.pop('format')
+        if sdform == 'rayleigh':
+            method = 'rayleigh'
+        else:
+            method = None
         use_percentiles = str(
             self.pargs.pop('no-percentiles')).lower() == 'false'
 
@@ -434,10 +438,10 @@ class SpectrumDataPlot(DataPlot):
 
             if self.type == 'coherence-spectrum':
                 data = get_coherence_spectrum([str(channel), str(channel2)],
-                                              valid, query=False, format=sdform)
+                                              valid, query=False)
             else:
                 data = get_spectrum(str(channel), valid, query=False,
-                                    format=sdform)
+                                    format=sdform, method=method)
 
             # anticipate log problems
             if self.pargs['logx']:

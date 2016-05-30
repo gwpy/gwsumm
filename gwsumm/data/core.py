@@ -66,11 +66,11 @@ except ImportError:
 from gwpy.spectrogram import SpectrogramList
 from gwpy.io import nds as ndsio
 
-from . import globalv
-from .mode import *
-from .utils import *
-from .channels import (get_channel, update_missing_channel_params, re_channel,
-                       split_combination as split_channel_combination)
+from .. import globalv
+from ..mode import *
+from ..utils import *
+from ..channels import (get_channel, update_missing_channel_params, re_channel,
+                        split_combination as split_channel_combination)
 
 OPERATOR = {
     '*': operator.mul,
@@ -728,8 +728,8 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
     channel = get_channel(channel)
 
     if method is None:
-        methods = set([key.split(',', 1)[1] for key in globalv.SPECTROGRAMS
-                       if key.startswith('%s,' % channel.ndsname)])
+        methods = set([key.split(';')[1] for key in globalv.SPECTROGRAMS
+                       if key.startswith('%s;' % channel.ndsname)])
         if len(methods) == 1:
             method = list(methods)[0]
         else:
@@ -738,10 +738,11 @@ def _get_spectrogram(channel, segments, config=ConfigParser(), cache=None,
         method = format
 
     # clean fftparams dict using channel default values
-    fftparams = _clean_fftparams(fftparams, channel)
+    fftparams = _clean_fftparams(fftparams, channel, method=method)
 
     # key used to store the coherence spectrogram in globalv
     key = make_globalv_key(channel, fftparams, method=method)
+    method = fftparams.pop('method', method)
 
     # extract spectrogram stride from dict
     stride = float(fftparams.pop('stride'))
@@ -1421,78 +1422,6 @@ def get_range(channel, segments, config=ConfigParser(), cache=None,
 
     if return_:
         return get_timeseries(key, segments, query=False)
-
-
-def make_globalv_key(channels, fftparams, method=None, sampling=None):
-    """Generate a unique key for storing data in a globalv `dict`
-    """
-    # foundation is channel name(s), input is a single channel or a list
-    if isinstance(channels, basestring):
-        key = channels
-    elif isinstance(channels, Channel):
-        key = channels.ndsname
-    elif all(isinstance(chan, basestring) for chan in channels):
-        key = ','.join(channels)
-    elif all(isinstance(chan, Channel) for chan in channels):
-        key = ','.join(map(lambda chan: chan.ndsname, channels))
-    else:
-        raise TypeError('Input is not a channel or list of channels.')
-
-    # parameters to append to channel names
-    p = []
-    p.append(method)
-    p.append(fftparams.get('window', None))
-    for param in ['stride', 'fftlength', 'overlap']:
-        try:
-            p.append(float(fftparams[param]))
-        except KeyError:
-            p.append(None)
-    p.append(sampling)
-
-    # build string
-    key = key + ';' + ';'.join(map(str, p))
-
-    return key
-
-
-def _clean_fftparams(fftparams, channel, **defaults):
-
-    channel = get_channel(channel)
-    # replace missing fftparams with defaults or values from given channel
-
-    # set defaults
-    out = {
-        'window': None,
-        'fftlength': 1,
-        'overlap': .5,
-        'method': 'median-mean'
-    }
-    out.update(defaults)
-    out.update(fftparams)
-    if out['overlap'] != 0:
-        out.setdefault('stride', ceil(out['fftlength'] * 1.5))
-    else:
-        out.setdefault('stride', out['fftlength'])
-
-
-    # channel values take precedence
-    for param in ['window', 'method']:
-        if hasattr(channel, param):
-            out[param] = getattr(channel, param)
-    for param in ['fftlength', 'overlap', 'stride']:
-        if hasattr(channel, param):
-            out[param] = float(getattr(channel, param))
-        # if channel doesn't have parameter, set it at the earliest oppotunity
-        else:
-            setattr(channel, param, out[param])
-
-    # checks
-    if out['stride'] == 0:
-        raise ZeroDivisionError("Spectrogram stride is 0")
-    elif out['fftlength'] == 0:
-        raise ZeroDivisionError("FFT length is 0")
-
-    return out
 
 
 def _get_from_list(serieslist, segment):

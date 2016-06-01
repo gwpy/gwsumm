@@ -20,10 +20,21 @@
 
 """
 
+import os.path
 import operator
+import tempfile
+import shutil
+
+try:  # py3
+    from urllib.request import urlopen
+except ImportError:  # py2
+    from urllib2 import urlopen
+
+from glue.lal import (Cache, CacheEntry)
 
 from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel
+from gwpy.segments import (Segment, SegmentList)
 
 from compat import unittest
 from gwsumm import (data, globalv)
@@ -31,10 +42,47 @@ from gwsumm.data import (utils, mathutils)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+LOSC_DATA = {
+    'H1:LOSC-STRAIN': ['https://losc.ligo.org/s/events/GW150914/'
+                       'H-H1_LOSC_4_V1-1126259446-32.gwf'],
+    'L1:LOSC-STRAIN': ['https://losc.ligo.org/s/events/GW150914/'
+                       'L-L1_LOSC_4_V1-1126259446-32.gwf'],
+}
+LOSC_SEGMENTS = SegmentList([Segment(1126259446, 1126259478)])
+
+
+def download(remote, target=None):
+    """Download a file
+    """
+    if target is None:
+        suffix = os.path.splitext(remote)[1]
+        _, target = tempfile.mkstemp(suffix=suffix, prefix='gwsumm-tests-')
+    response = urlopen(remote)
+    with open(target, 'w') as f:
+        f.write(response.read())
+    return target
+
 
 class DataTests(unittest.TestCase):
     """`TestCase` for the `gwsumm.data` module
     """
+    @classmethod
+    def setUpClass(cls):
+        cls.FRAMES = {}
+        cls._tempdir = tempfile.mkdtemp(prefix='gwsumm-test-data-')
+        # get data
+        for channel in LOSC_DATA:
+            cls.FRAMES[channel] = Cache()
+            for gwf in LOSC_DATA[channel]:
+                target = os.path.join(cls._tempdir, os.path.basename(gwf))
+                download(gwf, target)
+                cls.FRAMES[channel].append(CacheEntry.from_T050017(target))
+
+    @classmethod
+    def tearDownClass(cls):
+        # remove the temporary data
+        shutil.rmtree(cls._tempdir)
+
     def test_find_frame_type(self):
         channel = Channel('L1:TEST-CHANNEL')
         self.assertEqual(data.find_frame_type(channel), 'L1_R')
@@ -104,4 +152,9 @@ class DataTests(unittest.TestCase):
                        sample_rate=1)
         data.add_timeseries(a)
         b = data.get_timeseries('test name', [(0, 5)])
+        self.assertEqual(a, b)
+        # test more complicated add with a cache
+        a = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                cache=self.FRAMES['H1:LOSC-STRAIN'])
+        b = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
         self.assertEqual(a, b)

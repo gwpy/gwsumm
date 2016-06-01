@@ -345,7 +345,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
     """
     # separate channels by type
     if query:
-        if frametype is not None:
+        if frametype is not None or cache is not None:
             frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
@@ -559,7 +559,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 else:
                     segcache = fcache.sieve(segment=segment)
                 # set minute trend times modulo 60 from GPS 0
-                if (re.match('(?:(.*)_)?[A-Z]\d_M', frametype) or
+                if (re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)) or
                         (ifo == 'C1' and frametype == 'M')):
                     segstart = int(segment[0]) // 60 * 60
                     segend = int(segment[1]) // 60 * 60

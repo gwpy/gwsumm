@@ -65,10 +65,13 @@ class GWSummConfigParser(ConfigParser):
     # disable colon separator
     OPTCRE = re.compile(
         r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
-    # use OrderedDict for dict type
-    _dict = OrderedDict
     # set interpolation match
     _interpvar_re = re.compile(r"%\(([^)]+)\)s")
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('dict_type', OrderedDict)
+        ConfigParser.__init__(self, *args, **kwargs)
+    __init__.__doc__ = ConfigParser.__init__.__doc__
 
     def ndoptions(self, section, **kwargs):
         try:

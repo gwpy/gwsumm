@@ -347,7 +347,7 @@ class GWSummConfigParser(ConfigParser):
             try:
                 css[key] = self.get(section, '%s-css' % key)
             except NoSectionError:
-                return []
+                return css.values()
             except NoOptionError:
                 continue
         files = css.values()
@@ -367,7 +367,7 @@ class GWSummConfigParser(ConfigParser):
             try:
                 js[key] = self.get(section, '%s-js' % key)
             except NoSectionError:
-                break
+                return js.values()
             except NoOptionError:
                 continue
         files = js.values()

@@ -158,3 +158,16 @@ class DataTests(unittest.TestCase):
                                 cache=self.FRAMES['H1:LOSC-STRAIN'])
         b = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
         self.assertEqual(a, b)
+
+    def test_get_spectrogram(self):
+        self.assertRaises(TypeError, data.get_spectrogram, 'H1:LOSC-STRAIN',
+                          LOSC_SEGMENTS, cache=self.FRAMES['H1:LOSC-STRAIN'])
+        a = data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                 stride=4, fftlength=2, overlap=1)
+
+    def test_get_spectrum(self):
+        a = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                              cache=self.FRAMES['H1:LOSC-STRAIN'])
+        a = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS, format='asd',
+                              cache=self.FRAMES['H1:LOSC-STRAIN'])

@@ -101,7 +101,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         try:
             fftparams['method'] = list(methods)[0]
         except IndexError:
-            fftparams['method'] = 'median-mean'
+            fftparams['method'] = 'welch'
     # set default 'method' for Rayleigh
     if format in ['rayleigh']:
         fftparams.setdefault('method', format)
@@ -116,7 +116,12 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     fftparams = fftparams.dict()
 
     # extract spectrogram stride from dict
-    stride = float(fftparams.pop('stride'))
+    try:
+        stride = float(fftparams.pop('stride'))
+    except TypeError as e:
+        e.args = ('cannot parse a spectrogram stride from the kwargs given, '
+                  'please give some or all of fftlength, overlap, stride',)
+        raise
 
     # read segments from global memory
     havesegs = globalv.SPECTROGRAMS.get(key, SpectrogramList()).segments
@@ -234,6 +239,11 @@ def get_spectrum(channel, segments, config=None, cache=None, query=True,
     if name not in globalv.SPECTRUM:
         vprint("    Calculating 5/50/95 percentile spectra for %s"
                % name.rsplit(',', 1)[0])
+        fftparams.setdefault('fftlength', 1)
+        fftparams.setdefault('overlap', 0.5)
+        if 'stride' not in fftparams and 'fftlength' in fftparams:
+            fftparams.setdefault('stride', fftparams['fftlength'])
+
         speclist = get_spectrogram(channel, segments, config=config,
                                    cache=cache, query=query, nds=nds,
                                    format=format, **fftparams)

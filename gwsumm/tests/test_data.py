@@ -171,3 +171,15 @@ class DataTests(unittest.TestCase):
                               cache=self.FRAMES['H1:LOSC-STRAIN'])
         a = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS, format='asd',
                               cache=self.FRAMES['H1:LOSC-STRAIN'])
+
+    def test_get_coherence_spectrogram(self):
+        cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
+        a = data.get_coherence_spectrogram(
+            ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
+            stride=4, fftlength=2, overlap=1)
+
+    def test_get_coherence_spectrum(self):
+        cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
+        a = data.get_coherence_spectrogram(
+            ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
+            stride=4, fftlength=2, overlap=1)

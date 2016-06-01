@@ -26,7 +26,7 @@ matrix:
       env: PRE="--pre"
 
 before_install:
-  - . .travis/build-nds2.sh
+  - . .travis/build-src-dependencies.sh
   - pip install -q --upgrade pip
   - pip install ${PRE} -r requirements.txt
   - pip install ${PRE} -q coveralls "pytest>=2.8" pytest-runner unittest2

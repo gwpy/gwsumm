@@ -87,6 +87,44 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
                 urltype='file', gaps='warn', onerror='raise'):
     """Query the datafind server for GWF files for the given type
+
+    Parameters
+    ----------
+    ifo : `str`
+        prefix for the IFO of interest (either one or two characters)
+
+    frametype : `str`
+        name of the frametype to find
+
+    gpsstart : `int`
+        GPS start time of the query
+
+    gpsend : `int`
+        GPS end time of the query
+
+    config : `~ConfigParser.ConfigParser`, optional
+        configuration with `[datafind]` section containing `server`
+        specification, otherwise taken from the environment
+
+    urltype : `str`, optional
+        what type of file paths to return, default: `file`
+
+    gaps : `str`, optional
+        what to do when gaps are detected, one of
+
+        - `ignore` : do nothing
+        - `warn` : display the existence of gaps but carry on
+        - `raise` : raise an exception
+
+    onerror : `str`, optional
+        what to do when the `~glue.datafind` query itself fails, same
+        options as for ``gaps``
+
+    Returns
+    -------
+    cache : `~glue.lal.Cache`
+        a list of structured frame file descriptions matching the ifo and
+        frametype requested
     """
     vprint('    Finding %s-%s frames for [%d, %d)...'
            % (ifo[0], frametype, int(gpsstart), int(gpsend)))
@@ -175,17 +213,16 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
 
 
 def find_cache_segments(*caches):
-    """Construct a :class:`~gwpy.segments.segments.SegmentList` describing
-    the validity of a given :class:`~glue.lal.Cache`, or list of them.
+    """Return the segments covered by one or more data caches
 
     Parameters
     ----------
-    cache : :class:`~glue.lal.Cache`
-        Cache of frame files to check
+    *cache : `~glue.lal.Cache`
+        one or more file caches
 
     Returns
     -------
-    segments : :class:`~gwpy.segments.segments.SegmentList`
+    segments : `~gwpy.segments.SegmentList`
         list of segments containing in cache
     """
     out = SegmentList()
@@ -211,6 +248,12 @@ def find_cache_segments(*caches):
 
 
 def find_frame_type(channel):
+    """Find the frametype associated with the given channel
+
+    If the input channel has a `frametype` attribute, that will be used,
+    otherwise the frametype will be guessed based on the channel name and
+    any trend options given
+    """
     if channel.frametype is None:
         try:
             ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
@@ -249,6 +292,56 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
                         frametype=None, statevector=False, return_=True,
                         datafind_error='raise', **ioargs):
     """Retrieve the data for a set of channels
+
+    Parameters
+    ----------
+    channels : `list` of `str` or `~gwpy.detector.Channel`
+        the channels you want to get
+
+    segments : `~gwpy.segments.SegmentList`
+        the data segments of interest
+
+    config : `~gwsumm.config.GWSummConfigParser`
+        the configuration for this analysis
+
+    query : `bool`, optional
+        whether you want to retrieve new data from the source if it hasn't
+        been loaded already
+
+    nds : `bool`, optional
+        whether to try and use NDS2 for data access, default is to ``'guess'``
+
+    multiprocess : `bool`, `int`, optional
+        whether to use multiprocessing for file reading
+
+    frametype : `str`, optional`
+        the frametype of the target channels, if not given, this will be
+        guessed based on the channel name(s)
+
+    statevector : `bool`, optional
+        whether you want to load `~gwpy.timeseries.StateVector` rather than
+        `~gwpy.timeseries.TimeSeries` data
+
+    datafind_error : `str`, optional
+        what to do in the event of a datafind error, one of
+
+        - 'raise' : stop immediately upon error
+        - 'warn' : print warning and continue as if no frames had been found
+        - 'ignore' : print nothing and continue with no frames
+
+    return_ : `bool`, optional
+        whether you actually want anything returned to you, or you are just
+        calling this function to load data for use later
+
+    **ioargs
+        all other keyword arguments are passed to the relevant data
+        reading method (either `~gwpy.timeseries.TimeSeriesDict.read` or
+        `~gwpy.timeseries.TimeSeriesDict.fetch` or state-vector equivalents)
+
+    Returns
+    -------
+    datalist : `dict` of `~gwpy.timeseries.TimeSeriesList`
+        a set of `(channel, TimeSeriesList`) pairs
     """
     # separate channels by type
     if query:
@@ -578,7 +671,60 @@ def get_timeseries(channel, segments, config=None, cache=None,
                    query=True, nds='guess', multiprocess=True,
                    frametype=None, statevector=False, return_=True,
                    datafind_error='raise', **ioargs):
-    """Retrieve the data (time-series) for a given channel
+    """Retrieve data for channel
+
+    Parameters
+    ----------
+    channel : `str` or `~gwpy.detector.Channel`
+        the name of the channel you want
+
+    segments : `~gwpy.segments.SegmentList`
+        the data segments of interest
+
+    config : `~gwsumm.config.GWSummConfigParser`
+        the configuration for this analysis
+
+    cache : `~glue.lal.Cache`
+        a cache of data files from which to read
+
+    query : `bool`, optional
+        whether you want to retrieve new data from the source if it hasn't
+        been loaded already
+
+    nds : `bool`, optional
+        whether to try and use NDS2 for data access, default is to ``'guess'``
+
+    multiprocess : `bool`, `int`, optional
+        whether to use multiprocessing for file reading
+
+    frametype : `str`, optional`
+        the frametype of the target channels, if not given, this will be
+        guessed based on the channel name(s)
+
+    statevector : `bool`, optional
+        whether you want to load `~gwpy.timeseries.StateVector` rather than
+        `~gwpy.timeseries.TimeSeries` data
+
+    datafind_error : `str`, optional
+        what to do in the event of a datafind error, one of
+
+        - 'raise' : stop immediately upon error
+        - 'warn' : print warning and continue as if no frames had been found
+        - 'ignore' : print nothing and continue with no frames
+
+    return_ : `bool`, optional
+        whether you actually want anything returned to you, or you are just
+        calling this function to load data for use later
+
+    **ioargs
+        all other keyword arguments are passed to the relevant data
+        reading method (either `~gwpy.timeseries.TimeSeries.read` or
+        `~gwpy.timeseries.TimeSeries.fetch` or state-vector equivalents)
+
+    Returns
+    -------
+    data : `~gwpy.timeseries.TimeSeriesList`
+        a list of `TimeSeries`
     """
     channel = get_channel(channel)
     out = get_timeseries_dict([channel.ndsname], segments, config=config,
@@ -593,6 +739,18 @@ def get_timeseries(channel, segments, config=None, cache=None,
 
 def add_timeseries(timeseries, key=None, coalesce=True):
     """Add a `TimeSeries` to the global memory cache
+
+    Parameters
+    ----------
+    timeseries : `~gwpy.timeseries.TimeSeries` or `~gwpy.timeseries.StateVector`
+        the data series to add
+
+    key : `str`, optional
+        the key with which to store these data, defaults to the
+        `~gwpy.timeseries.TimeSeries.name` of the series
+
+    coalesce : `bool`, optional
+        coalesce contiguous series after adding, defaults to `True`
     """
     update_missing_channel_params(timeseries.channel)
     if key is None:

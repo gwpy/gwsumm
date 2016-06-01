@@ -752,7 +752,8 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     coalesce : `bool`, optional
         coalesce contiguous series after adding, defaults to `True`
     """
-    update_missing_channel_params(timeseries.channel)
+    if timeseries.channel is not None:
+        update_missing_channel_params(timeseries.channel)
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname
     if isinstance(timeseries, StateVector):

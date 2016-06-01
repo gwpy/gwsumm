@@ -440,7 +440,9 @@ def _get_timeseries_dict(channels, segments, config=None,
             dtype_[channel] = channel.dtype
 
     # work out whether to use NDS or not
-    if nds == 'guess':
+    if nds == 'guess' and cache is not None:
+        nds = false
+    elif nds == 'guess':
         nds = 'LIGO_DATAFIND_SERVER' not in os.environ
 
     # read new data

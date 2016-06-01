@@ -68,7 +68,10 @@ def parse_math_definition(definition):
     breaks = re_channel.finditer(definition)
     channels = []
     operators = []
-    match = next(breaks)
+    try:
+        match = next(breaks)
+    except StopIteration:  # no channel names parsed at all, just return
+        return [(definition, None)], []
     while True:
         # find channel
         a, b = match.span()

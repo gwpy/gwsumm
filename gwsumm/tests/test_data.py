@@ -22,10 +22,11 @@
 
 import operator
 
+from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel
 
 from compat import unittest
-from gwsumm import data
+from gwsumm import (data, globalv)
 from gwsumm.data import (utils, mathutils)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -78,3 +79,29 @@ class DataTests(unittest.TestCase):
         self.assertIsInstance(chans[1], tuple)
         self.assertEqual(chans[1][0], 'L1:TEST2')
         self.assertTupleEqual(chans[1][1], (operator.pow, 5))
+
+    def test_add_timeseries(self):
+        a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
+                       sample_rate=1)
+        # test simple add using 'name'
+        data.add_timeseries(a)
+        self.assertIn('test name', globalv.DATA)
+        self.assertEqual(globalv.DATA['test name'], [a])
+        # test add using key kwarg
+        data.add_timeseries(a, key='test key')
+        self.assertIn('test key', globalv.DATA)
+        self.assertEqual(globalv.DATA['test key'], [a])
+        # test add to existing key with coalesce
+        b = TimeSeries([6, 7, 8, 9, 10], name='test name 2', epoch=5,
+                       sample_rate=1)
+        data.add_timeseries(b, key='test key', coalesce=True)
+        self.assertEqual(globalv.DATA['test key'],
+                         [a.append(b, inplace=False)])
+
+    def test_get_timeseries(self):
+        # test simple get after add
+        a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
+                       sample_rate=1)
+        data.add_timeseries(a)
+        b = data.get_timeseries('test name', [(0, 5)])
+        self.assertEqual(a, b)

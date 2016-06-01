@@ -387,7 +387,7 @@ for job in jobs:
 if not opts.skip_html_wrapper:
     htmljob.add_opt('html-only', '')
     htmljob.add_opt('config-file', ','.join(
-        [globalconfig]+opts.config_file))
+        [globalconfig]+opts.config_file).strip(','))
 
     htmlnode = GWSummaryDAGNode(htmljob)
     for configfile in opts.config_file:
@@ -406,7 +406,8 @@ if not opts.html_wrapper_only:
     # configure each data node
     for i, configfile in enumerate(opts.config_file):
         node = GWSummaryDAGNode(datajob)
-        node.add_var_arg('--config-file %s,%s' % (globalconfig, configfile))
+        node.add_var_arg('--config-file %s' % ','.join(
+            [globalconfig, configfile]).strip(','))
         if opts.archive:
             jobtag = os.path.splitext(os.path.basename(configfile))[0]
             archivetag = jobtag.upper().replace('-', '_')

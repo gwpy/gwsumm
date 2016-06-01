@@ -217,7 +217,7 @@ class DailyAhopeTab(base):
         # only process if the cachfile was found
         super(DailyAhopeTab, self).process(*args, **kwargs)
 
-    def process_state(self, state, nds='guess', multiprocess=False,
+    def process_state(self, state, nds=None, multiprocess=False,
                       config=GWSummConfigParser(),
                       segdb_error='raise', trigcache=None, datacache=None):
         if trigcache is None:

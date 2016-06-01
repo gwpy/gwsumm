@@ -288,7 +288,7 @@ def find_types(site=None, match=None):
 @use_configparser
 @use_segmentlist
 def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
-                        cache=None, query=True, nds='guess', multiprocess=True,
+                        cache=None, query=True, nds=None, multiprocess=True,
                         frametype=None, statevector=False, return_=True,
                         datafind_error='raise', **ioargs):
     """Retrieve the data for a set of channels
@@ -309,7 +309,8 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
         been loaded already
 
     nds : `bool`, optional
-        whether to try and use NDS2 for data access, default is to ``'guess'``
+        whether to try and use NDS2 for data access, default is to guess
+        based on other arguments and the environment
 
     multiprocess : `bool`, `int`, optional
         whether to use multiprocessing for file reading
@@ -380,7 +381,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
 
 @use_segmentlist
 def _get_timeseries_dict(channels, segments, config=None,
-                         cache=None, query=True, nds='guess', frametype=None,
+                         cache=None, query=True, nds=None, frametype=None,
                          multiprocess=True, return_=True, statevector=False,
                          archive=True, datafind_error='raise', **ioargs):
     """Internal method to retrieve the data for a set of like-typed
@@ -440,9 +441,9 @@ def _get_timeseries_dict(channels, segments, config=None,
             dtype_[channel] = channel.dtype
 
     # work out whether to use NDS or not
-    if nds == 'guess' and cache is not None:
-        nds = false
-    elif nds == 'guess':
+    if nds is None and cache is not None:
+        nds = False
+    elif nds is None:
         nds = 'LIGO_DATAFIND_SERVER' not in os.environ
 
     # read new data
@@ -670,7 +671,7 @@ def _get_timeseries_dict(channels, segments, config=None,
 
 @use_segmentlist
 def get_timeseries(channel, segments, config=None, cache=None,
-                   query=True, nds='guess', multiprocess=True,
+                   query=True, nds=None, multiprocess=True,
                    frametype=None, statevector=False, return_=True,
                    datafind_error='raise', **ioargs):
     """Retrieve data for channel
@@ -694,7 +695,8 @@ def get_timeseries(channel, segments, config=None, cache=None,
         been loaded already
 
     nds : `bool`, optional
-        whether to try and use NDS2 for data access, default is to ``'guess'``
+        whether to try and use NDS2 for data access, default is to guess
+        based on other arguments and the environment
 
     multiprocess : `bool`, `int`, optional
         whether to use multiprocessing for file reading

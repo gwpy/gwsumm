@@ -96,7 +96,7 @@ class SEIWatchDogTab(base):
             new.plot_duration = 30
         return new
 
-    def process(self, nds='guess', multiprocess=True,
+    def process(self, nds=None, multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
                 trigcache=None, datafind_error='raise', **kwargs):
         """Process data for the given state.

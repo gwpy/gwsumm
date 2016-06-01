@@ -59,7 +59,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 @use_segmentlist
 def get_spectrogram(channel, segments, config=None, cache=None,
-                    query=True, nds='guess', format='power', return_=True,
+                    query=True, nds=None, format='power', return_=True,
                     frametype=None, multiprocess=True, datafind_error='raise',
                     **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
@@ -87,7 +87,7 @@ def get_spectrogram(channel, segments, config=None, cache=None,
 
 @use_segmentlist
 def _get_spectrogram(channel, segments, config=None, cache=None,
-                     query=True, nds='guess', format='power', return_=True,
+                     query=True, nds=None, format='power', return_=True,
                      frametype=None, multiprocess=True,
                      datafind_error='raise', **fftparams):
 
@@ -222,7 +222,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 
 
 def get_spectrum(channel, segments, config=None, cache=None, query=True,
-                 nds='guess', format='power', return_=True, **fftparams):
+                 nds=None, format='power', return_=True, **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
     """
@@ -292,7 +292,7 @@ def add_spectrogram(specgram, key=None, coalesce=True):
 
 @use_segmentlist
 def get_spectrograms(channels, segments, config=None, cache=None, query=True,
-                     nds='guess', format='power', return_=True, frametype=None,
+                     nds=None, format='power', return_=True, frametype=None,
                      multiprocess=True, datafind_error='raise', **fftparams):
     """Get spectrograms for multiple channels
     """

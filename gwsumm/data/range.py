@@ -53,7 +53,7 @@ def get_range_channel(channel, **rangekwargs):
 
 @use_segmentlist
 def get_range(channel, segments, config=None, cache=None,
-              query=True, nds='guess', return_=True, multiprocess=True,
+              query=True, nds=None, return_=True, multiprocess=True,
               datafind_error='raise', frametype=None,
               stride=None, fftlength=None, overlap=None,
               method=None, **rangekwargs):

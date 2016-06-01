@@ -144,7 +144,7 @@ class GuardianTab(DataTab):
         ))
         return new
 
-    def process(self, nds='guess', multiprocess=True,
+    def process(self, nds=None, multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
                 segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.

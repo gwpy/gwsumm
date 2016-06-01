@@ -51,7 +51,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 @use_segmentlist
 def get_coherence_spectrogram(channel_pair, segments, config=None,
-                              cache=None, query=True, nds='guess',
+                              cache=None, query=True, nds=None,
                               return_=True, frametype=None, multiprocess=True,
                               datafind_error='raise', return_components=False,
                               **fftparams):
@@ -73,7 +73,7 @@ def get_coherence_spectrogram(channel_pair, segments, config=None,
 
 @use_segmentlist
 def _get_coherence_spectrogram(channel_pair, segments, config=None,
-                               cache=None, query=True, nds='guess',
+                               cache=None, query=True, nds=None,
                                return_=True, frametype=None, multiprocess=True,
                                datafind_error='raise', return_components=False,
                                **fftparams):
@@ -299,7 +299,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 
 
 def get_coherence_spectrum(channel_pair, segments, config=None,
-                           cache=None, query=True, nds='guess', return_=True,
+                           cache=None, query=True, nds=None, return_=True,
                            **fftparams):
     """Retrieve the time-series and generate a coherence spectrogram of the given
     channel
@@ -396,7 +396,7 @@ def add_coherence_component_spectrogram(specgram, key=None, coalesce=True):
 
 @use_segmentlist
 def get_coherence_spectrograms(channel_pairs, segments, config=None,
-                               cache=None, query=True, nds='guess',
+                               cache=None, query=True, nds=None,
                                return_=True, frametype=None, multiprocess=True,
                                datafind_error='raise', **fftparams):
     """Get coherence spectrograms for multiple channels

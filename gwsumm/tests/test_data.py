@@ -83,6 +83,8 @@ class DataTests(unittest.TestCase):
         # remove the temporary data
         shutil.rmtree(cls._tempdir)
 
+    # -- test utilities -------------------------
+
     def test_find_frame_type(self):
         channel = Channel('L1:TEST-CHANNEL')
         self.assertEqual(data.find_frame_type(channel), 'L1_R')
@@ -96,6 +98,12 @@ class DataTests(unittest.TestCase):
         self.assertEqual(data.find_frame_type(channel), 'H1_LDAS_C02_L2')
         channel = Channel('H1:TEST-CHANNEL.rms,online')
         self.assertEqual(data.find_frame_type(channel), 'H1_lldetchar')
+
+    def test_get_channel_type(self):
+        self.assertEqual(data.get_channel_type('L1:TEST-CHANNEL'), 'adc')
+        self.assertEqual(data.get_channel_type('G1:DER_DATA_HL'), 'proc')
+        self.assertEqual(data.get_channel_type('H1:GDS-CALIB_STRAIN'), 'proc')
+        self.assertEqual(data.get_channel_type('V1:GDS-CALIB_STRAIN'), 'adc')
 
     def test_make_globalv_key(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
@@ -127,6 +135,8 @@ class DataTests(unittest.TestCase):
         self.assertIsInstance(chans[1], tuple)
         self.assertEqual(chans[1][0], 'L1:TEST2')
         self.assertTupleEqual(chans[1][1], (operator.pow, 5))
+
+    # -- test add/get methods -------------------
 
     def test_add_timeseries(self):
         a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,

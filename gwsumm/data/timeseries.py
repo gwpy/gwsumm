@@ -283,6 +283,30 @@ def find_types(site=None, match=None):
     return conn.find_types(site=site, match=match)
 
 
+def get_channel_type(name):
+    """Returns the probable type of this channel, based on the name
+
+    Parameters
+    ----------
+    name : `str`
+        the name of the channel
+
+    Returns
+    -------
+    type : `str`
+        one of ``'adc'``, ``'proc'``, or ``'sim'``
+    """
+    channel = get_channel(name)
+    # find GEO h(t) channels
+    if channel.ifo == 'G1' and channel.system in ['DER']:
+        return 'proc'
+    # find LIGO h(t) or LOSC channels
+    if channel.ifo in ['L1', 'H1'] and channel.system in ['GDS', 'LOSC']:
+        return 'proc'
+    # default to ADC
+    return 'adc'
+
+
 # -- data accessors -----------------------------------------------------------
 
 @use_configparser
@@ -529,9 +553,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 try:
                     ctype.add(channel.ctype)
                 except AttributeError:
-                    channel.ctype = 'adc'
-                    ctype.add(channel.ctype)
-                    continue
+                    ctype.add(get_channel_type(channel))
             if len(ctype) == 1:
                 ctype = list(ctype)[0]
             else:

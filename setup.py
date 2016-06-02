@@ -74,7 +74,6 @@ install_requires = [
     'trigfind>=0.2.1',
 ]
 requires = [
-    'decorator',
     'glue',
     'numpy',
     'matplotlib',

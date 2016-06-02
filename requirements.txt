@@ -1,4 +1,3 @@
-decorator
 pykerberos
 m2crypto
 python-cjson

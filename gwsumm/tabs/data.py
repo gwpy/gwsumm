@@ -370,7 +370,7 @@ class DataTab(DataTabBase):
                                **stateargs)
 
 
-    def process_state(self, state, nds='guess', multiprocess=True,
+    def process_state(self, state, nds=None, multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
                       trigcache=None, segmentcache=None,
                       segdb_error='raise', datafind_error='raise'):
@@ -381,9 +381,9 @@ class DataTab(DataTabBase):
         state : `~gwsumm.state.SummaryState`
             the state to process. Can give `None` to process ALLSTATE with
             no plots, useful to load all data for other states
-        nds : `bool`, ``'guess'``, optional
+        nds : `bool`, optional
             `True` to use NDS to read data, otherwise read from frames.
-            Use ``'guess'`` to read from frames if possible, otherwise
+            Use `None` to read from frames if possible, otherwise
             using NDS.
         multiprocess : `bool`, `int`, optional
             use multiple processes to read data and make plots. If `True`
@@ -487,10 +487,12 @@ class DataTab(DataTabBase):
                                  "each spectrogram.")
             vprint("    %d channel pairs identified for Coherence "
                    "Spectrogram\n" % (len(csgchannels)/2))
+            fp2 = fftparams.copy()
+            fp2['method'] = 'welch'
             get_coherence_spectrograms(
                 csgchannels, state, config=config, nds=nds,
                 multiprocess=multiprocess, return_=False, cache=datacache,
-                datafind_error=datafind_error, **fftparams)
+                datafind_error=datafind_error, **fp2)
 
         # --------------------------------------------------------------------
         # process spectra

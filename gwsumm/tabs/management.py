@@ -129,7 +129,7 @@ class AccountingTab(ParentTab):
 
         return new
 
-    def process(self, nds='guess', multiprocess=True,
+    def process(self, nds=None, multiprocess=True,
                 config=GWSummConfigParser(), datacache=None,
                 datafind_error='raise', **kwargs):
         """Process time accounting data

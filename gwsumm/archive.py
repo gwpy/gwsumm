@@ -32,7 +32,8 @@ from gwpy.spectrogram import Spectrogram
 from gwpy.segments import DataQualityFlag
 
 from . import (globalv, mode)
-from .data import (get_channel, add_timeseries, add_spectrogram)
+from .data import (get_channel, add_timeseries, add_spectrogram,
+                   add_coherence_component_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -164,6 +165,10 @@ def read_data_archive(sourcefile):
 
         # read all spectrogram data
         for tag in ['spectrogram', 'coherence-components']:
+            if tag == 'coherence-components':
+                add_ = add_coherence_component_spectrogram
+            else:
+                add_ = add_spectrogram
             try:
                 group = h5file[tag]
             except KeyError:
@@ -172,10 +177,9 @@ def read_data_archive(sourcefile):
                 key = key.rsplit(',', 1)[0]
                 spec = Spectrogram.read(dataset, format='hdf')
                 spec.channel = get_channel(spec.channel)
-                add_spectrogram(
-                    spec, key=key,
-                    coherence_component=tag == 'coherence-components')
+                add_(spec, key=key)
 
+        # read all segments
         try:
             group = h5file['segments']
         except KeyError:

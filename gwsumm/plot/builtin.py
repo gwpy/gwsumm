@@ -241,7 +241,9 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             return self._pid
         except AttributeError:
             pid = super(SpectrogramDataPlot, self).pid
-            if self.ratio:
+            if isinstance(self.ratio, str) and os.path.isfile(self.ratio):
+                self._pid += '_REFERENCE_RATIO'
+            elif self.ratio:
                 self._pid += '_%s_RATIO' % re_cchar.sub(
                     '_', str(self.ratio).upper())
             return self.pid
@@ -270,7 +272,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         ratio = self.ratio
 
         # get cmap
-        if ratio in ['median', 'mean']:
+        if ratio in ['median', 'mean'] or (
+                isinstance(ratio, str) and os.path.isfile(ratio)):
             self.pargs.setdefault('cmap', 'Spectral_r')
         cmap = self.pargs.pop('cmap', None)
 
@@ -304,6 +307,18 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 ratio = allspec.percentile(ratio)
             else:
                 ratio = getattr(allspec, ratio)(axis=0)
+        elif isinstance(ratio, str) and os.path.isfile(ratio):
+            try:
+                ratio = FrequencySeries.read(ratio)
+            except IOError as e:
+                warnings.warn('IOError: %s' % str(e))
+            except Exception as e:
+                # hack for old versions of GWpy
+                # TODO: remove me when GWSumm requires GWpy > 0.1
+                if 'Format could not be identified' in str(e):
+                    ratio = FrequencySeries.read(ratio, format='dat')
+                else:
+                    raise
 
         # allow channel data to set parameters
         if getattr(channel, 'frequency_range', None) is not None:

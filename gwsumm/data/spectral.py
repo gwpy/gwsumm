@@ -93,18 +93,18 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 
     channel = get_channel(channel)
 
-    # if we aren't given a method, check to see whether data have already
+    # special-case methods
+    if fftparams.get('method', None) is None and format in ['rayleigh']:
+        fftparams['method'] = format
+    # or, if we aren't given a method, check to see whether data have already
     # been processed, if so, choose that one
-    if fftparams.get('method', None) is None:
+    elif fftparams.get('method', None) is None:
         methods = set([key.split(';')[1] for key in globalv.SPECTROGRAMS
                        if key.startswith('%s;' % channel.ndsname)])
         try:
             fftparams['method'] = list(methods)[0]
         except IndexError:
             fftparams['method'] = 'welch'
-    # set default 'method' for Rayleigh
-    if format in ['rayleigh']:
-        fftparams.setdefault('method', format)
 
     # clean fftparams dict using channel default values
     fftparams = get_fftparams(channel, **fftparams)

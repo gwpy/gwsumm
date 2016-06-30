@@ -556,6 +556,17 @@ class DataPlot(SummaryPlot):
             self.plot.close()
         return outputfile
 
+    def apply_parameters(self, ax, **pargs):
+        for key in pargs:
+            val = pargs[key]
+            if key in ['xlim', 'ylim'] and isinstance(val, str):
+                val = eval(val)
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                setattr(ax, key, val)
+
+
 register_plot(DataPlot)
 
 

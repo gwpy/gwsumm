@@ -243,11 +243,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         legendargs = self.parse_legend_kwargs(markerscale=4)
         logx = self.pargs.pop('logx', self.pargs.pop('xscale', None) == 'log')
         logy = self.pargs.pop('logy', self.pargs.pop('yscale', None) == 'log')
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if logx:
             if ax.get_xlim()[0] <= 0 and not ntrigs:
                 ax.set_xlim(1, 10)
@@ -480,11 +476,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
             ax.autoscale_view(tight=True, scalex=False)
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
 

@@ -201,11 +201,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                         linestyle='--', color='red')
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
+
         if (len(channels) > 1 or plotargs[0].get('label', None) in
                 [re.sub(r'(_|\\_)', r'\_', channels[0]), None]):
             plot.add_legend(ax=ax, **legendargs)
@@ -937,11 +934,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
 
         # customise
         hlines = list(self.pargs.pop('hline', []))
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
 
         # add horizontal lines to add
         if hlines:

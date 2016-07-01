@@ -28,6 +28,9 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+# imports for filter
+from math import pi
+
 import numpy
 
 from astropy import units

@@ -118,10 +118,13 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
-        cstrings = ['%s [%s, %s]' % (c.ndsname, c.sample_rate, c.unit)
-                    for c in found]
-        raise ValueError("Ambiguous channel request '%s', multiple existing "
-                         "channels recovered:\n    %s"
+        cstrings = set(['%s [%s, %s]' % (c.ndsname, c.sample_rate, c.unit)
+                        for c in found])
+        if len(cstrings) == 1:
+            return found[0]
+        else:
+            raise ValueError("Ambiguous channel request '%s', multiple "
+                             "existing channels recovered:\n    %s"
                          % (str(channel), '\n    '.join(cstrings)))
     else:
         matches = list(Channel.MATCH.finditer(name))

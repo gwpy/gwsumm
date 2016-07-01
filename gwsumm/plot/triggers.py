@@ -76,7 +76,7 @@ class TriggerPlotMixin(object):
         return ChannelList(map(Channel, chans))
 
 
-class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
+class TriggerDataPlot(TimeSeriesDataPlot):
     """Standard event trigger plot
     """
     _threadsafe = False
@@ -370,7 +370,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 register_plot(TriggerTimeSeriesDataPlot)
 
 
-class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
+class TriggerHistogramPlot(get_plot('histogram')):
     """HistogramPlot from a LIGO_LW Table
     """
     type = 'trigger-histogram'

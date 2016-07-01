@@ -530,7 +530,8 @@ class DataTab(DataTabBase):
                                               'trigger-histogram',
                                               all_data=all_data, state=state):
             get_triggers(channel, etg, state.active, config=config,
-                         cache=trigcache)
+                         cache=trigcache, multiprocess=multiprocess,
+                         return_=False)
 
         # --------------------------------------------------------------------
         # make plots

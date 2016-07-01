@@ -79,7 +79,6 @@ class TriggerPlotMixin(object):
 class TriggerDataPlot(TimeSeriesDataPlot):
     """Standard event trigger plot
     """
-    _threadsafe = False
     type = 'triggers'
     data = 'triggers'
     defaults = {'x': 'time',
@@ -377,7 +376,6 @@ class TriggerHistogramPlot(get_plot('histogram')):
     """
     type = 'trigger-histogram'
     data = 'triggers'
-    _threadsafe = False
 
     def __init__(self, *args, **kwargs):
         super(TriggerHistogramPlot, self).__init__(*args, **kwargs)
@@ -495,7 +493,6 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
     """
     type = 'trigger-rate'
     data = 'triggers'
-    _threadsafe = False
     defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({'column': None,
                      'legend_bbox_to_anchor': (1.15, 1.1),
@@ -559,6 +556,15 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             labels = self.channels
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)
 
+        # get time column
+        try:
+            tcol = self.pargs.pop('timecolumn')
+        except KeyError:
+            if self.etg in ['pycbc_live']:
+                tcol = 'end_time'
+            else:
+                tcol = 'time'
+
         # generate data
         keys = []
         for channel in self.channels:
@@ -574,9 +580,10 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             if self.column:
                 rates = binned_event_rates(
                     table_, stride, self.column, bins, operator, self.start,
-                    self.end).values()
+                    self.end, timecolumn=tcol).values()
             else:
-                rates = [event_rate(table_, stride, self.start, self.end)]
+                rates = [event_rate(table_, stride, self.start, self.end,
+                                    timecolumn=tcol)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
                 keys.append('%s_%s_EVENT_RATE_%s_%s'

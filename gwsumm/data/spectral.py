@@ -159,7 +159,11 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                     continue
                 else:
                     d = float(abs(s))
-                    tmp.append(type(s)(s[0], s[0] + d//stride * stride))
+                    e = (s[0] + d // stride * stride +
+                         fftparams.get('overlap', 0))
+                    if e - s[0] > d:
+                        e -= fftparams['fftlength']
+                    tmp.append(type(s)(s[0], e))
             new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,

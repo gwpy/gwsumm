@@ -148,7 +148,8 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             base = SpectrumPlot
         else:
             base = Plot
-        plot = self.plot = EventTablePlot(figsize=[12, 6], base=base)
+        plot = self.plot = EventTablePlot(
+            figsize=self.pargs.pop('figsize', [12, 6]), base=base)
         ax = plot.gca()
         ax.grid(True, which='both')
         if isinstance(plot, TimeSeriesPlot):
@@ -243,6 +244,9 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         legendargs = self.parse_legend_kwargs(markerscale=4)
         logx = self.pargs.pop('logx', self.pargs.pop('xscale', None) == 'log')
         logy = self.pargs.pop('logy', self.pargs.pop('yscale', None) == 'log')
+        if len(self.channels) == 1:
+            self.pargs.setdefault(
+                'title', '%s (%s)' % (self.channels[0].texname, self.etg))
         self.apply_parameters(ax, **self.pargs)
         if logx:
             if ax.get_xlim()[0] <= 0 and not ntrigs:
@@ -252,8 +256,6 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             if ax.get_ylim()[0] <= 0 and not ntrigs:
                 ax.set_ylim(1, 10)
             ax.set_yscale('log')
-        if 'title' not in self.pargs.keys() and len(self.channels) == 1:
-            plot.title = '%s (%s)' % (self.channels[0].texname, self.etg)
 
         # correct log-scale empty axes
         if any(map(isinf, ax.get_ylim())):

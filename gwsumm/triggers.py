@@ -199,7 +199,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
         vprint("    Grabbing %s triggers for %s" % (etg, str(channel)))
 
         # store read kwargs
-        kwargs = {'columns': columns}
+        kwargs = get_etg_read_kwargs(config, etg, exclude=['columns'])
+        kwargs['columns'] = columns
         if etg.lower().replace('-', '_') in ['cwb', 'pycbc_live']:
             kwargs['ifo'] = get_channel(channel).ifo
         if 'format' not in kwargs and 'ahope' not in etg.lower():
@@ -237,6 +238,10 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                             if TRIGFIND_FORMAT[regex] in lsctables.TableByName:
                                 kwargs['get_as_columns'] = True
                             break
+                if etg.lower() == 'omega':
+                    kwargs.setdefault('format', 'omega')
+                else:
+                    kwargs.setdefault('format', 'ligolw')
             elif isinstance(cache, Cache):
                 segcache = cache.sieve(segment=segment)
             else:
@@ -251,6 +256,8 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
             if len(segcache) == 0:
                 continue
             # read triggers
+            if kwargs.get('format', None) == 'ligolw':
+                kwargs['contenthandler'] = contenthandler
             try:  # try directly reading a numpy.recarray
                 table = GWRecArray.read(segcache, nproc=nproc, **kwargs)
             except Exception as e:  # back up to LIGO_LW
@@ -373,3 +380,21 @@ def get_times(table, etg):
             return table['start_time'] + table['start_time_ns'] * 1e-9
     # use gwpy method (not guaranteed to work)
     return get_table_column(table, 'time').astype(float)
+
+
+def get_etg_read_kwargs(config, etg, exclude=['columns']):
+    """Read keyword arguments to pass to the trigger reader for a given etg
+    """
+    try:
+        kwargs = dict(config.nditems(etg))
+    except NoSectionError:
+        return {}
+    for key in kwargs.keys():
+        if key in exclude:
+            kwargs.pop(key)
+            continue
+        try:
+            kwargs[key] = eval(kwargs[key])
+        except (NameError, SyntaxError):
+            pass
+    return kwargs

@@ -19,8 +19,6 @@
 """Read and store transient event triggers
 """
 
-import os.path
-import glob
 import re
 import warnings
 try:
@@ -28,18 +26,19 @@ try:
 except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
-from glue.lal import (Cache, CacheEntry)
+import numpy
+from numpy.lib import recfunctions
+
+from glue.lal import Cache
 from glue.ligolw.table import (StripTableName as strip_table_name,
                                CompareTableNames as compare_table_names)
 from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.io.cache import cache_segments
-from gwpy.table import lsctables
-
-from gwpy.time import to_gps
-
-from gwpy.table.utils import (get_table_column, get_row_value)
-from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
+from gwpy.table import (lsctables, GWRecArray)
+from gwpy.table.utils import get_table_column
+from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
+from gwpy.segments import (DataQualityFlag, SegmentList)
 
 try:
     import trigfind
@@ -47,8 +46,15 @@ except ImportError:
     from gwpy.table.io import trigfind
 
 from . import globalv
-from .utils import (re_cchar, vprint)
+from .utils import (re_cchar, vprint, count_free_cores)
 from .channels import get_channel
+
+TRIGFIND_FORMAT = {
+    re.compile('omicron', re.I): 'sngl_burst',
+    trigfind.pycbc_live: 'pycbc_live',
+    trigfind.kleinewelle: 'sngl_burst',
+    trigfind.dmt_omega: 'sngl_burst',
+}
 
 ETG_TABLE = lsctables.TableByName.copy()
 ETG_TABLE.update({
@@ -152,46 +158,37 @@ def get_partial_contenthandler(table):
 
 
 def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
-                 query=True, multiprocess=False, tablename=None,
-                 columns=None, contenthandler=None, return_=True):
+                 columns=None, query=True, multiprocess=False,
+                 ligolwtable=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
+
+    # convert input segments to a segmentlist (for convenience)
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     segments = SegmentList(segments)
 
-    # get LIGO_LW table for this etg
-    if tablename:
-        TableClass = lsctables.TableByName[tablename]
-        register_etg_table(etg, TableClass, force=True)
-    elif key in globalv.TRIGGERS:
-        TableClass = type(globalv.TRIGGERS[key])
+    # get processes
+    if multiprocess is True:
+        nproc = count_free_cores()
+    elif multiprocess is False:
+        nproc = 1
     else:
-        TableClass = get_etg_table(etg)
+        nproc = multiprocess
 
     # work out columns
     if columns is None:
         try:
             columns = config.get(etg, 'columns').split(',')
         except (NoSectionError, NoOptionError):
-            if etg.lower() in ['cwb', 'cwb-ascii']:
-                columns = None
-            else:
-                columns = TableClass.validcolumns.keys()
-    if columns is not None:
-        for col in ['process_id', 'search', 'channel']:
-            if col not in columns:
-                columns.append(col)
+            columns = None
 
     # read segments from global memory
     try:
         havesegs = globalv.TRIGGERS[key].segments
     except KeyError:
         new = segments
-        globalv.TRIGGERS.setdefault(
-            key, lsctables.New(TableClass, columns=columns))
-        globalv.TRIGGERS[key].segments = type(segments)()
     else:
         new = segments - havesegs
 
@@ -199,26 +196,32 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     query &= (abs(new) != 0)
     if query:
         ntrigs = 0
-        vprint("    Grabbing %s triggers for %s... " % (etg, str(channel)))
+        vprint("    Grabbing %s triggers for %s" % (etg, str(channel)))
+
         # store read kwargs
         kwargs = {'columns': columns}
+        if etg.lower().replace('-', '_') in ['cwb', 'pycbc_live']:
+            kwargs['ifo'] = get_channel(channel).ifo
+        if 'format' not in kwargs and 'ahope' not in etg.lower():
+            kwargs['format'] = etg.lower()
 
-        # set content handler
-        if contenthandler is None:
+        # set up ligolw options if needed
+        try:
+            TableClass = get_etg_table(etg)
+        except KeyError:
+            TableClass = None
+        else:
             contenthandler = get_partial_contenthandler(TableClass)
-        lsctables.use_in(contenthandler)
+            lsctables.use_in(contenthandler)
 
+        # loop over segments
         for segment in new:
-            kwargs['filt'] = (
-                lambda t: float(get_row_value(t, 'time')) in segment)
             # find trigger files
             if cache is None and etg.lower() == 'hacr':
                 raise NotImplementedError("HACR parsing has not been "
                                           "implemented.")
             if cache is None and etg.lower() in ['kw', 'kleinewelle']:
-                kwargs['filt'] = lambda t: (
-                    float(get_row_value(t, 'time')) in segment and
-                    t.channel == str(channel))
+                kwargs['filt'] = lambda t: t.channel == str(channel)
             if cache is None:
                 try:
                     segcache = trigfind.find_trigger_urls(str(channel), etg,
@@ -227,52 +230,146 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
                 except ValueError as e:
                     warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
                     continue
-                if etg.lower() == 'omega':
-                    kwargs['format'] = 'omega'
                 else:
-                    kwargs['format'] = 'ligolw'
+                    for regex in TRIGFIND_FORMAT:
+                        if regex.match(etg):
+                            kwargs['format'] = TRIGFIND_FORMAT[regex]
+                            if TRIGFIND_FORMAT[regex] in lsctables.TableByName:
+                                kwargs['get_as_columns'] = True
+                            break
             elif isinstance(cache, Cache):
                 segcache = cache.sieve(segment=segment)
             else:
                 segcache = cache
             if isinstance(segcache, Cache):
                 segcache = segcache.checkfilesexist()[0]
-            if 'format' not in kwargs and 'ahope' not in etg.lower():
-                kwargs['format'] = etg.lower()
-            if (issubclass(TableClass, lsctables.SnglBurstTable) and
-                    etg.lower().startswith('cwb')):
-                kwargs['ifo'] = get_channel(channel).ifo
-            # read triggers and store
+                segcache.sort(key=lambda x: x.segment[0])
+                if etg == 'pycbc_live':  # remove empty HDF5 files
+                    segcache = filter_pycbc_live_files(segcache,
+                                                       ifo=kwargs['ifo'])
+            # if no files, skip
             if len(segcache) == 0:
                 continue
-            if kwargs.get('format', None) == 'ligolw':
-                kwargs['contenthandler'] = contenthandler
-            table = TableClass.read(segcache, **kwargs)
-            globalv.TRIGGERS[key].extend(table)
-            ntrigs += len(table)
+            # read triggers
+            try:  # try directly reading a numpy.recarray
+                table = GWRecArray.read(segcache, nproc=nproc, **kwargs)
+            except Exception as e:  # back up to LIGO_LW
+                if TableClass is not None and 'No reader' in str(e):
+                    try:
+                        table = TableClass.read(segcache, **kwargs)
+                    except Exception:
+                        raise e
+                    else:
+                        table = table.to_recarray(get_as_columns=True)
+                else:
+                    raise
+            # append new events to existing table
             try:
                 csegs = cache_segments(segcache)
             except AttributeError:
                 csegs = SegmentList()
-            try:
-                globalv.TRIGGERS[key].segments.extend(csegs)
-            except AttributeError:
-                globalv.TRIGGERS[key].segments = csegs
-            finally:
-                globalv.TRIGGERS[key].segments.coalesce()
-        vprint("%d events read\n" % ntrigs)
+            table.segments = csegs
+            add_triggers(keep_in_segments(table, SegmentList([segment]), etg),
+                         key, csegs)
+            ntrigs += len(table)
+            vprint(".")
+        vprint(" | %d events read\n" % ntrigs)
 
     # work out time function
     if return_:
-        times = get_table_column(globalv.TRIGGERS[key], 'time').astype(float)
-
-        # return correct triggers
-        out = lsctables.New(TableClass, columns=columns)
-        out.channel = str(channel)
-        out.etg = str(etg)
-        out.extend(t for (i, t) in enumerate(globalv.TRIGGERS[key]) if
-                   times[i] in segments)
-        out.segments = segments & globalv.TRIGGERS[key].segments
-        return out
+        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
     else:
         return
+
+
+def add_triggers(table, key, segments=None):
+    """Add a `GWRecArray` to the global memory cache
+    """
+    try:
+        old = globalv.TRIGGERS[key]
+    except KeyError:
+        globalv.TRIGGERS[key] = table
+        globalv.TRIGGERS[key].segments = segments
+    else:
+        segs = old.segments
+        globalv.TRIGGERS[key] = recfunctions.stack_arrays(
+            (old, table), asrecarray=True, usemask=False).view(type(table))
+        globalv.TRIGGERS[key].segments = segs + segments
+    globalv.TRIGGERS[key].segments.coalesce()
+
+
+def time_in_segments(times, segmentlist):
+    """Find which times lie inside a segmentlist
+
+    Parameters
+    ----------
+    times : `numpy.ndarray`
+        1-dimensional array of times
+    segmentlist : :class:`~glue.segments.segmentlist`
+        list of time segments to test
+
+    Returns
+    -------
+    insegments : `numpy.ndarray`
+        boolean array indicating which times lie inside the segmentlist
+
+    Notes
+    -----
+    A time `t` lies inside a segment `[a..b]` if `a <= t <= b`
+    """
+    segmentlist = type(segmentlist)(segmentlist).coalesce()
+    keep = numpy.zeros(times.shape[0], dtype=bool)
+    j = 0
+    try:
+        a, b = segmentlist[j]
+    except IndexError:  # no segments, return all False
+        return keep
+    i = 0
+    while i < keep.size:
+        t = times[i]
+        # if before start, move to next trigger now
+        if t < a:
+            i += 1
+            continue
+        # if after end, find the next segment and check this trigger again
+        if t > b:
+            j += 1
+            try:
+                a, b = segmentlist[j]
+                continue
+            except IndexError:
+                break
+        # otherwise it must be in this segment, record and move to next
+        keep[i] = True
+        i += 1
+    return keep
+
+
+def keep_in_segments(table, segmentlist, etg=None):
+    """Return a view of the table containing only those rows in the segmentlist
+    """
+    times = get_times(table, etg)
+    keep = time_in_segments(times, segmentlist)
+    out = table[keep]
+    out.segments = segmentlist & table.segments
+    return out
+
+
+def get_times(table, etg):
+    if etg == 'pycbc_live':
+        return table['end_time']
+    # guess from mapped LIGO_LW table
+    try:
+        TableClass = get_etg_table(etg)
+    except KeyError:
+        pass
+    else:
+        tablename = strip_table_name(TableClass.tableName)
+        if tablename.endswith('_burst'):
+            return table['peak_time'] + table['peak_time_ns'] * 1e-9
+        if tablename.endswith('_inspiral'):
+            return table['end_time'] + table['end_time_ns'] * 1e-9
+        if tablename.endswith('_ringdown'):
+            return table['start_time'] + table['start_time_ns'] * 1e-9
+    # use gwpy method (not guaranteed to work)
+    return get_table_column(table, 'time').astype(float)

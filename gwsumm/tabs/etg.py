@@ -27,6 +27,7 @@ from astropy.io.registry import (register_reader, get_reader)
 from glue.lal import Cache
 
 from gwpy.time import from_gps
+from gwpy.table.utils import get_rec_time
 from gwpy.plotter.table import (get_table_column, get_row_value)
 
 from .. import html
@@ -106,20 +107,21 @@ class EventTriggerTab(get_tab('default')):
                 e.args = ("Cannot automatically determine LIGO_LW table for "
                           "etg %r, please specify in configuration file or "
                           "when creating EventTriggerTab" % tablename,)
-                raise
+                table = None
         # register custom readers for this type
-        try:
-            register_etg_table(self.etg.lower(), table)
-        except KeyError:
-            pass
-        try:
-            register_reader(self.etg.lower(), table,
-                            get_reader('ligolw', table))
-        except Exception as e:
-            if 'already defined' in str(e):
+        if table is not None:
+            try:
+                register_etg_table(self.etg.lower(), table)
+            except KeyError:
                 pass
-            else:
-                raise
+            try:
+                register_reader(self.etg.lower(), table,
+                                get_reader('ligolw', table))
+            except Exception as e:
+                if 'already defined' in str(e):
+                    pass
+                else:
+                    raise
 
     @classmethod
     def from_ini(cls, config, section, **kwargs):
@@ -321,43 +323,44 @@ class EventTriggerTab(get_tab('default')):
                                      query=False)
                 # set table headers
                 headers = list(self.loudest['labels'])
-                if 'time' in headers[0]:
+                columns = list(self.loudest['columns'])
+                if columns[0].endswith('time'):
                     headers.insert(1, 'UTC time')
                     date = True
+                    tcol = columns[0]
                 else:
                     date = False
+                    tcol = 'time'
                 # loop over rank columns
                 for rank in self.loudest['rank']:
                     try:
-                        rankstr = self.loudest['labels'][
-                            self.loudest['columns'].index(rank)]
+                        rankstr = self.loudest['labels'][columns.index(rank)]
                     except ValueError:
                         rankstr = repr(rank)
                     page.h3('Loudest events by %s' % rankstr)
-                    rank = get_table_column(table, rank).argsort()[::-1]
+                    rank = table[rank].argsort()[::-1]
                     loudest = []
                     i = 0
+                    dt = self.loudest['dt']
                     while len(loudest) < self.loudest['N'] and i < rank.size:
-                        t = table[rank[i]]
-                        if i == 0 or all([
-                                abs(float(get_row_value(t, 'time')) -
-                                    float(get_row_value(t2, 'time'))) >=
-                                self.loudest['dt'] for t2 in loudest]):
-                            loudest.append(t)
+                        e = table[rank[i]]
+                        t = get_row_value(e, tcol)
+                        if i == 0 or all(
+                                abs((t - get_row_value(e2, tcol))) >= dt
+                                for e2 in loudest):
+                            loudest.append(e)
                         i += 1
                     data = []
                     for row in loudest:
                         data.append([])
-                        for column in self.loudest['columns']:
+                        for column in columns:
                             data[-1].append(
                                 '%.3f' % float(get_row_value(row, column)))
                         if date:
                             data[-1].insert(
-                                1,
-                                from_gps(get_row_value(
-                                    row, self.loudest['columns'][0])).strftime(
-                                    '%B %d %Y, %H:%M:%S.%f')[:-3])
-                    page.add(str(html.data_table(headers, data, table='data')))
+                                1, from_gps(get_row_value(row, tcol)).strftime(
+                                       '%B %d %Y, %H:%M:%S.%f')[:-3])
+                    page.add(str(html.data_table(headers, data)))
 
             if self.subplots:
                 page.hr(class_='row-divider')

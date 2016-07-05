@@ -101,16 +101,16 @@ class ConfigTestCase(unittest.TestCase):
 
     def test_load_channels(self):
         cp = self.new()
-        cp.add_section('X1:TEST-CHANNEL:1')
-        cp.set('X1:TEST-CHANNEL:1', 'frametype', 'X1_TEST')
+        cp.add_section('X1:TEST-CHANNEL')
+        cp.set('X1:TEST-CHANNEL', 'frametype', 'X1_TEST')
         cp.load_channels()
-        c = get_channel('X1:TEST-CHANNEL:1')
+        c = get_channel('X1:TEST-CHANNEL')
         self.assertEqual(c.frametype, 'X1_TEST')
         # test with interpolation
         cp.set(config.DEFAULTSECT, 'ifo', 'X1')
-        cp.add_section('%(ifo)s:TEST-CHANNEL_2:1')
-        cp.set('%(ifo)s:TEST-CHANNEL_2:1', 'resample', '128')
+        cp.add_section('%(ifo)s:TEST-CHANNEL_2')
+        cp.set('%(ifo)s:TEST-CHANNEL_2', 'resample', '128')
         cp.interpolate_section_names(ifo='X1')
         cp.load_channels()
-        c = get_channel('X1:TEST-CHANNEL_2:1')
+        c = get_channel('X1:TEST-CHANNEL_2')
         self.assertEqual(c.resample, 128)

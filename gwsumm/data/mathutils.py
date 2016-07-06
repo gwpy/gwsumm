@@ -102,7 +102,7 @@ def parse_math_definition(definition):
             if mathstr:
                 raise ValueError("Cannot parse math operation %r" % mathstr)
         else:
-            op = get_operator(cop['operator'])
+            op = get_operator(cop['operator'].strip())
             value = float(cop['value'])
             channels[-1] = (cname, (op, value))  # record math to be done
         if c is None:  # if at the end, break

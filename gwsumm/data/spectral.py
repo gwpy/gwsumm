@@ -152,19 +152,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                 filter_ = eval(filter_)
 
         # get time-series data
-        if stride is not None:
-            tmp = type(new)()
-            for s in new:
-                if abs(s) < stride:
-                    continue
-                else:
-                    d = float(abs(s))
-                    e = (s[0] + d // stride * stride +
-                         fftparams.get('overlap', 0))
-                    if e - s[0] > d:
-                        e -= fftparams['fftlength']
-                    tmp.append(type(s)(s[0], e))
-            new = tmp
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
                                         multiprocess=nproc, query=query,
@@ -173,8 +160,15 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         if len(timeserieslist):
             vprint("    Calculating spectrograms for %s" % str(channel))
         for ts in timeserieslist:
-            if abs(ts.span) < stride:
+            # if too short for a single segment, continue
+            if abs(ts.span) < (stride + fftparams.get('overlap', 0)):
                 continue
+            # truncate timeseries to integer number of strides
+            d = size_for_spectrogram(ts.duration.to('s').value, stride,
+                                     fftparams['fftlength'],
+                                     fftparams.get('overlap', 0))
+            ts = ts.crop(ts.span[0], ts.span[0] + d, copy=False)
+            # calculate spectrogram
             try:
                 specgram = ts.spectrogram(stride, nproc=nproc, **fftparams)
             except ZeroDivisionError:
@@ -334,3 +328,12 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
             return_=return_, datafind_error=datafind_error,
             **fftparams)
     return out
+
+
+def size_for_spectrogram(size, stride, fftlength, overlap):
+    if size < stride:
+        return None
+    x = size // stride * stride + overlap
+    if x > size:
+        x -= fftlength
+    return x

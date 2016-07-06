@@ -200,7 +200,9 @@ class DataPlot(SummaryPlot):
             self.tag = tag
         if pid is not None:
             self.pid = pid
-        self.all_data = all_data
+        # allow user to specify all-data instead of all_data as kwarg
+        # mainly for INI-parsing convenience, should fix properly
+        self.all_data = pargs.pop('all-data', all_data)
         self.pargs = self.defaults.copy()
         self.pargs.update(pargs)
         self.parse_rcParams(self.pargs)

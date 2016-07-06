@@ -94,8 +94,9 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     Channel : :class:`~gwpy.detector.channel.Channel`
         new channel.
     """
-    nchans = len(re_channel.findall(str(channel)))
-    if nchans > 1:
+    chans = re_channel.findall(str(channel))
+    nchans = len(chans)
+    if nchans > 1 or (nchans == 1 and chans[0] != str(channel)):
         name = str(channel)
         try:
             type_ = Channel.MATCH.match(name).groupdict()['type']

@@ -177,6 +177,12 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
     else:
         nproc = multiprocess
 
+    # find LIGO_LW table for this ETG
+    try:
+        TableClass = get_etg_table(etg)
+    except KeyError:
+        TableClass = None
+
     # work out columns
     if columns is None:
         try:
@@ -207,11 +213,7 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
             kwargs['format'] = etg.lower()
 
         # set up ligolw options if needed
-        try:
-            TableClass = get_etg_table(etg)
-        except KeyError:
-            TableClass = None
-        else:
+        if TableClass is not None:
             contenthandler = get_partial_contenthandler(TableClass)
             lsctables.use_in(contenthandler)
 
@@ -284,7 +286,16 @@ def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
 
     # work out time function
     if return_:
-        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        try:
+            return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        except KeyError:
+            if TableClass is not None:
+                tab = lsctables.New(TableClass, columns=columns).to_recarray(
+                    get_as_columns=True)
+            else:
+                tab = GWRecArray((0,), dtype=[(c, float) for c in columns])
+            tab.segments = segments
+            return tab
     else:
         return
 

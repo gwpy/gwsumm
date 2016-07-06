@@ -166,7 +166,8 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
         clog = self.pargs.pop('logcolor', False)
         clabel = self.pargs.pop('colorlabel', None)
-        no_loudest = self.pargs.pop('no_loudest', False) is not False
+        no_loudest = self.pargs.pop('no-loudest', False) is not False
+        loudest_by = self.pargs.pop('loudest-by', None)
 
         # get plot arguments
         plotargs = []
@@ -275,10 +276,26 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             plot.add_colorbar(ax=ax, visible=False)
 
         if len(self.channels) == 1 and len(table) and not no_loudest:
-            if ccolumn is None:
-                ax.add_loudest(table, ycolumn, xcolumn, ycolumn)
+            if loudest_by is None and ccolumn is None:
+                columns = [ycolumn, xcolumn, ycolumn]
+            elif loudest_by is None:
+                columns = [ccolumn, xcolumn, ycolumn]
+            elif ccolumn is None:
+                columns = [loudest_by, xcolumn, ycolumn]
             else:
-                ax.add_loudest(table, ccolumn, xcolumn, ycolumn)
+                columns = [loudest_by, xcolumn, ycolumn, ccolumn]
+            ax.add_loudest(table, *columns)
+            # pin loudest to edge of axes if outside
+            loudest = ax.collections[-1]
+            x, y = loudest.get_offsets()[0]
+            xlim = ax.get_xlim()
+            ylim = ax.get_ylim()
+            x1 = max(min(x, xlim[1]), xlim[0])
+            y1 = max(min(y, ylim[1]), ylim[0])
+            if x1 != x or y1 != y:
+                loudest.set_offsets(([x1, y1]))
+                loudest.set_clip_on(False)
+                loudest.set_facecolor('pink')
 
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)

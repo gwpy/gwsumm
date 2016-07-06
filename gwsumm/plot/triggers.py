@@ -495,8 +495,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
     data = 'triggers'
     defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({'column': None,
-                     'legend_bbox_to_anchor': (1.15, 1.1),
-                     'legend_markerscale': 3,
+                     'legend-bbox_to_anchor': (1.15, 1.1),
+                     'legend-markerscale': 3,
                      'ylabel': 'Rate [Hz]'})
 
     def __init__(self, *args, **kwargs):
@@ -548,10 +548,12 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []
             for channel, bin in [(c, b) for c in self.channels for b in bins]:
-                labels.append(r' '.join([channel, cname, '$%s$' % opstr,
+                labels.append(r' '.join([channel, '$%s$' % opstr,
                                          str(b)]))
+            self.pargs.setdefault('legend-title', cname)
         elif labels is None and self.column:
-            labels = [r' '.join([cname,'$%s$' % opstr, str(b)]) for b in bins]
+            labels = [r' '.join(['$%s$' % opstr, str(b)]) for b in bins]
+            self.pargs.setdefault('legend-title', cname)
         elif labels is None:
             labels = self.channels
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)

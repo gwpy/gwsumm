@@ -135,7 +135,9 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         # match single trend
         elif len(matches) == 1:
             # set default trend type based on mode
-            if type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
+            if type_ is None and ':DMT-' in name:  # DMT is always m-trend
+                type_ = 'm-trend'
+            elif type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
                 type_ = 's-trend'
             elif type_ is None:
                 type_ = 'm-trend'

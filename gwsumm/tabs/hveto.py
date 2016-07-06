@@ -36,11 +36,12 @@ from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
 from ..mode import SUMMARY_MODE_DAY
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import (GWSummConfigParser, NoSectionError, NoOptionError,
+                      DEFAULTSECT)
 from ..channels import get_channel
 from ..segments import get_segments
 from ..state import (ALLSTATE, SummaryState)
-from ..triggers import (register_etg_table, get_triggers)
+from ..triggers import (register_etg_table, get_triggers, add_triggers)
 from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
@@ -72,8 +73,8 @@ class HvetoTab(base):
         """Define a new `HvetoTab` from a `ConfigParser`.
         """
         # set state information
-        start = config.getint('general', 'gps-start-time')
-        end = config.getint('general', 'gps-end-time')
+        start = config.getint(DEFAULTSECT, 'gps-start-time')
+        end = config.getint(DEFAULTSECT, 'gps-end-time')
         ifo = config.get('DEFAULT', 'ifo')
 
         if config.has_option(section, 'states'):
@@ -90,6 +91,15 @@ class HvetoTab(base):
         globalv.STATES[state] = SummaryState(state, known=(start, end))
         globalv.STATES[state].definition = '%s:hveto' % ifo
         config.set(section, 'states', state)
+
+        # create hveto ETG section
+        try:
+            config.get('hveto', 'columns')
+        except NoSectionError:
+            config.add_section('hveto')
+            config.set('hveto', 'columns', ','.join(HVETO_COLUMNS))
+        except NoOptionError:
+            pass
 
         # parse generic configuration
         new = super(HvetoTab, cls).from_ini(config, section, **kwargs)
@@ -202,11 +212,10 @@ class HvetoTab(base):
         cache = Cache([CacheEntry.from_T050017(
                            os.path.join(self.directory, rawfile))])
         get_triggers('%s:hveto_start' % ifo, 'hveto', [self.span],
-                     config=config, cache=cache, tablename='sngl_burst',
-                     return_=False)
-
+                     config=config, cache=cache, return_=False)
         get_triggers('%s:hveto_vetoed_all' % ifo, 'hveto', [self.span],
-                     config=config, cache=Cache(), tablename='sngl_burst')
+                     config=config, cache=Cache(), return_=False)
+
         for r in range(1, len(self.rounds) + 1):
             # read round veto triggers
             rawfile = ('%s-HVETO_VETOED_TRIGS_ROUND_%d-%d-%d.txt'
@@ -214,9 +223,9 @@ class HvetoTab(base):
             cache = Cache([CacheEntry.from_T050017(
                                os.path.join(self.directory, rawfile))])
             trigs = get_triggers('%s:hveto_vetoed_round %d' % (ifo, r), 'hveto',
-                         [self.span], config=config, cache=cache,
-                         tablename='sngl_burst')
-            globalv.TRIGGERS['%s:hveto_vetoed_all,hveto' % ifo].extend(trigs)
+                         [self.span], config=config, cache=cache)
+            add_triggers(trigs, '%s:hveto_vetoed_all,hveto' % ifo,
+                         segments=SegmentList([self.span]))
             # read round veto segments
             segfile = ('%s-HVETO_VETO_SEGS_ROUND_%d-%d-%d.txt'
                        % (ifo, r, start, duration))

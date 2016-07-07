@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home/detchar/opt/gwpysoft-2.7/bin/python
 
 """Plot the triggers for a given ETG and a given channel
 """
@@ -75,10 +75,6 @@ for input_ in args.plot_params:
 # get segments
 if args.state:
     segs = get_segments(args.state, [span], url='https://dqsegdb5.phy.syr.edu')
-    filt = lambda row: (row.snr > args.snr and
-                        get_row_value(row, 'time') in segs)
-else:
-    filt = lambda row: row.snr > args.snr
 
 # read cache
 if args.cache_file:

@@ -21,10 +21,6 @@
 
 import re
 import warnings
-try:
-    from configparser import (ConfigParser, NoSectionError, NoOptionError)
-except ImportError:
-    from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 
 import numpy
 from numpy.lib import recfunctions
@@ -47,6 +43,7 @@ except ImportError:
 
 from . import globalv
 from .utils import (re_cchar, vprint, count_free_cores)
+from .config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from .channels import get_channel
 
 TRIGFIND_FORMAT = {
@@ -157,8 +154,8 @@ def get_partial_contenthandler(table):
     return _ContentHandler
 
 
-def get_triggers(channel, etg, segments, config=ConfigParser(), cache=None,
-                 columns=None, query=True, multiprocess=False,
+def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
+                 cache=None, columns=None, query=True, multiprocess=False,
                  ligolwtable=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """

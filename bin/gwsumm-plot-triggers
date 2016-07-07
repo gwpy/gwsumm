@@ -16,10 +16,11 @@ from glue.lal import Cache
 from gwpy.segments import Segment
 from gwpy.table.utils import get_row_value
 from gwpy.time import to_gps
+from gwpy.plotter import EventTablePlot
 
 from gwsumm.plot import (get_plot, rcParams)
 from gwsumm.segments import get_segments
-from gwsumm.triggers import get_triggers
+from gwsumm.triggers import (get_triggers, keep_in_segments)
 
 
 def safe_eval(val):
@@ -88,20 +89,21 @@ else:
     cache = None
 
 # get triggers
-tmp = get_triggers(args.channel, args.etg, [span], cache=cache,
-                   columns=args.columns)
-trigs = tmp.copy()
-trigs.extend(filter(filt, tmp))
+trigs = get_triggers(args.channel, args.etg, [span], cache=cache,
+                     columns=args.columns)
+trigs = trigs[trigs['snr'] > args.snr]
+if args.state:
+    trigs = keep_in_segments(trigs[snrt], segs, etg=args.etg)
 print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot
 if args.tiles:
-    plot = trigs.plot('time', args.fcolumn, 'duration', 'bandwidth',
-                      epoch=args.epoch, color=args.color, edgecolor='face',
-                      linewidth=0.8)
+    plot = EventTablePlot(trigs, 'time', args.fcolumn, 'duration', 'bandwidth',
+                          epoch=args.epoch, color=args.color, edgecolor='face',
+                          linewidth=0.8)
 else:
-    plot = trigs.plot('time', args.fcolumn, epoch=args.epoch,
-                      color=args.color, edgecolor='none', s=12)
+    plot = EventTablePlot(trigs, 'time', args.fcolumn, epoch=args.epoch,
+                          color=args.color, edgecolor='none', s=12)
 ax = plot.gca()
 map = ax.collections[0]
 

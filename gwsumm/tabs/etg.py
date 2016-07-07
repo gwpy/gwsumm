@@ -319,11 +319,11 @@ class EventTriggerTab(get_tab('default')):
                        'separation).'
                        % (self.loudest['N'], self.etg, self.loudest['dt']))
                 # get triggers
+                columns = list(self.loudest['columns'])
                 table = get_triggers(self.channel, self.plots[0].etg, state,
-                                     query=False)
+                                     query=False, columns=columns)
                 # set table headers
                 headers = list(self.loudest['labels'])
-                columns = list(self.loudest['columns'])
                 if columns[0].endswith('time'):
                     headers.insert(1, 'UTC time')
                     date = True

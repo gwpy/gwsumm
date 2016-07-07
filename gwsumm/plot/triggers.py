@@ -198,6 +198,12 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                 clim is not None):
             plotargs[0]['size_range'] = clim
 
+        # get columns
+        columns = [c for c in self.columns if c is not None]
+        if loudest_by is not None:
+            columns.append(loudest_by)
+        columns = list(set(columns))
+
         # add data
         valid = SegmentList([self.span])
         if self.state and not self.all_data:
@@ -213,7 +219,8 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table = get_triggers(key, self.etg, valid, query=False)
+            table = get_triggers(key, self.etg, valid, query=False,
+                                 columns=columns)
             ntrigs += len(table)
             # access channel parameters for limits
             for c, column in zip(('x', 'y', 'c'), (xcolumn, ycolumn, ccolumn)):
@@ -450,7 +457,8 @@ class TriggerHistogramPlot(get_plot('histogram')):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid, query=False)
+            table_ = get_triggers(key, self.etg, valid, query=False,
+                                  columns=[self.column])
             livetime.append(float(abs(table_.segments)))
             data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
@@ -584,6 +592,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
             else:
                 tcol = 'time'
 
+        columns = [tcol, self.column]
+
         # generate data
         keys = []
         for channel in self.channels:
@@ -595,7 +605,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                 key = '%s,%s' % (str(channel), state and str(state) or 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid, query=False)
+            table_ = get_triggers(key, self.etg, valid, query=False,
+                                  columns=columns)
             if self.column:
                 rates = binned_event_rates(
                     table_, stride, self.column, bins, operator, self.start,

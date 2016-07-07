@@ -196,8 +196,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         new = segments - havesegs
 
     # read new triggers
-    query &= (abs(new) != 0)
-    if query:
+    if query and abs(new) != 0:
         ntrigs = 0
         vprint("    Grabbing %s triggers for %s" % (etg, str(channel)))
 
@@ -281,18 +280,19 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             vprint(".")
         vprint(" | %d events read\n" % ntrigs)
 
+    # set default empty table
+    elif query and key not in globalv.TRIGGERS:
+        if TableClass is not None:
+            tab = lsctables.New(TableClass, columns=columns).to_recarray(
+                get_as_columns=True)
+        else:
+            tab = GWRecArray((0,), dtype=[(c, float) for c in columns])
+        tab.segments = SegmentList()
+        add_triggers(tab, key, tab.segments)
+
     # work out time function
     if return_:
-        try:
-            return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
-        except KeyError:
-            if TableClass is not None:
-                tab = lsctables.New(TableClass, columns=columns).to_recarray(
-                    get_as_columns=True)
-            else:
-                tab = GWRecArray((0,), dtype=[(c, float) for c in columns])
-            tab.segments = segments
-            return tab
+        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
     else:
         return
 

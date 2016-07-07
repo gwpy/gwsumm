@@ -250,18 +250,22 @@ class GuardianTab(DataTab):
         page.p("Only those states named in the configuration are shown, but "
                "the 'Total' includes transitions from any and all states. "
                "'-' indicates no transitions from that state")
-        page.table(class_='transitions data')
-        page.tr(class_='header')
+        page.table(class_='table table-condensed table-hover '
+                          'table-responsive transitions')
+        page.thead()
+        page.tr()
         for th in ['State'] + self.grdstates.values() + ['Total']:
             page.th(th)
         page.tr.close()
+        page.thead.close()
+        page.tbody()
         for i, bit in enumerate(self.transstates):
             page.tr()
             name = self.grdstates[bit].strip('*')
             page.th(name)
             for j, bit2 in enumerate(self.grdstates):
                 if i == j:
-                    page.td('-', class_='IOP')
+                    page.td('-', class_='ignore')
                     continue
                 count = len([t for t in self.transitions[bit] if
                              t[1] == bit2])
@@ -271,6 +275,7 @@ class GuardianTab(DataTab):
                     page.td('-')
             page.th(str(len(self.transitions[bit])))
             page.tr.close()
+        page.tbody.close()
         page.table.close()
         page.div.close()
         page.div.close()

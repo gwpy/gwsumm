@@ -261,14 +261,17 @@ class SEIWatchDogTab(base):
 
         # build summary table
         page.div(class_='well')
-        page.table(class_='watchdog data')
+        page.table(class_='table table-condensed table-hover watchdog')
+        page.thead()
         # add headers
         page.tr(class_='header')
         for th in ['WD'] + self.chambers + ['Sub-total']:
             page.th(th)
         page.tr.close()
+        page.thead.close()
 
         # add rows
+        page.tbody()
         totals = numpy.zeros((len(mask), len(self.chambers) + 1),
                              dtype=int)
         rows = []
@@ -278,7 +281,7 @@ class SEIWatchDogTab(base):
                     i == len(hepimask + isichannels[0].bits)):
                 class_.append('tdiv')
             if re_no_count.match(bit):
-                class_.append('IOP')
+                class_.append('ignore')
             if class_:
                 page.tr(class_=' '.join(class_))
             else:
@@ -299,13 +302,17 @@ class SEIWatchDogTab(base):
             totals[i][-1] = totals[i].sum()
             page.th(totals[i][-1])
             page.tr.close()
+        page.tbody.close()
+
         # add totals
+        page.thead()
         page.tr(class_='header')
         page.th('Totals')
         for i in range(totals.shape[1]):
             t = totals[:,i].sum()
             page.th(t)
         page.tr.close()
+        page.thead.close()
         page.table.close()
         page.div.close()
 
@@ -373,7 +380,7 @@ class SEIWatchDogTab(base):
                 rows[-1].append('<br>'.join(assoc))
             else:
                 rows[-1].append('-')
-        page.add(str(html.data_table(headers, rows, table='wdtrips data')))
+        page.add(str(html.data_table(headers, rows)))
 
         wdp = []
         for i, p in enumerate(self.plots):

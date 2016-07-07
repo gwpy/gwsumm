@@ -280,8 +280,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             vprint(".")
         vprint(" | %d events read\n" % ntrigs)
 
-    # set default empty table
-    elif query and key not in globalv.TRIGGERS:
+    # if asked to read triggers, but didn't actually read any,
+    # create an empty table so that subsequent calls don't raise KeyErrors
+    if query and key not in globalv.TRIGGERS:
         if TableClass is not None:
             tab = lsctables.New(TableClass, columns=columns).to_recarray(
                 get_as_columns=True)

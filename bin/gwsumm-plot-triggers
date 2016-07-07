@@ -42,10 +42,13 @@ parser.add_argument('-e', '--etg', default='omicron',
                     help='name of ETG, default: %(default)s')
 parser.add_argument('-t', '--epoch', type=to_gps,
                     help='Zero-time for plot, defaults to GPSSTART')
+parser.add_argument('-x', '--tcolumn', default='time',
+                    help='column for time, default: %(default)s')
 parser.add_argument('-f', '--fcolumn', default='peak_frequency',
-                  help='sngl_burst column for frequency: default: %(default)s')
+                    help='sngl_burst column for frequency: '
+                         'default: %(default)s')
 parser.add_argument('-c', '--color', default='snr',
-                  help='sngl_burst column for colour: default: %(default)s')
+                    help='sngl_burst column for colour: default: %(default)s')
 parser.add_argument('-s', '--snr', default=0, type=float,
                     help='minimum SNR, default: %(default)s')
 parser.add_argument('-p', '--plot-params', action='append', default=[],
@@ -94,11 +97,11 @@ print("Read %d events for %s [%s]" % (len(trigs), args.channel, args.etg))
 
 # plot
 if args.tiles:
-    plot = EventTablePlot(trigs, 'time', args.fcolumn, 'duration', 'bandwidth',
-                          epoch=args.epoch, color=args.color, edgecolor='face',
-                          linewidth=0.8)
+    plot = EventTablePlot(trigs, args.tcolumn, args.fcolumn, 'duration',
+                          'bandwidth', epoch=args.epoch, color=args.color,
+                          edgecolor='face', linewidth=0.8)
 else:
-    plot = EventTablePlot(trigs, 'time', args.fcolumn, epoch=args.epoch,
+    plot = EventTablePlot(trigs, args.tcolumn, args.fcolumn, epoch=args.epoch,
                           color=args.color, edgecolor='none', s=12)
 ax = plot.gca()
 map = ax.collections[0]
@@ -110,12 +113,18 @@ ax.set_ylabel('Frequency [Hz]')
 ax.set_yscale('log')
 
 # set mappable properties
-map.set_norm(LogNorm(vmin=3, vmax=50))
+vmin, vmax = params.pop('clim', (3, 50))
+if params.pop('logcolor', True):
+    map.set_norm(LogNorm(vmin=vmin, vmax=vmax))
 if map._A is None:
     map._A = ndarray((0,))
 
-plot.add_colorbar(mappable=map, ax=ax, label='Signal-to-noise ratio (SNR)',
-                  cmap=get_plot('triggers').defaults.get('cmap',  'YlGnBu'))
+# draw colorbar
+clabel = params.pop('colorlabel', 'Signal-to-noise ratio (SNR)')
+cmap = params.pop('cmap', get_plot('triggers').defaults.get('cmap',  'YlGnBu'))
+plot.add_colorbar(mappable=map, ax=ax, label=clabel, cmap=cmap,
+                  clim=(vmin, vmax))
+
 for key, val in params.iteritems():
     try:
         getattr(ax, 'set_%s' % key)(val)

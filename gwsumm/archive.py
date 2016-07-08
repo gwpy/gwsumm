@@ -89,6 +89,11 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                                 ts.write(tgroup, name=name, format='hdf')
                         except ValueError as e:
                             warnings.warn(str(e))
+                        except RuntimeError as e:
+                            if 'Name already exists' in str(e):
+                                warnings.warn("%s [%s]" % (str(e), name))
+                            else:
+                                raise
 
             # record all spectrogram data
             if spectrogram:

@@ -187,8 +187,12 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                 else:
                     raise
             if filter_ and fftparams['method'] not in ['rayleigh']:
+                # manually setting x0 is a hack against precision error
+                # somewhere inside the **(1/2.) operation (Quantity)
+                x0 = specgram.x0.value
                 specgram = (specgram ** (1/2.)).filter(*filter_,
                                                        inplace=True) ** 2
+                specgram.x0 = x0
             if specgram.unit is None:
                 specgram._unit = channel.unit
             elif len(globalv.SPECTROGRAMS[key]):

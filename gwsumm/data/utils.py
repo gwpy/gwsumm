@@ -193,14 +193,16 @@ class FftParams(object):
 
 
 def get_fftparams(channel, **defaults):
-
     channel = get_channel(channel)
     fftparams = FftParams(**defaults)
     for key in fftparams.__slots__:
         try:
             setattr(fftparams, key, getattr(channel, key))
         except AttributeError:
-            pass
+            try:  # set attribute in channel object for future reference
+                setattr(channel, key, defaults[key])
+            except KeyError:
+                pass
 
     # set stride to something sensible
     if fftparams.stride is None and fftparams.overlap:

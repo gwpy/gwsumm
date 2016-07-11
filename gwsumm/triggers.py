@@ -273,9 +273,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             except AttributeError:
                 csegs = SegmentList()
             table.segments = csegs
-            add_triggers(keep_in_segments(table, SegmentList([segment]), etg),
-                         key, csegs)
-            ntrigs += len(table)
+            t2 = keep_in_segments(table, SegmentList([segment]), etg)
+            add_triggers(t2, key, csegs)
+            ntrigs += len(t2)
             vprint(".")
         vprint(" | %d events read\n" % ntrigs)
 

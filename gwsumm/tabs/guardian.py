@@ -19,8 +19,6 @@
 """Definition of the `GuardianTab`
 """
 
-from __future__ import print_function
-
 import re
 
 try:
@@ -58,6 +56,8 @@ UTC = tz.gettz('UTC')
 REQUESTSTUB = '+request'
 NOMINALSTUB = '+nominal'
 MODE_COLORS = ['grey', 'magenta', 'red', 'saddlebrown']
+
+re_guardian_index = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
 
 
 class GuardianTab(DataTab):
@@ -351,7 +351,6 @@ class GuardianStatePlot(get_plot('segments')):
     defaults = get_plot('segments').defaults.copy()
     defaults.update({
         'color': None,
-        'insetlabels': 'inset',
         'edgecolor': 'black',
         'linewidth': 0.5,
         'requestcolor': (0., .4, 1.),
@@ -361,6 +360,7 @@ class GuardianStatePlot(get_plot('segments')):
         'legend_borderaxespad': 0.,
         'legend_fontsize': 12,
         'legend_title': 'Node state',
+        'ytick.labelsize': 10,
     })
 
     def __init__(self, *args, **kwargs):
@@ -375,7 +375,7 @@ class GuardianStatePlot(get_plot('segments')):
     def ifo(self):
         return list(self.ifos)[0]
 
-    def process(self):
+    def draw(self):
         (plot, axes) = self.init_plot(plot=SegmentPlot)
         ax = axes[0]
 
@@ -421,6 +421,17 @@ class GuardianStatePlot(get_plot('segments')):
             nominal = str(flag) + NOMINALSTUB
             segs = get_segments([flag, inreq, nominal], validity=valid,
                                 query=False)
+            # format label
+            if self.fileformat != 'svg':
+                try:
+                    idx, label = re_guardian_index.match(label).groups()
+                except AttributeError:
+                    pass
+                else:
+                    x = float(self.span[0]) - (float(abs(self.span)) * 0.005)
+                    ax.text(x, y, '[%s]' % idx, ha='right', va='center',
+                            fontsize=12)
+            # plot segments
             ax.plot(segs[nominal], label=label, y=y, height=1., **plotargs)
             ax.plot(segs[inreq], label=label, y=y, collection='ignore',
                     **reqargs)

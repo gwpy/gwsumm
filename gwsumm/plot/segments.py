@@ -61,7 +61,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     data = 'segments'
     defaults = {'mask': None,
                 'color': None,
-                'on_is_bad': False,
+                'on-is-bad': False,
                 'insetlabels': 'inset',
                 'edgecolor': 'black',
                 'legend-bbox_to_anchor': (1.01, 1.),
@@ -185,7 +185,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         elif known != 'undefined':
             return 'blue', known
         else:
-            onisbad = bool(self.pargs.pop('on_is_bad', True))
+            onisbad = bool(self.pargs.pop('on-is-bad', False))
             if onisbad:
                 return 'red', GREEN
             else:
@@ -359,9 +359,11 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         mask = self.pargs.pop('mask')
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         activecolor, validcolor = self.get_segment_color()
-        edgecolor = self.pargs.pop('edgecolor')
-        plotargs = {'facecolor': activecolor,
-                    'edgecolor': edgecolor}
+        plotargs = {'edgecolor': self.pargs.pop('edgecolor')}
+        if isinstance(activecolor, dict):
+            plotargs.update(activecolor)
+        else:
+            plotargs['facecolor'] = activecolor
         if isinstance(validcolor, dict):
             plotargs['known'] = validcolor
         elif (validcolor is None or isinstance(validcolor, str) or

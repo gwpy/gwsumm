@@ -240,16 +240,15 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     kwargs.setdefault('format', 'omega')
                 else:
                     kwargs.setdefault('format', 'ligolw')
-            elif isinstance(cache, Cache):
-                segcache = cache.sieve(segment=segment)
             else:
                 segcache = cache
             if isinstance(segcache, Cache):
+                segcache = segcache.sieve(segment=segment)
                 segcache = segcache.checkfilesexist()[0]
                 segcache.sort(key=lambda x: x.segment[0])
                 if etg == 'pycbc_live':  # remove empty HDF5 files
-                    segcache = filter_pycbc_live_files(segcache,
-                                                       ifo=kwargs['ifo'])
+                    segcache = type(segcache)(
+                        filter_pycbc_live_files(segcache, ifo=kwargs['ifo']))
             # if no files, skip
             if len(segcache) == 0:
                 continue

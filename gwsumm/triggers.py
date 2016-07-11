@@ -308,7 +308,8 @@ def add_triggers(table, key, segments=None):
     else:
         segs = old.segments
         globalv.TRIGGERS[key] = recfunctions.stack_arrays(
-            (old, table), asrecarray=True, usemask=False).view(type(table))
+            (old, table), asrecarray=True, usemask=False,
+            autoconvert=True).view(type(table))
         globalv.TRIGGERS[key].segments = segs + segments
     globalv.TRIGGERS[key].segments.coalesce()
 

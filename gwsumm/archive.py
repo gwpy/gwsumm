@@ -26,14 +26,17 @@ import re
 import datetime
 import os.path
 
-from gwpy.time import (from_gps, to_gps)
+from numpy import (rec, array)
+
+from gwpy.time import (from_gps, to_gps, LIGOTimeGPS)
 from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
-from gwpy.segments import DataQualityFlag
+from gwpy.segments import (SegmentList, Segment, DataQualityFlag)
 
 from . import (globalv, mode)
 from .data import (get_channel, add_timeseries, add_spectrogram,
                    add_coherence_component_spectrogram)
+from .triggers import (GWRecArray, add_triggers)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -41,7 +44,7 @@ re_rate = re.compile('_EVENT_RATE_')
 
 
 def write_data_archive(outfile, timeseries=True, spectrogram=True,
-                       segments=True):
+                       segments=True, triggers=True):
     """Build and save an HDF archive of data processed in this job.
 
     Parameters
@@ -117,6 +120,13 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 # loop over channels
                 for name, dqflag in globalv.SEGMENTS.iteritems():
                     dqflag.write(group, name=name, format='hdf')
+
+            # record all triggers
+            if triggers:
+                group = h5file.create_group('triggers')
+                for key in globalv.TRIGGERS:
+                    archive_recarray(globalv.TRIGGERS[key], key, group)
+
     except:
         if backup:
             restore_backup(backup, outfile)
@@ -193,6 +203,13 @@ def read_data_archive(sourcefile):
             dqflag = DataQualityFlag.read(dataset, format='hdf')
             globalv.SEGMENTS += {name: dqflag}
 
+        # read all triggers
+        try:
+            group = h5file['triggers']
+        except KeyError:
+            group = dict()
+        for key in group:
+            load_recarray(group[key])
 
 def backup_existing_archive(filename, suffix='.hdf',
                             prefix='gw_summary_archive_', dir=None):
@@ -230,3 +247,38 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
         if os.path.isfile(arch):
             archives.append(arch)
     return archives
+
+
+# -- utility methods --------------------------------------------------------
+
+def archive_recarray(table, key, parent, compression='gzip'):
+    """Add a recarray to the given HDF5 group
+    """
+    group = parent.create_group(key)
+    # write segments with an offset to preserve precision
+    epoch = int(table.segments[0][0])
+    segs = [(s[0] - epoch, s[1] - epoch) for s in table.segments]
+    dset = group.create_dataset('segments', data=array(segs, dtype=float),
+                                compression=compression)
+    dset.attrs['epoch'] = epoch
+    # write each column
+    for col in table.dtype.fields:
+        group.create_dataset(col, data=table[col], compression=compression)
+    return key
+
+
+def load_recarray(group):
+    """Read recarray from the given HDF5 group
+    """
+    columns = map(str, list(group))
+    # read segments
+    epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
+    segments = SegmentList(Segment(epoch + x[0], epoch + x[1]) for
+                           x in group['segments'][:])
+    columns.pop(columns.index('segments'))
+    # read columns
+    data = [group[c] for c in columns]
+    # format and add
+    table = rec.fromarrays(data, names=columns).view(GWRecArray)
+    add_triggers(table, group.name.split('/')[-1], segments=segments)
+    return table

@@ -42,6 +42,11 @@ body {
 		}
 }
 
+// put images in the middle of their container
+img {
+		margin: 0 auto;
+}
+
 // detchar stuff
 #idq img,
 #upv img {

@@ -20,8 +20,25 @@
 """
 
 import sys
+from functools import wraps
 
 if sys.version_info < (2, 7):
     import unittest2 as unittest
 else:
     import unittest
+
+from gwsumm import globalv
+
+
+# -- test decorators ----------------------------------------------------------
+
+def empty_globalv_CHANNELS(f):
+    @wraps(f)
+    def wrapped_f(*args, **kwargs):
+        _channels = globalv.CHANNELS
+        globalv.CHANNELS = type(globalv.CHANNELS)()
+        try:
+            return f(*args, **kwargs)
+        finally:
+            globalv.CHANNELS = _channels
+    return wrapped_f

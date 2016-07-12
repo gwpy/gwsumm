@@ -23,7 +23,7 @@
 import sys
 import datetime
 
-from compat import unittest
+from common import unittest
 from gwsumm import (globalv, mode)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

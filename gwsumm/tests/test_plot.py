@@ -23,7 +23,7 @@
 from matplotlib import use
 use('agg')
 
-from compat import unittest
+from common import unittest
 from gwsumm import plot
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -240,16 +240,15 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     kwargs.setdefault('format', 'omega')
                 else:
                     kwargs.setdefault('format', 'ligolw')
-            elif isinstance(cache, Cache):
-                segcache = cache.sieve(segment=segment)
             else:
                 segcache = cache
             if isinstance(segcache, Cache):
+                segcache = segcache.sieve(segment=segment)
                 segcache = segcache.checkfilesexist()[0]
                 segcache.sort(key=lambda x: x.segment[0])
                 if etg == 'pycbc_live':  # remove empty HDF5 files
-                    segcache = filter_pycbc_live_files(segcache,
-                                                       ifo=kwargs['ifo'])
+                    segcache = type(segcache)(
+                        filter_pycbc_live_files(segcache, ifo=kwargs['ifo']))
             # if no files, skip
             if len(segcache) == 0:
                 continue
@@ -274,9 +273,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             except AttributeError:
                 csegs = SegmentList()
             table.segments = csegs
-            add_triggers(keep_in_segments(table, SegmentList([segment]), etg),
-                         key, csegs)
-            ntrigs += len(table)
+            t2 = keep_in_segments(table, SegmentList([segment]), etg)
+            add_triggers(t2, key, csegs)
+            ntrigs += len(t2)
             vprint(".")
         vprint(" | %d events read\n" % ntrigs)
 
@@ -309,7 +308,8 @@ def add_triggers(table, key, segments=None):
     else:
         segs = old.segments
         globalv.TRIGGERS[key] = recfunctions.stack_arrays(
-            (old, table), asrecarray=True, usemask=False).view(type(table))
+            (old, table), asrecarray=True, usemask=False,
+            autoconvert=True).view(type(table))
         globalv.TRIGGERS[key].segments = segs + segments
     globalv.TRIGGERS[key].segments.coalesce()
 

@@ -29,7 +29,7 @@ from gwpy.detector import Channel
 from gwsumm import tabs
 from gwsumm.plot import SummaryPlot
 
-from compat import unittest
+from common import unittest
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

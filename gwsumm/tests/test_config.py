@@ -26,7 +26,7 @@ from matplotlib import rcParams
 
 from astropy import units
 
-from compat import unittest
+from common import unittest
 from gwsumm import (state, config, html)
 from gwsumm.channels import get_channel
 

@@ -20,7 +20,7 @@
 
 """
 
-from compat import unittest
+from common import (unittest, empty_globalv_CHANNELS)
 from gwsumm import (globalv, channels)
 from gwsumm.mode import set_mode
 
@@ -31,17 +31,6 @@ TREND_NAME = 'H1:TEST-TREND_CHANNEL.rms,m-trend'
 TREND_NAME2 = 'H1:TEST-TREND_CHANNEL.mean,m-trend'
 TREND_NAME3 = 'H1:TEST-TREND_CHANNEL_3.mean'
 TREND_NAME4 = 'H1:TEST-TREND_CHANNEL_4.mean'
-
-
-def empty_globalv_CHANNELS(f):
-    def wrapped_f(*args, **kwargs):
-        _channels = globalv.CHANNELS
-        globalv.CHANNELS = type(globalv.CHANNELS)()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            globalv.CHANNELS = _channels
-    return wrapped_f
 
 
 class ChannelTests(unittest.TestCase):

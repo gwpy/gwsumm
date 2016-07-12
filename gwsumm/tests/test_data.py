@@ -36,7 +36,7 @@ from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 
-from compat import unittest
+from common import (unittest, empty_globalv_CHANNELS)
 from gwsumm import (data, globalv)
 from gwsumm.data import (utils, mathutils)
 
@@ -169,6 +169,7 @@ class DataTests(unittest.TestCase):
         b = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
         self.assertEqual(a, b)
 
+    @empty_globalv_CHANNELS
     def test_get_spectrogram(self):
         self.assertRaises(TypeError, data.get_spectrogram, 'H1:LOSC-STRAIN',
                           LOSC_SEGMENTS, cache=self.FRAMES['H1:LOSC-STRAIN'])

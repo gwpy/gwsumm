@@ -105,6 +105,7 @@ class DataTests(unittest.TestCase):
         self.assertEqual(data.get_channel_type('H1:GDS-CALIB_STRAIN'), 'proc')
         self.assertEqual(data.get_channel_type('V1:GDS-CALIB_STRAIN'), 'adc')
 
+    @empty_globalv_CHANNELS
     def test_make_globalv_key(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
             stride=123.456, window='test-window', method='test-method')

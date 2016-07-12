@@ -254,9 +254,12 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
 def archive_recarray(table, key, parent, compression='gzip'):
     """Add a recarray to the given HDF5 group
     """
-    group = parent.create_group(key)
     # write segments with an offset to preserve precision
-    epoch = int(table.segments[0][0])
+    try:
+        epoch = int(table.segments[0][0])
+    except IndexError:  # no segments read
+        return
+    group = parent.create_group(key)
     segs = [(s[0] - epoch, s[1] - epoch) for s in table.segments]
     dset = group.create_dataset('segments', data=array(segs, dtype=float),
                                 compression=compression)

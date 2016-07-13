@@ -140,13 +140,9 @@ function reset_width_on_resize() {
 }
 
 // resize fancybox iframe to 'normal' proportions
-function resizeFancyboxIframe(width=null, height=null) {
-  if (!width) {
-    var width = Math.min(1200, $(".fancybox-skin").width());
-  }
-  if (!height) {
-    var height = (width - 40) * 0.5;
-  }
+function resizeFancyboxIframe() {
+  var width = Math.min(1200, $(".fancybox-skin").width());
+  var height = (width - 40) * 0.5;
   if (width > document.body.clientWidth ) {
     $(".fancybox-iframe").width(width - 40);
   } else {

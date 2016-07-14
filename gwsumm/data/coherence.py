@@ -41,7 +41,7 @@ except ImportError:
 from gwpy.spectrogram import SpectrogramList
 
 from .. import globalv
-from ..utils import (vprint, count_free_cores)
+from ..utils import (vprint, count_free_cores, safe_eval)
 from ..channels import get_channel
 from .utils import (use_segmentlist, get_fftparams, make_globalv_key)
 from .timeseries import (get_timeseries, get_timeseries_dict)
@@ -159,7 +159,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 filter_ = None
             else:
                 if isinstance(filter_, str):
-                    filter_ = eval(filter_)
+                    filter_ = safe_eval(filter_, strict=True)
 
             # check how much of this component still needs to be calculated
             req = new - globalv.COHERENCE_COMPONENTS.get(

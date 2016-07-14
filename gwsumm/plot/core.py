@@ -43,7 +43,7 @@ from . import rcParams
 from .registry import register_plot
 from .. import globalv
 from ..channels import (get_channel, split as split_channels)
-from ..utils import vprint
+from ..utils import (vprint, safe_eval)
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
@@ -482,10 +482,7 @@ class DataPlot(SummaryPlot):
 
         # parse other parameters
         for key, val in params.iteritems():
-            try:
-                params[key] = eval(val)
-            except NameError:
-                pass
+            params[key] = safe_eval(val)
         params.update(kwargs)
         # escape text
         for key, val in params.iteritems():
@@ -595,10 +592,7 @@ class _SingleCallPlot(object):
                 except KeyError:
                     val = None
             if val is not None:
-                try:
-                    val = eval(val)
-                except Exception:
-                    pass
+                plotargs[kwarg] = safe_eval(val)
                 plotargs[kwarg] = val
         return plotargs
 

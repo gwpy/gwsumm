@@ -37,6 +37,10 @@ WARNC = '\033[93m'
 ERRC = '\033[91m'
 ENDC = '\033[0m'
 
+# bad things to eval
+UNSAFE_EVAL_STRS = ['os.path', 'shutil', '\.rm', '\.mv']
+UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
+
 
 def elapsed_time():
     """Return the time (seconds) since this job started
@@ -158,3 +162,25 @@ def get_default_ifo(fqdn=getfqdn()):
     elif '.virgo.' in fqdn or '.ego-gw.' in fqdn:
         return 'V1'
     raise ValueError("Cannot determine default IFO for host %r" % fqdn)
+
+
+def safe_eval(val):
+    """Evaluate the given string as a line of python, if possible
+
+    If the :meth:`eval` fails, a `str` is returned in stead.
+    """
+    # don't evaluate non-strings
+    if not isinstance(val, str):
+        return val
+    # check that we aren't evaluating something dangerous
+    try:
+        match = UNSAFE_EVAL.search(val).group()
+    except AttributeError:
+        pass
+    else:
+        raise ValueError("Will not evaluate string containing %r" % match)
+    # try and eval str
+    try:
+        return eval(val)
+    except (NameError, SyntaxError):
+        return str(val)

@@ -40,7 +40,7 @@ from gwpy.time import (from_gps, to_gps)
 
 from .. import globalv, mode
 from ..config import NoOptionError
-from ..utils import (re_quote, get_odc_bitmask, re_flagdiv)
+from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
 from ..data import (get_channel, get_timeseries)
 from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE

@@ -43,7 +43,7 @@ except ImportError:
 from gwpy.spectrogram import SpectrogramList
 
 from .. import globalv
-from ..utils import (vprint, count_free_cores)
+from ..utils import (vprint, count_free_cores, safe_eval)
 from ..channels import (get_channel, re_channel,
                         split_combination as split_channel_combination)
 from .utils import (use_segmentlist, make_globalv_key, get_fftparams)
@@ -149,7 +149,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
             filter_ = None
         else:
             if isinstance(filter_, str):
-                filter_ = eval(filter_)
+                filter_ = safe_eval(filter_, strict=True)
 
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,

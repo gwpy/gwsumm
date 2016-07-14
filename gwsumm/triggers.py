@@ -42,7 +42,7 @@ except ImportError:
     from gwpy.table.io import trigfind
 
 from . import globalv
-from .utils import (re_cchar, vprint, count_free_cores)
+from .utils import (re_cchar, vprint, count_free_cores, safe_eval)
 from .config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from .channels import get_channel
 
@@ -402,8 +402,5 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
         if key in exclude:
             kwargs.pop(key)
             continue
-        try:
-            kwargs[key] = eval(kwargs[key])
-        except (NameError, SyntaxError):
-            pass
+        kwargs[key] = safe_eval(kwargs[key])
     return kwargs

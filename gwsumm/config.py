@@ -53,7 +53,7 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
-from .utils import (nat_sorted, re_cchar)
+from .utils import (nat_sorted, re_cchar, safe_eval)
 from .channels import (get_channels, split as split_channels)
 
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
@@ -280,10 +280,7 @@ class GWSummConfigParser(ConfigParser):
                             val = eval(val)
                         channel.bits.append(val)
                     else:
-                        try:
-                            setattr(channel, key, eval(val.rstrip()))
-                        except NameError:
-                            setattr(channel, key, val.rstrip())
+                        setattr(channel, key, safe_eval(val.rstrip()))
                 channels.append(channel)
         return channels
 
@@ -336,10 +333,7 @@ class GWSummConfigParser(ConfigParser):
             return []
         else:
             for key, value in new.items():
-                try:
-                    new[key] = eval(value)
-                except (SyntaxError, NameError):
-                    new[key] = value
+                new[key] = safe_eval(value)
             rcParams.update(new)
             return new
 

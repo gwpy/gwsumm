@@ -29,6 +29,11 @@ except ImportError:
 import warnings
 import operator
 
+try:
+    from astropy.io.registry import IORegistryError
+except ImportError:  # astropy < 1.2
+    IORegistryError = Exception
+
 from gwpy.utils.compat import OrderedDict
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
                            SegmentList, Segment)
@@ -118,8 +123,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         if cache is not None:
             try:
                 new = DataQualityDict.read(cache, list(allflags))
-            except Exception as e:
-                if type(e) is not Exception:
+            except IORegistryError as e:
+                # can remove when astropy >= 1.2 is required
+                if type(e) is not IORegistryError:
                     raise
                 if len(allflags) == 1:
                     f = list(allflags)[0]

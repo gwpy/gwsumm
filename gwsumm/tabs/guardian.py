@@ -389,11 +389,11 @@ class GuardianStatePlot(get_plot('segments')):
 
         # parse plotting arguments
         legendargs = self.parse_legend_kwargs()
-        activecolor, validcolor = self.get_segment_color()
-        nominalcolor = self.pargs.pop('nominalcolor')
-        requestcolor = self.pargs.pop('requestcolor')
         plotargs = self.parse_plot_kwargs()[0]
         plotargs.pop('label')
+        activecolor = plotargs.pop('facecolor')
+        nominalcolor = self.pargs.pop('nominalcolor')
+        requestcolor = self.pargs.pop('requestcolor')
         actargs = plotargs.copy()
         plotargs.update({
             'facecolor': nominalcolor,

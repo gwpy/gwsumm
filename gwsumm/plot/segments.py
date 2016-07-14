@@ -63,7 +63,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'color': None,
                 'on-is-bad': False,
                 'insetlabels': 'inset',
-                'edgecolor': 'black',
                 'legend-bbox_to_anchor': (1.01, 1.),
                 'legend-loc': 'upper left',
                 'legend-borderaxespad': 0,
@@ -170,27 +169,52 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         """Parse the configured ``pargs`` and determine the colors for
         active and valid segments.
         """
-        active = self.pargs.pop('active', None)
-        known = self.pargs.pop('known', 'undefined')
-        # both defined by user
-        if active is not None and known is not 'undefined':
-            return active, known
-        # only active defined by user
-        elif isinstance(active, str) and active.lower() != 'red':
-            return active, 'red'
-        elif active is not None:
-            return active, 'blue'
-        # only known defined by user
-        elif known not in ['undefined', None, GREEN, 'green', 'g']:
-            return GREEN, known
-        elif known != 'undefined':
-            return 'blue', known
-        else:
-            onisbad = bool(self.pargs.pop('on-is-bad', False))
-            if onisbad:
-                return 'red', GREEN
+        active = safe_eval(
+            self.pargs.pop('active', self.pargs.pop('facecolor', None)))
+        known = safe_eval(self.pargs.pop('known', None))
+        # neither known nor active defined
+        if active is None and known is None:
+            if bool(self.pargs.pop('on-is-bad', False)):
+                self.pargs['facecolor'] = 'red'
+                self.pargs.setdefault('edgecolor', 'darkred')
+                self.pargs['known'] = GREEN
             else:
-                return GREEN, 'red'
+                self.pargs['facecolor'] = GREEN
+                self.pargs.setdefault('edgecolor', 'darkred')
+                self.pargs['known'] = 'red'
+        # only active is defined
+        elif known is None:
+            if isinstance(active, dict):
+                self.pargs.update(active)
+                active = active.get('facecolor')
+            else:
+                self.pargs['facecolor'] = active
+            if isinstance(active, str) and active.lower() == 'red':
+                self.pargs['known'] = 'dodgerblue'
+            else:
+                self.pargs['known'] = 'red'
+        # only known is defined
+        elif active is None:
+            self.pargs['known'] = known
+            if known in [GREEN, str(GREEN), 'green', 'g']:
+                self.pargs['facecolor'] = 'dodgerblue'
+                self.pargs.setdefault('edgecolor', 'blue')
+            else:
+                self.pargs['facecolor'] = GREEN
+                self.pargs.setdefault('edgecolor', 'green')
+        # both are given
+        else:
+            if isinstance(active, dict):
+                self.pargs.update(active)
+            else:
+                self.pargs['facecolor'] = active
+            self.pargs['known'] = known
+        self.pargs.setdefault('edgecolor', 'black')
+        return self.pargs
+
+    def parse_plot_kwargs(self, *args, **kwargs):
+        self.get_segment_color()
+        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
 
     def draw(self):
         # get labelsize
@@ -206,20 +230,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
         mask = self.pargs.pop('mask')
-        activecolor, validcolor = self.get_segment_color()
-        if isinstance(activecolor, dict):
-            self.pargs.update(activecolor)
-        else:
-            self.pargs['facecolor'] = activecolor
         plotargs = self.parse_plot_kwargs()
-        for i, kwdict in enumerate(plotargs):
-            if isinstance(validcolor, dict) or validcolor is None:
-                kwdict['known'] = validcolor
-            elif (validcolor is None or isinstance(validcolor, str) or
-                    isinstance(validcolor[0], (float, int))):
-                kwdict['known'] = {'facecolor': validcolor}
-            else:
-                kwdict['known'] = {'facecolor': validcolor[i]}
         legcolors = plotargs[0].copy()
 
         # plot segments
@@ -340,6 +351,11 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             labels.append(None)
         return labels
 
+    def parse_plot_kwargs(self, *args, **kwargs):
+        self.get_segment_color()
+        return super(StateVectorDataPlot, self).parse_plot_kwargs(
+            *args, **kwargs)
+
     def draw(self):
         # make font size smaller
         _labelsize = rcParams['ytick.labelsize']
@@ -359,19 +375,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         # extract plotting arguments
         mask = self.pargs.pop('mask')
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        activecolor, validcolor = self.get_segment_color()
-        plotargs = {'edgecolor': self.pargs.pop('edgecolor')}
-        if isinstance(activecolor, dict):
-            plotargs.update(activecolor)
-        else:
-            plotargs['facecolor'] = activecolor
-        if isinstance(validcolor, dict):
-            plotargs['known'] = validcolor
-        elif (validcolor is None or isinstance(validcolor, str) or
-                isinstance(validcolor[0], (float, int))):
-            plotargs['known'] = {'facecolor': validcolor}
-        else:
-            plotargs['known'] = {'facecolor': validcolor[i]}
         extraargs = self.parse_plot_kwargs()
 
         # plot segments
@@ -416,7 +419,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 labels.append(None)
             for flag, label in zip(flags, labels)[::-1]:
                 kwargs = pargs.copy()
-                kwargs.update(plotargs)
                 if label is not None:
                     kwargs['label'] = label
                 ax.plot(flag, **kwargs)
@@ -478,6 +480,9 @@ class DutyDataPlot(SegmentDataPlot):
     @pid.setter
     def pid(self, p):
         self._pid = p
+
+    def parse_plot_kwargs(self, *args, **kwargs):
+        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
 
     def get_bins(self):
         """Work out the correct histogram binning for this `DutyDataPlot`

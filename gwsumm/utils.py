@@ -21,7 +21,6 @@
 
 import os
 import sys
-import time
 import re
 from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
@@ -45,6 +44,7 @@ UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 def elapsed_time():
     """Return the time (seconds) since this job started
     """
+    import time
     time.time() - globalv.START
 
 

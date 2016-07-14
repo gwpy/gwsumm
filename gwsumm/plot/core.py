@@ -185,6 +185,15 @@ class DataPlot(SummaryPlot):
     type = 'data'
     #: dict of default plotting kwargs
     defaults = {}
+    #: list of parameters parsed for `plot()` calls
+    DRAW_PARAMS = ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
+                   'linewidth', 'marker', 'markeredgecolor',
+                   'markeredgewidth', 'markerfacecolor',
+                   'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
+                   'bins', 'range', 'normed', 'weights', 'cumulative',
+                   'bottom', 'histtype', 'align', 'orientation', 'rwidth',
+                   'log', 'stacked', 'logbins', 'linecolor',
+                   'facecolor', 'rasterized']
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, pid=None, href=None, new=True, all_data=False,
@@ -358,14 +367,7 @@ class DataPlot(SummaryPlot):
         """
         plotargs = defaults.copy()
         plotargs.setdefault('label', self._parse_labels())
-        for kwarg in ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
-                      'linewidth', 'marker', 'markeredgecolor',
-                      'markeredgewidth', 'markerfacecolor',
-                      'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
-                      'bins', 'range', 'normed', 'weights', 'cumulative',
-                      'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                      'log', 'stacked', 'logbins', 'linecolor',
-                      'facecolor', 'rasterized']:
+        for kwarg in self.DRAW_PARAMS:
             try:
                 val = self.pargs.pop(kwarg)
             except KeyError:
@@ -374,14 +376,13 @@ class DataPlot(SummaryPlot):
                 except KeyError:
                     val = None
             if val is not None:
-                try:
-                    val = eval(val)
-                except Exception:
-                    pass
-                plotargs[kwarg] = val
+                plotargs[kwarg] = safe_eval(val)
         chans = zip(*self.get_channel_groups())[0]
         for key, val in plotargs.iteritems():
-            if (not isinstance(val, (list, tuple)) or len(val) != len(chans)):
+            if (key.endswith('color') and isinstance(val, (list, tuple)) and
+                    isinstance(val[0], (int, float))):
+                plotargs[key] = [val]*len(self.get_channel_groups())
+            elif (not isinstance(val, (list, tuple)) or len(val) != len(chans)):
                 plotargs[key] = [val]*len(self.get_channel_groups())
         out = []
         for i in range(len(chans)):

@@ -68,6 +68,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'legend-loc': 'upper left',
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
+    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + ['known']
 
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         padding = kwargs.pop('padding', None)

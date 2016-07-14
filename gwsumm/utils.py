@@ -164,10 +164,30 @@ def get_default_ifo(fqdn=getfqdn()):
     raise ValueError("Cannot determine default IFO for host %r" % fqdn)
 
 
-def safe_eval(val):
+def safe_eval(val, strict=False):
     """Evaluate the given string as a line of python, if possible
 
-    If the :meth:`eval` fails, a `str` is returned in stead.
+    If the :meth:`eval` fails, a `str` is returned instead, unless
+    `strict=True` is given.
+
+    Parameters
+    ----------
+    val : `str`
+        input text to evaluate
+
+    strict : `bool`, optional, default: `False`
+        raise an exception when the `eval` call fails (`True`) otherwise
+        return the input as a `str` (`False`, default)
+
+    Raises
+    ------
+    ValueError
+        if the input string is considered unsafe to evaluate, normally
+        meaning it contains something that might interact with the filesystem
+        (e.g. `os.path` calls)
+    NameError
+    SyntaxError
+        if the input cannot be evaluated, and `strict=True` is given
     """
     # don't evaluate non-strings
     if not isinstance(val, str):

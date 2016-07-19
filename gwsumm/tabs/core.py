@@ -622,7 +622,8 @@ class Tab(object):
                     groups[group] = zip(*sorted(
                         zip(groups[group], names),
                         key=lambda (t, n): n.lower() in ['summary', 'overview']
-                                           and n.upper() or n.lower()))[0]
+                                           and ' %s' % n.upper() or
+                                           n.lower()))[0]
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):

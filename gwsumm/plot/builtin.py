@@ -331,8 +331,13 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
         # plot data
         for specgram in specgrams:
+            # undo demodulation
+            specgram = undo_demodulation(specgram, channel,
+                                         self.pargs.get('ylim', None))
+            # calculate ratio
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
+            # plot
             ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
 
         # add colorbar
@@ -454,6 +459,11 @@ class SpectrumDataPlot(DataPlot):
             else:
                 data = get_spectrum(str(channel), valid, query=False,
                                     format=sdform, method=method)
+
+            # undo demodulation
+            for spec in data:
+                spec = undo_demodulation(spec, channel,
+                                         self.pargs.get('xlim', None))
 
             # anticipate log problems
             if self.pargs['logx']:
@@ -894,6 +904,10 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             variance = specgram.variance(**varargs)
             # normalize the variance
             variance /= livetime / specgram.dt.value
+            # undo demodulation
+            variance = undo_demodulation(variance, self.channels[0],
+                                         self.pargs.get('xlim', None))
+
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
             m = ax.plot_variance(variance, cmap=cmap, **plotargs)
@@ -990,3 +1004,33 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
                 'reference-linestyle': '--'}
 
 register_plot(RayleighSpectrumDataPlot)
+
+
+def undo_demodulation(spec, channel, limits=None):
+    if spec.size == 0:
+        return spec
+    # undo demodulation
+    try:
+        demod = channel.demodulation
+    except AttributeError:
+        return spec
+    else:
+        del spec.frequencies
+        spec.f0 = demod
+        # if physical frequency-range is below demod, get negative df
+        try:
+            low, high = channel.frequency_range
+        except (AttributeError, TypeError):
+            try:
+                low, high = limits
+            except TypeError:
+                return spec
+        high = Quantity(high, 'Hz')
+        if high < spec.f0:
+            if spec.ndim > 1:  # Spectrogram
+                spec.value[:] = numpy.fliplr(spec.value)
+            else:  # FrequencySeries
+                spec.value[:] = spec.value[::-1]
+            spec.df *= -1
+            spec.frequencies = spec.frequencies[::-1]
+        return spec

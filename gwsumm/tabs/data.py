@@ -473,7 +473,7 @@ class DataTab(DataTabBase):
                              **fftparams)
         if len(raychannels):
             fp2 = fftparams.copy()
-            fp2['method'] = 'rayleigh'
+            fp2['method'] = fp2['format'] = 'rayleigh'
             get_spectrograms(raychannels, state, config=config, return_=False,
                              multiprocess=multiprocess, **fp2)
 
@@ -501,6 +501,8 @@ class DataTab(DataTabBase):
 
         for channel in self.get_channels(
                 'rayleigh-spectrum', all_data=all_data, read=True):
+            fp2 = fftparams.copy()
+            fp2['method'] = fp2['format'] = 'rayleigh'
             get_spectrum(channel, state, config=config, return_=False, **fp2)
 
         # --------------------------------------------------------------------

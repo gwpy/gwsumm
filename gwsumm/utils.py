@@ -49,7 +49,7 @@ def elapsed_time():
     """Return the time (seconds) since this job started
     """
     import time
-    time.time() - globalv.START
+    return time.time() - globalv.START
 
 
 def vprint(message, verbose=True, stream=sys.stdout, profile=True):

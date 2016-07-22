@@ -25,6 +25,10 @@ import re
 from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
+# import filter evals
+from math import pi
+import numpy
+
 from . import globalv
 
 re_cchar = re.compile("[\W_]+")

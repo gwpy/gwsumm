@@ -275,7 +275,10 @@ def load_recarray(group):
     """
     columns = map(str, list(group))
     # read segments
-    epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
+    try:
+        epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
+    except TypeError:
+        epoch = LIGOTimeGPS(float(group['segments'].attrs['epoch']))
     segments = SegmentList(Segment(epoch + x[0], epoch + x[1]) for
                            x in group['segments'][:])
     columns.pop(columns.index('segments'))

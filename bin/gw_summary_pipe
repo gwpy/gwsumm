@@ -209,6 +209,8 @@ popts.add_argument('--event-cache', action='append', default=[],
 popts.add_argument('--segment-cache', action='append', default=[],
                    help='path to LAL-format cache of state or data-quality '
                         'segment files')
+popts.add_argument('--no-htaccess', action='store_true', default=False,
+                   help='tell gw_summary to not write .htaccess files')
 
 outopts = parser.add_argument_group("Output options")
 outopts.add_argument('-o', '--output-dir', action='store', type=str,
@@ -382,6 +384,8 @@ for job in jobs:
             [opts.data_cache, opts.event_cache, opts.segment_cache]):
         if fplist:
             job.add_arg('%s %s' % (opt, (' %s ' % opt).join(fplist)))
+    if opts.no_htaccess:
+        job.add_opt('no-htaccess')
 
 # make surrounding HTML first
 if not opts.skip_html_wrapper:

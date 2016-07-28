@@ -34,10 +34,7 @@ import numpy
 from astropy import units
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
-try:
-    from gwpy.frequencyseries import FrequencySeries
-except ImportError:
-    from gwpy.spectrum import Spectrum as FrequencySeries
+from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
 from .. import globalv

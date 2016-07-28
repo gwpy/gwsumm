@@ -144,7 +144,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         if 'time' in xcolumn:
             base = TimeSeriesPlot
         elif 'freq' in xcolumn:
-            base = SpectrumPlot
+            base = FrequencySeriesPlot
         else:
             base = Plot
         plot = self.plot = EventTablePlot(

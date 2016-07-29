@@ -184,7 +184,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
 
             # allow channel data to set parameters
             if len(flatdata):
-                chan = get_channel(str(flatdata[0].channel))
+                chan = get_channel(flatdata[0].channel)
             else:
                 chan = get_channel(clist[0])
             if getattr(chan, 'amplitude_range', None) is not None:

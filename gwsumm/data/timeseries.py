@@ -661,6 +661,13 @@ def _get_timeseries_dict(channels, segments, config=None,
                 # XXX: HACK for failing unit check
                 if len(globalv.DATA[key]):
                     data._unit = globalv.DATA[key][-1].unit
+                # update channel type for trends
+                if (data.channel.type is None and
+                       data.channel.trend is not None):
+                    if data.dt.to('s').value == 1:
+                        data.channel.type = 's-trend'
+                    elif data.dt.to('s').value == 60:
+                        data.channel.type = 'm-trend'
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
             if multiprocess:

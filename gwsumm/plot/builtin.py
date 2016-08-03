@@ -658,14 +658,16 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
-            if arr.size == 0:
-                kwargs = dict(
-                    (k, pargs[k]) for k in ['label', 'color'] if pargs.get(k))
-                ax.plot([], **kwargs)
-            else:
-                if isinstance(pargs.get('weights', None), (float, int)):
-                    pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
+            if isinstance(pargs.get('weights', None), (float, int)):
+                pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
+            try:
                 ax.hist(arr, **pargs)
+            except ValueError:  # empty dataset
+                p2 = pargs.copy()
+                p2.pop('weights')  # mpl errors on weights
+                if p2.get('log', False) or self.pargs.get('logx', False):
+                    p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
+                ax.hist([], **p2)
 
         # customise plot
         legendargs = self.parse_legend_kwargs()

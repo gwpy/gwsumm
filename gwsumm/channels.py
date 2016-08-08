@@ -112,10 +112,8 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
         type_ = isinstance(channel, Channel) and channel.type or None
-        sr = isinstance(channel, Channel) and channel.sample_rate or None
         name = str(channel)
-        found = globalv.CHANNELS.sieve(name=name, type=type_,
-                                       sample_rate=sr, exact_match=True)
+        found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
@@ -227,12 +225,12 @@ def update_missing_channel_params(channel, **kwargs):
 
     Parameters
     ----------
-    channel : `str`, `~gwpy.detector.Channel`
+    channel : `~gwpy.detector.Channel`
         channel to update
     **kwargs
         `(key, value)` pairs to set
     """
-    target = get_channel(str(channel))
+    target = get_channel(channel)
     for param in ['unit', 'sample_rate', 'frametype']:
         if getattr(target, param) is None:
             setattr(target, param, getattr(channel, param))

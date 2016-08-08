@@ -154,7 +154,12 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
 
     @staticmethod
     def calculate_time_volume(segments, range):
-        ts = TimeSeries(numpy.zeros(range.size), xindex=range.times, unit='s')
+        try:
+            ts = TimeSeries(numpy.zeros(range.size), xindex=range.times,
+                            unit='s')
+        except IndexError:
+            ts = TimeSeries(numpy.zeros(range.size), unit='s',
+                            x0=range.x0, dx=range.dx)
         dx = range.dx.value
 
         # use float, not LIGOTimeGPS for speed
@@ -199,7 +204,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
                 valid = SegmentList([self.span])
             data = get_timeseries(
                 channel, valid, query=False).join(gap='pad', pad=pad)
-            if not data.unit or data.unit.name == 'undef':
+            if not data.unit or data.unit.to_string() in ['', 'undef']:
                 data.override_unit('Mpc')
             segments = get_segments(flag, valid, query=False)
             timevolume = self.calculate_time_volume(segments.active, data)

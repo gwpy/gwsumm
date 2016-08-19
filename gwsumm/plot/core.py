@@ -69,11 +69,12 @@ class SummaryPlot(object):
     type = None
     _threadsafe = True
 
-    def __init__(self, href=None, src=None, new=True):
+    def __init__(self, href=None, src=None, new=True, caption=''):
         self.href = href
         if src:
             self.src = src
         self.new = new
+        self.caption = caption
 
     @property
     def href(self):
@@ -113,6 +114,16 @@ class SummaryPlot(object):
     @src.setter
     def src(self, url):
         self._src = url
+
+    @property
+    def caption(self):
+        """HTML <fancybox plot> title attribute for this `SummaryPlot`.
+        """
+        return self._caption
+
+    @caption.setter
+    def caption(self,text):
+        self._caption = text
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods

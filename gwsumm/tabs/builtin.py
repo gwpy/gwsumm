@@ -210,14 +210,14 @@ class PlotTab(Tab):
     """
     type = 'plots'
 
-    def __init__(self, name, plots=list(), layout=None, foreword=None,
+    def __init__(self, name, plots=list(), captions=list(), layout=None, foreword=None,
                  afterword=None, **kwargs):
         """Initialise a new :class:`PlotTab`.
         """
         super(PlotTab, self).__init__(name, **kwargs)
         self.plots = []
-        for p in plots:
-            self.add_plot(p)
+        for p in zip(plots,captions):
+            self.add_plot(p[0],p[1])
         self.set_layout(layout)
         self.foreword = foreword
         self.afterword = afterword
@@ -385,6 +385,19 @@ class PlotTab(Tab):
         except IndexError:
             pass
 
+        # if there are plots, get captions and sort them,
+        # if a plot doesn't have a caption, return caption = ''
+        if kwargs['plots']:
+            captions = []
+            for opt, arg in cp.nditems(section):
+                if opt.isdigit():
+                    if cp.has_option(section,opt+'-caption'):
+                        captions.append((opt,cp.get(section,opt+'-caption')))
+                    else:
+                        captions.append((opt,''))
+            kwargs.setdefault('captions',
+                zip(*sorted(captions,key=lambda a: a[0]))[1])
+
         # get content
         try:
             kwargs.setdefault('foreword', cp.get(section, 'foreword'))
@@ -398,7 +411,7 @@ class PlotTab(Tab):
         # build and return tab
         return super(PlotTab, cls).from_ini(cp, section, *args, **kwargs)
 
-    def add_plot(self, plot):
+    def add_plot(self, plot, cap=''):
         """Add a plot to this tab.
 
         Parameters
@@ -408,7 +421,7 @@ class PlotTab(Tab):
             object.
         """
         if isinstance(plot, str):
-            plot = SummaryPlot(href=plot)
+            plot = SummaryPlot(href=plot,caption=cap)
             plot.new = False
         if not isinstance(plot, SummaryPlot):
             raise TypeError("Cannot append plot of type %r" % type(plot))
@@ -475,7 +488,9 @@ class PlotTab(Tab):
                 page.a(href='%s?iframe' % plot.href.replace('.svg', '.html'),
                        class_=aclass, **fbkw)
             else:
-                page.a(href=plot.href, class_=aclass, **fancyboxargs)
+                fbkw = fancyboxargs.copy()
+                fbkw['title'] = plot.caption
+                page.a(href=plot.href, class_=aclass, **fbkw)
             if plot.src.endswith('.pdf'):
                 page.img(class_='img-responsive',
                          src=plot.src.replace('.pdf', '.png'))

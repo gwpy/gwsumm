@@ -358,8 +358,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
 
     def draw(self):
         # make font size smaller
-        _labelsize = rcParams['ytick.labelsize']
-        labelsize = self.pargs.pop('labelsize', 12)
+        labelsize = self.rcParams.get('ytick.labelsize', 12)
         if self.pargs.get('insetlabels', True) is False:
             rcParams['ytick.labelsize'] = labelsize
 
@@ -440,8 +439,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         if self.state and self.state.name != ALLSTATE:
             self.add_state_segments(ax)
 
-        # reset tick size and return
-        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
 
 register_plot(StateVectorDataPlot)

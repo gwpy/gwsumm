@@ -304,6 +304,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
     type = 'statevector'
     data = 'statevector'
     defaults = SegmentDataPlot.defaults.copy()
+    DRAW_PARAMS = list(SegmentDataPlot.DRAW_PARAMS)
 
     # copy from SegmentDataPlot
     flag = property(fget=SegmentDataPlot.flags.__get__,

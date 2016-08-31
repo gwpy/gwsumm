@@ -554,13 +554,13 @@ class Tab(object):
         page : `~gwsumm.html.markup.page`
             a markup page containing the navigation bar.
         """
+        class_ = 'navbar navbar-fixed-top'
         # build interferometer cross-links
         if ifo is not None:
             brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
-            class_ = 'navbar navbar-fixed-top navbar-%s' % ifo.lower()
+            class_ += ' navbar-%s' % ifo.lower()
         else:
             brand_ = html.markup.page()
-            class_ = 'navbar'
         # build HTML brand
         if isinstance(brand, html.markup.page):
             brand_.add(str(brand))
@@ -665,7 +665,7 @@ class Tab(object):
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=dict(), brand=None, base=None,
+                   ifo=None, ifomap=dict(), brand=None, base=os.curdir,
                    css=None, js=None, about=None, footer=None, **inargs):
         """Write the HTML page for this `Tab`.
 
@@ -708,9 +708,9 @@ class Tab(object):
 
         # initialise HTML page
         if css is None:
-            css = html.get_css()
+            css = html.get_css().values()
         if js is None:
-            js = html.get_js()
+            js = html.get_js().values()
         self.initialise_html_page(title=title, subtitle=subtitle, css=css,
                                   base=base, js=js)
 

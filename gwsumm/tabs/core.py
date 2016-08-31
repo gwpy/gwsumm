@@ -708,7 +708,7 @@ class Tab(object):
 
         # initialise HTML page
         if css is None:
-            css = html.get_css(ifo=ifo or 'All')
+            css = html.get_css()
         if js is None:
             js = html.get_js()
         self.initialise_html_page(title=title, subtitle=subtitle, css=css,

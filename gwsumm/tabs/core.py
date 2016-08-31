@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""This module defines the core :class:`Tab` object.
+"""This module defines the core `Tab` object.
 """
 
 import os
@@ -56,33 +56,39 @@ class Tab(object):
     ----------
     name : `str`
         name of this tab (required)
+
     index : `str`
         HTML file in which to write. By default each tab is written to
-        an index.html file in its own directory. Use :attr:`~Tab.index`
+        an index.html file in its own directory. Use `~Tab.index`
         to find out the default index, if not given.
+
     shortname : `str`
         shorter name for this tab to use in the navigation bar. By
         default the regular name is used
-    parent : :class:`~gwsumm.tabs.Tab`
+
+    parent : `~gwsumm.tabs.Tab`
         parent of this tab. This is used to position this tab in the
         navigation bar.
+
     children : `list`
-        list of child :class:`Tabs <~gwsumm.tabs.Tab>` of this one. This
+        list of child `Tabs <~gwsumm.tabs.Tab>` of this one. This
         is used to position this tab in the navigation bar.
+
     group : `str`
         name of containing group for this tab in the navigation bar
         dropdown menu. This is only relevant if this tab has a parent.
+
     path : `str`
         base output directory for this tab (should be the same directory
         for all tabs in this run)
 
     Notes
     -----
-    A `Tab` cannot have both a :attr:`~Tab.parent` and :attr:`~tab.Children`.
+    A `Tab` cannot have both a `~Tab.parent` and `~tab.Children`.
     This is a limitation imposed by the twitter bootstrap navigation bar
     implementation, which does not allow nested dropdown menus. In order
     to collect child tabs in a given place, assign them all the same
-    :attr:`~Tab.group`.
+    `~Tab.group`.
     """
     type = 'basic'
     """Type identifier for this `Tab`"""
@@ -185,7 +191,7 @@ class Tab(object):
 
     @property
     def index(self):
-        """The HTML path (relative to the :attr:`~Tab.path`) for this tab
+        """The HTML path (relative to the `~Tab.path`) for this tab
         """
         if not self._index:
             if self.shortname.lower() == 'summary':
@@ -211,10 +217,10 @@ class Tab(object):
 
     @property
     def href(self):
-        """HTML href (relative to the :attr:`~Tab.path`) for this tab
+        """HTML href (relative to the `~Tab.path`) for this tab
 
         This attribute is just a convenience to clean-up the
-        :attr:`~Tab.index` for a given tab, by removing index.htmls.
+        `~Tab.index` for a given tab, by removing index.htmls.
         hierarchy.
 
         :type: `str`
@@ -313,14 +319,16 @@ class Tab(object):
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
-        """Define a new tab from a :class:`~gwsumm.config..GWConfigParser`
+        """Define a new tab from a `~gwsumm.config..GWConfigParser`
 
         Parameters
         ----------
-        cp : :class:`~gwsumm.config.GWConfigParser`
+        cp : `~gwsumm.config.GWConfigParser`
             customised configuration parser containing given section
+
         section : `str`
             name of section to parse
+
         *args, **kwargs
             other positional and keyword arguments to pass to the class
             constructor (`__init__`)
@@ -343,7 +351,7 @@ class Tab(object):
            ~Tab.index
 
         Sub-classes should parse their own configuration values and then pass
-        these as ``*args`` and ``**kwargs`` to this method via :class:`super`:
+        these as ``*args`` and ``**kwargs`` to this method via `super`:
 
         .. code-block:: python
 
@@ -416,19 +424,23 @@ class Tab(object):
         ----------
         title : `str`, optional, default: {parent.name}
             level 1 heading for this `Tab`.
+
         subtitle : `str`, optional, default: {self.name}
             level 2 heading for this `Tab`.
+
         css : `list`, optional
             list of resolvable URLs for CSS files
+
         js : `list`, optional
             list of resolvable URLs for javascript files
+
         copy : `bool`, optional, default: `True`
             copy CSS or javascript files that exist on disk into this
             tab's output directory
 
         Returns
         -------
-        page : :class:`~gwsumm.html.markup.page`
+        page : `~gwsumm.html.markup.page`
             initialised HTML markup page
 
         Notes
@@ -483,18 +495,21 @@ class Tab(object):
         ----------
         user : `bool`, default: `True`
             print details of user running this job
+
         issues : `bool`, default: `True`
             print link to github.com issue tracker for this package
+
         about : `str`
             URL for the 'About this page' HTML page
+
         content : `str`, `~gwsumm.html.markup.page`
             user-defined content for the footer (placed below everything
             else).
 
         Returns
         -------
-        page : :class:`~gwsumm.html.markup.page`
-            a copy of the :attr:`~Tab.page` for this tab.
+        page : `~gwsumm.html.markup.page`
+            a copy of the `~Tab.page` for this tab.
 
         Notes
         -----
@@ -519,12 +534,13 @@ class Tab(object):
         ----------
         title : `str`
             title for this page
+
         subtitle : `str`
             sub-title for this page
 
         Returns
         -------
-        banner : :class:`~gwsumm.html.markup.page`
+        banner : `~gwsumm.html.markup.page`
             formatter markup page for the banner
         """
         # work title as Parent Name/Tab Name
@@ -538,13 +554,16 @@ class Tab(object):
 
         Parameters
         ----------
-        brand : `str`, :class:`~gwsumm.html.markup.page`
+        brand : `str`, `~gwsumm.html.markup.page`
             content for navbar-brand
+
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
             in the navigation bar.
+
         ifo : `str`, optional
             prefix for this IFO.
+
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
@@ -577,7 +596,7 @@ class Tab(object):
         ----------
         tabs : `list`
             a list of `Tabs <gwsumm.tabs.Tab`, some of which may contain
-            :attr:`~Tab.children`.
+            `~Tab.children`.
 
         Returns
         -------
@@ -650,12 +669,12 @@ class Tab(object):
 
         Parameters
         ----------
-        content : `str`, :class:`~gwsumm.html.markup.page`
+        content : `str`, `~gwsumm.html.markup.page`
             HTML content to be wrapped
 
         Returns
         -------
-        #main : :class:`~gwsumm.html.markup.page`
+        #main : `~gwsumm.html.markup.page`
             A new `page` with the input content wrapped as
         """
         page = html.markup.page()
@@ -671,32 +690,43 @@ class Tab(object):
 
         Parameters
         ----------
-        maincontent : `str`, :class:`~gwsumm.html.markup.page`
+        maincontent : `str`, `~gwsumm.html.markup.page`
             simple string content, or a structured `page` of markup to
             embed as the content of the #main div.
+
         title : `str`, optional, default: {parent.name}
             level 1 heading for this `Tab`.
+
         subtitle : `str`, optional, default: {self.name}
             level 2 heading for this `Tab`.
+
         tabs: `list`, optional
             list of top-level tabs (with children) to populate navbar
+
         ifo : `str`, optional
             prefix for this IFO.
+
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
-        brand : `str`, :class:`~gwsumm.html.markup.page`, optional
+
+        brand : `str`, `~gwsumm.html.markup.page`, optional
             non-menu content for navigation bar
+
         css : `list`, optional
             list of resolvable URLs for CSS files. See `gwsumm.html.CSS` for
             the default list.
+
         js : `list`, optional
             list of resolvable URLs for javascript files. See
             `gwumm.html.JS` for the default list.
+
         about : `str`, optional
             href for the 'About' page
+
         footer : `str`, `~gwsumm.html.markup.page`
             user-defined content for the footer (placed below everything else)
+
         **inargs
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
@@ -821,7 +851,7 @@ class SummaryArchiveMixin(object):
         Notes
         -----
         The datetime for the calendar is taken from this tab's
-        :attr:`~StateTab.span`.
+        `~StateTab.span`.
         """
         date = from_gps(self.start)
         # double-check path matches what is required from custom datepicker
@@ -847,7 +877,7 @@ class SummaryArchiveMixin(object):
 
         Parameters
         ----------
-        brand : `str`, :class:`~gwsumm.html.markup.page`
+        brand : `str`, `~gwsumm.html.markup.page`
             content for navbar-brand
         ifo : `str`, optional
             prefix for this IFO.

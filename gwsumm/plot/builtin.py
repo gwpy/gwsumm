@@ -31,10 +31,7 @@ from matplotlib.pyplot import subplots
 
 from astropy.units import Quantity
 
-try:
-    from gwpy.frequencyseries import FrequencySeries
-except ImportError:
-    from gwpy.spectrum import Spectrum as FrequencySeries
+from gwpy.frequencyseries import FrequencySeries
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 

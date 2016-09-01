@@ -849,6 +849,39 @@ class ArchivedStateTab(SummaryArchiveMixin, StateTab):
 
 register_tab(ArchivedStateTab)
 
+class UrlTab(Tab):
+    type = 'link'
+    def __init__(self, name, url, **kwargs):
+        super(UrlTab, self).__init__(name, **kwargs)
+        self.href = url
+
+    @property
+    def href(self):
+        return self._href
+
+    @href.setter
+    def href(self, url):
+        self._href = url
+
+    @classmethod
+    def from_ini(cls, cp, section, *args, **kwargs):
+        kwargs.setdefault('url',cp.get(section,'url'))
+        return super(UrlTab, cls).from_ini(cp, section, *args, **kwargs)
+
+    def write_html(self, **kwargs):
+        return
+
+register_tab(UrlTab)
+
+class ArchivedUrlTab(SummaryArchiveMixin, UrlTab):
+    type = 'archived-link'
+
+    def __init__(self, name, start, end, mode=None, **kwargs):
+        super(ArchivedUrlTab, self).__init__(name, **kwargs)
+        self.span = (start, end)
+        self.mode = mode
+
+register_tab(ArchivedUrlTab)
 
 class AboutTab(SummaryArchiveMixin, Tab):
     type = 'about'

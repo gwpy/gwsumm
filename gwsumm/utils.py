@@ -41,7 +41,7 @@ ERRC = '\033[91m'
 ENDC = '\033[0m'
 
 # bad things to eval
-UNSAFE_EVAL_STRS = ['os\.', 'shutil', '\.rm', '\.mv']
+UNSAFE_EVAL_STRS = ['os\.(?![$\'\" ])', 'shutil', '\.rm', '\.mv']
 UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 
 
@@ -202,7 +202,8 @@ def safe_eval(val, strict=False):
     except AttributeError:
         pass
     else:
-        raise ValueError("Will not evaluate string containing %r" % match)
+        raise ValueError("Will not evaluate string containing %r: %r"
+                         % (match, val))
     # try and eval str
     try:
         return eval(val)

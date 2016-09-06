@@ -375,7 +375,12 @@ class DataPlot(SummaryPlot):
                     val = self.pargs.pop('%ss' % kwarg)
                 except KeyError:
                     val = None
-            if val is not None:
+            if val is not None and isinstance(val, str) and 'self' in val:
+                try:
+                    plotargs[kwarg] = safe_eval(val, locals_={'self': self})
+                except ZeroDivisionError:
+                    plotargs[kwarg] = 0
+            elif val is not None:
                 plotargs[kwarg] = safe_eval(val)
         chans = zip(*self.get_channel_groups())[0]
         for key, val in plotargs.iteritems():

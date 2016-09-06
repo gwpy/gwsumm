@@ -277,7 +277,7 @@ def load_recarray(group):
     # read segments
     try:
         epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
-    except TypeError:
+    except (ValueError, TypeError):
         epoch = LIGOTimeGPS(float(group['segments'].attrs['epoch']))
     segments = SegmentList(Segment(epoch + x[0], epoch + x[1]) for
                            x in group['segments'][:])

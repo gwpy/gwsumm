@@ -468,8 +468,6 @@ class TriggerHistogramPlot(get_plot('histogram')):
             if isinstance(pargs.get('weights', None), (float, int)):
                 pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
             try:
-                print(arr.size)
-                print(pargs)
                 ax.hist(arr, **pargs)
             except ValueError:  # empty dataset
                 p2 = pargs.copy()

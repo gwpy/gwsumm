@@ -99,6 +99,11 @@ class UtilsTestCase(unittest.TestCase):
                           "os.remove('file-that-doesnt-exist')")
         self.assertRaises(ValueError, utils.safe_eval,
                           "lambda x: shutil.remove('file-that-doesnt-exist')")
+        # test locals or globals
+        t = utils.safe_eval('test', globals_={'test': 4})
+        self.assertEqual(t, 4)
+        t = utils.safe_eval('type(self)', locals_={'self': self})
+        self.assertEqual(t, type(self))
 
     def test_mkdir(self):
         d = 'test-dir/test-dir2'

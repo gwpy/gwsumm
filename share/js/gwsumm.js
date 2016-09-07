@@ -223,7 +223,6 @@ $(window).load(function() {
   // reposition dropdown if too scrolling off the screen
   $('.dropdown-toggle').on('click', function() {
     // if page width is small, no-operation
-    console.log($(document).width());
     if ($(document).width() < 992 ) {
       return;
     }

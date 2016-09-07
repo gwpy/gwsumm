@@ -155,12 +155,26 @@ function resizeFancyboxIframe() {
   $(".fancybox-wrap").height(parseInt($(".fancybox-wrap").width() * 0.5));
 }
 
+// shorten date in calendar if very small screen
+function shortenDate() {
+  var $calendar_ = $('#calendar');
+  var date_ = moment($calendar_.data('date'), $calendar_.data('date-format'));
+  if ($(document).width() < 400 ) {  // print shortened month name
+    $('#calendar').html(date_.format('MMM D YYYY'));
+  } else {  // print full month name
+    $('#calendar').html(date_.format('MMMM D YYYY'));
+  }
+}
 
 /* ------------------------------------------------------------------------- */
 /* Document ready and loaded                                                  */
 
 // When document is ready, run this stuff:
 $(window).load(function() {
+
+  // shorten the date
+  shortenDate();
+
   // define inter-IFO links
   var thisbase = document.getElementsByTagName('base')[0].href;
   $('[data-new-base]').each(function() {
@@ -221,4 +235,9 @@ $(window).load(function() {
     }
   });
 
+});
+
+$(window).resize(function() {
+  // set short month date
+  shortenDate();
 });

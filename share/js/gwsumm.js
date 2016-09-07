@@ -157,15 +157,15 @@ function resizeFancyboxIframe() {
 
 // shorten date in calendar if very small screen
 function shortenDate() {
-  var $calendar_ = $('#calendar');
-  var date_ = moment($calendar_.data('date'), $calendar_.data('date-format'));
+  var $calendar = $('#calendar');
+  var date_ = moment($calendar.data('date'), $calendar.data('date-format'));
   if ($calendar.html().startsWith('Calendar')) {  // don't break non-dates
     return;
   }
   if ($(document).width() < 400 ) {  // print shortened month name
-    $('#calendar').html(date_.format('MMM D YYYY'));
+    $calendar.html(date_.format('MMM D YYYY'));
   } else {  // print full month name
-    $('#calendar').html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
+    $calendar.html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
   }
 }
 

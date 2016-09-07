@@ -162,7 +162,7 @@ function shortenDate() {
   if ($(document).width() < 400 ) {  // print shortened month name
     $('#calendar').html(date_.format('MMM D YYYY'));
   } else {  // print full month name
-    $('#calendar').html(date_.format('MMMM D YYYY'));
+    $('#calendar').html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
   }
 }
 

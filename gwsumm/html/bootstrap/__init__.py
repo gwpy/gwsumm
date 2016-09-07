@@ -264,7 +264,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
             dateformat = '%Y'
         else:
             raise ValueError("Cannot set dateformat for mode=%r" % mode)
-    datestring = date.strftime(dateformat)
+    datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()
     page.a('&laquo;', class_='navbar-brand step-back', title='Step back',

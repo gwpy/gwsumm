@@ -107,7 +107,7 @@ def navbar(links, class_='navbar navbar-fixed-top',
     """
     # set up page
     page = markup.page()
-    markup.element('header', parent=page)(class_=class_, role='banner')
+    markup.element('header', parent=page)(class_=class_)
     page.div(class_="container")
 
     # ---- non-collapable part (<div class="navbar-header">) ----
@@ -126,9 +126,9 @@ def navbar(links, class_='navbar navbar-fixed-top',
 
     page.div.close()
     if collapse:
-        page.nav(class_="collapse navbar-collapse", role="navigation")
+        page.nav(class_="collapse navbar-collapse")
     else:
-        page.nav(role="navigation")
+        page.nav()
 
     # ---- collapsable part (<nav>) ----
 

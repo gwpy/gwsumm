@@ -159,6 +159,9 @@ function resizeFancyboxIframe() {
 function shortenDate() {
   var $calendar_ = $('#calendar');
   var date_ = moment($calendar_.data('date'), $calendar_.data('date-format'));
+  if ($calendar.html().startsWith('Calendar') {  // don't break non-dates
+    return;
+  }
   if ($(document).width() < 400 ) {  // print shortened month name
     $('#calendar').html(date_.format('MMM D YYYY'));
   } else {  // print full month name

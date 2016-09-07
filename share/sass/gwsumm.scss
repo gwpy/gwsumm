@@ -10,7 +10,9 @@ body {
 		// map page to another IFO
 		.base-map {
 				padding-right: 5px;
-				margin-right: 10px;
+				@media (min-width: 768px) {
+						margin-right: 10px;
+				}
 				.dropdown-menu {
 						min-width: 44px;
 						width: 100%;

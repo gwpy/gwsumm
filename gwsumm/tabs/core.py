@@ -509,8 +509,9 @@ class Tab(object):
         # add footer
         self.page.add(str(html.footer(user=user, issues=issues, about=about,
                                       content=content)))
-        self.page.body.close()
-        self.page.html.close()
+        if not self.page._full:
+            self.page.body.close()
+            self.page.html.close()
 
     def build_html_banner(self, title=None, subtitle=None):
         """Build the HTML headline banner for this tab.

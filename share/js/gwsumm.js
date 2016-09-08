@@ -158,7 +158,8 @@ function resizeFancyboxIframe() {
 // shorten date in calendar if very small screen
 function shortenDate() {
   var $calendar = $('#calendar');
-  var date_ = moment($calendar.data('date'), $calendar.data('date-format'));
+  var date_ = moment($calendar.data('date'),
+                     $calendar.data('date-format').toUpperCase());
   if ($calendar.html().startsWith('Calendar')) {  // don't break non-dates
     return;
   }

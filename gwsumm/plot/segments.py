@@ -171,9 +171,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         """
         active = safe_eval(
             self.pargs.pop('active', self.pargs.pop('facecolor', None)))
-        known = safe_eval(self.pargs.pop('known', None))
+        known = safe_eval(self.pargs.pop('known', 0))
         # neither known nor active defined
-        if active is None and known is None:
+        if active is None and known == 0:
             if bool(self.pargs.pop('on-is-bad', False)):
                 self.pargs['facecolor'] = 'red'
                 self.pargs.setdefault('edgecolor', 'darkred')
@@ -183,7 +183,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 self.pargs.setdefault('edgecolor', 'darkred')
                 self.pargs['known'] = 'red'
         # only active is defined
-        elif known is None:
+        elif known == 0:
             if isinstance(active, dict):
                 self.pargs.update(active)
                 active = active.get('facecolor')
@@ -248,6 +248,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
+            pargs.setdefault('known', None)
             ax.plot(segs, y=i, label=label, **pargs)
 
         # make custom legend
@@ -1255,6 +1256,9 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 'histtype': 'stepfilled',
                 'bottom': 0,
                 'rwidth': 1}
+
+    def parse_plot_kwargs(self, *args, **kwargs):
+        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
 
     def draw(self, outputfile=None):
         # make axes

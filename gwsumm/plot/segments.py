@@ -258,8 +258,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             epoch = ax.get_epoch()
             xlim = ax.get_xlim()
             seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            v = ax.plot(seg, facecolor=known['facecolor'],
-                        collection=False)[0][0]
+            if isinstance(known, dict):
+                known = known['facecolor']
+            v = ax.plot(seg, facecolor=known, collection=False)[0][0]
             a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
                         collection=False)[0][0]
             if edgecolor not in [None, 'none']:

@@ -88,8 +88,7 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     return page
 
 
-def navbar(links, class_='navbar navbar-fixed-top',
-           brand=None, collapse=True):
+def navbar(links, class_='navbar navbar-fixed-top', brand=None, collapse=True):
     """Construct a navigation bar in bootstrap format.
 
     Parameters
@@ -118,13 +117,12 @@ def navbar(links, class_='navbar navbar-fixed-top',
     if collapse:
         page.add(NAVBAR_TOGGLE)
 
-    # add branding
-    if isinstance(brand, markup.page):
+    # add branding (generic non-collapsed content)
+    if brand:
         page.add(str(brand))
-    elif brand is not None:
-        page.div(str(brand), class_='navbar-brand')
 
-    page.div.close()
+    page.div.close()  # navbar-header
+
     if collapse:
         page.nav(class_="collapse navbar-collapse", role="navigation")
     else:
@@ -237,7 +235,7 @@ def dropdown_link(page, link, active=False, class_=''):
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
-             id_='calendar', dateformat=None, mode='days'):
+             id_='calendar', dateformat=None, mode=None):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -253,14 +251,18 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         a onliner string of HTML containing the calendar text and a
         triggering dropdown
     """
+    mode = get_mode(mode)
+    if mode < SUMMARY_MODE_DAY:
+        raise ValueError("Cannot generate calendar for Mode %s"
+                         % MODE_NAME[mode])
     if dateformat is None:
-        if mode in [SUMMARY_MODE_DAY, 'days']:
+        if mode == SUMMARY_MODE_DAY:
             dateformat = '%B %d %Y'
-        elif mode in [SUMMARY_MODE_WEEK, 'weeks']:
+        elif mode == SUMMARY_MODE_WEEK:
             dateformat = 'Week of %B %d %Y'
-        elif mode in [SUMMARY_MODE_MONTH, 'months']:
+        elif mode == SUMMARY_MODE_MONTH:
             dateformat = '%B %Y'
-        elif mode in [SUMMARY_MODE_YEAR, 'years']:
+        elif mode == SUMMARY_MODE_YEAR:
             dateformat = '%Y'
         else:
             raise ValueError("Cannot set dateformat for mode=%r" % mode)
@@ -271,7 +273,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
            onclick='stepDate(-1)')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': mode})
+              'data-viewmode': '%ss' % mode})
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()

@@ -857,8 +857,8 @@ class IntervalTab(GpsTab):
                                 % (type(self).__name__, mode))
             else:
                 span = (start, end)
-        super(IntervalTab, self).__init__(*args, **kwargs)
         self.span = span
+        super(IntervalTab, self).__init__(*args, **kwargs)
 
     def html_calendar(self):
         """Build the datepicker calendar for this tab.
@@ -963,10 +963,10 @@ class EventTab(GpsTab):
             raise TypeError("%s() in %r mode needs keyword argument 'gpstime'"
                             % (type(self).__name__, mode))
         duration = kwargs.pop('duration', 200)
-        # create tab and assign properties
-        super(EventTab, self).__init__(*args, **kwargs)
         self.gpstime = gpstime
         self.duration = duration
+        # create tab and assign properties
+        super(EventTab, self).__init__(*args, **kwargs)
 
     def html_navbar(self, brand=None, **kwargs):
         if brand is None:

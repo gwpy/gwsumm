@@ -84,13 +84,13 @@ class EventTriggerTab(get_tab('default')):
         for details on the other keyword arguments (``**kwargs``)
         accepted by the constructor for this `EventTriggerTab`.
     """
-    type = 'archived-triggers'
+    type = 'triggers'
 
-    def __init__(self, name, start, end, channel=None, etg=None, table=None,
+    def __init__(self, name, channel=None, etg=None, table=None,
                  cache=None, url=None, **kwargs):
         """Create a new `EventTriggerTab`
         """
-        super(EventTriggerTab, self).__init__(name, start, end, **kwargs)
+        super(EventTriggerTab, self).__init__(name, **kwargs)
         self.channel = channel and get_channel(channel) or None
         self.cache = cache
         self.url = url

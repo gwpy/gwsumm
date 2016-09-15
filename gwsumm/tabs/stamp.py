@@ -44,7 +44,7 @@ SummaryPlot = get_plot(None)
 class StampPEMTab(base):
     """Custom tab displaying a summary of StampPEM results.
     """
-    type = 'archived-stamp'
+    type = 'stamp'
 
     def __init__(self, *args, **kwargs):
         if globalv.MODE != SUMMARY_MODE_DAY:

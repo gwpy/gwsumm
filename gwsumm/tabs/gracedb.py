@@ -48,7 +48,7 @@ LABELS = {
 class GraceDbTab(get_tab('default')):
     """Custom tab displaying a summary of GraceDb results.
     """
-    type = 'archived-gracedb'
+    type = 'gracedb'
 
     def __init__(self, name, start, end, url='https://gracedb.ligo.org',
                  query='External', columns=['gpstime', 'date', 'pipeline'],

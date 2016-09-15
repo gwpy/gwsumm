@@ -50,7 +50,7 @@ base = get_tab('default')
 class DailyAhopeTab(base):
     """Custom tab displaying a summary of Daily iHope results.
     """
-    type = 'archived-daily-ahope'
+    type = 'daily-ahope'
 
     def __init__(self, *args, **kwargs):
         super(DailyAhopeTab, self).__init__(*args, **kwargs)

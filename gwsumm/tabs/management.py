@@ -47,7 +47,7 @@ ParentTab = get_tab('default')
 class AccountingTab(ParentTab):
     """Summarise the data recorded by the operating mode channels
     """
-    type = 'archived-accounting'
+    type = 'accounting'
 
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):

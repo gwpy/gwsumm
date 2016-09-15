@@ -69,7 +69,7 @@ class GuardianTab(DataTab):
     transitions summary table, and a detailed list of transitions and
     segments for each listed state.
     """
-    type = 'archived-guardian'
+    type = 'guardian'
 
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):

@@ -26,27 +26,44 @@ from . import globalv
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # set mode enum
-SUMMARY_MODE_DAY = 0
-SUMMARY_MODE_MONTH = 1
-SUMMARY_MODE_YEAR = 2
-SUMMARY_MODE_WEEK = 3
-SUMMARY_MODE_GPS = 4
+SUMMARY_MODE_STATIC = 0
+SUMMARY_MODE_EVENT = 1
+SUMMARY_MODE_GPS = 2
+SUMMARY_MODE_DAY = 10
+SUMMARY_MODE_WEEK = 11
+SUMMARY_MODE_MONTH = 12
+SUMMARY_MODE_YEAR = 13
 
-MODE_NAME = {SUMMARY_MODE_GPS: 'GPS',
-             SUMMARY_MODE_DAY: 'DAY',
-             SUMMARY_MODE_WEEK: 'WEEK',
-             SUMMARY_MODE_MONTH: 'MONTH',
-             SUMMARY_MODE_YEAR: 'YEAR'}
+MODE_NAME = {
+    SUMMARY_MODE_STATIC: 'STATIC',
+    SUMMARY_MODE_EVENT: 'EVENT',
+    SUMMARY_MODE_GPS: 'GPS',
+    SUMMARY_MODE_DAY: 'DAY',
+    SUMMARY_MODE_WEEK: 'WEEK',
+    SUMMARY_MODE_MONTH: 'MONTH',
+    SUMMARY_MODE_YEAR: 'YEAR',
+}
 
 MODE_ENUM = dict((val, key) for (key, val) in MODE_NAME.iteritems())
 
-MODE = None
 
-
-def get_mode():
+def get_mode(mode=None):
     """Return the current mode.
     """
-    return globalv.MODE
+    if mode is None:
+        return globalv.MODE
+    elif isinstance(mode, int):
+        try:
+            MODE_NAME[mode]
+        except KeyError:
+            ValueError("%s is not a valid mode" % mode)
+        else:
+            return mode
+    else:
+        try:
+            return MODE_ENUM[mode]
+        except KeyError:
+            raise ValueError("%s is not a valid mode" % mode)
 
 
 def set_mode(m):

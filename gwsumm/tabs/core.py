@@ -17,6 +17,20 @@
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines the core `Tab` object.
+
+The basic Tab allows for simple embedding of arbitrary text inside a
+standardised HTML interface. Most real-world applications will use a
+sub-class of `Tab` to create more complex HTML output.
+
+The `Tab` class comes in three flavours:
+
+- 'static', no specific GPS time reference
+- 'interval', displaying data in a given GPS [start, stop) interval
+- 'event', displaying data around a specific central GPS time
+
+The flavour is dynamically set when each instance is created based on the
+`mode` keyword, or the presence of `span`, `start and `end`, or `gpstime`
+keyword arguments.
 """
 
 import os
@@ -29,80 +43,30 @@ from gwpy.utils.compat import OrderedDict
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from .. import (html, mode)
+from .. import html
+from ..mode import (get_mode, get_base, MODE_ENUM, MODE_NAME)
 from ..utils import (re_quote, re_cchar)
-from ..config import *
+from ..config import NoOptionError
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-class Tab(object):
-    """A Simple HTML tab.
+# -- BaseTab ------------------------------------------------------------------
+# this object defines the basic object from which all three flavours inherit
 
-    This `class` provides a mechanism to generate a full-formatted
-    HTML page including banner, navigation-bar, content, and a footer,
-    without the user worrying too much about the details.
-
-    For example::
-
-    >>> # import Tab and make a new one with a given title and HTML file
-    >>> from gwsumm.tabs import Tab
-    >>> tab = Tab('My new tab', 'mytab.html')
-    >>> # write the Tab to disk with some simple content
-    >>> tab.write_html('This is my content', brand='Brand name')
-
-    Parameters
-    ----------
-    name : `str`
-        name of this tab (required)
-
-    index : `str`
-        HTML file in which to write. By default each tab is written to
-        an index.html file in its own directory. Use `~Tab.index`
-        to find out the default index, if not given.
-
-    shortname : `str`
-        shorter name for this tab to use in the navigation bar. By
-        default the regular name is used
-
-    parent : `~gwsumm.tabs.Tab`
-        parent of this tab. This is used to position this tab in the
-        navigation bar.
-
-    children : `list`
-        list of child `Tabs <~gwsumm.tabs.Tab>` of this one. This
-        is used to position this tab in the navigation bar.
-
-    group : `str`
-        name of containing group for this tab in the navigation bar
-        dropdown menu. This is only relevant if this tab has a parent.
-
-    path : `str`
-        base output directory for this tab (should be the same directory
-        for all tabs in this run)
-
-    Notes
-    -----
-    A `Tab` cannot have both a `~Tab.parent` and `~tab.Children`.
-    This is a limitation imposed by the twitter bootstrap navigation bar
-    implementation, which does not allow nested dropdown menus. In order
-    to collect child tabs in a given place, assign them all the same
-    `~Tab.group`.
-    """
-    type = 'basic'
-    """Type identifier for this `Tab`"""
-
-    def __init__(self, name, index=None, shortname=None, parent=None,
-                 children=list(), group=None, path=os.curdir, hidden=False):
-        """Initialise a new `Tab`.
-        """
+class BaseTab(object):
+    def __init__(self, name, index=None,
+                 shortname=None, parent=None, children=list(), group=None,
+                 path=os.curdir, mode=None, hidden=False):
+        # mode
+        self.mode = mode
         # names
         self.name = name
         self.shortname = shortname
         # structure
         self._children = []
-        self.set_parent(parent)
+        self.parent = parent
         self.children = children
         self.group = group
         # HTML format
@@ -111,8 +75,7 @@ class Tab(object):
         self.page = None
         self.hidden = hidden
 
-    # -------------------------------------------
-    # Tab properties
+    # -- properties -----------------------------
 
     @property
     def name(self):
@@ -155,7 +118,14 @@ class Tab(object):
 
     @parent.setter
     def parent(self, p):
-        self.set_parent(p)
+        if p is None:
+            del self.parent
+        else:
+            self.set_parent(p)
+
+    @parent.deleter
+    def parent(self):
+        self._parent = None
 
     def set_parent(self, p):
         """Set the parent `Tab` for this tab
@@ -168,6 +138,10 @@ class Tab(object):
         if p and self._children:
             raise ValueError("A tab cannot have both a parent, and a "
                              "set of children.")
+        if isinstance(p, BaseTab) and self not in p.children:
+            p.add_child(self)
+        else:
+            p = ParentTab(p, [self], mode=self.mode)
         self._parent = p
 
     @property
@@ -275,8 +249,27 @@ class Tab(object):
         else:
             self._group = str(gp)
 
-    # -------------------------------------------
-    # Tab instance methods
+    @property
+    def mode(self):
+        """The date-time mode of this tab.
+
+        :type: `int`
+
+        See Also
+        --------
+        gwsumm.mode : for details on the modes
+        """
+        return self._mode
+
+    @mode.setter
+    def mode(self, m):
+        self._mode = get_mode(m)
+
+    @mode.deleter
+    def mode(self):
+        self._mode = get_mode(0)
+
+    # -- Tab instance methods -------------------
 
     def add_child(self, tab):
         """Add a child to this `SummaryTab`
@@ -314,12 +307,11 @@ class Tab(object):
         else:
             return self.children[idx]
 
-    # -------------------------------------------
-    # SummaryTab configuration parser
+    # -- Tab configuration parser ---------------
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
-        """Define a new tab from a `~gwsumm.config..GWConfigParser`
+        """Define a new tab from a `~gwsumm.config.GWConfigParser`
 
         Parameters
         ----------
@@ -407,27 +399,57 @@ class Tab(object):
             else:
                 hidden = bool(hidden.title())
         kwargs.setdefault('hidden', hidden)
+
+        # get mode and times if required
+        try:
+            kwargs['mode']
+        except KeyError:
+            try:
+                kwargs['mode'] = get_mode(cp.get(section, 'mode'))
+            except NoOptionError:
+                kwargs['mode'] = get_mode()
+        if kwargs['mode'] >= MODE_ENUM['GPS']:
+            try:
+                kwargs['start']
+            except KeyError:
+                kwargs['start'] = cp.getint(section, 'gps-start-time')
+            try:
+                kwargs['end']
+            except KeyError:
+                kwargs['end'] = cp.getint(section, 'gps-end-time')
+        elif kwargs['mode'] == MODE_ENUM['EVENT']:
+            try:
+                kwargs['gpstime']
+            except KeyError:
+                kwargs['gpstime'] = cp.getfloat(section, 'gpstime')
+            try:
+                kwargs['duration']
+            except KeyError:
+                kwargs['duration'] = cp.getfloat(section, 'duration')
+
         return cls(name, *args, **kwargs)
 
-    # -------------------------------------------------------------------------
-    # HTML operations
+    # -- HTML operations ------------------------
+    # the following related HTML operations are defined here
+    #
+    # - init: create page
+    # - navbar: create navbar
+    # - banner: create header
+    # - content: create main content
+    # - finalize: create footer and close page
+    #
+    # The `Tab.write_html` method pulls all of these things together and
+    # is the primary user-facing HTML method
 
-    def initialise_html_page(self, title=None, subtitle=None, css=list(),
-                             js=list(), copy=True, **initargs):
-        """Initialise a new HTML `~markup.page` with a headline.
+    def html_init(self, title=None, css=list(), js=list(), copy=True,
+                  **initargs):
+        """Initialise the HTML for this tab
 
-        This method opens the HTML page with <html> and <body> tags,
-        writes a complete <head>, opens the #wrap <div> and writes the
-        headline banner.
+        This method creates a new `~markup.page` with `<html>` and
+        `<body>` tags and writes a complete `<head></head>` section
 
         Parameters
         ----------
-        title : `str`, optional, default: {parent.name}
-            level 1 heading for this `Tab`.
-
-        subtitle : `str`, optional, default: {self.name}
-            level 2 heading for this `Tab`.
-
         css : `list`, optional
             list of resolvable URLs for CSS files
 
@@ -445,7 +467,7 @@ class Tab(object):
 
         Notes
         -----
-        The :meth:`~Tab.finalize_html_page` method is provided to clean
+        The :meth:`~Tab.html_finalize` method is provided to clean
         up the open tags from this method, so if you want to subclass either,
         you should preserve the same tag structure, or subclass both.
         """
@@ -476,20 +498,19 @@ class Tab(object):
                             css[i] = localscript
         # initialise page
         if title is None:
-            title = self.shorttitle
+            title = self.shorttitle.replace('/', ' | ')
         initargs.setdefault('doctype', html.DOCTYPE)
         initargs.setdefault('metainfo', html.META)
         self.page = html.markup.page()
-        self.page.init(css=css, script=js, title=title, base=base, **initargs)
+        self.page.init(title=title, css=css, script=js, base=base,
+                       **initargs)
         return self.page
 
-    def finalize_html_page(self, user=True, issues=True, about=None,
-                           content=None):
+    def html_finalize(self, user=True, issues=True, about=None, content=None):
         """Finalize the HTML content for this tab.
 
-        This method closes the #wrap div (opened by
-        :meth:`~Tab.initialise_html_page`), prints a footer, and closes
-        the <body> and <html> tags to close the HTML content.
+        This method appends a `<footer></footer>` to the HTML page, and
+        closes the `<body>` and `<html>` tags to finalize the content.
 
         Parameters
         ----------
@@ -513,7 +534,7 @@ class Tab(object):
 
         Notes
         -----
-        This method is twinned with the :meth:`~Tab.initialize_html_page`
+        This method is twinned with the :meth:`~Tab.html_init`
         method, and is designed to clean up any open tags known to have been
         created from that method. So, if you want to subclass either method,
         you should preserve the same tag structure, or subclass both.
@@ -527,7 +548,7 @@ class Tab(object):
         self.page.body.close()
         self.page.html.close()
 
-    def build_html_banner(self, title=None, subtitle=None):
+    def html_banner(self, title=None, subtitle=None):
         """Build the HTML headline banner for this tab.
 
         Parameters
@@ -548,14 +569,14 @@ class Tab(object):
             title = self.title.replace('/', ' : ', 1)
         return html.banner(title, subtitle=subtitle)
 
-    def build_html_navbar(self, brand=None, tabs=list(),
-                          ifo=None, ifomap=dict()):
-        """Build the navigation bar for this `Tab`.
+    def html_navbar(self, brand=None, tabs=list(), ifo=None, ifomap=dict(),
+                    **kwargs):
+        """Build the navigation bar for this tab.
 
         Parameters
         ----------
         brand : `str`, `~gwsumm.html.markup.page`
-            content for navbar-brand
+            content to place inside `<div class="navbar-brand"></div>`
 
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
@@ -567,6 +588,9 @@ class Tab(object):
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
+
+        **kwargs
+            other keyword arguments to pass to :meth:`gwsumm.html.navbar`
 
         Returns
         -------
@@ -581,15 +605,13 @@ class Tab(object):
         else:
             brand_ = html.markup.page()
         # build HTML brand
-        if isinstance(brand, html.markup.page):
+        if brand:
             brand_.add(str(brand))
-        elif brand:
-            brand_.div(str(brand), class_='navbar-brand')
         # combine and return
-        return html.navbar(self._build_nav_links(tabs), class_=class_,
-                           brand=brand_)
+        return html.navbar(self._html_navbar_links(tabs), class_=class_,
+                           brand=brand_, **kwargs)
 
-    def _build_nav_links(self, tabs):
+    def _html_navbar_links(self, tabs):
         """Construct the ordered list of tabs to write into the navbar
 
         Parameters
@@ -611,6 +633,7 @@ class Tab(object):
         """
         # build navbar links
         navlinks = []
+        tabs = TabList(tabs).get_hierarchy()
         for tab in tabs:
             if tab.hidden:
                 continue
@@ -623,11 +646,11 @@ class Tab(object):
                 groups = set([t.group for t in children])
                 groups = dict((g, [t for t in children if t.group == g])
                               for g in groups)
-                nogroup = sorted(groups.pop(None, []),
-                                 key=lambda c: c.shortname.lower()
-                                               in ['summary', 'overview'] and
-                                               c.shortname.upper() or
-                                               c.shortname.lower())
+                nogroup = sorted(
+                    groups.pop(None, []),
+                    key=(lambda c:
+                         c.shortname.lower() in ['summary', 'overview'] and
+                         c.shortname.upper() or c.shortname.lower()))
                 for child in nogroup:
                     links.append((child.shortname.strip('_'), child.href))
                     if child == self:
@@ -640,9 +663,9 @@ class Tab(object):
                              for t in groups[group]]
                     groups[group] = zip(*sorted(
                         zip(groups[group], names),
-                        key=lambda (t, n): n.lower() in ['summary', 'overview']
-                                           and ' %s' % n.upper() or
-                                           n.lower()))[0]
+                        key=(lambda (t, n):
+                             n.lower() in ['summary', 'overview'] and
+                             ' %s' % n.upper() or n.lower())))[0]
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):
@@ -664,7 +687,7 @@ class Tab(object):
         return navlinks
 
     @staticmethod
-    def build_html_content(content):
+    def html_content(content):
         """Build the #main div for this tab.
 
         Parameters
@@ -684,7 +707,7 @@ class Tab(object):
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=dict(), brand=None, base=os.curdir,
+                   ifo=None, ifomap=dict(), brand=None, base=None,
                    css=None, js=None, about=None, footer=None, **inargs):
         """Write the HTML page for this `Tab`.
 
@@ -741,38 +764,50 @@ class Tab(object):
             css = html.get_css().values()
         if js is None:
             js = html.get_js().values()
-        self.initialise_html_page(title=title, subtitle=subtitle, css=css,
-                                  base=base, js=js)
+        self.html_init(title=title, css=css, base=base, js=js)
 
         # add navigation
-        self.page.add(str(self.build_html_navbar(ifo=ifo, ifomap=ifomap,
-                                                 tabs=tabs, brand=brand)))
+        if tabs:
+            self.page.add(str(self.html_navbar(ifo=ifo, ifomap=ifomap,
+                                               tabs=tabs, brand=brand)))
         # -- open main page container
         self.page.div(class_='container')
 
         # add banner
-        self.page.add(str(self.build_html_banner(title=title,
-                                                 subtitle=subtitle)))
+        self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))
 
         # add #main content
-        self.page.add(str(self.build_html_content(maincontent)))
+        self.page.add(str(self.html_content(maincontent)))
 
         self.page.div.close()  # container
         # close page and write
-        self.finalize_html_page(about=about, content=footer)
+        self.html_finalize(about=about, content=footer)
         with open(self.index, 'w') as fobj:
             fobj.write(str(self.page))
         return
 
-register_tab(Tab)
+
+# -- Mixins -------------------------------------------------------------------
+#
+# All actual `Tab` objects will come in three favours:
+#
+#     - `StaticTab` - no GPS associations
+#     - `IntervalTab` - associated with GPS start and stop time
+#     - `EventTab` - associated with central GPS time (and duration)
 
 
-class SummaryArchiveMixin(object):
-    """A `Tab` designed to exist in a calendar-linked archive.
+class StaticTab(BaseTab):
+    """Empty shell for dynamic base setting
     """
+    pass
+
+
+class GpsTab(BaseTab):
     @property
     def span(self):
         """The GPS [start, end) span of this tab.
+
+        :type: `~gwpy.segments.Segment`
         """
         return self._span
 
@@ -786,6 +821,8 @@ class SummaryArchiveMixin(object):
     @property
     def start(self):
         """The GPS start time of this tab.
+
+        :type: `float`
         """
         try:
             return self.span[0]
@@ -795,79 +832,56 @@ class SummaryArchiveMixin(object):
     @property
     def end(self):
         """The GPS end time of this tab.
+
+        :type: `float`
         """
         try:
             return self.span[1]
         except TypeError:
             return None
 
-    @property
-    def mode(self):
-        """The date-time mode of this tab.
 
-        See Also
-        --------
-        gwsumm.mode : for details on the modes
-        """
-        if self._mode is None:
-            return mode.get_mode()
-        else:
-            return self._mode
+class IntervalTab(GpsTab):
 
-    @mode.setter
-    def mode(self, m):
-        if isinstance(m, str):
-            m = mode.MODE_ENUM[m]
-        if m is None:
-            self._mode = m
-        else:
-            self._mode = int(m)
-        return self._mode
+    def __init__(self, *args, **kwargs):
+        try:
+            span = kwargs.pop('span')
+        except KeyError:
+            try:
+                start = kwargs.pop('start')
+                end = kwargs.pop('end')
+            except KeyError:
+                mode = MODE_NAME[get_mode(kwargs.get('mode'))]
+                raise TypeError("%s() in %r mode needs keyword argument 'span'"
+                                " or both 'start' and 'end'"
+                                % (type(self).__name__, mode))
+            else:
+                span = (start, end)
+        super(IntervalTab, self).__init__(*args, **kwargs)
+        self.span = span
 
-    # -------------------------------------------------------------------------
-    # SummaryArchive methods
-
-    @classmethod
-    def from_ini(cls, config, section, start=None, end=None, hidden=None,
-                 **kwargs):
-        config = GWSummConfigParser.from_configparser(config)
-        if start is None:
-            start = config.getint(section, 'gps-start-time')
-        if end is None:
-            end = config.getint(section, 'gps-end-time')
-
-        return super(SummaryArchiveMixin, cls).from_ini(config, section, start,
-                                                        end, **kwargs)
-
-    def build_html_calendar(self):
+    def html_calendar(self):
         """Build the datepicker calendar for this tab.
-
-        Parameters
-        ----------
-        mode : `int`
-            the mode in which to print the calendar, defaults to the selected
-            mode in `gwsumm.globalv`.
 
         Notes
         -----
-        The datetime for the calendar is taken from this tab's
-        `~StateTab.span`.
+        The datetime for the calendar is taken from this tab's `~GpsTab.span`
         """
         date = from_gps(self.start)
         # double-check path matches what is required from custom datepicker
         try:
-            requiredpath = mode.get_base(date, mode=self.mode)
+            requiredpath = get_base(date, mode=self.mode)
         except ValueError:
             return html.markup.oneliner.div('%d-%d' % (self.start, self.end),
                                             class_='navbar-brand')
-        if not requiredpath in self.path:
+        if requiredpath not in self.path:
             raise RuntimeError("Tab path %r inconsistent with required "
                                "format including %r for archive calendar"
                                % (self.path, requiredpath))
         # format calendar
-        return html.calendar(date, mode=self.mode % 3)
+        return html.calendar(date, mode=self.mode)
 
-    def build_html_navbar(self, brand=None, calendar=True, **kwargs):
+    def html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.
 
         The navigation bar will consist of a switch for this page linked
@@ -898,15 +912,185 @@ class SummaryArchiveMixin(object):
         brand_ = html.markup.page()
         # add calendar
         if calendar:
-            brand_.add(str(self.build_html_calendar()))
+            brand_.add(str(self.html_calendar()))
         # build HTML brand
-        if isinstance(brand, html.markup.page):
-            brand_.add(brand)
-        elif brand:
-            brand_.div(str(brand), class_='navbar-brand')
+        if brand:
+            brand_.add(str(brand))
         # combine and return
-        return super(SummaryArchiveMixin, self).build_html_navbar(
-            brand=brand_, **kwargs)
+        return super(IntervalTab, self).html_navbar(brand=brand_, **kwargs)
+
+
+class EventTab(GpsTab):
+    """Mixin to identify a specific GPS time for a given Tab
+    """
+    @property
+    def gpstime(self):
+        """Central GPS time of this tab
+
+        :type: `~gwpy.time.LIGOTimeGPS`
+        """
+        return self._gpstime
+
+    @gpstime.setter
+    def gpstime(self, t):
+        self._gpstime = to_gps(t)
+
+    @property
+    def datetime(self):
+        return from_gps(self.gpstime)
+
+    @property
+    def duration(self):
+        """Time duration of this tab, centred on the `gpstime`
+
+        :type: `float`
+        """
+        return abs(self.span)
+
+    @duration.setter
+    def duration(self, d):
+        d2 = d/2.
+        self.span = (self.gpstime - d2, self.gpstime + d2)
+
+    # -- EventTab methods -----------------------
+
+    def __init__(self, *args, **kwargs):
+        # parse gpstime and duration
+        try:
+            gpstime = kwargs.pop('gpstime')
+        except KeyError:
+            mode = MODE_NAME[get_mode(kwargs['mode'])]
+            raise TypeError("%s() in %r mode needs keyword argument 'gpstime'"
+                            % (type(self).__name__, mode))
+        duration = kwargs.pop('duration', 200)
+        # create tab and assign properties
+        super(EventTab, self).__init__(*args, **kwargs)
+        self.gpstime = gpstime
+        self.duration = duration
+
+    def html_navbar(self, brand=None, **kwargs):
+        if brand is None:
+            brand = str(self.gpstime)
+        super(EventTab, self).html_navbar(brand=brand, **kwargs)
+    html_navbar.__doc__ = GpsTab.html_navbar.__doc__
+
+
+class _MetaTab(type):
+    """Metaclass for creating tabs of the right flavour
+
+    The `MetaTab.__call__` method will get executed whenever a subclass of
+    `Tab` is created. It works out the 'mode' of the new tab and dynamically
+    sets the parent class for `Tab` accordingly.
+    """
+    def __call__(cls, *args, **kwargs):
+        """Parse the `mode` kwarg for the Tab and add the right flavour
+        """
+        # parse default mode based on other kwargs
+        try:
+            mode = kwargs['mode']
+        except KeyError:
+            if 'gpstime' in kwargs:
+                mode = 'EVENT'
+            else:
+                mode = None
+        mode = get_mode(mode)
+        # parse regular Tab (don't add a mixin)
+        if mode == MODE_ENUM['STATIC']:
+            kwargs.pop('mode', None)
+            base = StaticTab
+        # parse event Tab
+        elif mode == MODE_ENUM['EVENT']:
+            kwargs['mode'] = mode
+            base = EventTab
+        # parse interval Tab
+        else:
+            kwargs['mode'] = mode
+            base = IntervalTab
+        # set bases and create Tab
+        Tab.__bases__ = (base,)
+        return super(_MetaTab, cls).__call__(*args, **kwargs)
+
+
+# -- Tab ----------------------------------------------------------------------
+# this is the first actual Tab object, all of the functionality is defined
+# in the `BaseTab` object
+
+class Tab(BaseTab):
+    """A Simple HTML tab.
+
+    This `class` provides a mechanism to generate a full-formatted
+    HTML page including banner, navigation-bar, content, and a footer,
+    without the user worrying too much about the details.
+
+    For example::
+
+    >>> # import Tab and make a new one with a given title and HTML file
+    >>> from gwsumm.tabs import Tab
+    >>> tab = Tab('My new tab', 'mytab.html')
+    >>> # write the Tab to disk with some simple content
+    >>> tab.write_html('This is my content', brand='Brand name')
+
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+
+    index : `str`
+        HTML file in which to write. By default each tab is written to
+        an index.html file in its own directory. Use `~Tab.index`
+        to find out the default index, if not given.
+
+    shortname : `str`
+        shorter name for this tab to use in the navigation bar. By
+        default the regular name is used
+
+    parent : `~gwsumm.tabs.Tab`
+        parent of this tab. This is used to position this tab in the
+        navigation bar.
+
+    children : `list`
+        list of child `Tabs <~gwsumm.tabs.Tab>` of this one. This
+        is used to position this tab in the navigation bar.
+
+    group : `str`
+        name of containing group for this tab in the navigation bar
+        dropdown menu. This is only relevant if this tab has a parent.
+
+    path : `str`
+        base output directory for this tab (should be the same directory
+        for all tabs in this run)
+
+    Notes
+    -----
+    A `Tab` cannot have both a `~Tab.parent` and `~tab.Children`.
+    This is a limitation imposed by the twitter bootstrap navigation bar
+    implementation, which does not allow nested dropdown menus. In order
+    to collect child tabs in a given place, assign them all the same
+    `~Tab.group`.
+    """
+    __metaclass__ = _MetaTab
+    type = 'basic'
+
+register_tab(Tab)
+
+
+class ParentTab(Tab):
+    """Dummy `Tab` only for navigation
+    """
+    def __init__(self, name, children, **kwargs):
+        # parse list of children
+        if not isinstance(children, list):
+            children = [child]
+        child = children[0]
+        # parse mode and GPS arguments (if required)
+        kwargs.setdefault('mode', child.mode)
+        if isinstance(self, EventTab):
+            kwargs.setdefault('gpstime', child.gpstime)
+            kwargs.setdefault('duration', child.duration)
+        elif isinstance(self, IntervalTab):
+            kwargs.setdefault('span', child.span)
+        # create Tab
+        super(ParentTab, self).__init__(name, children=children, **kwargs)
 
 
 # -- TabList -----------------------------------------------------------------
@@ -929,7 +1113,8 @@ class TabList(list):
             if tab.parent in parents:
                 tab.set_parent(parents[tab.parent])
             elif not isinstance(tab.parent, Tab):
-                tab.set_parent(get_tab('default')(tab.parent, *tab.span))
+                tab.set_parent(get_tab('default')(
+                    tab.parent, mode=tab.mode, span=tab.span))
             parents.setdefault(tab.parent.name, tab.parent)
             if tab not in tab.parent.children:
                 tab.parent.add_child(tab)
@@ -956,7 +1141,7 @@ class TabList(list):
         hlist = self.get_hierarchy()
         hlist.sort(key=key)
         for tab in hlist:
-           tab.children.sort(key=key)
+            tab.children.sort(key=key)
         super(TabList, self).sort(key=key, reverse=reverse)
 
     @classmethod
@@ -971,14 +1156,11 @@ class TabList(list):
                 continue
             # otherwise, get type and create instance of class
             try:
-                type = config.get(section, 'type')
+                type_ = config.get(section, 'type')
             except NoOptionError:
-                type = 'default'
-            else:
-                if not type.startswith('archived-'):
-                    type = 'archived-%s' % type
-            Tab = get_tab(type)
-            if issubclass(Tab, get_tab('archived-data')):
+                type_ = 'default'
+            Tab = get_tab(type_)
+            if issubclass(Tab, get_tab('data')):
                 tab = Tab.from_ini(config, section, plotdir=plotdir, path=path)
             else:
                 tab = Tab.from_ini(config, section, path=path)

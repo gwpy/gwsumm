@@ -42,7 +42,7 @@ PROFILE = False
 START = time.time()
 
 # run time variables
-MODE = 4
+MODE = 0
 WRITTEN_PLOTS = []
 NOW = tconvert('now').seconds
 HTMLONLY = False

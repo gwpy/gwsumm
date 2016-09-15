@@ -44,7 +44,7 @@ SummaryPlot = get_plot(None)
 class FscanTab(base):
     """Custom tab displaying a summary of Fscan results.
     """
-    type = 'archived-fscan'
+    type = 'fscan'
 
     def __init__(self, *args, **kwargs):
         if globalv.MODE != SUMMARY_MODE_DAY:

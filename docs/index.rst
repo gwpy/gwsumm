@@ -27,12 +27,37 @@ Summary page configuration
 API documentation
 =================
 
+**Working with Tabs**
+
 .. toctree::
    :maxdepth: 1
 
-   tabs
+   tabs/index
+   tabs/websites
+   tabs/modes
+   tabs/api
+
+**Working with States**
+
+.. toctree::
+   :maxdepth: 1
+
    states
+
+**Working with Plots**
+
+.. toctree::
+   :maxdepth: 1
+
    plots
+
+Modules
+=======
+
+.. toctree::
+   :maxdepth: 1
+
+   modes
 
 Indices and tables
 ==================

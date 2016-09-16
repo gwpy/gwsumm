@@ -88,7 +88,7 @@ tests_require = [
 if sys.version < (2.7):
     tests_require.append('unittest2')
 extras_require = {
-    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme'],
+    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme', 'astropy_helpers'],
 }
 
 # -- data files ---------------------------------------------------------------

@@ -1157,6 +1157,7 @@ class TabList(list):
         if isinstance(tag, str):
             tag = re.compile(tag)
         tabs = cls()
+        parents = {}
         for section in filter(tag.match, config.sections()):
             # if user gave matches, test match and skip
             if match and section[4:] not in match:
@@ -1172,5 +1173,9 @@ class TabList(list):
             else:
                 tab = Tab.from_ini(config, section, path=path)
             tabs.append(tab)
+            if tab.parent and tab.parent.name in parents:
+                tab.set_parent(parents[tab.parent.name])
+            elif tab.parent:
+                parents[tab.parent.name] = tab.parent
         tabs.get_hierarchy()  # call this to resolve map parent names to tabs
         return tabs

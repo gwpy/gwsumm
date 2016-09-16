@@ -36,6 +36,7 @@ from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import (ALLSTATE, SummaryState)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['FscanTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)
@@ -44,7 +45,7 @@ SummaryPlot = get_plot(None)
 class FscanTab(base):
     """Custom tab displaying a summary of Fscan results.
     """
-    type = 'archived-fscan'
+    type = 'fscan'
 
     def __init__(self, *args, **kwargs):
         if globalv.MODE != SUMMARY_MODE_DAY:

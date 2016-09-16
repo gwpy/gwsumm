@@ -40,6 +40,7 @@ from ..plot.registry import (get_plot, register_plot)
 from ..utils import vprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['AccountingTab']
 
 ParentTab = get_tab('default')
 
@@ -47,7 +48,7 @@ ParentTab = get_tab('default')
 class AccountingTab(ParentTab):
     """Summarise the data recorded by the operating mode channels
     """
-    type = 'archived-accounting'
+    type = 'accounting'
 
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):

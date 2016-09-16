@@ -43,6 +43,7 @@ from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['DailyAhopeTab']
 
 base = get_tab('default')
 
@@ -50,7 +51,7 @@ base = get_tab('default')
 class DailyAhopeTab(base):
     """Custom tab displaying a summary of Daily iHope results.
     """
-    type = 'archived-daily-ahope'
+    type = 'daily-ahope'
 
     def __init__(self, *args, **kwargs):
         super(DailyAhopeTab, self).__init__(*args, **kwargs)

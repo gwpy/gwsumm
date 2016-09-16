@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# Copyright (C) Duncan Macleod (2013)
+# Copyright (C) Duncan Macleod (2013-2016)
 #
 # This file is part of GWSumm.
 #
@@ -16,93 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""A `Tab` is a single, configurable page of output, containing some data.
-Each `Tab` is written in its own HTML page, and can be written to contain
-any set of data, with any format.
-
-Abstract Tab classes
---------------------
-
-The :mod:`gwsumm.tabs` module provides a few base classes from which users
-can write their own tab `classes <class>`.
-These include:
-
-.. autosummary::
-   :nosignatures:
-   :toctree: api
-
-   Tab
-   SummaryArchiveMixin
-   DataTabBase
-
-
-Available Tabs
---------------
-
-Along with the base classes, GWSumm provides a set of `Tab` subclasses covering
-some common data displays.
-These include:
-
-.. autosummary::
-   :nosignatures:
-   :toctree: api
-
-   ExternalTab
-   PlotTab
-   StateTab
-
-Each of these tab classes is also available with the `SummaryArchiveMixin`
-applied, allowing users to archive their output with a calendar, and crosslinks:
-
-.. autosummary::
-   :nosignatures:
-   :toctree: api
-
-   ArchivedExternalTab
-   ArchivedPlotTab
-   ArchivedStateTab
-
-
-Data generation
----------------
-
-All of the above tabs simply format data that has already been generated.
-GWSumm also provides a `DataTab`, allowing users to configure plots and have
-them generated on-the-fly by reading in the raw data, processing, and saving
-plots to disk.
-
-This is achieved via the following class
-
-.. autosummary::
-   :toctree: api
-
-   DataTab
-   EventTriggerTab
-
-Process-specific tabs
----------------------
-
-The following `Tab` classes are provided to interface to a specific GW
-detector characterization or analysis group or process:
-
-.. autosummary::
-   :nosignatures:
-   :toctree: api
-
-   AccountingTab
-   GuardianTab
-   HvetoTab
-   SEIWatchDogTab
-   StampPEMTab
-
+"""This module defines the `Tab` API, and all of the built-in tab objects
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# core
 from .registry import *
 from .core import *
 from .builtin import *
+from .misc import *
+
+# data
 from .data import *
+
+# application-specific extras
 from .ihope import *
 from .hveto import *
 from .sei import *

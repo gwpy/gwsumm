@@ -17,20 +17,30 @@
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>
 
 """This module defines a number of `Tab` subclasses.
+
+The `builtin` classes provide interfaces for simple operations including
+
+- `ExternalTab`: embedding an existing webpage
+- `PlotTab`: scaffolding a collection of existing images
+- `StateTab`: scaffolding plots split into a number of states, with
+  a button to switch between states in the HTML
+
 """
 
+import os.path
 import warnings
 
-from .core import (Tab, SummaryArchiveMixin)
-from .registry import register_tab
+from .registry import (get_tab, register_tab)
 from ..plot import get_plot
-from ..utils import *
-from ..config import *
+from ..utils import (re_quote, re_cchar)
+from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import (ALLSTATE, SummaryState, get_state)
 from .. import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['ExternalTab', 'PlotTab', 'StateTab']
 
+Tab = get_tab('basic')
 SummaryPlot = get_plot(None)
 DataPlot = get_plot('data')
 
@@ -125,12 +135,13 @@ class ExternalTab(Tab):
         if cp.has_option(section, 'success'):
             kwargs.setdefault(
                 'success', re_quote.sub('', cp.get(section, 'success')))
-        return super(ExternalTab, cls).from_ini(cp, section, url, *args, **kwargs)
+        return super(ExternalTab, cls).from_ini(cp, section, url,
+                                                *args, **kwargs)
 
-    def build_html_content(self, content):
+    def html_content(self, content):
         wrappedcontent = html.load(self.url, id_='content', error=self.error,
                                    success=self.success)
-        return super(ExternalTab, self).build_html_content(wrappedcontent)
+        return super(ExternalTab, self).html_content(wrappedcontent)
 
     def write_html(self, **kwargs):
         """Write the HTML page for this tab.
@@ -150,19 +161,6 @@ class ExternalTab(Tab):
         return super(ExternalTab, self).write_html('', **kwargs)
 
 register_tab(ExternalTab)
-
-
-class ArchivedExternalTab(SummaryArchiveMixin, ExternalTab):
-    """An archivable externally-linked tab.
-    """
-    type = 'archived-external'
-
-    def __init__(self, name, url, start, end, mode=None, **kwargs):
-        super(ArchivedExternalTab, self).__init__(name, url, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-register_tab(ArchivedExternalTab)
 
 
 class PlotTab(Tab):
@@ -428,8 +426,8 @@ class PlotTab(Tab):
 
         if plots is None:
             if state:
-                plots = [p for p in self.plots if not isinstance(p, DataPlot) or
-                         p.state in [state, None]]
+                plots = [p for p in self.plots if not
+                         isinstance(p, DataPlot) or p.state in [state, None]]
             else:
                 plots = self.plots
 
@@ -499,7 +497,7 @@ class PlotTab(Tab):
         page.div.close()
         return page
 
-    def build_html_content(self, content):
+    def html_content(self, content):
         page = html.markup.page()
         if self.foreword:
             page.add(str(self.foreword))
@@ -508,7 +506,7 @@ class PlotTab(Tab):
         page.add(str(self.scaffold_plots()))
         if self.afterword:
             page.add(str(self.afterword))
-        return Tab.build_html_content(str(page))
+        return Tab.html_content(str(page))
 
     def write_html(self, foreword=None, afterword=None, **kwargs):
         """Write the HTML page for this tab.
@@ -539,20 +537,6 @@ class PlotTab(Tab):
         return super(PlotTab, self).write_html(None, **kwargs)
 
 register_tab(PlotTab)
-
-
-class ArchivedPlotTab(SummaryArchiveMixin, PlotTab):
-
-    """An archivable tab with multiple plots to be laid out in a scaffold.
-    """
-    type = 'archived-plots'
-
-    def __init__(self, name, start, end, mode=None, plots=list(), **kwargs):
-        super(ArchivedPlotTab, self).__init__(name, plots=plots, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-register_tab(ArchivedPlotTab)
 
 
 class StateTab(PlotTab):
@@ -605,6 +589,9 @@ class StateTab(PlotTab):
     def __init__(self, name, states=list(), **kwargs):
         """Initialise a new `Tab`.
         """
+        if kwargs.get('mode', None) is None:
+            raise ValueError("%s() needs keyword argument 'mode'"
+                             % type(self).__name__)
         super(StateTab, self).__init__(name, **kwargs)
         # process states
         if not isinstance(states, (tuple, list)):
@@ -697,8 +684,7 @@ class StateTab(PlotTab):
     # ------------------------------------------------------------------------
     # HTML methods
 
-    def build_html_navbar(self, brand=None, ifo=None, ifomap=dict(),
-                          tabs=list()):
+    def html_navbar(self, brand='', **kwargs):
         """Build the navigation bar for this `Tab`.
 
         The navigation bar will consist of a switch for this page linked
@@ -725,39 +711,27 @@ class StateTab(PlotTab):
         page : `~gwsumm.html.markup.page`
             a markup page containing the navigation bar.
         """
-        # ---- construct brand
         brand_ = html.markup.page()
-
         # build state switch
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             default = self.states.index(self.defaultstate)
             brand_.add(str(html.state_switcher(
                 zip(self.states, self.frames), default)))
-        # build interferometer cross-links
-        if ifo is not None:
-            brand_.add(str(html.base_map_dropdown(ifo, id_='ifos', **ifomap)))
-            class_ = 'navbar navbar-fixed-top navbar-%s' % ifo.lower()
-        else:
-            class_ = 'navbar navbar-fixed-top'
         # build HTML brand
-        if isinstance(brand, html.markup.page):
+        if brand:
             brand_.add(str(brand))
-        elif brand:
-            brand_.div(str(brand), class_='navbar-brand')
-
         # combine and return
-        return html.navbar(self._build_nav_links(tabs), brand=brand_,
-                           class_=class_)
+        return super(StateTab, self).html_navbar(brand=brand_, **kwargs)
 
     @staticmethod
-    def build_html_content(frame):
+    def html_content(frame):
         """Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
         """
         wrappedcontent = html.load(frame, id_='content')
-        return Tab.build_html_content(str(wrappedcontent))
+        return Tab.html_content(str(wrappedcontent))
 
     def write_state_html(self, state, pre=None, post=None, plots=True):
         """Write the frame HTML for the specific state of this tab
@@ -825,88 +799,3 @@ class StateTab(PlotTab):
             about=about, footer=footer, **inargs)
 
 register_tab(StateTab)
-
-
-class ArchivedStateTab(SummaryArchiveMixin, StateTab):
-    """An archivable tab with data in multiple states
-    """
-    type = 'archived-state'
-
-    def __init__(self, name, start, end, mode=None, states=list(), **kwargs):
-        super(ArchivedStateTab, self).__init__(name, states=states, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    @classmethod
-    def from_ini(cls, config, section, start=None, end=None, **kwargs):
-        config = GWSummConfigParser.from_configparser(config)
-        if start is None:
-            start = config.getint(section, 'gps-start-time')
-        if end is None:
-            end = config.getint(section, 'gps-end-time')
-        return super(ArchivedStateTab, cls).from_ini(config, section, start,
-                                                     end, **kwargs)
-
-register_tab(ArchivedStateTab)
-
-
-class AboutTab(SummaryArchiveMixin, Tab):
-    type = 'about'
-
-    def __init__(self, start, end, name='About', mode=None, **kwargs):
-        super(AboutTab, self).__init__(name, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    def write_html(self, config=list(), **kwargs):
-        return super(AboutTab, self).write_html(
-            html.about_this_page(config=config), **kwargs)
-
-register_tab(AboutTab)
-
-
-class Error404Tab(SummaryArchiveMixin, Tab):
-    type = '404'
-
-    def __init__(self, start, end, name='404', mode=None, **kwargs):
-        super(Error404Tab, self).__init__(name, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    def write_html(self, config=list(), top=None, **kwargs):
-        if top is None:
-            top = kwargs.get('base', self.path)
-        kwargs.setdefault('title', '404: Page not found')
-        page = html.markup.page()
-        page.div(class_='alert alert-danger')
-        page.p()
-        page.strong("The page you are looking for doesn't exist")
-        page.p.close()
-        page.p("This could be because the times for which you are looking "
-               "were never processed (or haven't even happened yet), or "
-               "because no page exists for the specific data products you "
-               "want. Either way, if you think this is in error, please "
-               "contact <a class=\"alert-link\" "
-               "href=\"mailto:detchar+code@ligo.org\">the DetChar group</a>.")
-        page.p("Otherwise, you might be interested in one of the following:")
-        page.div(style="padding-top: 10px;")
-        page.a("Take me back", role="button", class_="btn btn-lg btn-info",
-               title="Back", href="javascript:history.back()")
-        page.a("Take me up one level", role="button",
-               class_="btn btn-lg btn-warning", title="Up",
-               href="javascript:linkUp()")
-        page.a("Take me to the top level", role="button",
-               class_="btn btn-lg btn-success", title="Top", href=top)
-        page.div.close()
-        page.div.close()
-        page.script("""
-  function linkUp() {
-    var url = window.location.href;
-    if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
-    url = url.split('/');
-    url.pop();
-    window.location = url.join('/');
-  }""", type="text/javascript")
-        return super(Error404Tab, self).write_html(page, **kwargs)
-
-register_tab(Error404Tab)

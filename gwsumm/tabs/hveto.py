@@ -46,6 +46,7 @@ from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['HvetoTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)
@@ -57,7 +58,7 @@ HVETO_COLUMNS = ['peak_time', 'peak_time_ns', 'peak_frequency', 'snr']
 class HvetoTab(base):
     """Custom tab displaying a summary of Hveto results.
     """
-    type = 'archived-hveto'
+    type = 'hveto'
     summaryrows = ['Winning channel', 'Time Window [s]', 'SNR Thresh.',
                    'Significance', 'N. trigs',
                    'Use %', 'Efficiency [%]', 'Deadtime [%]',

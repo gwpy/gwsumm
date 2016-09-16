@@ -32,6 +32,14 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 class ModeTests(unittest.TestCase):
     """`TestCase` for the channels.py module
     """
+    @classmethod
+    def setUpClass(cls):
+        cls._defaultmode = mode.get_mode()
+
+    @classmethod
+    def tearDownClass(cls):
+        mode.set_mode(cls._defaultmode)
+
     def test_get_mode(self):
         m = mode.get_mode()
         self.assertEqual(m, globalv.MODE)
@@ -39,7 +47,7 @@ class ModeTests(unittest.TestCase):
     def test_set_mode(self):
         mode.set_mode(0)
         self.assertEqual(globalv.MODE, 0)
-        self.assertEqual(globalv.MODE, mode.SUMMARY_MODE_DAY)
+        self.assertEqual(globalv.MODE, mode.SUMMARY_MODE_STATIC)
         mode.set_mode('GPS')
         self.assertEqual(globalv.MODE, mode.SUMMARY_MODE_GPS)
 

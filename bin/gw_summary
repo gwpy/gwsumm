@@ -588,7 +588,7 @@ else:
 # write 404 error page
 if not opts.no_htaccess and not opts.no_html and urlbase:
     top = os.path.join(urlbase, path)
-    four0four = get_tab('404')(span[0], span[1], parent=None, path=path,
+    four0four = get_tab('404')(span=span, parent=None, path=path,
                                index=os.path.join(path, '404.html'))
     four0four.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
                          ifomap=ifobases, top=top, base=base,
@@ -601,7 +601,7 @@ if not opts.no_htaccess and not opts.no_html and urlbase:
         print('ErrorDocument 403 %s' % url404, file=htaccess)
 
 # write config page
-about = get_tab('about')(span[0], span[1], parent=None, path=path)
+about = get_tab('about')(span=span, parent=None, path=path)
 if not opts.no_html:
     mkdir(about.path)
     about.write_html(css=css, js=javascript, tabs=tabs, config=config.files,
@@ -674,7 +674,7 @@ for tab in tablist:
         name = '%s/%s' % (tab.parent.name, tab.name)
     else:
         name = tab.name
-    if not opts.html_only and isinstance(tab, get_tab('archived-data')):
+    if not opts.html_only and isinstance(tab, get_tab('_processed')):
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
                     multiprocess=opts.multiprocess,

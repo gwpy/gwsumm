@@ -17,11 +17,14 @@
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines tabs for generating plots from data on-the-fly.
+
+This module also provides the `ProcessedTab` mixin, which should be used
+to declare that a tab has a `process()` method that should be executed
+as part of a workflow, see the ``gw_summary`` executable as an example.
 """
 
 from __future__ import print_function
 
-import abc
 import os.path
 import getpass
 import re
@@ -55,22 +58,29 @@ from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores, safe_eval)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['ProcessedTab', 'DataTab']
+
+ParentTab = get_tab('state')
 
 
-class DataTabBase(get_tab('archived-state')):
+# -- ProcessTab mixin ---------------------------------------------------------
+
+class ProcessedTab(object):
     """Abstract base class to detect necessity to run Tab.process()
     """
-    __metaclass__ = abc.ABCMeta
-    type = 'data-abc'
-
-    @abc.abstractmethod
+    type = '_processed'
     def process(self):
         """This method must be overridden by all subclasses
         """
-        pass
+        raise NotImplementedError("process() must be defined in %s"
+                                  % type(self).__name__)
+
+register_tab(ProcessedTab)
 
 
-class DataTab(DataTabBase):
+# -- DataTab ------------------------------------------------------------------
+
+class DataTab(ProcessedTab, ParentTab):
     """A tab where plots and data summaries are built upon request
 
     This is the 'default' tab for the command-line gw_summary executable.
@@ -107,13 +117,13 @@ class DataTab(DataTabBase):
         for details on the other keyword arguments (``**kwargs``)
         accepted by the constructor for the `DataTab`.
     """
-    type = 'archived-data'
+    type = 'data'
 
-    def __init__(self, name, start, end, states=list([ALLSTATE]),
-                 ismeta=False, noplots=False, **kwargs):
+    def __init__(self, name, states=list([ALLSTATE]), ismeta=False,
+                 noplots=False, **kwargs):
         """Initialise a new `DataTab`.
         """
-        super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
+        super(DataTab, self).__init__(name, states=states, **kwargs)
         self.ismeta = ismeta
         self.noplots = noplots
         self.subplots = []
@@ -331,15 +341,15 @@ class DataTab(DataTabBase):
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
     def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
-        """Process data for this `StateTab`.
+        """Process data for this tab
 
         Parameters
         ----------
         config : `ConfigParser.ConfigParser`, optional
-            job configuration to pass to :math:`~StateTab.finalize_states`
+            job configuration to pass to :math:`~DataTab.finalize_states`
         **stateargs
             all other keyword arguments are passed directly onto the
-            :meth:`~StateTab.process_state` method.
+            :meth:`~DataTab.process_state` method.
         """
         if self.ismeta:
             return
@@ -600,7 +610,7 @@ class DataTab(DataTabBase):
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def build_html_content(self, frame):
+    def html_content(self, frame):
         """Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a

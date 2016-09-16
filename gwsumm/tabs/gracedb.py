@@ -51,11 +51,11 @@ class GraceDbTab(get_tab('default')):
     """
     type = 'gracedb'
 
-    def __init__(self, name, start, end, url='https://gracedb.ligo.org',
+    def __init__(self, name, url='https://gracedb.ligo.org',
                  query='External', columns=['gpstime', 'date', 'pipeline'],
                  headers=['GPS time', 'UTC time', 'Source'], rank='gpstime',
                  **kwargs):
-        super(GraceDbTab, self).__init__(name, start, end, **kwargs)
+        super(GraceDbTab, self).__init__(name, **kwargs)
         self.url = url
         self.query = query
         self.events = dict()

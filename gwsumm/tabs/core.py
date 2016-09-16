@@ -57,6 +57,8 @@ __all__ = ['BaseTab', 'Tab', 'TabList']
 # this object defines the basic object from which all three flavours inherit
 
 class BaseTab(object):
+    """The core `Tab` object, defining basic functionality
+    """
     def __init__(self, name, index=None,
                  shortname=None, parent=None, children=list(), group=None,
                  path=os.curdir, mode=None, hidden=False):
@@ -798,12 +800,14 @@ class BaseTab(object):
 
 
 class StaticTab(BaseTab):
-    """Empty shell for dynamic base setting
+    """Simple `Tab` with no GPS association
     """
     pass
 
 
 class GpsTab(BaseTab):
+    """Stub for GPS-related tabs
+    """
     @property
     def span(self):
         """The GPS [start, end) span of this tab.
@@ -843,7 +847,8 @@ class GpsTab(BaseTab):
 
 
 class IntervalTab(GpsTab):
-
+    """`Tab` defined within a GPS [start, end) interval
+    """
     def __init__(self, *args, **kwargs):
         try:
             span = kwargs.pop('span')
@@ -922,7 +927,7 @@ class IntervalTab(GpsTab):
 
 
 class EventTab(GpsTab):
-    """Mixin to identify a specific GPS time for a given Tab
+    """`Tab` defined around a central GPS time
     """
     @property
     def gpstime(self):

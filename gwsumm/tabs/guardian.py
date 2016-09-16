@@ -50,6 +50,7 @@ from ..plot.registry import (get_plot, register_plot)
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['GuardianTab']
 
 DataTab = get_tab('default')
 UTC = tz.gettz('UTC')

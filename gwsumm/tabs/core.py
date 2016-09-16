@@ -50,6 +50,7 @@ from ..config import NoOptionError
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['BaseTab', 'Tab', 'TabList']
 
 
 # -- BaseTab ------------------------------------------------------------------

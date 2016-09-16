@@ -36,6 +36,7 @@ from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import (ALLSTATE, SummaryState)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['StampPEMTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)

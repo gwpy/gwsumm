@@ -58,6 +58,7 @@ from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores, safe_eval)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['ProcessedTab', 'DataTab']
 
 ParentTab = get_tab('state')
 

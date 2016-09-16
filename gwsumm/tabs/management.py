@@ -40,6 +40,7 @@ from ..plot.registry import (get_plot, register_plot)
 from ..utils import vprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['AccountingTab']
 
 ParentTab = get_tab('default')
 

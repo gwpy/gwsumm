@@ -46,6 +46,7 @@ from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['HvetoTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)

@@ -51,6 +51,7 @@ from ..plot.registry import (get_plot, register_plot)
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['SEIWatchDogTab']
 
 base = get_tab('default')
 HAMs = ['HAM%d' % i for i in range(1, 7)]

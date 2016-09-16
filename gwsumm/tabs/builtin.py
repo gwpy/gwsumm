@@ -38,6 +38,7 @@ from ..state import (ALLSTATE, SummaryState, get_state)
 from .. import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['ExternalTab', 'PlotTab', 'StateTab']
 
 Tab = get_tab('basic')
 SummaryPlot = get_plot(None)

@@ -28,6 +28,7 @@ from ..config import (GWSummConfigParser, NoOptionError)
 from ..utils import (re_quote, vprint)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['GraceDbTab']
 
 LABELS = {
     'ADVOK': 'success',

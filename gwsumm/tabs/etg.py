@@ -40,6 +40,7 @@ from ..mode import (get_mode, MODE_ENUM)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['EventTriggerTab']
 
 
 class EventTriggerTab(get_tab('default')):

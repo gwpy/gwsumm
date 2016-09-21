@@ -189,7 +189,7 @@ class SEIWatchDogTab(base):
                         stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
-                    causes = ['%s (no cause found)' % stage]
+                    causes = ['%s Unknown' % stage]
                 else:
                     allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
                     causes = [latch.bits[b] for b in allbits]
@@ -233,16 +233,18 @@ class SEIWatchDogTab(base):
         # find one example of each channel, and get the bits
         hepichannel = get_channel(HEPI_LATCH_CHANNEL
                                   % (self.ifo, self.chambers[1]))
-        hepimask = hepichannel.bits
+        hepimask = hepichannel.bits + ['HEPI Unknown']
         if self.chambers == HAMs:
              isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
+             isimask = isichannels.bits + ['ISI Unknown']
         else:
              isichannels = [get_channel(BSC_ST1_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0])),
                             get_channel(BSC_ST2_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
-        isimask = [bit for c in isichannels for bit in c.bits]
+             isimask = (isichannels[0].bits + ['ISI ST1 Unknown'] +
+                        isichannels[1].bits + ['ISI ST2 Unknown'])
         mask = hepimask + isimask
 
         # count trips

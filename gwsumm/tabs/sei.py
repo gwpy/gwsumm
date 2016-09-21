@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import os
 import re
-from math import ceil
 from multiprocessing import cpu_count
 
 from dateutil import tz
@@ -41,13 +40,12 @@ from matplotlib.ticker import NullLocator
 from gwpy.time import Time
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.plotter import TimeSeriesPlot
-from gwpy.segments import (Segment, SegmentList)
 
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..config import (NoOptionError, GWSummConfigParser)
 from ..data import (get_timeseries_dict, get_channel)
-from ..plot.registry import (get_plot, register_plot)
+from ..plot.registry import get_plot
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -154,9 +152,7 @@ class SEIWatchDogTab(base):
         for (gpschannel, latch) in zip(tschannels, svchannels):
             # get channel data
             gpschannel = get_channel(gpschannel)
-            gpsts = tripdata[gpschannel.name].join(gap='pad', pad=0.0)
             latch = get_channel(latch)
-            latchts = latchdata[latch.name].join(gap='pad', pad=0.0)
             chamber = gpschannel.subsystem
             system = gpschannel.system
             vprint("    Locating WD trips for %s %s %s...\n"
@@ -193,7 +189,7 @@ class SEIWatchDogTab(base):
                         stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
-                    cause = '%s (no cause found)' % stage
+                    causes = ['%s (no cause found)' % stage]
                 else:
                     allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
                     causes = [latch.bits[b] for b in allbits]
@@ -288,7 +284,6 @@ class SEIWatchDogTab(base):
             else:
                 page.tr()
             page.th(bit)
-            row = []
             for j, chamber in enumerate(self.chambers):
                 try:
                     c = count[(chamber, bit)]

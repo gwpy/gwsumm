@@ -42,7 +42,7 @@ else:
 from gwpy.detector import Channel
 
 from . import globalv
-from .mode import *
+from .mode import Mode
 from .utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -136,7 +136,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             # set default trend type based on mode
             if type_ is None and ':DMT-' in name:  # DMT is always m-trend
                 type_ = 'm-trend'
-            elif type_ is None and globalv.MODE == SUMMARY_MODE_GPS:
+            elif type_ is None and globalv.MODE == Mode.gps:
                 type_ = 's-trend'
             elif type_ is None:
                 type_ = 'm-trend'

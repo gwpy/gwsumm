@@ -30,8 +30,8 @@ from numpy import loadtxt
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
-from .. plot import get_plot
-from ..mode import SUMMARY_MODE_DAY
+from ..mode import Mode
+from ..plot import get_plot
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import (ALLSTATE, SummaryState)
 
@@ -48,8 +48,9 @@ class StampPEMTab(base):
     type = 'stamp'
 
     def __init__(self, *args, **kwargs):
-        if globalv.MODE != SUMMARY_MODE_DAY:
-            raise RuntimeError("StampPEMTab is only available in 'DAY' mode.")
+        if kwargs['mode'] != Mode.day:
+            raise RuntimeError("StampPEMTab is only available in %s mode."
+                               % Mode.day.name)
         super(StampPEMTab, self).__init__(*args, **kwargs)
 
     @classmethod

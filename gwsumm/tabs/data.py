@@ -46,7 +46,7 @@ from .. import (globalv, html)
 from ..channels import (re_channel,
                         split_combination as split_channel_combination)
 from ..config import *
-from ..mode import (get_mode, MODE_ENUM)
+from ..mode import (Mode, get_mode)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..plot import get_plot
@@ -195,13 +195,13 @@ class DataTab(ProcessedTab, ParentTab):
                     section, 'subplot-duration'))
             except NoOptionError:
                 mode = get_mode()
-                if mode == MODE_ENUM['DAY']:
+                if mode == Mode.day:
                     subdelta = timedelta(hours=1)
-                elif mode == MODE_ENUM['WEEK']:
+                elif mode == Mode.week:
                     subdelta = timedelta(days=1)
-                elif mode == MODE_ENUM['MONTH']:
+                elif mode == Mode.month:
                     subdelta = timedelta(weeks=1)
-                elif mode == MODE_ENUM['YEAR']:
+                elif mode == Mode.year:
                     subdelta = timedelta(months=1)
                 else:
                     d = int(end - start)
@@ -696,7 +696,7 @@ class DataTab(ProcessedTab, ParentTab):
         if self.subplots:
             page.hr(class_='row-divider')
             page.h1('Sub-plots')
-            layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+            layout = get_mode() == Mode.week and [7] or [4]
             plist = [p for p in self.subplots if p.state in [state, None]]
             page.add(str(self.scaffold_plots(plots=plist, state=state,
                                              layout=layout)))

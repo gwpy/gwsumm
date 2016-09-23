@@ -38,7 +38,8 @@ from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 from gwpy.time import (from_gps, to_gps)
 
-from .. import globalv, mode
+from .. import globalv
+from ..mode import (Mode, get_mode)
 from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
 from ..data import (get_channel, get_timeseries)
@@ -489,19 +490,19 @@ class DutyDataPlot(SegmentDataPlot):
         """
         # if not given anything, work it out from the mode
         if self.bins is None:
-            m = mode.MODE_NAME[mode.get_mode()]
+            m = get_mode()
             duration = float(abs(self.span))
             # for year mode, use a month
-            if m in ['YEAR'] or duration >= 86400 * 300:
+            if m == Mode.year or duration >= 86400 * 300:
                 dt = relativedelta(months=1)
             # for more than 8 weeks, use weeks
             elif duration >= 86400 * 7 * 8:
                 dt = relativedelta(weeks=1)
             # for week and month mode, use daily
-            elif m in ['WEEK', 'MONTH'] or duration >= 86400 * 7:
+            elif m in [Mode.week, Mode.month] or duration >= 86400 * 7:
                 dt = relativedelta(days=1)
             # for day mode, make hourly duty factor
-            elif m in ['DAY']:
+            elif m == Mode.day:
                 dt = relativedelta(hours=1)
             # otherwise provide 10 bins
             else:

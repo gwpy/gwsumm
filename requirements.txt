@@ -1,3 +1,4 @@
+enum34
 pykerberos
 m2crypto
 python-cjson

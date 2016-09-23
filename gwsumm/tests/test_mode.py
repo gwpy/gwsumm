@@ -46,10 +46,10 @@ class ModeTests(unittest.TestCase):
 
     def test_set_mode(self):
         mode.set_mode(0)
-        self.assertEqual(globalv.MODE, 0)
-        self.assertEqual(globalv.MODE, mode.SUMMARY_MODE_STATIC)
+        self.assertEqual(globalv.MODE, mode.Mode(0))
+        self.assertEqual(globalv.MODE, mode.Mode.static)
         mode.set_mode('GPS')
-        self.assertEqual(globalv.MODE, mode.SUMMARY_MODE_GPS)
+        self.assertEqual(globalv.MODE, mode.Mode.gps)
 
     def test_get_base(self):
         date = datetime.date(2015, 9, 22)

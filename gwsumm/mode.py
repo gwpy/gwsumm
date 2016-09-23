@@ -93,8 +93,8 @@ def get_mode(m=None):
     """Return the enum for the given mode, defaults to the current mode.
     """
     if m is None:
-        return globalv.MODE
-    elif isinstance(m, (int, Enum)):
+        m = globalv.MODE
+    if isinstance(m, (int, Enum)):
         return Mode(m)
     else:
         try:
@@ -107,7 +107,7 @@ def set_mode(m):
     """
     if isinstance(m, int):
         m = Mode(m)
-    else:
+    elif not isinstance(m, Mode):
         try:
             m = Mode[str(m).lower()]
         except KeyError:

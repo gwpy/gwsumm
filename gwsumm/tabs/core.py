@@ -44,7 +44,7 @@ from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
 from .. import html
-from ..mode import (get_mode, get_base, MODE_ENUM, MODE_NAME)
+from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
 from ..config import NoOptionError
 from .registry import (get_tab, register_tab)
@@ -411,7 +411,7 @@ class BaseTab(object):
                 kwargs['mode'] = get_mode(cp.get(section, 'mode'))
             except NoOptionError:
                 kwargs['mode'] = get_mode()
-        if kwargs['mode'] >= MODE_ENUM['GPS']:
+        if kwargs['mode'] >= Mode.gps:
             try:
                 kwargs['start']
             except KeyError:
@@ -420,7 +420,7 @@ class BaseTab(object):
                 kwargs['end']
             except KeyError:
                 kwargs['end'] = cp.getint(section, 'gps-end-time')
-        elif kwargs['mode'] == MODE_ENUM['EVENT']:
+        elif kwargs['mode'] == Mode.event:
             try:
                 kwargs['gpstime']
             except KeyError:
@@ -858,7 +858,7 @@ class IntervalTab(GpsTab):
                 start = kwargs.pop('start')
                 end = kwargs.pop('end')
             except KeyError:
-                mode = MODE_NAME[get_mode(kwargs.get('mode'))]
+                mode = get_mode(kwargs.get('mode')).name
                 raise TypeError("%s() in %r mode needs keyword argument 'span'"
                                 " or both 'start' and 'end'"
                                 % (type(self).__name__, mode))
@@ -966,7 +966,7 @@ class EventTab(GpsTab):
         try:
             gpstime = kwargs.pop('gpstime')
         except KeyError:
-            mode = MODE_NAME[get_mode(kwargs['mode'])]
+            mode = get_mode(kwargs['mode']).name
             raise TypeError("%s() in %r mode needs keyword argument 'gpstime'"
                             % (type(self).__name__, mode))
         duration = kwargs.pop('duration', 200)
@@ -1002,11 +1002,11 @@ class _MetaTab(type):
                 mode = None
         mode = get_mode(mode)
         # parse regular Tab (don't add a mixin)
-        if mode == MODE_ENUM['STATIC']:
+        if mode == Mode.static:
             kwargs.pop('mode', None)
             base = StaticTab
         # parse event Tab
-        elif mode == MODE_ENUM['EVENT']:
+        elif mode == Mode.event:
             kwargs['mode'] = mode
             base = EventTab
         # parse interval Tab

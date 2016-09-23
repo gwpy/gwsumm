@@ -28,7 +28,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from .. import markup
 from ..utils import highlight_syntax
-from ...mode import *
+from ...mode import (Mode, get_mode)
 from ...utils import re_cchar
 from ..._version import get_versions
 
@@ -252,20 +252,19 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         triggering dropdown
     """
     mode = get_mode(mode)
-    if mode < SUMMARY_MODE_DAY:
-        raise ValueError("Cannot generate calendar for Mode %s"
-                         % MODE_NAME[mode])
+    if mode < Mode.day:
+        raise ValueError("Cannot generate calendar for Mode %s" % mode)
     if dateformat is None:
-        if mode == SUMMARY_MODE_DAY:
+        if mode == Mode.day:
             dateformat = '%B %d %Y'
-        elif mode == SUMMARY_MODE_WEEK:
+        elif mode == Mode.week:
             dateformat = 'Week of %B %d %Y'
-        elif mode == SUMMARY_MODE_MONTH:
+        elif mode == Mode.month:
             dateformat = '%B %Y'
-        elif mode == SUMMARY_MODE_YEAR:
+        elif mode == Mode.year:
             dateformat = '%Y'
         else:
-            raise ValueError("Cannot set dateformat for mode=%r" % mode)
+            raise ValueError("Cannot set dateformat for Mode %s" % mode)
     datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()
@@ -273,7 +272,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
            onclick='stepDate(-1)')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': '%ss' % mode})
+              'data-viewmode': '%ss' % mode.name})
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()

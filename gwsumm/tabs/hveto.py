@@ -35,7 +35,7 @@ from gwpy.segments import (SegmentList, DataQualityFlag)
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
-from ..mode import SUMMARY_MODE_DAY
+from ..mode import Mode
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError,
                       DEFAULTSECT)
 from ..channels import get_channel
@@ -65,8 +65,9 @@ class HvetoTab(base):
                    'Cum. Efficiency [%]', 'Cum. Deadtime [%]']
 
     def __init__(self, *args, **kwargs):
-        if globalv.MODE != SUMMARY_MODE_DAY:
-            raise RuntimeError("HvetoTab is only available in 'DAY' mode.")
+        if kargs['mode'] != Mode.day:
+            raise RuntimeError("HvetoTab is only available in %s mode."
+                               % Mode.day.name)
         super(HvetoTab, self).__init__(*args, **kwargs)
 
     @classmethod

@@ -36,7 +36,7 @@ from ..data import get_channel
 from ..state import (get_state, ALLSTATE)
 from ..triggers import (get_etg_table, get_triggers, register_etg_table)
 from ..utils import re_quote
-from ..mode import (get_mode, MODE_ENUM)
+from ..mode import (Mode, get_mode)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -366,7 +366,7 @@ class EventTriggerTab(get_tab('default')):
             if self.subplots:
                 page.hr(class_='row-divider')
                 page.h1('Sub-plots')
-                layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+                layout = get_mode() == Mode.week and [7] or [4]
                 plist = [p for p in self.subplots if p.state in [state, None]]
                 page.add(str(self.scaffold_plots(plots=plist, state=state,
                                                  layout=layout)))

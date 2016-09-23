@@ -419,7 +419,7 @@ starttime = Time(float(opts.gpsstart), format='gps')
 endtime = Time(float(opts.gpsend), format='gps')
 
 # set mode and output directory
-mode.set_mode(mode.MODE_ENUM[opts.mode.upper()])
+mode.set_mode(opts.mode)
 try:
     path = mode.get_base(utc)
 except ValueError:
@@ -461,7 +461,7 @@ You have selected %s mode.
 Start time %s (%s)
 End time: %s (%s)
 Output directory: %s
-""" % (os.getpid(), mode.MODE_NAME[mode.get_mode()],
+""" % (os.getpid(), mode.get_mode().name,
        starttime.utc.iso, starttime.gps,
        endtime.utc.iso, endtime.gps,
        os.path.abspath(os.path.join(opts.output_dir, path))))

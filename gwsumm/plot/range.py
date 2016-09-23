@@ -120,7 +120,10 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     """
     data = 'timeseries'
     type = 'time-volume'
+    DRAW_PARAMS = get_plot('timeseries').DRAW_PARAMS
     defaults = get_plot('timeseries').defaults.copy()
+
+    parse_plot_kwargs = get_plot('timeseries').parse_plot_kwargs
 
     def __init__(self, sources, *args, **kwargs):
         if isinstance(sources, str):

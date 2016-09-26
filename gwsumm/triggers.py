@@ -69,6 +69,7 @@ ETG_TABLE.update({
     'daily_ihope': lsctables.SnglInspiralTable,
     'daily_ahope': lsctables.SnglInspiralTable,
 })
+CONTENT_HANDLERS = {}
 
 
 def get_etg_table(etg):
@@ -208,75 +209,51 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         if 'format' not in kwargs and 'ahope' not in etg.lower():
             kwargs['format'] = etg.lower()
 
-        # set up ligolw options if needed
-        if TableClass is not None:
-            contenthandler = get_partial_contenthandler(TableClass)
-            lsctables.use_in(contenthandler)
-
-        # loop over segments
-        for segment in new:
-            # find trigger files
-            if cache is None and etg.lower() == 'hacr':
-                raise NotImplementedError("HACR parsing has not been "
-                                          "implemented.")
-            if cache is None and etg.lower() in ['kw', 'kleinewelle']:
-                kwargs['filt'] = lambda t: t.channel == str(channel)
-            if cache is None:
-                try:
-                    segcache = trigfind.find_trigger_urls(str(channel), etg,
-                                                          segment[0],
-                                                          segment[1])
-                except ValueError as e:
-                    warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
-                    continue
-                else:
-                    for regex in TRIGFIND_FORMAT:
-                        if regex.match(etg):
-                            kwargs['format'] = TRIGFIND_FORMAT[regex]
-                            if TRIGFIND_FORMAT[regex] in lsctables.TableByName:
-                                kwargs['get_as_columns'] = True
-                            break
-                if etg.lower() == 'omega':
-                    kwargs.setdefault('format', 'omega')
-                else:
-                    kwargs.setdefault('format', 'ligolw')
-            else:
-                segcache = cache
-            if isinstance(segcache, Cache):
-                segcache = segcache.sieve(segment=segment)
-                segcache = segcache.checkfilesexist()[0]
-                segcache.sort(key=lambda x: x.segment[0])
-                if etg == 'pycbc_live':  # remove empty HDF5 files
-                    segcache = type(segcache)(
-                        filter_pycbc_live_files(segcache, ifo=kwargs['ifo']))
-            # if no files, skip
-            if len(segcache) == 0:
-                continue
-            # read triggers
-            if kwargs.get('format', None) == 'ligolw':
-                kwargs['contenthandler'] = contenthandler
-            try:  # try directly reading a numpy.recarray
-                table = GWRecArray.read(segcache, nproc=nproc, **kwargs)
-            except Exception as e:  # back up to LIGO_LW
-                if TableClass is not None and 'No reader' in str(e):
+        # if single file
+        if cache is not None and len(cache) == 1:
+            trigs = read_cache(cache, new, etg, nproc=nproc,
+                               tableclass=TableClass, **kwargs)
+            if trigs is not None:
+                add_triggers(trigs, key)
+                ntrigs += len(trigs)
+        # otherwise, loop over segments
+        else:
+            for segment in new:
+                # find trigger files
+                if cache is None and etg.lower() == 'hacr':
+                    raise NotImplementedError("HACR parsing has not been "
+                                              "implemented.")
+                if cache is None and etg.lower() in ['kw', 'kleinewelle']:
+                    kwargs['filt'] = lambda t: t.channel == str(channel)
+                if cache is None:
                     try:
-                        table = TableClass.read(segcache, **kwargs)
-                    except Exception:
-                        raise e
+                        segcache = trigfind.find_trigger_urls(str(channel), etg,
+                                                              segment[0],
+                                                              segment[1])
+                    except ValueError as e:
+                        warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
+                        continue
                     else:
-                        table = table.to_recarray(get_as_columns=True)
+                        for regex in TRIGFIND_FORMAT:
+                            if regex.match(etg):
+                                kwargs['format'] = TRIGFIND_FORMAT[regex]
+                                if TRIGFIND_FORMAT[regex] in lsctables.TableByName:
+                                    kwargs['get_as_columns'] = True
+                                break
+                    if etg.lower() == 'omega':
+                        kwargs.setdefault('format', 'omega')
+                    else:
+                        kwargs.setdefault('format', 'ligolw')
                 else:
-                    raise
-            # append new events to existing table
-            try:
-                csegs = cache_segments(segcache)
-            except AttributeError:
-                csegs = SegmentList()
-            table.segments = csegs
-            t2 = keep_in_segments(table, SegmentList([segment]), etg)
-            add_triggers(t2, key, csegs)
-            ntrigs += len(t2)
-            vprint(".")
+                    segcache = cache
+                # read table
+                trigs = read_cache(segcache, SegmentList([segment]), etg,
+                                   nproc=nproc, tableclass=TableClass,
+                                   **kwargs)
+                if trigs is not None:
+                    add_triggers(trigs, key)
+                    ntrigs += len(trigs)
+                vprint(".")
         vprint(" | %d events read\n" % ntrigs)
 
     # if asked to read triggers, but didn't actually read any,
@@ -288,7 +265,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:
             tab = GWRecArray((0,), dtype=[(c, float) for c in columns])
         tab.segments = SegmentList()
-        add_triggers(tab, key, tab.segments)
+        add_triggers(tab, key)
 
     # work out time function
     if return_:
@@ -300,6 +277,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 def add_triggers(table, key, segments=None):
     """Add a `GWRecArray` to the global memory cache
     """
+    if segments is None:
+        segments = table.segments
     try:
         old = globalv.TRIGGERS[key]
     except KeyError:
@@ -365,8 +344,11 @@ def keep_in_segments(table, segmentlist, etg=None):
     """Return a view of the table containing only those rows in the segmentlist
     """
     times = get_times(table, etg)
+    order = times.argsort()
+    t2 = table[order]
+    times = times[order]
     keep = time_in_segments(times, segmentlist)
-    out = table[keep]
+    out = t2[keep]
     out.segments = segmentlist & table.segments
     return out
 
@@ -404,3 +386,43 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
             continue
         kwargs[key] = safe_eval(kwargs[key])
     return kwargs
+
+
+def read_cache(cache, segments, etg, nproc=1, tableclass=None, **kwargs):
+    if isinstance(cache, Cache):
+        cache = cache.sieve(segmentlist=segments)
+        cache = cache.checkfilesexist()[0]
+        cache.sort(key=lambda x: x.segment[0])
+        if etg == 'pycbc_live':  # remove empty HDF5 files
+            cache = type(cache)(
+                filter_pycbc_live_files(cache, ifo=kwargs['ifo']))
+    # if no files, skip
+    if len(cache) == 0:
+        return
+    # read triggers
+    if (kwargs.get('format', None) == 'ligolw' and tableclass is not None and
+            'contenthandler' not in kwargs):
+        if tableclass not in CONTENT_HANDLERS:  # only generate once
+            CONTENT_HANDLERS[tableclass] = get_partial_contenthandler(
+                tableclass)
+        kwargs['contenthandler'] = CONTENT_HANDLERS[tableclass]
+        lsctables.use_in(kwargs['contenthandler'])
+    try:  # try directly reading a numpy.recarray
+        table = GWRecArray.read(cache, nproc=nproc, **kwargs)
+    except Exception as e:  # back up to LIGO_LW
+        if tableclass is not None and 'No reader' in str(e):
+            try:
+                table = tableclass.read(cache, **kwargs)
+            except Exception:
+                raise e
+            else:
+                table = table.to_recarray(get_as_columns=True)
+        else:
+            raise
+    # append new events to existing table
+    try:
+        csegs = cache_segments(cache)
+    except AttributeError:
+        csegs = SegmentList()
+    table.segments = csegs
+    return keep_in_segments(table, segments, etg)

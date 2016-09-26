@@ -65,7 +65,7 @@ class HvetoTab(base):
                    'Cum. Efficiency [%]', 'Cum. Deadtime [%]']
 
     def __init__(self, *args, **kwargs):
-        if kargs['mode'] != Mode.day:
+        if kwargs['mode'] != Mode.day:
             raise RuntimeError("HvetoTab is only available in %s mode."
                                % Mode.day.name)
         super(HvetoTab, self).__init__(*args, **kwargs)

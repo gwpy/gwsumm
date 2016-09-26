@@ -389,6 +389,32 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
 
 
 def read_cache(cache, segments, etg, nproc=1, tableclass=None, **kwargs):
+    """Read a table of events from a cache
+
+    This function is mainly meant for use from the `get_triggers method
+
+    Parameters
+    ----------
+    cache : :class:`glue.lal.Cache`
+        the formatted list of files to read
+    segments : `~gwpy.segments.SegmentList`
+        the list of segments to read
+    etg : `str`
+        the name of the trigger generator that created the files
+    nproc : `int`, optional
+        the number of parallel processes to use when reading
+    tableclass : `type`, optional
+        the :class:`glue.ligolw.table.Table` sub-class for this ETG
+    **kwargs
+        other keyword arguments are passed to the `GWRecArray.read` or
+        `{tableclass}.read` methods
+
+    Returns
+    -------
+    table : `~gwpy.table.GWRecArray`, `None`
+        a table of events, or `None` if the cache has no overlap with
+        the segments
+    """
     if isinstance(cache, Cache):
         cache = cache.sieve(segmentlist=segments)
         cache = cache.checkfilesexist()[0]

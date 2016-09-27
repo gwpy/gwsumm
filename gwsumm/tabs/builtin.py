@@ -384,7 +384,7 @@ class PlotTab(Tab):
                 plot.new = False  # this plot does not need to be generated
                 # get caption
                 try:
-                    plot.caption = cp.get(section, '%d-caption' % idx)
+                    plot.caption = re_quote.sub('', cp.get(section, '%d-caption' % idx))
                 except NoOptionError:
                     pass
                 kwargs['plots'].append(plot)

@@ -237,7 +237,7 @@ class SEIWatchDogTab(base):
         if self.chambers == HAMs:
              isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
-             isimask = isichannels.bits + ['ISI Unknown']
+             isimask = isichannels[0].bits + ['ISI Unknown']
         else:
              isichannels = [get_channel(BSC_ST1_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0])),

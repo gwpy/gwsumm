@@ -799,30 +799,6 @@ class StateTab(PlotTab):
             about=about, footer=footer, **inargs)
 
 register_tab(StateTab)
-<<<<<<< HEAD
-
-
-class ArchivedStateTab(SummaryArchiveMixin, StateTab):
-    """An archivable tab with data in multiple states
-    """
-    type = 'archived-state'
-
-    def __init__(self, name, start, end, mode=None, states=list(), **kwargs):
-        super(ArchivedStateTab, self).__init__(name, states=states, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    @classmethod
-    def from_ini(cls, config, section, start=None, end=None, **kwargs):
-        config = GWSummConfigParser.from_configparser(config)
-        if start is None:
-            start = config.getint(section, 'gps-start-time')
-        if end is None:
-            end = config.getint(section, 'gps-end-time')
-        return super(ArchivedStateTab, cls).from_ini(config, section, start,
-                                                     end, **kwargs)
-
-register_tab(ArchivedStateTab)
 
 class UrlTab(Tab):
     type = 'link'
@@ -848,65 +824,3 @@ class UrlTab(Tab):
 
 register_tab(UrlTab)
 
-class AboutTab(SummaryArchiveMixin, Tab):
-    type = 'about'
-
-    def __init__(self, start, end, name='About', mode=None, **kwargs):
-        super(AboutTab, self).__init__(name, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    def write_html(self, config=list(), **kwargs):
-        return super(AboutTab, self).write_html(
-            html.about_this_page(config=config), **kwargs)
-
-register_tab(AboutTab)
-
-
-class Error404Tab(SummaryArchiveMixin, Tab):
-    type = '404'
-
-    def __init__(self, start, end, name='404', mode=None, **kwargs):
-        super(Error404Tab, self).__init__(name, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-    def write_html(self, config=list(), top=None, **kwargs):
-        if top is None:
-            top = kwargs.get('base', self.path)
-        kwargs.setdefault('title', '404: Page not found')
-        page = html.markup.page()
-        page.div(class_='alert alert-danger')
-        page.p()
-        page.strong("The page you are looking for doesn't exist")
-        page.p.close()
-        page.p("This could be because the times for which you are looking "
-               "were never processed (or haven't even happened yet), or "
-               "because no page exists for the specific data products you "
-               "want. Either way, if you think this is in error, please "
-               "contact <a class=\"alert-link\" "
-               "href=\"mailto:detchar+code@ligo.org\">the DetChar group</a>.")
-        page.p("Otherwise, you might be interested in one of the following:")
-        page.div(style="padding-top: 10px;")
-        page.a("Take me back", role="button", class_="btn btn-lg btn-info",
-               title="Back", href="javascript:history.back()")
-        page.a("Take me up one level", role="button",
-               class_="btn btn-lg btn-warning", title="Up",
-               href="javascript:linkUp()")
-        page.a("Take me to the top level", role="button",
-               class_="btn btn-lg btn-success", title="Top", href=top)
-        page.div.close()
-        page.div.close()
-        page.script("""
-  function linkUp() {
-    var url = window.location.href;
-    if (url.substr(-1) == '/') url = url.substr(0, url.length - 2);
-    url = url.split('/');
-    url.pop();
-    window.location = url.join('/');
-  }""", type="text/javascript")
-        return super(Error404Tab, self).write_html(page, **kwargs)
-
-register_tab(Error404Tab)
-=======
->>>>>>> 3f89f01565ff14f93d3b783d0795a1891bf688f0

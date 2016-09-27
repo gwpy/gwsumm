@@ -23,7 +23,7 @@ from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, globalv)
+from .. import html
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..utils import (re_quote, vprint)
 

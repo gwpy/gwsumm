@@ -28,11 +28,6 @@ import warnings
 from math import (floor, ceil)
 from urlparse import urlparse
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from astropy.utils import OrderedDict
-
 from matplotlib import rc_context
 
 from gwpy.segments import Segment

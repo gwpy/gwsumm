@@ -1087,7 +1087,7 @@ class ParentTab(Tab):
     def __init__(self, name, children, **kwargs):
         # parse list of children
         if not isinstance(children, list):
-            children = [child]
+            children = [children]
         child = children[0]
         # parse mode and GPS arguments (if required)
         kwargs.setdefault('mode', child.mode)

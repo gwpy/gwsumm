@@ -51,9 +51,9 @@ from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..plot import get_plot
 from ..segments import get_segments
-from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
+from ..state import (generate_all_state, ALLSTATE, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores, safe_eval)
+from ..utils import (re_flagdiv, vprint, safe_eval)
 
 from .registry import (get_tab, register_tab)
 
@@ -782,7 +782,6 @@ class DataTab(ProcessedTab, ParentTab):
                     padding = None
                 flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
-                v = flag.version and str(flag.version) or ''
                 try:
                     valid = '%.2f (%.2f%%)' % (abs(flag.known),
                                                abs(flag.known) / pc)

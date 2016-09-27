@@ -23,17 +23,13 @@ import os
 import re
 import glob
 
-from dateutil import parser
-
-from numpy import loadtxt
-
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
 from ..mode import Mode
 from ..plot import get_plot
-from ..config import (GWSummConfigParser, NoOptionError)
-from ..state import (ALLSTATE, SummaryState)
+from ..config import GWSummConfigParser
+from ..state import SummaryState
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['StampPEMTab']

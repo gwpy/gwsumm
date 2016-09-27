@@ -150,8 +150,6 @@ class GuardianTab(DataTab):
                 segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.
         """
-        ifo = self.ifo
-
         for p in self.plots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
@@ -471,7 +469,6 @@ class GuardianStatePlot(get_plot('segments')):
             plot.add_colorbar(ax=ax, visible=False)
 
         # add node MODE along the bottom
-        ylim = ax.get_ylim()
         sax = None
         legentry = OrderedDict()
         grdmode = get_timeseries(

@@ -20,7 +20,6 @@
 
 """
 
-import sys
 import datetime
 
 from common import unittest

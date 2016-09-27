@@ -40,7 +40,7 @@ from ..config import (GWSummConfigParser, NoSectionError, NoOptionError,
                       DEFAULTSECT)
 from ..channels import get_channel
 from ..segments import get_segments
-from ..state import (ALLSTATE, SummaryState)
+from ..state import SummaryState
 from ..triggers import (register_etg_table, get_triggers, add_triggers)
 from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
@@ -107,8 +107,6 @@ class HvetoTab(base):
         new = super(HvetoTab, cls).from_ini(config, section, **kwargs)
 
         # work out day directory and url
-        gps = int(new.span[0])
-        duration = int(abs(new.span))
         basedir = os.path.normpath(config.get(section, 'base-directory'))
         daydir = os.path.realpath(
             os.path.join(basedir, config.get(section, 'directory-tag')))
@@ -319,7 +317,7 @@ class HvetoTab(base):
                 if re.search('\.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
-                    cype = ctype in ['rms'] and ctype.upper() or ctype.title()
+                    ctype = ctype in ['rms'] and ctype.upper() or ctype.title()
                 else:
                     c2 = channel
                     ctype = 'Raw'

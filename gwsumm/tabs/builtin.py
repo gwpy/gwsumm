@@ -210,14 +210,14 @@ class PlotTab(Tab):
     """
     type = 'plots'
 
-    def __init__(self, name, plots=list(), captions=list(), layout=None, foreword=None,
+    def __init__(self, name, plots=list(), layout=None, foreword=None,
                  afterword=None, **kwargs):
         """Initialise a new :class:`PlotTab`.
         """
         super(PlotTab, self).__init__(name, **kwargs)
         self.plots = []
-        for p in zip(plots,captions):
-            self.add_plot(p[0],p[1])
+        for p in plots:
+            self.add_plot(p)
         self.set_layout(layout)
         self.foreword = foreword
         self.afterword = afterword
@@ -377,26 +377,19 @@ class PlotTab(Tab):
         kwargs.setdefault('layout', layout)
 
         # get plots
-        try:
-            kwargs.setdefault(
-                'plots', zip(*sorted([(int(opt), url) for (opt, url) in
-                                      cp.nditems(section) if opt.isdigit()],
-                                     key=lambda a: a[0]))[1])
-        except IndexError:
-            pass
-
-        # if there are plots, get captions and sort them,
-        # if a plot doesn't have a caption, return caption = ''
-        if kwargs['plots']:
-            captions = []
-            for opt, arg in cp.nditems(section):
-                if opt.isdigit():
-                    if cp.has_option(section,opt+'-caption'):
-                        captions.append((opt,cp.get(section,opt+'-caption')))
-                    else:
-                        captions.append((opt,''))
-            kwargs.setdefault('captions',
-                zip(*sorted(captions,key=lambda a: a[0]))[1])
+        if 'plots' not in kwargs:
+            kwargs['plots'] = []
+            for idx, url in sorted([(int(opt), url) for (opt, url) in
+                                    cp.nditems(section) if opt.isdigit()],
+                                   key=lambda x: x[0]):
+                plot = SummaryPlot(href=url)
+                plot.new = False  # this plot does not need to be generated
+                # get caption
+                try:
+                    plot.caption = cp.get(section, '%d-caption' % idx)
+                except NoOptionError:
+                    pass
+                kwargs['plots'].append(plot)
 
         # get content
         try:
@@ -411,7 +404,7 @@ class PlotTab(Tab):
         # build and return tab
         return super(PlotTab, cls).from_ini(cp, section, *args, **kwargs)
 
-    def add_plot(self, plot, cap=''):
+    def add_plot(self, plot):
         """Add a plot to this tab.
 
         Parameters
@@ -421,7 +414,7 @@ class PlotTab(Tab):
             object.
         """
         if isinstance(plot, str):
-            plot = SummaryPlot(href=plot,caption=cap)
+            plot = SummaryPlot(href=plot)
             plot.new = False
         if not isinstance(plot, SummaryPlot):
             raise TypeError("Cannot append plot of type %r" % type(plot))

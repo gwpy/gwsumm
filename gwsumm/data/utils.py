@@ -77,7 +77,6 @@ def parse_math_definition(definition):
     breaks = re_channel.finditer(definition)
     channels = []
     operators = []
-    pos = 0
     match = next(breaks)
     while True:
         # find channel
@@ -105,7 +104,7 @@ def parse_math_definition(definition):
             mathstr = mathstr[:-1]
         try:  # then parse some math to apply to the current channel
             cop = re_math.match(mathstr).groupdict()
-        except AttributeError as e:
+        except AttributeError:
             if mathstr:
                 raise ValueError("Cannot parse math operation %r" % mathstr)
         else:

@@ -24,8 +24,6 @@ import os.path
 
 import pytest
 
-from gwpy.detector import Channel
-
 from gwsumm import tabs
 from gwsumm.plot import SummaryPlot
 

@@ -22,8 +22,6 @@ All Tabs should be registered for easy identification from the
 configuration INI files
 """
 
-import re
-
 from ..utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

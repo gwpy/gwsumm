@@ -39,8 +39,7 @@ from astropy import units
 from glue import datafind
 from glue.lal import Cache
 
-from gwpy.detector import Channel
-from gwpy.segments import (DataQualityFlag, SegmentList)
+from gwpy.segments import SegmentList
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorDict)
 try:
@@ -52,10 +51,10 @@ from gwpy.io import nds as ndsio
 from .. import globalv
 from ..utils import (vprint, count_free_cores)
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
-from ..channels import (get_channel, update_missing_channel_params, re_channel,
+from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
-from .mathutils import (get_with_math, parse_math_definition)
+from .mathutils import get_with_math
 
 
 OPERATOR = {

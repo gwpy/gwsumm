@@ -20,7 +20,6 @@
 """
 
 import threading
-import urllib2
 import re
 from Queue import Queue
 
@@ -283,7 +282,6 @@ def split_combination(channelstring):
     """Split a math-combination of channels
     """
     channel = Channel(channelstring)
-    chanstrs = re_channel.findall(channel.ndsname)
     if channel.ifo == 'G1':
         return channel.ndsname.split(' ')
     else:

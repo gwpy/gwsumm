@@ -21,7 +21,8 @@
 
 from __future__ import division
 
-import hashlib
+import os.path
+import re
 import warnings
 from itertools import cycle
 
@@ -34,17 +35,16 @@ from astropy.units import Quantity
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
+from gwpy.segments import SegmentList
 
 from .. import globalv
 from ..mode import (Mode, get_mode)
-from ..utils import re_quote, re_cchar
-from ..channels import split as split_channels
+from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, get_spectrogram,
-                    get_coherence_spectrogram, get_spectrum, get_coherence_spectrum,
-                    add_timeseries)
-from ..state import ALLSTATE
+                    get_coherence_spectrogram, get_spectrum,
+                    get_coherence_spectrum)
 from .registry import (get_plot, register_plot)
-from .mixins import *
+from .mixins import DataLabelSvgMixin
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -235,7 +235,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            pid = super(SpectrogramDataPlot, self).pid
+            super(SpectrogramDataPlot, self).pid
             if isinstance(self.ratio, str) and os.path.isfile(self.ratio):
                 self._pid += '_REFERENCE_RATIO'
             elif self.ratio:
@@ -910,7 +910,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
 
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
-            m = ax.plot_variance(variance, cmap=cmap, **plotargs)
+            ax.plot_variance(variance, cmap=cmap, **plotargs)
         #else:
         #    ax.scatter([1], [1], c=[1], visible=False, vmin=plotargs['vmin'],
         #               vmax=plotargs['vmax'], cmap=plotargs['cmap'])

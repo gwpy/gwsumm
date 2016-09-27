@@ -27,13 +27,12 @@ from astropy.io.registry import (register_reader, get_reader)
 from glue.lal import Cache
 
 from gwpy.time import from_gps
-from gwpy.table.utils import get_rec_time
-from gwpy.plotter.table import (get_table_column, get_row_value)
+from gwpy.plotter.table import get_row_value
 
 from .. import html
 from ..config import NoOptionError
 from ..data import get_channel
-from ..state import (get_state, ALLSTATE)
+from ..state import (get_state, ALLSTATE, generate_all_state)
 from ..triggers import (get_etg_table, get_triggers, register_etg_table)
 from ..utils import re_quote
 from ..mode import (Mode, get_mode)

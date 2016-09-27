@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import re
 from itertools import (izip, cycle)
 
 from numpy import isinf
@@ -116,7 +117,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            pid = super(TriggerDataPlot, self).pid
+            super(TriggerDataPlot, self).pid
             self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:

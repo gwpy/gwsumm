@@ -873,23 +873,13 @@ class UrlTab(Tab):
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
-        kwargs.setdefault('url',cp.get(section,'url'))
+        kwargs.setdefault('url', cp.get(section,'url'))
         return super(UrlTab, cls).from_ini(cp, section, *args, **kwargs)
 
     def write_html(self, **kwargs):
         return
 
 register_tab(UrlTab)
-
-class ArchivedUrlTab(SummaryArchiveMixin, UrlTab):
-    type = 'archived-link'
-
-    def __init__(self, name, start, end, mode=None, **kwargs):
-        super(ArchivedUrlTab, self).__init__(name, **kwargs)
-        self.span = (start, end)
-        self.mode = mode
-
-register_tab(ArchivedUrlTab)
 
 class AboutTab(SummaryArchiveMixin, Tab):
     type = 'about'

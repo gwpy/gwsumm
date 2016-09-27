@@ -680,7 +680,7 @@ for tab in tablist:
                     multiprocess=opts.multiprocess,
                     segdb_error=opts.on_segdb_error,
                     datafind_error=opts.on_datafind_error, **cache)
-    if not tab.hidden:
+    if not tab.hidden and not isinstance(tab, get_tab('archived-link')):
         mkdir(tab.href)
         page = tab.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
                               ifomap=ifobases, about=about.index, base=base,

@@ -28,11 +28,6 @@ import warnings
 from math import (floor, ceil)
 from urlparse import urlparse
 
-try:
-    from collections import OrderedDict
-except ImportError:
-    from astropy.utils import OrderedDict
-
 from matplotlib import rc_context
 
 from gwpy.segments import Segment
@@ -69,12 +64,11 @@ class SummaryPlot(object):
     type = None
     _threadsafe = True
 
-    def __init__(self, href=None, src=None, new=True, caption=''):
+    def __init__(self, href=None, src=None, new=True):
         self.href = href
         if src:
             self.src = src
         self.new = new
-        self.caption = caption
 
     @property
     def href(self):
@@ -114,16 +108,6 @@ class SummaryPlot(object):
     @src.setter
     def src(self, url):
         self._src = url
-
-    @property
-    def caption(self):
-        """HTML <fancybox plot> title attribute for this `SummaryPlot`.
-        """
-        return self._caption
-
-    @caption.setter
-    def caption(self,text):
-        self._caption = text
 
     # ------------------------------------------------------------------------
     # TabSummaryPlot methods
@@ -386,7 +370,12 @@ class DataPlot(SummaryPlot):
                     val = self.pargs.pop('%ss' % kwarg)
                 except KeyError:
                     val = None
-            if val is not None:
+            if val is not None and isinstance(val, str) and 'self' in val:
+                try:
+                    plotargs[kwarg] = safe_eval(val, locals_={'self': self})
+                except ZeroDivisionError:
+                    plotargs[kwarg] = 0
+            elif val is not None:
                 plotargs[kwarg] = safe_eval(val)
         chans = zip(*self.get_channel_groups())[0]
         for key, val in plotargs.iteritems():

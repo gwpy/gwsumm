@@ -23,11 +23,12 @@ from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, globalv)
+from .. import html
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..utils import (re_quote, vprint)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['GraceDbTab']
 
 LABELS = {
     'ADVOK': 'success',
@@ -48,13 +49,13 @@ LABELS = {
 class GraceDbTab(get_tab('default')):
     """Custom tab displaying a summary of GraceDb results.
     """
-    type = 'archived-gracedb'
+    type = 'gracedb'
 
-    def __init__(self, name, start, end, url='https://gracedb.ligo.org',
+    def __init__(self, name, url='https://gracedb.ligo.org',
                  query='External', columns=['gpstime', 'date', 'pipeline'],
                  headers=['GPS time', 'UTC time', 'Source'], rank='gpstime',
                  **kwargs):
-        super(GraceDbTab, self).__init__(name, start, end, **kwargs)
+        super(GraceDbTab, self).__init__(name, **kwargs)
         self.url = url
         self.query = query
         self.events = dict()

@@ -27,19 +27,19 @@ from astropy.io.registry import (register_reader, get_reader)
 from glue.lal import Cache
 
 from gwpy.time import from_gps
-from gwpy.table.utils import get_rec_time
-from gwpy.plotter.table import (get_table_column, get_row_value)
+from gwpy.plotter.table import get_row_value
 
 from .. import html
 from ..config import NoOptionError
 from ..data import get_channel
-from ..state import (get_state, ALLSTATE)
+from ..state import (get_state, ALLSTATE, generate_all_state)
 from ..triggers import (get_etg_table, get_triggers, register_etg_table)
 from ..utils import re_quote
-from ..mode import (get_mode, MODE_ENUM)
+from ..mode import (Mode, get_mode)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['EventTriggerTab']
 
 
 class EventTriggerTab(get_tab('default')):
@@ -84,13 +84,13 @@ class EventTriggerTab(get_tab('default')):
         for details on the other keyword arguments (``**kwargs``)
         accepted by the constructor for this `EventTriggerTab`.
     """
-    type = 'archived-triggers'
+    type = 'triggers'
 
-    def __init__(self, name, start, end, channel=None, etg=None, table=None,
+    def __init__(self, name, channel=None, etg=None, table=None,
                  cache=None, url=None, **kwargs):
         """Create a new `EventTriggerTab`
         """
-        super(EventTriggerTab, self).__init__(name, start, end, **kwargs)
+        super(EventTriggerTab, self).__init__(name, **kwargs)
         self.channel = channel and get_channel(channel) or None
         self.cache = cache
         self.url = url
@@ -365,7 +365,7 @@ class EventTriggerTab(get_tab('default')):
             if self.subplots:
                 page.hr(class_='row-divider')
                 page.h1('Sub-plots')
-                layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+                layout = get_mode() == Mode.week and [7] or [4]
                 plist = [p for p in self.subplots if p.state in [state, None]]
                 page.add(str(self.scaffold_plots(plots=plist, state=state,
                                                  layout=layout)))

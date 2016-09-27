@@ -1,0 +1,60 @@
+.. _modes:
+
+.. currentmodule:: gwsumm.tabs
+
+###########
+`Tab` modes
+###########
+
+In its simplest form, the `Tab` is essentially a blank canvas on which to write whatever you want.
+However, the original mandate for GWSumm was to provide a framework in which to generate automatic summaries of LIGO data, over a given timescale.
+
+To handle data processing, rather than static HTML generation, each `Tab` has a flavour, based on its relation to any interval in time
+
+.. currentmodule:: gwsumm.tabs.core
+
+.. autosummary::
+   :nosignatures:
+   :toctree: ../api
+
+   StaticTab
+   IntervalTab
+   EventTab
+
+The 'flavour' of a `Tab` is set automatically when it is created based on the value of the :attr:`~Tab.mode` attribute, so you don't need to remember the above objects.
+
+=====
+Modes
+=====
+
+All tabs have a :attr:`~Tab.mode`, loosely based around the time interval of interest.
+GWSumm support seven modes:
+
+==========  ====  =============================================================
+Mode        Enum  Description
+==========  ====  =============================================================
+``STATIC``  0     No associated time interval
+``EVENT``   1     Associated with a single GPS time, normally around an event
+``GPS``     2     Simple (arbitrary) GPS ``[start, end)`` interval
+``DAY``     10    One UTC 24-hour day
+``WEEK``    11    One 7-day week
+``MONTH``   12    One calendar month
+``YEAR``    13    One calendar year
+==========  ====  =============================================================
+
+===============
+Assigning modes
+===============
+
+Each `Tab` must be assigned a mode, which can either be done locally, by passing the `~Tab.mode` keyword argument when creating a `Tab`, or globally, by using the :meth:`gwsumm.mode.set_mode`; this sets the default mode for all tabs created in this session.
+
+If a :attr:`~Tab.mode` is given that assocaites with a GPS time or times, these must be given via the `~IntervalTab.span` or `~EventTab.gpstime` keyword arguments, otherwise a `TypeError` will be raised.
+
+.. code-block:: python
+
+   >>> tab = Tab('My first tab', mode='day', span=(0, 100))
+   >>> print(tab.mode, tab.span)
+   (10, Segment(0, 100))
+   >>> tab = Tab('My first tab', mode='EVENT', gpstime=101)
+   >>> print(tab.mode, tab.gpstime)
+   (1, LIGOTimeGPS(101,0))

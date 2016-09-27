@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import os
 import re
-from math import ceil
 from multiprocessing import cpu_count
 
 from dateutil import tz
@@ -41,16 +40,16 @@ from matplotlib.ticker import NullLocator
 from gwpy.time import Time
 from gwpy.timeseries import TimeSeriesDict
 from gwpy.plotter import TimeSeriesPlot
-from gwpy.segments import (Segment, SegmentList)
 
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..config import (NoOptionError, GWSummConfigParser)
 from ..data import (get_timeseries_dict, get_channel)
-from ..plot.registry import (get_plot, register_plot)
+from ..plot.registry import get_plot
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['SEIWatchDogTab']
 
 base = get_tab('default')
 HAMs = ['HAM%d' % i for i in range(1, 7)]
@@ -71,7 +70,7 @@ re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.
     """
-    type = 'archived-seismic-watchdog'
+    type = 'seismic-watchdog'
     window = 5
 
     @classmethod
@@ -153,9 +152,7 @@ class SEIWatchDogTab(base):
         for (gpschannel, latch) in zip(tschannels, svchannels):
             # get channel data
             gpschannel = get_channel(gpschannel)
-            gpsts = tripdata[gpschannel.name].join(gap='pad', pad=0.0)
             latch = get_channel(latch)
-            latchts = latchdata[latch.name].join(gap='pad', pad=0.0)
             chamber = gpschannel.subsystem
             system = gpschannel.system
             vprint("    Locating WD trips for %s %s %s...\n"
@@ -192,7 +189,7 @@ class SEIWatchDogTab(base):
                         stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
-                    cause = '%s (no cause found)' % stage
+                    causes = ['%s Unknown' % stage]
                 else:
                     allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
                     causes = [latch.bits[b] for b in allbits]
@@ -236,16 +233,18 @@ class SEIWatchDogTab(base):
         # find one example of each channel, and get the bits
         hepichannel = get_channel(HEPI_LATCH_CHANNEL
                                   % (self.ifo, self.chambers[1]))
-        hepimask = hepichannel.bits
+        hepimask = hepichannel.bits + ['HEPI Unknown']
         if self.chambers == HAMs:
              isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
+             isimask = isichannels.bits + ['ISI Unknown']
         else:
              isichannels = [get_channel(BSC_ST1_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0])),
                             get_channel(BSC_ST2_LATCH_CHANNEL
                                         % (self.ifo, self.chambers[0]))]
-        isimask = [bit for c in isichannels for bit in c.bits]
+             isimask = (isichannels[0].bits + ['ISI ST1 Unknown'] +
+                        isichannels[1].bits + ['ISI ST2 Unknown'])
         mask = hepimask + isimask
 
         # count trips
@@ -287,7 +286,6 @@ class SEIWatchDogTab(base):
             else:
                 page.tr()
             page.th(bit)
-            row = []
             for j, chamber in enumerate(self.chambers):
                 try:
                     c = count[(chamber, bit)]

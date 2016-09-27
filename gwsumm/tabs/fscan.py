@@ -20,22 +20,19 @@
 """
 
 import os
-import re
 import glob
 
 from dateutil import parser
-
-from numpy import loadtxt
 
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
 from .. plot import get_plot
-from ..mode import SUMMARY_MODE_DAY
-from ..config import (GWSummConfigParser, NoOptionError)
-from ..state import (ALLSTATE, SummaryState)
+from ..mode import Mode
+from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['FscanTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)
@@ -44,22 +41,18 @@ SummaryPlot = get_plot(None)
 class FscanTab(base):
     """Custom tab displaying a summary of Fscan results.
     """
-    type = 'archived-fscan'
+    type = 'fscan'
 
     def __init__(self, *args, **kwargs):
-        if globalv.MODE != SUMMARY_MODE_DAY:
-            raise RuntimeError("FscanTab is only available in 'DAY' mode.")
+        if kwargs['mode'] != Mode.day:
+            raise RuntimeError("FscanTab is only available in %s mode."
+                               % Mode.day.name)
         super(FscanTab, self).__init__(*args, **kwargs)
 
     @classmethod
     def from_ini(cls, config, section, **kwargs):
         """Define a new `FscanTab` from a `ConfigParser`.
         """
-        # set state information
-        start = config.getint('general', 'gps-start-time')
-        end = config.getint('general', 'gps-end-time')
-        ifo = config.get('DEFAULT', 'ifo')
-
         # parse generic configuration
         new = super(FscanTab, cls).from_ini(config, section, **kwargs)
         new.set_layout([2])
@@ -156,8 +149,6 @@ class FscanTab(base):
             home_, postbase = index.split('/public_html/', 1)
             user = os.path.split(home_)[1]
             index = '/~%s/%s' % (user, postbase)
-            i2 = ('/~%s/%s/fscanNavigation.html'
-                  % (user, postbase.rsplit('/', 4)[0]))
             page.div(class_='btn-group')
             page.a('Click here for the full Fscan results for %s' % date,
                    href=index, rel='external', target='_blank',

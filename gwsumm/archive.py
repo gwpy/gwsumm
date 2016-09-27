@@ -160,7 +160,7 @@ def read_data_archive(sourcefile):
             try:
                 add_timeseries(ts, key=ts.channel.ndsname)
             except ValueError:
-                if mode.get_mode() != mode.SUMMARY_MODE_DAY:
+                if mode.get_mode() != mode.Mode.day:
                     raise
                 warnings.warn('Caught ValueError in combining daily archives')
                 # get end time
@@ -237,7 +237,7 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
     s = from_gps(to_gps(start))
     e = from_gps(to_gps(end))
     while s < e:
-        daybase = mode.get_base(s, mode=mode.SUMMARY_MODE_DAY)
+        daybase = mode.get_base(s, mode=mode.Mode.day)
         ds = to_gps(s)
         s += datetime.timedelta(days=1)
         de = to_gps(s)
@@ -277,7 +277,7 @@ def load_recarray(group):
     # read segments
     try:
         epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
-    except TypeError:
+    except (ValueError, TypeError):
         epoch = LIGOTimeGPS(float(group['segments'].attrs['epoch']))
     segments = SegmentList(Segment(epoch + x[0], epoch + x[1]) for
                            x in group['segments'][:])

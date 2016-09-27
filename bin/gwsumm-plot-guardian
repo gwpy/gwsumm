@@ -98,7 +98,7 @@ if args.archive or args.read_only_archive:
            % args.archive or args.rad_only_archive)
 
 # make tab
-tab = GuardianTab.from_ini(config, sec, path='.', plotdir='.')
+tab = GuardianTab.from_ini(config, sec, mode='gps', path='.', plotdir='.')
 tab.plots = tab.plots[:1]
 tab.plots[0].pargs.update(params)
 tab.plots[0].pargs['epoch'] = args.epoch

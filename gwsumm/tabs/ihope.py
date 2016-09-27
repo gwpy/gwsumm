@@ -39,10 +39,11 @@ from ..data import find_cache_segments
 from ..triggers import (get_triggers, register_etg_table)
 from ..utils import re_quote
 from ..state import SummaryState
-from ..mode import (get_mode, MODE_ENUM)
+from ..mode import (Mode, get_mode)
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['DailyAhopeTab']
 
 base = get_tab('default')
 
@@ -50,7 +51,7 @@ base = get_tab('default')
 class DailyAhopeTab(base):
     """Custom tab displaying a summary of Daily iHope results.
     """
-    type = 'archived-daily-ahope'
+    type = 'daily-ahope'
 
     def __init__(self, *args, **kwargs):
         super(DailyAhopeTab, self).__init__(*args, **kwargs)
@@ -316,7 +317,7 @@ class DailyAhopeTab(base):
             if self.subplots:
                 page.hr(class_='row-divider')
                 page.h1('Sub-plots')
-                layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+                layout = get_mode() == Mode.week and [7] or [4]
                 plist = [p for p in self.subplots if p.state in [state, None]]
                 page.add(str(self.scaffold_plots(plots=plist, state=state,
                                                  layout=layout)))

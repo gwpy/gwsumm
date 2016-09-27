@@ -30,7 +30,6 @@ import numpy
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
-from .. import globalv
 from .registry import (get_plot, register_plot)
 from ..data import (get_range_channel, get_range, get_timeseries)
 from ..segments import get_segments
@@ -120,7 +119,10 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     """
     data = 'timeseries'
     type = 'time-volume'
+    DRAW_PARAMS = get_plot('timeseries').DRAW_PARAMS
     defaults = get_plot('timeseries').defaults.copy()
+
+    parse_plot_kwargs = get_plot('timeseries').parse_plot_kwargs
 
     def __init__(self, sources, *args, **kwargs):
         if isinstance(sources, str):

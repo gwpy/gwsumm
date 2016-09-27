@@ -27,8 +27,7 @@ except ImportError:
 
 from glue.lal import Cache
 
-from gwpy.segments import (DataQualityDict, SegmentList, Segment)
-from gwpy.plotter import SegmentPlot
+from gwpy.segments import (DataQualityDict, SegmentList)
 
 from ..config import (GWSummConfigParser, NoOptionError)
 from ..state import ALLSTATE
@@ -36,10 +35,11 @@ from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..data import get_timeseries
 from ..segments import get_segments
-from ..plot.registry import (get_plot, register_plot)
+from ..plot.registry import get_plot
 from ..utils import vprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['AccountingTab']
 
 ParentTab = get_tab('default')
 
@@ -47,7 +47,7 @@ ParentTab = get_tab('default')
 class AccountingTab(ParentTab):
     """Summarise the data recorded by the operating mode channels
     """
-    type = 'archived-accounting'
+    type = 'accounting'
 
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):
@@ -134,8 +134,6 @@ class AccountingTab(ParentTab):
                 datafind_error='raise', **kwargs):
         """Process time accounting data
         """
-        ifo = self.ifo
-
         for p in self.plots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
@@ -191,7 +189,6 @@ class AccountingTab(ParentTab):
             not name.startswith('*'))
         headers = ['Index', 'Name', 'Active seconds',
                    'Hours', '%']
-        tables = []
         for flags, title in zip(
                 [groups, modes],
                 ['Top-level mode information', 'Detailed mode information']):
@@ -206,7 +203,6 @@ class AccountingTab(ParentTab):
             for idx, name in flags.iteritems():
                 flag = get_segments(self.segmenttag % idx,
                                     state.active, query=False).copy()
-                v = flag.version and str(flag.version) or ''
                 actives = abs(flag.active)
                 activeh = actives / 3600.
                 try:

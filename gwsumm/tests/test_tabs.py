@@ -24,8 +24,6 @@ import os.path
 
 import pytest
 
-from gwpy.detector import Channel
-
 from gwsumm import tabs
 from gwsumm.plot import SummaryPlot
 
@@ -107,19 +105,6 @@ class TabTestCase(unittest.TestCase):
                          os.path.join('parent', 'test', 'index.html'))
 
 
-class ArchivedTabMixin(object):
-    @classmethod
-    def setUpClass(cls):
-        cls.TYPE = 'archived-%s' % cls.TYPE
-        super(ArchivedTabMixin, cls).setUpClass()
-        cls.DEFAULT_ARGS += [0, 1000]
-
-    def _test_init(self, *args, **kwargs):
-        tab = super(ArchivedTabMixin, self)._test_init(*args, **kwargs)
-        self.assertTupleEqual(tab.span, tuple(self.DEFAULT_ARGS[-2:]))
-        return tab
-
-
 # -- external tab
 
 class ExternalTabTestCase(TabTestCase):
@@ -129,10 +114,6 @@ class ExternalTabTestCase(TabTestCase):
     def test_init(self):
         tab = self._test_init()
         self.assertEqual(tab.url, '//test.com')
-
-
-class ArchivedExternalTabTestCase(ArchivedTabMixin, ExternalTabTestCase):
-    pass
 
 
 # -- plot tab
@@ -165,6 +146,3 @@ class PlotTabTestCase(TabTestCase):
         self.assertRaises(ValueError, tab.set_layout, [1, (1, 2, 1)])
         with pytest.warns(DeprecationWarning):
             tab.layout = [1]
-
-class ArchivedPlotTabTestCase(ArchivedTabMixin, PlotTabTestCase):
-    pass

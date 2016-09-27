@@ -20,42 +20,102 @@
 """
 
 import os.path
+from enum import (Enum, unique)
 
 from . import globalv
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+# -- operating Mode -----------------------------------------------------------
+
+# https://docs.python.org/3/library/enum.html#orderedenum
+class OrderedEnum(Enum):
+    def __ge__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value >= other.value
+        return NotImplemented
+
+    def __gt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value > other.value
+        return NotImplemented
+
+    def __le__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value <= other.value
+        return NotImplemented
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
+
+
 # set mode enum
-SUMMARY_MODE_DAY = 0
-SUMMARY_MODE_MONTH = 1
-SUMMARY_MODE_YEAR = 2
-SUMMARY_MODE_WEEK = 3
-SUMMARY_MODE_GPS = 4
+@unique
+class Mode(OrderedEnum):
+    """Enumeration of valid processing 'modes'
 
-MODE_NAME = {SUMMARY_MODE_GPS: 'GPS',
-             SUMMARY_MODE_DAY: 'DAY',
-             SUMMARY_MODE_WEEK: 'WEEK',
-             SUMMARY_MODE_MONTH: 'MONTH',
-             SUMMARY_MODE_YEAR: 'YEAR'}
-
-MODE_ENUM = dict((val, key) for (key, val) in MODE_NAME.iteritems())
-
-MODE = None
-
-
-def get_mode():
-    """Return the current mode.
+    Each mode provides an association with a particular GPS interval
     """
-    return globalv.MODE
+    # no GPS associations
+    static = 0
+    # central GPS time (with duration)
+    event = 1
+    # arbitrary GPS [start, end) interval
+    gps = 2
+    # calendar epochs
+    day = 10
+    week = 11
+    month = 12
+    year = 13
 
+    def dir_format(self):
+        if self == Mode.day:
+            return os.path.join('day', '%Y%m%d')
+        elif self == Mode.week:
+            return os.path.join('week', '%Y%m%d')
+        elif self == Mode.month:
+            return os.path.join('month', '%Y%m')
+        elif self == Mode.year:
+            return os.path.join('year', '%Y')
+        raise ValueError("Cannot format base for Mode %s" % self)
+
+    def is_calendar(self):
+        if self >= Mode.day:
+            return True
+        return False
+
+
+# -- Mode accessors -----------------------------------------------------------
+
+def get_mode(m=None):
+    """Return the enum for the given mode, defaults to the current mode.
+    """
+    if m is None:
+        m = globalv.MODE
+    if isinstance(m, (int, Enum)):
+        return Mode(m)
+    else:
+        try:
+            return Mode[str(m).lower()]
+        except KeyError:
+            raise ValueError("%s is not a valid Mode" % m)
 
 def set_mode(m):
     """Set the current mode.
     """
-    if not isinstance(m, int):
-        m = MODE_ENUM[str(m).upper()]
+    if isinstance(m, int):
+        m = Mode(m)
+    elif not isinstance(m, Mode):
+        try:
+            m = Mode[str(m).lower()]
+        except KeyError:
+            raise ValueError("%s is not a valid Mode" % m)
     globalv.MODE = m
 
+
+# -- Mode utilities -----------------------------------------------------------
 
 def get_base(date, mode=None):
     """Determine the correct base attribute for the given date and mode.
@@ -72,16 +132,5 @@ def get_base(date, mode=None):
     base : `str`
         the recommended base URL to have a correctly linked calendar
     """
-    if mode is None:
-        mode = get_mode()
-    elif not isinstance(mode, int):
-        mode = MODE_ENUM[str(mode).upper()]
-    if mode == SUMMARY_MODE_DAY:
-        return os.path.join('day', date.strftime('%Y%m%d'))
-    elif mode == SUMMARY_MODE_WEEK:
-        return os.path.join('week', date.strftime('%Y%m%d'))
-    elif mode == SUMMARY_MODE_MONTH:
-        return os.path.join('month', date.strftime('%Y%m'))
-    elif mode == SUMMARY_MODE_YEAR:
-        return os.path.join('year', date.strftime('%Y'))
-    raise ValueError("Cannot format base for unknown mode %r" % mode)
+    mode = get_mode(mode)
+    return date.strftime(mode.dir_format())

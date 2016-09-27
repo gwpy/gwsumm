@@ -83,7 +83,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     # check validity
     if validity is None:
-        start = config.get(DEAFULTSECT, 'gps-start-time')
+        start = config.get(DEFAULTSECT, 'gps-start-time')
         end = config.get(DEFAULTSECT, 'gps-end-time')
         span = SegmentList([Segment(start, end)])
     elif isinstance(validity, DataQualityFlag):

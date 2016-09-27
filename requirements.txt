@@ -1,3 +1,4 @@
+enum34
 pykerberos
 m2crypto
 python-cjson
@@ -9,3 +10,4 @@ http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
 git+https://github.com/gwpy/gwpy
 libsass
 jsmin
+astropy_helpers

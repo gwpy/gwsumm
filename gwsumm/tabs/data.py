@@ -17,11 +17,14 @@
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module defines tabs for generating plots from data on-the-fly.
+
+This module also provides the `ProcessedTab` mixin, which should be used
+to declare that a tab has a `process()` method that should be executed
+as part of a workflow, see the ``gw_summary`` executable as an example.
 """
 
 from __future__ import print_function
 
-import abc
 import os.path
 import getpass
 import re
@@ -43,34 +46,41 @@ from .. import (globalv, html)
 from ..channels import (re_channel,
                         split_combination as split_channel_combination)
 from ..config import *
-from ..mode import (get_mode, MODE_ENUM)
+from ..mode import (Mode, get_mode)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..plot import get_plot
 from ..segments import get_segments
-from ..state import (generate_all_state, ALLSTATE, SummaryState, get_state)
+from ..state import (generate_all_state, ALLSTATE, get_state)
 from ..triggers import get_triggers
-from ..utils import (re_cchar, re_flagdiv, vprint, count_free_cores, safe_eval)
+from ..utils import (re_flagdiv, vprint, safe_eval)
 
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['ProcessedTab', 'DataTab']
+
+ParentTab = get_tab('state')
 
 
-class DataTabBase(get_tab('archived-state')):
+# -- ProcessTab mixin ---------------------------------------------------------
+
+class ProcessedTab(object):
     """Abstract base class to detect necessity to run Tab.process()
     """
-    __metaclass__ = abc.ABCMeta
-    type = 'data-abc'
-
-    @abc.abstractmethod
+    type = '_processed'
     def process(self):
         """This method must be overridden by all subclasses
         """
-        pass
+        raise NotImplementedError("process() must be defined in %s"
+                                  % type(self).__name__)
+
+register_tab(ProcessedTab)
 
 
-class DataTab(DataTabBase):
+# -- DataTab ------------------------------------------------------------------
+
+class DataTab(ProcessedTab, ParentTab):
     """A tab where plots and data summaries are built upon request
 
     This is the 'default' tab for the command-line gw_summary executable.
@@ -107,13 +117,13 @@ class DataTab(DataTabBase):
         for details on the other keyword arguments (``**kwargs``)
         accepted by the constructor for the `DataTab`.
     """
-    type = 'archived-data'
+    type = 'data'
 
-    def __init__(self, name, start, end, states=list([ALLSTATE]),
-                 ismeta=False, noplots=False, **kwargs):
+    def __init__(self, name, states=list([ALLSTATE]), ismeta=False,
+                 noplots=False, **kwargs):
         """Initialise a new `DataTab`.
         """
-        super(DataTab, self).__init__(name, start, end, states=states, **kwargs)
+        super(DataTab, self).__init__(name, states=states, **kwargs)
         self.ismeta = ismeta
         self.noplots = noplots
         self.subplots = []
@@ -185,13 +195,13 @@ class DataTab(DataTabBase):
                     section, 'subplot-duration'))
             except NoOptionError:
                 mode = get_mode()
-                if mode == MODE_ENUM['DAY']:
+                if mode == Mode.day:
                     subdelta = timedelta(hours=1)
-                elif mode == MODE_ENUM['WEEK']:
+                elif mode == Mode.week:
                     subdelta = timedelta(days=1)
-                elif mode == MODE_ENUM['MONTH']:
+                elif mode == Mode.month:
                     subdelta = timedelta(weeks=1)
-                elif mode == MODE_ENUM['YEAR']:
+                elif mode == Mode.year:
                     subdelta = timedelta(months=1)
                 else:
                     d = int(end - start)
@@ -331,15 +341,15 @@ class DataTab(DataTabBase):
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
     def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
-        """Process data for this `StateTab`.
+        """Process data for this tab
 
         Parameters
         ----------
         config : `ConfigParser.ConfigParser`, optional
-            job configuration to pass to :math:`~StateTab.finalize_states`
+            job configuration to pass to :math:`~DataTab.finalize_states`
         **stateargs
             all other keyword arguments are passed directly onto the
-            :meth:`~StateTab.process_state` method.
+            :meth:`~DataTab.process_state` method.
         """
         if self.ismeta:
             return
@@ -600,7 +610,7 @@ class DataTab(DataTabBase):
     # -------------------------------------------------------------------------
     # HTML operations
 
-    def build_html_content(self, frame):
+    def html_content(self, frame):
         """Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
@@ -686,7 +696,7 @@ class DataTab(DataTabBase):
         if self.subplots:
             page.hr(class_='row-divider')
             page.h1('Sub-plots')
-            layout = get_mode() == MODE_ENUM['WEEK'] and [7] or [4]
+            layout = get_mode() == Mode.week and [7] or [4]
             plist = [p for p in self.subplots if p.state in [state, None]]
             page.add(str(self.scaffold_plots(plots=plist, state=state,
                                              layout=layout)))
@@ -772,7 +782,6 @@ class DataTab(DataTabBase):
                     padding = None
                 flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
-                v = flag.version and str(flag.version) or ''
                 try:
                     valid = '%.2f (%.2f%%)' % (abs(flag.known),
                                                abs(flag.known) / pc)

@@ -28,7 +28,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from .. import markup
 from ..utils import highlight_syntax
-from ...mode import *
+from ...mode import (Mode, get_mode)
 from ...utils import re_cchar
 from ..._version import get_versions
 
@@ -88,8 +88,7 @@ def banner(title, subtitle=None, titleclass=None, substitleclass=None):
     return page
 
 
-def navbar(links, class_='navbar navbar-fixed-top',
-           brand=None, collapse=True):
+def navbar(links, class_='navbar navbar-fixed-top', brand=None, collapse=True):
     """Construct a navigation bar in bootstrap format.
 
     Parameters
@@ -107,7 +106,7 @@ def navbar(links, class_='navbar navbar-fixed-top',
     """
     # set up page
     page = markup.page()
-    markup.element('header', parent=page)(class_=class_, role='banner')
+    markup.element('header', parent=page)(class_=class_)
     page.div(class_="container")
 
     # ---- non-collapable part (<div class="navbar-header">) ----
@@ -118,17 +117,16 @@ def navbar(links, class_='navbar navbar-fixed-top',
     if collapse:
         page.add(NAVBAR_TOGGLE)
 
-    # add branding
-    if isinstance(brand, markup.page):
+    # add branding (generic non-collapsed content)
+    if brand:
         page.add(str(brand))
-    elif brand is not None:
-        page.div(str(brand), class_='navbar-brand')
 
-    page.div.close()
+    page.div.close()  # navbar-header
+
     if collapse:
-        page.nav(class_="collapse navbar-collapse", role="navigation")
+        page.nav(class_="collapse navbar-collapse")
     else:
-        page.nav(role="navigation")
+        page.nav()
 
     # ---- collapsable part (<nav>) ----
 
@@ -237,7 +235,7 @@ def dropdown_link(page, link, active=False, class_=''):
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
-             id_='calendar', dateformat=None, mode='days'):
+             id_='calendar', dateformat=None, mode=None):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -253,25 +251,28 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         a onliner string of HTML containing the calendar text and a
         triggering dropdown
     """
+    mode = get_mode(mode)
+    if mode < Mode.day:
+        raise ValueError("Cannot generate calendar for Mode %s" % mode)
     if dateformat is None:
-        if mode in [SUMMARY_MODE_DAY, 'days']:
+        if mode == Mode.day:
             dateformat = '%B %d %Y'
-        elif mode in [SUMMARY_MODE_WEEK, 'weeks']:
+        elif mode == Mode.week:
             dateformat = 'Week of %B %d %Y'
-        elif mode in [SUMMARY_MODE_MONTH, 'months']:
+        elif mode == Mode.month:
             dateformat = '%B %Y'
-        elif mode in [SUMMARY_MODE_YEAR, 'years']:
+        elif mode == Mode.year:
             dateformat = '%Y'
         else:
-            raise ValueError("Cannot set dateformat for mode=%r" % mode)
-    datestring = date.strftime(dateformat)
+            raise ValueError("Cannot set dateformat for Mode %s" % mode)
+    datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()
     page.a('&laquo;', class_='navbar-brand step-back', title='Step back',
            onclick='stepDate(-1)')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': mode})
+              'data-viewmode': '%ss' % mode.name})
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()

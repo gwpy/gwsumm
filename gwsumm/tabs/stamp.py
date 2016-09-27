@@ -23,19 +23,16 @@ import os
 import re
 import glob
 
-from dateutil import parser
-
-from numpy import loadtxt
-
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
-from .. plot import get_plot
-from ..mode import SUMMARY_MODE_DAY
-from ..config import (GWSummConfigParser, NoOptionError)
-from ..state import (ALLSTATE, SummaryState)
+from ..mode import Mode
+from ..plot import get_plot
+from ..config import GWSummConfigParser
+from ..state import SummaryState
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['StampPEMTab']
 
 base = get_tab('default')
 SummaryPlot = get_plot(None)
@@ -44,11 +41,12 @@ SummaryPlot = get_plot(None)
 class StampPEMTab(base):
     """Custom tab displaying a summary of StampPEM results.
     """
-    type = 'archived-stamp'
+    type = 'stamp'
 
     def __init__(self, *args, **kwargs):
-        if globalv.MODE != SUMMARY_MODE_DAY:
-            raise RuntimeError("StampPEMTab is only available in 'DAY' mode.")
+        if kwargs['mode'] != Mode.day:
+            raise RuntimeError("StampPEMTab is only available in %s mode."
+                               % Mode.day.name)
         super(StampPEMTab, self).__init__(*args, **kwargs)
 
     @classmethod

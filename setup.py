@@ -85,11 +85,15 @@ requires = [
 tests_require = [
     'pytest>=2.8'
 ]
-if sys.version < (2.7):
-    tests_require.append('unittest2')
 extras_require = {
-    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme'],
+    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme', 'astropy_helpers'],
 }
+
+# version-specific packages
+if sys.version < '3':
+    requires.append('enum34')
+if sys.version < '2.7':
+    tests_require.append('unittest2')
 
 # -- data files ---------------------------------------------------------------
 

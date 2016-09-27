@@ -22,7 +22,7 @@
 
 from common import (unittest, empty_globalv_CHANNELS)
 from gwsumm import (globalv, channels)
-from gwsumm.mode import set_mode
+from gwsumm.mode import (get_mode, set_mode)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -36,6 +36,14 @@ TREND_NAME4 = 'H1:TEST-TREND_CHANNEL_4.mean'
 class ChannelTests(unittest.TestCase):
     """`TestCase` for the channels.py module
     """
+    @classmethod
+    def setUpClass(cls):
+        cls._defaultmode = get_mode()
+
+    @classmethod
+    def tearDownClass(cls):
+        set_mode(cls._defaultmode)
+
     @empty_globalv_CHANNELS
     def test_get_channel(self):
         """Test get_channel for normal channels

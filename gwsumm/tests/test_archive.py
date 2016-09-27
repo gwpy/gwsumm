@@ -20,7 +20,6 @@
 
 """
 
-import sys
 import os
 import tempfile
 from functools import wraps

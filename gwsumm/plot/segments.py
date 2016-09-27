@@ -23,12 +23,14 @@ from __future__ import division
 
 import hashlib
 import bisect
-from itertools import cycle
+from itertools import (cycle, combinations)
 
 try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
+
+import numpy
 
 from dateutil.relativedelta import relativedelta
 
@@ -36,9 +38,11 @@ from matplotlib.patches import Rectangle
 
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
+from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
 
-from .. import globalv, mode
+from .. import globalv
+from ..mode import (Mode, get_mode)
 from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
 from ..data import (get_channel, get_timeseries)
@@ -171,9 +175,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         """
         active = safe_eval(
             self.pargs.pop('active', self.pargs.pop('facecolor', None)))
-        known = safe_eval(self.pargs.pop('known', None))
+        known = safe_eval(self.pargs.pop('known', 0))
         # neither known nor active defined
-        if active is None and known is None:
+        if active is None and known == 0:
             if bool(self.pargs.pop('on-is-bad', False)):
                 self.pargs['facecolor'] = 'red'
                 self.pargs.setdefault('edgecolor', 'darkred')
@@ -183,7 +187,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 self.pargs.setdefault('edgecolor', 'darkred')
                 self.pargs['known'] = 'red'
         # only active is defined
-        elif known is None:
+        elif known == 0:
             if isinstance(active, dict):
                 self.pargs.update(active)
                 active = active.get('facecolor')
@@ -248,6 +252,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
+            pargs.setdefault('known', None)
             ax.plot(segs, y=i, label=label, **pargs)
 
         # make custom legend
@@ -258,8 +263,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             epoch = ax.get_epoch()
             xlim = ax.get_xlim()
             seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            v = ax.plot(seg, facecolor=known['facecolor'],
-                        collection=False)[0][0]
+            if isinstance(known, dict):
+                known = known['facecolor']
+            v = ax.plot(seg, facecolor=known, collection=False)[0][0]
             a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
                         collection=False)[0][0]
             if edgecolor not in [None, 'none']:
@@ -304,6 +310,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
     type = 'statevector'
     data = 'statevector'
     defaults = SegmentDataPlot.defaults.copy()
+    DRAW_PARAMS = list(SegmentDataPlot.DRAW_PARAMS)
 
     # copy from SegmentDataPlot
     flag = property(fget=SegmentDataPlot.flags.__get__,
@@ -358,8 +365,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
 
     def draw(self):
         # make font size smaller
-        _labelsize = rcParams['ytick.labelsize']
-        labelsize = self.pargs.pop('labelsize', 12)
+        labelsize = self.rcParams.get('ytick.labelsize', 12)
         if self.pargs.get('insetlabels', True) is False:
             rcParams['ytick.labelsize'] = labelsize
 
@@ -440,8 +446,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         if self.state and self.state.name != ALLSTATE:
             self.add_state_segments(ax)
 
-        # reset tick size and return
-        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
 
 register_plot(StateVectorDataPlot)
@@ -489,19 +493,19 @@ class DutyDataPlot(SegmentDataPlot):
         """
         # if not given anything, work it out from the mode
         if self.bins is None:
-            m = mode.MODE_NAME[mode.get_mode()]
+            m = get_mode()
             duration = float(abs(self.span))
             # for year mode, use a month
-            if m in ['YEAR'] or duration >= 86400 * 300:
+            if m == Mode.year or duration >= 86400 * 300:
                 dt = relativedelta(months=1)
             # for more than 8 weeks, use weeks
             elif duration >= 86400 * 7 * 8:
                 dt = relativedelta(weeks=1)
             # for week and month mode, use daily
-            elif m in ['WEEK', 'MONTH'] or duration >= 86400 * 7:
+            elif m in [Mode.week, Mode.month] or duration >= 86400 * 7:
                 dt = relativedelta(days=1)
             # for day mode, make hourly duty factor
-            elif m in ['DAY']:
+            elif m == Mode.day:
                 dt = relativedelta(hours=1)
             # otherwise provide 10 bins
             else:
@@ -649,9 +653,9 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['edgecolor'] = 'none'
                     lw = pargs.pop('linewidth', 1)
                     pargs['linewidth'] = 0
-                b = ax.bar((times + self.bins * offset)[:now], height[:now],
-                           bottom=bottom[:now], align='center',
-                           width=width, color=color, **pargs)
+                ax.bar((times + self.bins * offset)[:now], height[:now],
+                       bottom=bottom[:now], align='center',
+                      width=width, color=color, **pargs)
                 if style == 'fill':
                     ax.plot(times[:now], duty[:now], drawstyle='steps-post',
                             color=ec, linewidth=lw)
@@ -1109,7 +1113,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
             name = self.NETWORK_NAME[i]
             flag = '%s:%s' % (network, name)
             networksegs = DataQualityFlag(flag, known=valid)
-            for ifoset in itertools.combinations(flags, i):
+            for ifoset in combinations(flags, i):
                 if not ifoset:
                     compound = '!%s' % '!'.join(flags.values())
                 else:
@@ -1220,7 +1224,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         # make bar chart
         width = plotargs.pop('width', .8)
         x = numpy.arange(len(data)) - width/2.
-        patches = ax.bar(x, data, width=width, **plotargs)[0]
+        ax.bar(x, data, width=width, **plotargs)
 
         # set labels
         ax.set_xticks(range(len(data)))
@@ -1257,6 +1261,9 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 'bottom': 0,
                 'rwidth': 1}
 
+    def parse_plot_kwargs(self, *args, **kwargs):
+        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
+
     def draw(self, outputfile=None):
         # make axes
         (plot, axes) = self.init_plot()
@@ -1286,7 +1293,6 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
-            livetime = float(abs(segs.active))
             data.append(map(lambda x: float(abs(x)), segs.active))
 
         # get range

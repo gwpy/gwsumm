@@ -41,7 +41,7 @@ ERRC = '\033[91m'
 ENDC = '\033[0m'
 
 # bad things to eval
-UNSAFE_EVAL_STRS = ['os\.', 'shutil', '\.rm', '\.mv']
+UNSAFE_EVAL_STRS = ['os\.(?![$\'\" ])', 'shutil', '\.rm', '\.mv']
 UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 
 
@@ -168,7 +168,7 @@ def get_default_ifo(fqdn=getfqdn()):
     raise ValueError("Cannot determine default IFO for host %r" % fqdn)
 
 
-def safe_eval(val, strict=False):
+def safe_eval(val, strict=False, globals_=None, locals_=None):
     """Evaluate the given string as a line of python, if possible
 
     If the :meth:`eval` fails, a `str` is returned instead, unless
@@ -183,6 +183,20 @@ def safe_eval(val, strict=False):
         raise an exception when the `eval` call fails (`True`) otherwise
         return the input as a `str` (`False`, default)
 
+    globals_ : `dict`, optional
+        dict of global variables to pass to `eval`, defaults to current
+        `globals`
+
+    locals_ : `dict`, optional
+        dict of local variables to pass to `eval`, defaults to current
+        `locals`
+
+        .. note::
+
+           Note the trailing underscore on the `globals_` and `locals_`
+           kwargs, this is required to not clash with the builtin `globals`
+           and `locals` methods`.
+
     Raises
     ------
     ValueError
@@ -192,6 +206,11 @@ def safe_eval(val, strict=False):
     NameError
     SyntaxError
         if the input cannot be evaluated, and `strict=True` is given
+
+    See also
+    --------
+    eval
+        for more documentation on the underlying evaluation method
     """
     # don't evaluate non-strings
     if not isinstance(val, str):
@@ -202,9 +221,19 @@ def safe_eval(val, strict=False):
     except AttributeError:
         pass
     else:
-        raise ValueError("Will not evaluate string containing %r" % match)
+        raise ValueError("Will not evaluate string containing %r: %r"
+                         % (match, val))
+    # format args for eval
+    if globals_ is None and locals_ is None:
+       args = ()
+    elif globals_ is None and locals_ is not None:
+       args = (globals(), locals_)
+    elif locals_ is None and globals_ is not None:
+       args = (globals_,)
+    else:
+       args = (globals_, locals_)
     # try and eval str
     try:
-        return eval(val)
+        return eval(val, *args)
     except (NameError, SyntaxError):
         return str(val)

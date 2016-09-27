@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import re
 from itertools import (izip, cycle)
 
 from numpy import isinf
@@ -116,7 +117,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            pid = super(TriggerDataPlot, self).pid
+            super(TriggerDataPlot, self).pid
             self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
@@ -144,7 +145,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         if 'time' in xcolumn:
             base = TimeSeriesPlot
         elif 'freq' in xcolumn:
-            base = SpectrumPlot
+            base = FrequencySeriesPlot
         else:
             base = Plot
         plot = self.plot = EventTablePlot(
@@ -463,34 +464,29 @@ class TriggerHistogramPlot(get_plot('histogram')):
                 kwset['range'] = ax.common_limits(data)
 
         # plot
-        for arr, d, kwargs in zip(data, livetime, histargs):
-            weights = kwargs.pop('weights', None)
-            direction = kwargs.get('orientation', 'vertical')
-            if weights is True:
-                try:
-                    weights = 1/d
-                except ZeroDivisionError:
-                    pass
-                if direction == 'horizontal':
-                    self.pargs.setdefault(
-                        'xbound', 1/float(abs(self.span)) * .5)
-                else:
-                    self.pargs.setdefault(
-                        'ybound', 1/float(abs(self.span)) * .5)
-            if (kwargs.get('logy', False) or
-                kwargs.get('yscale', 'linear') == 'log'):
-                kwargs.setdefault('bottom', 1e-100)
-            label = kwargs.pop('label', None)
-            if arr.size:
-                ax.hist(arr, label=label, weights=weights, **kwargs)
-            else:
-                ax.plot([], label=label)
+        for arr, d, pargs in zip(data, livetime, histargs):
+            pargs.setdefault('label', None)
+            if isinstance(pargs.get('weights', None), (float, int)):
+                pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
+            try:
+                ax.hist(arr, **pargs)
+            except ValueError:  # empty dataset
+                p2 = pargs.copy()
+                p2.pop('weights')  # mpl errors on weights
+                if p2.get('log', False) or self.pargs.get('logx', False):
+                    p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
+                ax.hist([], **p2)
 
-        # tight scale the axes
-        if len(data) and direction == 'vertical' or True:
-            ax.autoscale_view(tight=True, scaley=False)
-        if len(data) and direction == 'horizontal' or False:
-            ax.autoscale_view(tight=True, scalex=False)
+        ## tight scale the axes
+        try:
+             d = pargs.pop('orientation', 'vertical')
+        except NameError:
+             pass
+        else:
+             if d == 'vertical':
+                 ax.autoscale_view(tight=True, scaley=False)
+             elif d == 'horizontal':
+                 ax.autoscale_view(tight=True, scalex=False)
 
         # customise plot
         self.apply_parameters(ax, **self.pargs)

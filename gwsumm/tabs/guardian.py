@@ -50,6 +50,7 @@ from ..plot.registry import (get_plot, register_plot)
 from ..utils import (vprint, re_quote)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__all__ = ['GuardianTab']
 
 DataTab = get_tab('default')
 UTC = tz.gettz('UTC')
@@ -69,7 +70,7 @@ class GuardianTab(DataTab):
     transitions summary table, and a detailed list of transitions and
     segments for each listed state.
     """
-    type = 'archived-guardian'
+    type = 'guardian'
 
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):
@@ -149,8 +150,6 @@ class GuardianTab(DataTab):
                 segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.
         """
-        ifo = self.ifo
-
         for p in self.plots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
@@ -470,7 +469,6 @@ class GuardianStatePlot(get_plot('segments')):
             plot.add_colorbar(ax=ax, visible=False)
 
         # add node MODE along the bottom
-        ylim = ax.get_ylim()
         sax = None
         legentry = OrderedDict()
         grdmode = get_timeseries(
@@ -544,6 +542,7 @@ class GuardianStatePlot(get_plot('segments')):
                            fontsize=12, title='Node mode')
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.set_epoch(float(self.pargs.get('epoch', self.start)))
+            ax.set_epoch(sax.get_epoch())
 
         return self.finalize()
 

@@ -39,8 +39,7 @@ from astropy import units
 from glue import datafind
 from glue.lal import Cache
 
-from gwpy.detector import Channel
-from gwpy.segments import (DataQualityFlag, SegmentList)
+from gwpy.segments import SegmentList
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorDict)
 try:
@@ -52,10 +51,10 @@ from gwpy.io import nds as ndsio
 from .. import globalv
 from ..utils import (vprint, count_free_cores)
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
-from ..channels import (get_channel, update_missing_channel_params, re_channel,
+from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
-from .mathutils import (get_with_math, parse_math_definition)
+from .mathutils import get_with_math
 
 
 OPERATOR = {
@@ -70,6 +69,7 @@ FRAMETYPE_REGEX = {
     'science': re.compile('[A-Z][0-9]_R\Z'),
     'second-trend': re.compile('[A-Z][0-9]_T\Z'),
     'minute-trend': re.compile('[A-Z][0-9]_M\Z'),
+    'low-latency h(t)': re.compile('[A-Z][0-9]_DMT_C00\Z'),
     'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
     'calibrated h(t) version 1': re.compile('[A-Z][0-9]_HOFT_C01\Z'),
     'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
@@ -518,12 +518,29 @@ def _get_timeseries_dict(channels, segments, config=None,
                 fcache = find_frames(ifo, frametype, span[0], span[1],
                                      config=config, gaps='ignore',
                                      onerror=datafind_error)
+                cachesegments = find_cache_segments(fcache)
+                gaps = SegmentList([span]) - cachesegments
                 if len(fcache) == 0 and frametype == '%s_R' % ifo:
                     frametype = '%s_C' % ifo
                     vprint("    Moving to backup frametype %s\n" % frametype)
                     fcache = find_frames(ifo, frametype, span[0], span[1],
                                          config=config, gaps='ignore',
                                          onerror=datafind_error)
+                elif abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
+                    frametype = '%s_DMT_C00' % ifo
+                    vprint("    Gaps discovered in aggregated h(t) type "
+                           "%s_HOFT_C00, checking %s\n" % (ifo, frametype))
+                    c2 = find_frames(ifo, frametype, span[0], span[1],
+                                     config=config, gaps='ignore',
+                                     onerror=datafind_error)
+                    g2 = SegmentList([span]) - find_cache_segments(c2)
+                    if abs(g2) < abs(gaps):
+                        vprint("    Greater coverage with frametype %s\n"
+                               % frametype)
+                        fcache = c2
+                    else:
+                        vprint("    No extra coverage with frametype %s\n"
+                               % frametype)
 
             # parse discontiguous cache blocks and rebuild segment list
             cachesegments = find_cache_segments(fcache)

@@ -196,8 +196,8 @@ $(window).load(function() {
 
   // load correct run type
   if (location.hash.length > 1) {
-    hash = location.hash.substring(1);
-    path = location.pathname + hash + '.html';
+    var hash = location.hash.substring(1);
+    var path = location.pathname + hash + '.html';
     $('#state_' + hash).load_state(path);
   }
 

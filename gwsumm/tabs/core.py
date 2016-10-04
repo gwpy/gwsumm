@@ -604,7 +604,7 @@ class BaseTab(object):
         class_ = 'navbar navbar-fixed-top'
         # build interferometer cross-links
         if ifo is not None:
-            brand_ = html.base_map_dropdown(ifo, id_='ifos', **ifomap)
+            brand_ = html.base_map_dropdown(ifo, id_='ifos', bases=ifomap)
             class_ += ' navbar-%s' % ifo.lower()
         else:
             brand_ = html.markup.page()

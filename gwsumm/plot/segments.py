@@ -181,7 +181,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             if bool(self.pargs.pop('on-is-bad', False)):
                 self.pargs['facecolor'] = 'red'
                 self.pargs.setdefault('edgecolor', 'darkred')
-                self.pargs['known'] = GREEN
+                self.pargs['known'] = {'facecolor': GREEN}
             else:
                 self.pargs['facecolor'] = GREEN
                 self.pargs.setdefault('edgecolor', 'darkred')

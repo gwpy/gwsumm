@@ -40,6 +40,7 @@ import warnings
 import httplib
 import importlib
 
+from collections import OrderedDict
 from urlparse import urlparse
 
 from dateutil.relativedelta import relativedelta
@@ -565,7 +566,8 @@ except NoSectionError:
 else:
     for key, val in config.nditems('html'):
         if re.search('-base\Z', key):
-            ifobases[key.rsplit('-', 1)[0].title()] = val
+            ifobases[key.rsplit('-', 1)[0]] = val
+ifobases = OrderedDict(sorted(ifobases.items(), key=lambda x: x[0]))
 
 # -----------------------------------------------------------------------------
 # Write auxiliary pages

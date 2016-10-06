@@ -459,8 +459,8 @@ def about_this_page(cmdline=True, config=None):
     return page
 
 
-def base_map_dropdown(this,class_='btn-group pull-left base-map', id_=None,
-                      **bases):
+def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
+                      bases=dict()):
     """Construct a dropdown menu that links to a version of the current
     page on another server, based on a new base.
     """

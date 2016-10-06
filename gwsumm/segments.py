@@ -48,6 +48,7 @@ SEGDB_URLS = [
     'https://segdb.ligo.caltech.edu',
     'https://metaserver.phy.syr.edu',
     'https://geosegdb.atlas.aei.uni-hannover.de',
+    'http://10.20.50.30'  # geosegdb internal
 ]
 
 

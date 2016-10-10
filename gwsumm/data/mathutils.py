@@ -76,7 +76,7 @@ def parse_math_definition(definition):
         # find channel
         a, b = match.span()
         cname = definition[a:b]
-        channels.append((cname, None))
+        channels.append((cname, []))
 
         # find next channel and parse whatever's inbetween
         try:
@@ -100,7 +100,6 @@ def parse_math_definition(definition):
         if mathstr and not matches:
             raise ValueError("Cannot parse math operation %r" % mathstr)
         elif matches:
-            channels[-1] = (cname, [])
             for cop in matches:
                 op = get_operator(cop['operator'].strip())
                 value = float(cop['value'])
@@ -151,7 +150,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     else:
         tsdict = load_func(chans, segments, **ioargs)
     # shortcut single channel with no math
-    if len(names) == 1 and singleops[0][1] is None:
+    if len(names) == 1 and not singleops[0][1]:
         return tsdict.values()[0]
     # get union of segments for all sub-channels
     tslist = [tsdict[c.ndsname] for c in chans]

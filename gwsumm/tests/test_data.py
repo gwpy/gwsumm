@@ -132,10 +132,12 @@ class DataTests(unittest.TestCase):
         self.assertListEqual(operators, [operator.add])
         self.assertIsInstance(chans[0], tuple)
         self.assertEqual(chans[0][0], 'L1:TEST')
-        self.assertTupleEqual(chans[0][1], (operator.mul, 2))
+        self.assertIsInstance(chans[0][1], list)
+        self.assertEqual(len(chans[0][1]), 1)
+        self.assertTupleEqual(chans[0][1][0], (operator.mul, 2))
         self.assertIsInstance(chans[1], tuple)
         self.assertEqual(chans[1][0], 'L1:TEST2')
-        self.assertTupleEqual(chans[1][1], (operator.pow, 5))
+        self.assertTupleEqual(chans[1][1][0], (operator.pow, 5))
 
     # -- test add/get methods -------------------
 

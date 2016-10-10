@@ -15,17 +15,23 @@ body {
 				}
 				.dropdown-menu {
 						min-width: 44px;
-						width: 100%;
 						a {
 								padding-left: 12px;
 								cursor: pointer;
+								&:after {
+										display: block;
+										content: attr(title);
+										font-weight: bold;
+										height: 1px;
+										color: transparent;
+										overflow: hidden;
+										visibility: hidden;
+										margin-bottom: -1px;
+								}
 						}
 						@media (min-width: 768px) {
 								margin-left: -15px;
 								min-width: 52px;
-								a {
-										padding-left: 16px;
-								}
 						}
 				}
 		}

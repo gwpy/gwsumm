@@ -34,6 +34,7 @@ from gwpy.io.cache import cache_segments
 from gwpy.table import (lsctables, GWRecArray)
 from gwpy.table.utils import get_table_column
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
+from gwpy.table.io.hacr import get_hacr_triggers
 from gwpy.segments import (DataQualityFlag, SegmentList)
 
 try:
@@ -184,7 +185,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     # work out columns
     if columns is None:
         try:
-            columns = config.get(etg, 'columns').split(',')
+            columns = config.get(etg.lower(), 'columns').split(',')
         except (NoSectionError, NoOptionError):
             columns = None
 
@@ -220,12 +221,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:
             for segment in new:
                 # find trigger files
-                if cache is None and etg.lower() == 'hacr':
-                    raise NotImplementedError("HACR parsing has not been "
-                                              "implemented.")
                 if cache is None and etg.lower() in ['kw', 'kleinewelle']:
                     kwargs['filt'] = lambda t: t.channel == str(channel)
-                if cache is None:
+                if cache is None and not etg.lower() == 'hacr':
                     try:
                         segcache = trigfind.find_trigger_urls(str(channel), etg,
                                                               segment[0],
@@ -244,12 +242,17 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                         kwargs.setdefault('format', 'omega')
                     else:
                         kwargs.setdefault('format', 'ligolw')
-                else:
+                elif cache is not None:
                     segcache = cache
                 # read table
-                trigs = read_cache(segcache, SegmentList([segment]), etg,
-                                   nproc=nproc, tableclass=TableClass,
-                                   **kwargs)
+                if etg.lower() == 'hacr':
+                    trigs = get_hacr_triggers(channel, segment[0], segment[1],
+                                              columns=columns)
+                    trigs.segments = SegmentList([segment])
+                else:
+                    trigs = read_cache(segcache, SegmentList([segment]), etg,
+                                       nproc=nproc, tableclass=TableClass,
+                                       **kwargs)
                 if trigs is not None:
                     add_triggers(trigs, key)
                     ntrigs += len(trigs)

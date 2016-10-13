@@ -22,6 +22,7 @@
 import operator
 import re
 
+from gwpy.detector import Channel
 from gwpy.segments import SegmentList
 
 from ..channels import (get_channel, re_channel)
@@ -71,6 +72,8 @@ def parse_math_definition(definition):
     try:
         match = next(breaks)
     except StopIteration:  # no channel names parsed at all, just return
+        return [(definition, None)], []
+    if Channel.MATCH.match(definition):  # channel name matches (GEO)
         return [(definition, None)], []
     while True:
         # find channel

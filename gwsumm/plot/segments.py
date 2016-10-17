@@ -45,7 +45,8 @@ from .. import globalv
 from ..mode import (Mode, get_mode)
 from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
-from ..data import (get_channel, get_timeseries)
+from ..channels import (get_channel, re_channel)
+from ..data import get_timeseries
 from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot)
@@ -395,7 +396,14 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 bits_ = [x if i in bits else None for
                          (i, x) in enumerate(channel.bits)]
             else:
-                bits_ = channel.bits
+                try:
+                    bits_ = channel.bits
+                except AttributeError:
+                    m = list(re_channel.findall(str(channel)))
+                    if len(m) == 1 and hasattr(get_channel(m[0]), 'bits'):
+                        bits_ = get_channel(m[0]).bits
+                    else:
+                        raise
             data = get_timeseries(str(channel), valid, query=False,
                                   statevector=True)
             flags = None

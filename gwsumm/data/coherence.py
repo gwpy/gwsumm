@@ -447,7 +447,7 @@ def _get_from_list(serieslist, segment):
     for series in serieslist:
         if segment in series.span:
             return series.crop(segment)
-    raise ValueError("Cannot crop series for segment %d from list"
+    raise ValueError("Cannot crop series for segment %s from list"
                      % str(segment))
 
 

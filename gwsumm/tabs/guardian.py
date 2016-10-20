@@ -320,7 +320,7 @@ class GuardianTab(DataTab):
                     t, t2.iso, tlocal.iso,
                     '%s [%d]' % (self.grdstates.get(from_, 'Unknown'), from_),
                     '%s [%d]' % (self.grdstates.get(to_, 'Unknown'), to_)))
-            page.add(str(html.data_table(headers, data, table='guardian data')))
+            page.add(str(html.data_table(headers, data)))
 
             # print segments
             flag = get_segments(self.segmenttag % name, state.active,

@@ -84,6 +84,16 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 
     # key used to store the coherence spectrogram in globalv
     key = make_globalv_key(channel_pair, fftparams)
+
+    # keys used to store component spectrograms in globalv
+    components = ('Cxy', 'Cxx', 'Cyy')
+    ckeys = [
+        make_globalv_key([channel1, channel2], fftparams),
+        make_globalv_key(channel1, fftparams),
+        make_globalv_key(channel2, fftparams),
+    ]
+
+    # convert fftparams to regular dict
     fftparams = fftparams.dict()
 
     # work out what new segments are needed
@@ -123,14 +133,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
     else:
         sampling = None;
-
-    # keys used to store component spectrograms in globalv
-    components = ('Cxy', 'Cxx', 'Cyy')
-    ckeys = [
-        make_globalv_key([channel1, channel2], fftparams),
-        make_globalv_key(channel1, fftparams),
-        make_globalv_key(channel2, fftparams),
-    ]
 
     # initialize component lists if they don't exist yet
     for ck in ckeys:

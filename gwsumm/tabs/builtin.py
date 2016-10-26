@@ -799,3 +799,28 @@ class StateTab(PlotTab):
             about=about, footer=footer, **inargs)
 
 register_tab(StateTab)
+
+class UrlTab(Tab):
+    type = 'link'
+    def __init__(self, name, url, **kwargs):
+        super(UrlTab, self).__init__(name, **kwargs)
+        self.href = url
+
+    @property
+    def href(self):
+        return self._href
+
+    @href.setter
+    def href(self, url):
+        self._href = url
+
+    @classmethod
+    def from_ini(cls, cp, section, *args, **kwargs):
+        kwargs.setdefault('url', cp.get(section,'url'))
+        return super(UrlTab, cls).from_ini(cp, section, *args, **kwargs)
+
+    def write_html(self, **kwargs):
+        return
+
+register_tab(UrlTab)
+

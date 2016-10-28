@@ -177,7 +177,7 @@ function shortenDate() {
 $(window).load(function() {
 
   // shorten the date
-  shortenDate();
+  if ($('#calendar').length){ shortenDate();}
 
   // define inter-IFO links
   var thisbase = document.getElementsByTagName('base')[0].href;
@@ -242,5 +242,5 @@ $(window).load(function() {
 
 $(window).resize(function() {
   // set short month date
-  shortenDate();
+  if ($('#calendar').length){ shortenDate();}
 });

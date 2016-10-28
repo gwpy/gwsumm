@@ -34,7 +34,6 @@ from gwpy.io.cache import cache_segments
 from gwpy.table import (lsctables, GWRecArray)
 from gwpy.table.utils import get_table_column
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
-from gwpy.table.io.hacr import get_hacr_triggers
 from gwpy.segments import (DataQualityFlag, SegmentList)
 
 try:
@@ -246,6 +245,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     segcache = cache
                 # read table
                 if etg.lower() == 'hacr':
+                    from gwpy.table.io.hacr import get_hacr_triggers
                     trigs = get_hacr_triggers(channel, segment[0], segment[1],
                                               columns=columns)
                     trigs.segments = SegmentList([segment])

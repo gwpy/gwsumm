@@ -72,7 +72,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'legend-loc': 'upper left',
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
-    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + ['known']
+    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + ['known', 'height', 'y']
 
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         padding = kwargs.pop('padding', None)
@@ -254,7 +254,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
             pargs.setdefault('known', None)
-            ax.plot(segs, y=i, label=label, **pargs)
+            pargs.setdefault('y', i)
+            ax.plot(segs, label=label, **pargs)
 
         # make custom legend
         known = legcolors.pop('known', None)

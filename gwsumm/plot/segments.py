@@ -666,7 +666,7 @@ class DutyDataPlot(SegmentDataPlot):
                        bottom=bottom[:now], align='center',
                       width=width, color=color, **pargs)
                 if style == 'fill':
-                    ax.plot(times[:now], duty[:now], drawstyle='steps-post',
+                    ax.plot(times[:now+1], duty[:now+1], drawstyle='steps-post',
                             color=ec, linewidth=lw)
 
             # plot mean

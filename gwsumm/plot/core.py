@@ -203,8 +203,8 @@ class DataPlot(SummaryPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, pid=None, href=None, new=True, all_data=False,
-                 read=True, fileformat='png', **pargs):
-        super(DataPlot, self).__init__(href=href, new=new)
+                 read=True, fileformat='png', caption=None, **pargs):
+        super(DataPlot, self).__init__(href=href, new=new, caption=caption)
         if isinstance(channels, str):
             channels = split_channels(channels)
         self.channels = channels

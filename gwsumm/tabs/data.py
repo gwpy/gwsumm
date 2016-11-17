@@ -798,7 +798,7 @@ class DataTab(ProcessedTab, ParentTab):
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i, (flag, padding) in enumerate(allflags):
-                flag = get_segments(flag, state.active, query=False,
+                flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
                 page.div(class_='panel well panel-primary')
                 page.div(class_='panel-heading')

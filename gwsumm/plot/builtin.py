@@ -30,6 +30,11 @@ import numpy
 
 from matplotlib.pyplot import subplots
 
+try:
+    from mpl_toolkits.axes_grid1 import make_axes_locatable
+except ImportError:
+    from mpl_toolkits.axes_grid import make_axes_locatable
+
 from astropy.units import Quantity
 
 from gwpy.frequencyseries import FrequencySeries
@@ -43,6 +48,7 @@ from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum,
                     get_coherence_spectrum)
+from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
 
@@ -65,7 +71,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         for c in self.channels:
             c._timeseries = True
 
-    def add_state_segments(self, ax, **kwargs):
+    def add_state_segments(self, ax, visible=None, **kwargs):
         """Add an `Axes` below the given ``ax`` displaying the `SummaryState`
         for this `TimeSeriesDataPlot`.
 
@@ -73,21 +79,39 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         ----------
         ax : `Axes`
             the set of `Axes` below which to display the state segments.
+
+        visible : `bool`, optional
+            whether or not to display the axes, or just make space for them,
+            default is `None`, meaning a dynamic choice based on the state
+
         **kwargs
             other keyword arguments will be passed to the
             :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
             method.
         """
         epoch = ax.get_epoch()
-        kwargs.setdefault('edgecolor', 'darkgreen')
-        kwargs.setdefault('facecolor', GREEN)
-        kwargs.setdefault('known', {'facecolor': 'red', 'edgecolor': 'darkred'})
-        sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
-        ax.set_epoch(epoch)
-        sax.set_epoch(epoch)
-        sax.tick_params(axis='y', which='major', labelsize=12)
-        sax.yaxis.set_ticks_position('none')
-        sax.set_epoch(epoch)
+        xlim = ax.get_xlim()
+        if visible is None:
+            visible = self.state is not None and self.state.name != ALLSTATE
+        if visible:
+            kwargs.setdefault('edgecolor', 'darkgreen')
+            kwargs.setdefault('facecolor', GREEN)
+            kwargs.setdefault('known', {'facecolor': 'red', 'edgecolor': 'darkred'})
+            sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
+            ax.set_epoch(epoch)
+            sax.set_epoch(epoch)
+            sax.tick_params(axis='y', which='major', labelsize=12)
+            sax.yaxis.set_ticks_position('none')
+            sax.set_epoch(epoch)
+        else:
+            try:
+                div = ax.get_axes_locator()._axes_divider
+            except AttributeError:
+                div = make_axes_locatable(ax)
+            div.append_axes('bottom', 0.2, 0.1, axes_class=SegmentAxes,
+                            sharex=ax, add_to_figure=False)
+            sax = None
+        ax.set_xlim(xlim)
         ax.set_epoch(epoch)
         return sax
 
@@ -208,8 +232,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        if self.state:
-            self.add_state_segments(ax)
+
+        self.add_state_segments(ax)
         return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesDataPlot)
@@ -351,8 +375,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
                 setattr(ax, key, val)
-        if self.state:
-            self.add_state_segments(ax)
+        self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(SpectrogramDataPlot)

@@ -708,8 +708,6 @@ class DataTab(ProcessedTab, ParentTab):
                                      'spectrogram', 'odc', new=False)
         if len(channels):
             page.h1('Channel information')
-            page.add("The following channels were used to generate the above "
-                     "data")
             headers = ['Channel', 'Type', 'Frametype', 'Sample rate', 'Units']
             data = []
             for channel in sorted(channels, key=lambda x: str(x)):
@@ -760,7 +758,9 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     unit = 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
-            page.add(str(html.data_table(headers, data)))
+            page.add(str(html.table(
+                headers, data,
+                caption="Channels used to generate data on this page")))
 
         allflags = sorted(set([
             (f, p) for plot in filter(lambda p: p.data == 'segments' and
@@ -769,9 +769,6 @@ class DataTab(ProcessedTab, ParentTab):
             for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
         if len(allflags):
             page.h1('Segment information')
-            page.add("The following flags were used in "
-                     "the above data. This list does not include state "
-                     "information or combinations of flags")
             # make summary table
             headers = ['Name', 'Defined duration', 'Active duration',
                        'Padding', 'Description']
@@ -794,7 +791,12 @@ class DataTab(ProcessedTab, ParentTab):
                 data.append([flag.name, valid, active,
                              padding and str(padding) or '-',
                              flag.description or ''])
-            page.add(str(html.data_table(headers, data)))
+            page.add(str(html.table(
+                headers, data,
+                caption="The following flags were used in "
+                        "the above data. This list does not include state "
+                        "information or combinations of flags.")))
+
             # print segment lists
             page.div(class_='panel-group', id="accordion")
             for i, (flag, padding) in enumerate(allflags):

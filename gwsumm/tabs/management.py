@@ -193,8 +193,6 @@ class AccountingTab(ParentTab):
                 [groups, modes],
                 ['Top-level mode information', 'Detailed mode information']):
             page.h1(title)
-            page.p('The following modes were defined for the above data and '
-                   'were active as given:')
             data = []
             pc = float(abs(state.active) / 100.)
             tots = 0
@@ -217,7 +215,10 @@ class AccountingTab(ParentTab):
             data.append(map(
                 lambda x: '<strong>%s</strong>' % x,
                 ['', 'Total:', '%.1f' % tots, '%.1f' % toth, '%.1f' % totp]))
-            page.add(str(html.data_table(headers, data)))
+            page.add(str(html.table(
+                headers, data,
+                caption="%s observatory mode statistics as recorded in %s" % (
+                    title.split()[0], self.channel))))
 
         return super(ParentTab, self).write_state_html(state, plots=False,
                                                        pre=page)

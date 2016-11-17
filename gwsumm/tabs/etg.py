@@ -313,11 +313,6 @@ class EventTriggerTab(get_tab('default')):
                 page.hr(class_='row-divider')
 
             if self.loudest:
-                page.h1('Loudest events')
-                page.p('The following table(s) displays the %d loudest events '
-                       'as recorded by %s (with at least %s-second '
-                       'separation).'
-                       % (self.loudest['N'], self.etg, self.loudest['dt']))
                 # get triggers
                 table = get_triggers(self.channel, self.plots[0].etg, state,
                                      query=False)
@@ -337,7 +332,7 @@ class EventTriggerTab(get_tab('default')):
                         rankstr = self.loudest['labels'][columns.index(rank)]
                     except ValueError:
                         rankstr = repr(rank)
-                    page.h3('Loudest events by %s' % rankstr)
+                    page.h2('Loudest events by %s' % rankstr)
                     rank = table[rank].argsort()[::-1]
                     loudest = []
                     i = 0
@@ -360,7 +355,12 @@ class EventTriggerTab(get_tab('default')):
                             data[-1].insert(
                                 1, from_gps(get_row_value(row, tcol)).strftime(
                                        '%B %d %Y, %H:%M:%S.%f')[:-3])
-                    page.add(str(html.data_table(headers, data)))
+                    page.add(str(html.table(
+                        headers, data,
+                        caption="%d loudest %s (%s) events by %s with minimum "
+                                "%ss separation" % (
+                            self.loudest['N'], self.channel, self.etg,
+                            rankstr, self.loudest['dt']))))
 
             if self.subplots:
                 page.hr(class_='row-divider')

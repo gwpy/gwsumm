@@ -243,14 +243,14 @@ class GuardianTab(DataTab):
         page.div(class_='col-md-12')
 
         # draw table
-        page.h2('State transitions')
-        page.p("The table below lists for each state (row), the number of "
-               "transitions into that state from each other state (columns).")
-        page.p("Only those states named in the configuration are shown, but "
-               "the 'Total' includes transitions from any and all states. "
-               "'-' indicates no transitions from that state")
+        page.h2('%s state transitions' % self.node)
         page.table(class_='table table-condensed table-hover '
                           'table-responsive transitions')
+        page.caption("Transitions into each state (row) from each other "
+                     "state (column). Only those states named in the "
+                     "configuration are shown, but the 'Total' includes "
+                     "transitions from any and all states. '-' indicates no "
+                     "transitions from that state.")
         page.thead()
         page.tr()
         for th in ['State'] + self.grdstates.values() + ['Total']:
@@ -289,20 +289,18 @@ class GuardianTab(DataTab):
             page.div(class_='panel well panel-primary', id=str(bit))
             # heading
             page.div(class_='panel-heading')
-            page.a(href='#collapse%d' % bit,
+            page.a(href='#collapse-%d' % bit,
                    **{'data-toggle': 'collapse', 'data-parent': '#accordion'})
-            page.h4(name, class_='panel-title')
+            page.h4('%s [%d]' % (name, bit), class_='panel-title')
             page.a.close()
             page.div.close()
 
             # body
-            page.div(id='collapse%d' % bit, class_='panel-collapse collapse')
+            page.div(id='collapse-%d' % bit, class_='panel-collapse collapse')
             page.div(class_='panel-body')
 
             # print transitions
-            page.p('This state was active %d times as follows:'
-                   % len(self.transitions[bit]))
-            headers = ['GPS time', 'UTC time', 'Local time',
+            headers = ['Transition GPS time', 'UTC time', 'Local time',
                        'Transition from', 'Exited to']
             data = []
             if self.ifo in ['H1', 'C1', 'P1']:
@@ -320,7 +318,9 @@ class GuardianTab(DataTab):
                     t, t2.iso, tlocal.iso,
                     '%s [%d]' % (self.grdstates.get(from_, 'Unknown'), from_),
                     '%s [%d]' % (self.grdstates.get(to_, 'Unknown'), to_)))
-            page.add(str(html.data_table(headers, data)))
+            page.add(str(html.table(
+                headers, data,
+                caption="Transitions for %s %r state" % (self.node, name))))
 
             # print segments
             flag = get_segments(self.segmenttag % name, state.active,
@@ -333,9 +333,9 @@ class GuardianTab(DataTab):
             page.p('This state was active for %.2f seconds (%.2f%%) during '
                    'the following segments:' % (livetime, duty))
             page.add(str(self.print_segments(flag)))
-            page.div.close()
-            page.div.close()
-            page.div.close()
+            page.div.close()  # panel-body
+            page.div.close()  # panel-collapse
+            page.div.close()  # panel
         page.div.close()
         page.div.close()
         page.div.close()

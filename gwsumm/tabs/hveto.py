@@ -327,7 +327,7 @@ class HvetoTab(base):
                                                   target='_blank')
                 else:
                     data[-1][1] = str(channel)
-            page.add(str(html.data_table(['Round'] + headers, data)))
+            page.add(str(html.table(['Round'] + headers, data)))
             page.div.close()
 
             # add plots

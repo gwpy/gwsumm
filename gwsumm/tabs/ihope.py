@@ -312,7 +312,7 @@ class DailyAhopeTab(base):
                     if date:
                         data[-1].insert(1, from_gps(row.get_end()).strftime(
                                                '%B %d %Y, %H:%M:%S.%f')[:-3])
-                page.add(str(html.data_table(headers, data, table='data')))
+                page.add(str(html.table(headers, data, table='data')))
 
             if self.subplots:
                 page.hr(class_='row-divider')

@@ -261,6 +261,9 @@ class SEIWatchDogTab(base):
         # build summary table
         page.div(class_='well')
         page.table(class_='table table-condensed table-hover watchdog')
+        chambertype = self.chambers[0][:-1]
+        page.caption("Number of watch-dog trips per %s chamber (column) and "
+                     "trigger (row)" % (chambertype))
         page.thead()
         # add headers
         page.tr(class_='header')
@@ -337,9 +340,6 @@ class SEIWatchDogTab(base):
         page.h1('Trip list')
         page.div(class_='well')
 
-        page.p('In the following table, individual watchdog trips are '
-               'considered \'associated\' if they fall within %s seconds '
-               'of each other.' % self.window)
         utc = tz.gettz('UTC')
         if self.ifo in ['H1', 'C1', 'P1']:
             localzone = tz.gettz('America/Los_Angeles')
@@ -378,7 +378,12 @@ class SEIWatchDogTab(base):
                 rows[-1].append('<br>'.join(assoc))
             else:
                 rows[-1].append('-')
-        page.add(str(html.data_table(headers, rows)))
+        page.add(str(html.table(
+            headers, rows,
+            caption='List of %s watch-dog trips in interval [%d .. %d) - trips '
+                    'are considered \'associated\' if they fall within %s '
+                    'seconds of each other.' % (
+                    chambertype, self.start, self.end, self.window))))
 
         wdp = []
         for i, p in enumerate(self.plots):

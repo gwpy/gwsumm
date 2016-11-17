@@ -293,8 +293,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
-        if self.state and self.state.name != ALLSTATE:
-            self.add_state_segments(ax)
+
+        self.add_state_segments(ax)
 
         rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
@@ -452,8 +452,8 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             plot.add_colorbar(ax=ax, visible=False)
         elif mask is not None:
             plot.add_bitmask(mask, topdown=True)
-        if self.state and self.state.name != ALLSTATE:
-            self.add_state_segments(ax)
+
+        self.add_state_segments(ax)
 
         return self.finalize()
 
@@ -730,8 +730,8 @@ class DutyDataPlot(SegmentDataPlot):
         if not plot.colorbars:
             for ax in axes:
                 plot.add_colorbar(ax=ax, visible=False)
-        if self.state:
-            self.add_state_segments(axes[-1])
+
+        self.add_state_segments(axes[-1])
 
         return self.finalize(outputfile=outputfile)
 
@@ -914,8 +914,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         # add bit mask axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        if self.state and self.state.name != ALLSTATE:
-            self.add_state_segments(ax)
+        self.add_state_segments(ax)
         out = self.finalize()
         rcParams['ytick.labelsize'] = _labelsize
         return out

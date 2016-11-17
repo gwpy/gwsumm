@@ -302,9 +302,8 @@ class TriggerDataPlot(TimeSeriesDataPlot):
             plot.add_legend(ax=ax, **legendargs)
 
         # add state segments
-        if isinstance(plot, TimeSeriesPlot) and self.state:
+        if isinstance(plot, TimeSeriesPlot):
             self.add_state_segments(ax)
-
 
         # finalise
         return self.finalize()
@@ -382,8 +381,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
-        if self.state:
-            self.add_state_segments(ax)
+        self.add_state_segments(ax)
         return self.finalize()
 
 register_plot(TriggerTimeSeriesDataPlot)

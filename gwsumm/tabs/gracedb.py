@@ -131,7 +131,8 @@ class GraceDbTab(get_tab('default')):
         page.thead.close()
         # tbody
         page.tbody()
-        for event in self.events[str(state)]:
+        for event in sorted(self.events[str(state)],
+                            key=lambda e: e['gpstime']):
             context = None
             try:
                 l = event['labels'].split(', ')

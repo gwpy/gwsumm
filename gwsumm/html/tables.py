@@ -70,7 +70,7 @@ def table(headers, data, caption=None, separator='', id=None, **class_):
     p.thead(**kwargs['thead'])
     p.tr(**kwargs['tr'])
     for th in headers:
-        p.th(th, **kwargs['th'])
+        p.th(th, scope='col', **kwargs['th'])
     p.tr.close()
     p.thead.close()
 

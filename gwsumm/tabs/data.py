@@ -717,7 +717,10 @@ class DataTab(ProcessedTab, ParentTab):
                 if len(parts) != 1 or len(parts[0]) != len(channel.ndsname):
                     continue
                 # format CIS url and type
-                ftype = channel.frametype or 'Unknown'
+                if channel.frametype:
+                    ftype = '<samp>%s</samp>' % channel.frametype
+                else:
+                    ftype = 'Unknown'
                 for desc, regex in FRAMETYPE_REGEX.iteritems():
                     if regex.match(ftype):
                         ftype += ' <small>[%s]</small>' % desc
@@ -729,11 +732,12 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     c2 = channel
                     ctype = 'Raw'
+                c = '<samp>%s</samp>' % str(channel)
                 if c2.url:
-                    link = html.markup.oneliner.a(str(channel), href=c2.url,
+                    link = html.markup.oneliner.a(c, href=c2.url,
                                                   target='_blank')
                 else:
-                    link = str(channel)
+                    link = c
 
                 # format sameple rate
                 if channel.sample_rate is None:
@@ -768,12 +772,15 @@ class DataTab(ProcessedTab, ParentTab):
                                       self.plots)
             for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
         if len(allflags):
+            re_int_decimal = re.compile('\.00(?=(\s|\%))')
             page.h1('Segment information')
             # make summary table
-            headers = ['Name', 'Defined duration', 'Active duration',
+            headers = ['Name', 'Defined duration [s]', 'Active duration [s]',
                        'Padding', 'Description']
             data = []
             pc = float(abs(self.span) / 100.)
+            if pc.is_integer():
+                pc = int(pc)
             for flag, padding in allflags:
                 if padding == (0, 0):
                     padding = None
@@ -783,19 +790,23 @@ class DataTab(ProcessedTab, ParentTab):
                     valid = '%.2f (%.2f%%)' % (abs(flag.known),
                                                abs(flag.known) / pc)
                 except ZeroDivisionError:
-                    valid = '0.00 (0.00%)'
-                    active = '0.00 (0.00%)'
+                    valid = '0 (0%)'
+                    active = '0 (0%)'
                 else:
                     active = '%.2f (%.2f%%)' % (abs(flag.active),
                                                 abs(flag.active) / pc)
-                data.append([flag.name, valid, active,
+                valid = re_int_decimal.sub('', valid)
+                active = re_int_decimal.sub('', active)
+                data.append(['<samp>%s</samp>' % flag.name, valid, active,
                              padding and str(padding) or '-',
                              flag.description or ''])
             page.add(str(html.table(
                 headers, data,
                 caption="The following flags were used in "
                         "the above data. This list does not include state "
-                        "information or combinations of flags.")))
+                        "information or combinations of flags. Percentages "
+                        "are calculated relative to the total duration of "
+                        "%s seconds." % (pc * 100))))
 
             # print segment lists
             page.div(class_='panel-group', id="accordion")
@@ -806,7 +817,7 @@ class DataTab(ProcessedTab, ParentTab):
                 page.div(class_='panel-heading')
                 page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
                                               'data-parent': '#accordion'})
-                page.h4(flag.name, class_='panel-title')
+                page.h4('<samp>%s</samp>' % flag.name, class_='panel-title')
                 page.a.close()
                 page.div.close()
                 page.div(id_='flag%d' % i, class_='panel-collapse collapse')

@@ -24,7 +24,7 @@ from .markup import page
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
-def table(headers, data, caption=None, separator='', **class_):
+def table(headers, data, caption=None, separator='', id=None, **class_):
     """Write a <table> with one row of headers and many rows of data
 
     Parameters
@@ -48,9 +48,11 @@ def table(headers, data, caption=None, separator='', **class_):
     table : `markup.page`
         a formatted HTML page object containing the `<table>`
     """
+    class_.setdefault('table',
+                      'table table-hover table-condensed table-responsive')
     # unwrap class declarations (so we don't get empty class attributes)
     kwargs = {}
-    for tag in ['thead', 'tbody', 'tr', 'th', 'td', 'caption']:
+    for tag in ['table', 'thead', 'tbody', 'tr', 'th', 'td', 'caption']:
         try:
             kwargs[tag] = {'class_': class_.pop(tag)}
         except KeyError:
@@ -58,7 +60,9 @@ def table(headers, data, caption=None, separator='', **class_):
 
     # create table and add caption
     p = page(separator=separator)
-    p.table(class_=class_.pop('table', 'table table-condensed table-hover'))
+    if id is not None:
+        kwargs['table']['id_'] = id
+    p.table(**kwargs['table'])
     if caption:
         p.caption(caption, **kwargs['caption'])
 

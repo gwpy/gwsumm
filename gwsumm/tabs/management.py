@@ -217,9 +217,8 @@ class AccountingTab(ParentTab):
                 ['', 'Total:', '%.1f' % tots, '%.1f' % toth, '%.1f' % totp]))
             page.add(str(html.table(
                 headers, data,
-                caption="%s observatory mode statistics as recorded in %s" % (
-                    title.split()[0], self.channel))))
-
+                caption="%s observatory mode statistics as recorded in "
+                        "<samp>%s</samp>" % (title.split()[0], self.channel))))
         return super(ParentTab, self).write_state_html(state, plots=False,
                                                        pre=page)
 register_tab(AccountingTab)

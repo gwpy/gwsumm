@@ -357,8 +357,8 @@ class EventTriggerTab(get_tab('default')):
                                        '%B %d %Y, %H:%M:%S.%f')[:-3])
                     page.add(str(html.table(
                         headers, data,
-                        caption="%d loudest %s (%s) events by %s with minimum "
-                                "%ss separation" % (
+                        caption="%d loudest <samp>%s</samp> (%s) events by %s "
+                                "with minimum %ss separation" % (
                             self.loudest['N'], self.channel, self.etg,
                             rankstr, self.loudest['dt']))))
 

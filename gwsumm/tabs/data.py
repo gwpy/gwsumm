@@ -763,7 +763,7 @@ class DataTab(ProcessedTab, ParentTab):
                     unit = 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.table(
-                headers, data,
+                headers, data, id='channel-information',
                 caption="Channels used to generate data on this page")))
 
         allflags = sorted(set([
@@ -801,7 +801,7 @@ class DataTab(ProcessedTab, ParentTab):
                              padding and str(padding) or '-',
                              flag.description or ''])
             page.add(str(html.table(
-                headers, data,
+                headers, data, id='segment-information',
                 caption="The following flags were used in "
                         "the above data. This list does not include state "
                         "information or combinations of flags. Percentages "

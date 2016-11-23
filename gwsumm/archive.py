@@ -113,6 +113,11 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                                 spec.write(group, name=name, format='hdf')
                             except ValueError as e:
                                 warnings.warn(str(e))
+                            except RuntimeError as e:
+                                if 'Name already exists' in str(e):
+                                    warnings.warn("%s [%s]" % (str(e), name))
+                                else:
+                                    raise
 
             # record all segment data
             if segments:

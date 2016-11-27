@@ -394,7 +394,8 @@ finally:
 # interpolate section names
 interp = {}
 if ifo:
-    interp['ifo'] = ifo
+    interp['ifo'] = ifo  # FIXME change to ifo.lower() one configs are uptodate
+    interp['IFO'] = ifo.title()
 config.interpolate_section_names(**interp)
 
 # double-check week mode matches calendar setting

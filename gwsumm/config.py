@@ -21,6 +21,7 @@
 
 import os.path
 import re
+import warnings
 import sys
 from StringIO import StringIO
 from importlib import import_module
@@ -151,6 +152,11 @@ class GWSummConfigParser(ConfigParser):
         - `observatory` - the name of the observatory, e.g. ``LIGO Livingston``
 
         """
+        warnings.warn('In an upcoming release the `ifo` configuration option '
+                      'will be changed to hold the lower-case interferometer '
+                      'prefix, all configuration files should be modified to '
+                      'instead use the `IFO` option for the upper-case '
+                      'prefix.', DeprecationWarning)
         if observatory is None:
             observatory = OBSERVATORY_MAP.get(ifo)
         self.set(section, 'IFO', ifo)

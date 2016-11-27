@@ -380,7 +380,7 @@ if not opts.on_segdb_error in ['raise', 'warn', 'ignore']:
 config = GWSummConfigParser()
 config.optionxform = str
 if opts.ifo:
-    config.set(DEFAULTSECT, 'ifo', opts.ifo)
+    config.set_ifo_options(opts.ifo, section=DEFAULTSECT)
 config.set(DEFAULTSECT, 'user', getpass.getuser())
 config.read(opts.config_file)
 

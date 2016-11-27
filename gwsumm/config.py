@@ -53,7 +53,7 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
-from .utils import (nat_sorted, re_cchar, safe_eval)
+from .utils import (nat_sorted, re_cchar, safe_eval, OBSERVATORY_MAP)
 from .channels import (get_channels, split as split_channels)
 
 __all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
@@ -132,6 +132,19 @@ class GWSummConfigParser(ConfigParser):
                         '[%s]' % section, section, key, '%%(%s)s' % key)
                 s = section % {key: val}
             self._sections[s] = self._sections.pop(section)
+
+    def set_ifo_options(self, ifo, observatory=None,
+                        section=DEFAULTSECT):
+        """Set configurations options in [DEFAULT] based on the given `ifo`
+        """
+        if observatory is None:
+            observatory = OBSERVATORY_MAP.get(ifo)
+        self.set(section, 'IFO', ifo)
+        self.set(section, 'ifo', ifo)  # for backwards compatibility
+        self.set(section, 'SITE', ifo[0].upper())
+        self.set(section, 'site', ifo[0].lower())
+        if observatory is not None:
+            self.set(section, 'observatory', observatory)
 
     def set_date_options(self, start, end, section=DEFAULTSECT):
         """Set datetime options in [DEFAULT] based on the given times

@@ -136,6 +136,20 @@ class GWSummConfigParser(ConfigParser):
     def set_ifo_options(self, ifo, observatory=None,
                         section=DEFAULTSECT):
         """Set configurations options in [DEFAULT] based on the given `ifo`
+
+        The following options are set
+
+        - `IFO` - the two-character interferometer prefix, e.g. ``L1``
+        - `ifo` - the two-character interferometer prefix in lower-case,
+           e.g. ``l1``
+        - `SITE` - the single-character site ID, e.g. ``L``
+        - `site` - the single-character site ID,n lower-case e.g. ``l``
+
+        Additionally, if `observatory` is given, or the `ifo` matches known
+        observatories, the following option is set
+
+        - `observatory` - the name of the observatory, e.g. ``LIGO Livingston``
+
         """
         if observatory is None:
             observatory = OBSERVATORY_MAP.get(ifo)

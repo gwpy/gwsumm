@@ -45,6 +45,8 @@ UNSAFE_EVAL_STRS = ['os\.(?![$\'\" ])', 'shutil', '\.rm', '\.mv']
 UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 
 
+# -- utilities ----------------------------------------------------------------
+
 def elapsed_time():
     """Return the time (seconds) since this job started
     """
@@ -137,37 +139,6 @@ _re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')
 def get_odc_bitmask(odcchannel):
     return _re_odc.sub('BITMASK', str(odcchannel))
 
-
-def get_default_ifo(fqdn=getfqdn()):
-    """Find the default interferometer prefix (IFO) for the given host
-
-    Parameters
-    ----------
-    fqdn : `str`
-        the fully-qualified domain name (FQDN) of the host on which you
-        wish to find the default IFO
-
-    Returns
-    -------
-    IFO : `str`
-        the upper-case X1-style prefix for the default IFO, if found, e.g. `L1`
-
-    Raises
-    ------
-    ValueError
-        if not default interferometer prefix can be parsed
-    """
-    if '.uni-hannover.' in fqdn or '.atlas.' in fqdn:
-        return 'G1'
-    elif '.ligo-wa.' in fqdn:
-        return 'H1'
-    elif '.ligo-la.' in fqdn:
-        return 'L1'
-    elif '.virgo.' in fqdn or '.ego-gw.' in fqdn:
-        return 'V1'
-    raise ValueError("Cannot determine default IFO for host %r" % fqdn)
-
-
 def safe_eval(val, strict=False, globals_=None, locals_=None):
     """Evaluate the given string as a line of python, if possible
 
@@ -237,3 +208,35 @@ def safe_eval(val, strict=False, globals_=None, locals_=None):
         return eval(val, *args)
     except (NameError, SyntaxError):
         return str(val)
+
+
+# -- IFO parsing --------------------------------------------------------------
+
+def get_default_ifo(fqdn=getfqdn()):
+    """Find the default interferometer prefix (IFO) for the given host
+
+    Parameters
+    ----------
+    fqdn : `str`
+        the fully-qualified domain name (FQDN) of the host on which you
+        wish to find the default IFO
+
+    Returns
+    -------
+    IFO : `str`
+        the upper-case X1-style prefix for the default IFO, if found, e.g. `L1`
+
+    Raises
+    ------
+    ValueError
+        if not default interferometer prefix can be parsed
+    """
+    if '.uni-hannover.' in fqdn or '.atlas.' in fqdn:
+        return 'G1'
+    elif '.ligo-wa.' in fqdn:
+        return 'H1'
+    elif '.ligo-la.' in fqdn:
+        return 'L1'
+    elif '.virgo.' in fqdn or '.ego-gw.' in fqdn:
+        return 'V1'
+    raise ValueError("Cannot determine default IFO for host %r" % fqdn)

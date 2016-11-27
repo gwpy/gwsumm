@@ -212,6 +212,15 @@ def safe_eval(val, strict=False, globals_=None, locals_=None):
 
 # -- IFO parsing --------------------------------------------------------------
 
+OBSERVATORY_MAP = {
+    'G1': 'GEO',
+    'H1': 'LIGO Hanford',
+    'K1': 'KAGRA',
+    'L1': 'LIGO Livingston',
+    'V1': 'Virgo',
+}
+
+
 def get_default_ifo(fqdn=getfqdn()):
     """Find the default interferometer prefix (IFO) for the given host
 

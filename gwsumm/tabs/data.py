@@ -722,7 +722,7 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     ftype = 'Unknown'
                 for desc, regex in FRAMETYPE_REGEX.iteritems():
-                    if regex.match(ftype):
+                    if regex.match(str(channel.frametype)):
                         ftype += ' <small>[%s]</small>' % desc
                         break
                 if re.search('\.[a-z]+\Z', channel.name):

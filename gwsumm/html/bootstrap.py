@@ -24,6 +24,8 @@ import getpass
 import datetime
 import os.path
 
+from six import string_types
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from . import markup
@@ -128,7 +130,7 @@ def navbar(links, class_='navbar navbar-fixed-top', brand=None, collapse=True):
         page.ul(class_='nav navbar-nav')
         for i, link in enumerate(links):
             if (isinstance(link, (list, tuple)) and
-                    isinstance(link[1], basestring)):
+                    isinstance(link[1], string_types)):
                 page.li()
                 text, link = link
                 page.a(text, href=link)

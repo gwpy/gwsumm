@@ -28,6 +28,8 @@ import warnings
 from math import (floor, ceil)
 from urlparse import urlparse
 
+from six import string_types
+
 from matplotlib import rc_context
 
 from gwpy.segments import Segment
@@ -205,7 +207,7 @@ class DataPlot(SummaryPlot):
                  tag=None, pid=None, href=None, new=True, all_data=False,
                  read=True, fileformat='png', caption=None, **pargs):
         super(DataPlot, self).__init__(href=href, new=new, caption=caption)
-        if isinstance(channels, str):
+        if isinstance(channels, string_types):
             channels = split_channels(channels)
         self.channels = channels
         self.span = (start, end)
@@ -255,7 +257,7 @@ class DataPlot(SummaryPlot):
 
     @state.setter
     def state(self, state_):
-        if isinstance(state_, (unicode, str)):
+        if isinstance(state_, string_types):
             self._state = globalv.STATES[state_]
         else:
             self._state = state_
@@ -381,7 +383,8 @@ class DataPlot(SummaryPlot):
                     val = self.pargs.pop('%ss' % kwarg)
                 except KeyError:
                     val = None
-            if val is not None and isinstance(val, str) and 'self' in val:
+            if (val is not None and isinstance(val, string_types) and
+                    'self' in val):
                 try:
                     plotargs[kwarg] = safe_eval(val, locals_={'self': self})
                 except ZeroDivisionError:
@@ -408,7 +411,7 @@ class DataPlot(SummaryPlot):
         if defaults is None:
             defaults = chans
         labels = self.pargs.pop('labels', defaults)
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         labels = map(lambda s: rUNDERSCORE.sub(r'\_', str(s).strip('\n ')),
                      labels)
@@ -486,7 +489,7 @@ class DataPlot(SummaryPlot):
         # get channels
         if channels is None:
             channels = params.pop('channels', [])
-        if isinstance(channels, (unicode, str)):
+        if isinstance(channels, string_types):
             channels = split_channels(channels)
         # parse specific parameters
         if 'all-data' in params:
@@ -543,7 +546,7 @@ class DataPlot(SummaryPlot):
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
-        if not isinstance(outputfile, str):
+        if not isinstance(outputfile, string_types):
             extensions = [None]
         elif outputfile.endswith('.pdf'):
             extensions = ['.pdf', '.png']
@@ -561,7 +564,7 @@ class DataPlot(SummaryPlot):
                 warnings.warn("Caught %s: %s [retrying...]"
                              % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
-            if isinstance(fp, str):
+            if isinstance(fp, string_types):
                 vprint("        %s written\n" % fp)
         if close:
             self.plot.close()
@@ -570,7 +573,7 @@ class DataPlot(SummaryPlot):
     def apply_parameters(self, ax, **pargs):
         for key in pargs:
             val = pargs[key]
-            if key in ['xlim', 'ylim'] and isinstance(val, str):
+            if key in ['xlim', 'ylim'] and isinstance(val, string_types):
                 val = eval(val)
             try:
                 getattr(ax, 'set_%s' % key)(val)

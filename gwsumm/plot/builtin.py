@@ -26,6 +26,8 @@ import re
 import warnings
 from itertools import cycle
 
+from six import string_types
+
 import numpy
 
 from matplotlib.pyplot import subplots
@@ -260,7 +262,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             return self._pid
         except AttributeError:
             super(SpectrogramDataPlot, self).pid
-            if isinstance(self.ratio, str) and os.path.isfile(self.ratio):
+            if (isinstance(self.ratio, string_types) and
+                    os.path.isfile(self.ratio)):
                 self._pid += '_REFERENCE_RATIO'
             elif self.ratio:
                 self._pid += '_%s_RATIO' % re_cchar.sub(
@@ -292,7 +295,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
         # get cmap
         if ratio in ['median', 'mean'] or (
-                isinstance(ratio, str) and os.path.isfile(ratio)):
+                isinstance(ratio, string_types) and os.path.isfile(ratio)):
             self.pargs.setdefault('cmap', 'Spectral_r')
         cmap = self.pargs.pop('cmap', None)
 
@@ -326,7 +329,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 ratio = allspec.percentile(ratio)
             else:
                 ratio = getattr(allspec, ratio)(axis=0)
-        elif isinstance(ratio, str) and os.path.isfile(ratio):
+        elif isinstance(ratio, string_types) and os.path.isfile(ratio):
             try:
                 ratio = FrequencySeries.read(ratio)
             except IOError as e:

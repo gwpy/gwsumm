@@ -25,6 +25,8 @@ import warnings
 from StringIO import StringIO
 from importlib import import_module
 
+from six import string_types
+
 # import these for evaluating lambda expressions in the configuration file
 import math
 import numpy
@@ -91,7 +93,7 @@ class GWSummConfigParser(ConfigParser):
 
     def read(self, filenames):
         readok = ConfigParser.read(self, filenames)
-        if isinstance(filenames, (unicode, str)):
+        if isinstance(filenames, string_types):
             filenames = filenames.split(',')
         for fp in filenames:
             if fp not in readok:

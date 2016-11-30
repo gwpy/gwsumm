@@ -22,6 +22,8 @@
 import os
 import glob
 
+from six import string_types
+
 from dateutil import parser
 
 from .registry import (get_tab, register_tab)
@@ -84,7 +86,7 @@ class FscanTab(base):
     def process(self, config=GWSummConfigParser(), **kwargs):
         # find all plots
         self.plots = []
-        if isinstance(self.directory, str):
+        if isinstance(self.directory, string_types):
             plots = sorted(
                 glob.glob(os.path.join(self.directory, 'spec_*.png')),
                 key=lambda p: float(os.path.basename(p).split('_')[1]))

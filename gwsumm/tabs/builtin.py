@@ -30,6 +30,8 @@ The `builtin` classes provide interfaces for simple operations including
 import os.path
 import warnings
 
+from six import string_types
+
 from .registry import (get_tab, register_tab)
 from ..plot import get_plot
 from ..utils import (re_quote, re_cchar)
@@ -278,18 +280,18 @@ class PlotTab(Tab):
             self._layout = None
             return
         # parse a single int
-        if isinstance(l, int) or (isinstance(l, str) and l.isdigit()):
+        if isinstance(l, int) or (isinstance(l, string_types) and l.isdigit()):
             self._layout = [int(l)]
             return
         # otherwise parse as a list of ints or pairs of ints
-        if isinstance(l, str):
+        if isinstance(l, string_types):
             l = l.split(',')
         self._layout = []
         for e in l:
             if isinstance(e, int):
                 self._layout.append(e)
                 continue
-            if isinstance(e, str):
+            if isinstance(e, string_types):
                 e = e.strip('([').rstrip(')]').split(',')
             if not isinstance(e, (list, tuple)) or not len(e) == 2:
                 raise ValueError("Cannot parse layout element %r (%s)"
@@ -411,7 +413,7 @@ class PlotTab(Tab):
             either the URL of a plot to embed, or a formatted `SummaryPlot`
             object.
         """
-        if isinstance(plot, str):
+        if isinstance(plot, string_types):
             plot = SummaryPlot(href=plot)
             plot.new = False
         if not isinstance(plot, SummaryPlot):
@@ -626,7 +628,7 @@ class StateTab(PlotTab):
             # allow default indication by trailing asterisk
             if state == default:
                 default_ = True
-            elif (default is None and isinstance(state, str) and
+            elif (default is None and isinstance(state, string_types) and
                     state.endswith('*')):
                 state = state[:-1]
                 default_ = True

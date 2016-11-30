@@ -29,6 +29,8 @@ except ImportError:
     from ordereddict import OrderedDict
 from itertools import izip_longest
 
+from six import string_types
+
 import numpy
 
 from astropy import units
@@ -157,7 +159,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             except AttributeError:
                 filter_ = None
             else:
-                if isinstance(filter_, str):
+                if isinstance(filter_, string_types):
                     filter_ = safe_eval(filter_, strict=True)
 
             # check how much of this component still needs to be calculated

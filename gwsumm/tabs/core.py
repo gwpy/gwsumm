@@ -38,6 +38,8 @@ import re
 from urlparse import urlparse
 from shutil import copyfile
 
+from six import string_types
+
 from gwpy.utils.compat import OrderedDict
 
 from gwpy.time import (from_gps, to_gps)
@@ -1154,7 +1156,7 @@ class TabList(list):
     @classmethod
     def from_ini(cls, config, tag='tab[_-]', match=[],
                  path=os.curdir, plotdir='plots'):
-        if isinstance(tag, str):
+        if isinstance(tag, string_types):
             tag = re.compile(tag)
         tabs = cls()
         parents = {}

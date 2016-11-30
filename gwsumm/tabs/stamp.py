@@ -23,6 +23,8 @@ import os
 import re
 import glob
 
+from six import string_types
+
 from .registry import (get_tab, register_tab)
 
 from .. import (html, globalv)
@@ -73,7 +75,7 @@ class StampPEMTab(base):
     def process(self, config=GWSummConfigParser(), **kwargs):
         # find all plots
         self.plots = []
-        if isinstance(self.directory, str):
+        if isinstance(self.directory, string_types):
             plots = sorted(
                 glob.glob(os.path.join(self.directory, 'DAY_*.png')),
                 key=lambda p: float(re.split('[-_]', os.path.basename(p))[1]))

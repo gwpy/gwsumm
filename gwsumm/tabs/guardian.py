@@ -26,6 +26,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from six import string_types
+
 from dateutil import tz
 
 import numpy
@@ -382,7 +384,7 @@ class GuardianStatePlot(get_plot('segments')):
         flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
         labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 

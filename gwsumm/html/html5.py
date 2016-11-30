@@ -22,6 +22,8 @@
 import os.path
 from urlparse import urlparse
 
+from six import string_types
+
 from . import markup
 from ..utils import re_cchar
 
@@ -65,7 +67,7 @@ def load(url, id_='main', error=False, success=None):
         error = ('alert("Cannot load content from %r, use browser console '
                 'to inspect failure.");')
     else:
-        if not isinstance(error, (str, markup.page)):
+        if not isinstance(error, (string_types, markup.page)):
             error = 'Failed to load content from %r' % url
         error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
                                 '<p>%s</p></div>");'

@@ -29,6 +29,8 @@ except ImportError:
 import warnings
 import operator
 
+from six import string_types
+
 try:
     from astropy.io.registry import IORegistryError
 except ImportError:  # astropy < 1.2
@@ -69,7 +71,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     -------
     FIXME
     """
-    if isinstance(flag, (unicode, str)):
+    if isinstance(flag, string_types):
         flags = flag.split(',')
     else:
         flags = flag
@@ -215,7 +217,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             out[compound].active &= validity
             if coalesce:
                 out[compound].coalesce()
-        if isinstance(flag, basestring):
+        if isinstance(flag, string_types):
             return out[flag]
         else:
             return out
@@ -263,7 +265,7 @@ def format_padding(flags, padding):
     """Format an arbitrary collection of paddings into a `dict`
     """
     # parse string to start with
-    if isinstance(padding, str):
+    if isinstance(padding, string_types):
         padding = list(eval(str))
     # zip list into dict
     if (isinstance(padding, (list)) or

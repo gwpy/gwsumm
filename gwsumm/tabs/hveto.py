@@ -23,6 +23,8 @@ import os
 import re
 from glob import glob
 
+from six import string_types
+
 from numpy import loadtxt
 
 from astropy.io.registry import register_reader
@@ -364,9 +366,9 @@ def read_hveto_triggers(f, columns=HVETO_COLUMNS, filt=None, nproc=1):
     # format list of files
     if isinstance(f, CacheEntry):
         files = [f.path]
-    elif isinstance(f, (str, unicode)) and f.endswith(('.cache', '.lcf')):
+    elif isinstance(f, string_types) and f.endswith(('.cache', '.lcf')):
         files = open_cache(f).pfnlist()
-    elif isinstance(f, (str, unicode)):
+    elif isinstance(f, string_types):
         files = f.split(',')
     elif isinstance(f, Cache):
         files = f.pfnlist()

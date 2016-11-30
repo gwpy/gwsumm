@@ -25,6 +25,8 @@ import re
 from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
+from six import string_types
+
 # import filter evals
 from math import pi
 import numpy
@@ -184,7 +186,7 @@ def safe_eval(val, strict=False, globals_=None, locals_=None):
         for more documentation on the underlying evaluation method
     """
     # don't evaluate non-strings
-    if not isinstance(val, str):
+    if not isinstance(val, string_types):
         return val
     # check that we aren't evaluating something dangerous
     try:

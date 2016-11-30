@@ -30,6 +30,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from six import string_types
+
 import numpy
 
 from dateutil.relativedelta import relativedelta
@@ -92,7 +94,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
     @flags.setter
     def flags(self, flist):
-        if isinstance(flist, str):
+        if isinstance(flist, string_types):
             flist = [f.strip('\n ') for f in flist.split(',')]
         self._flags = []
         for f in flist:
@@ -165,7 +167,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         # get flags
         if flags is None:
             flags = dict(config.items(section)).pop('flags', [])
-        if isinstance(flags, str):
+        if isinstance(flags, string_types):
             flags = [f.strip('\n ') for f in flags.split(',')]
         new.flags = flags
         return new
@@ -194,7 +196,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 active = active.get('facecolor')
             else:
                 self.pargs['facecolor'] = active
-            if isinstance(active, str) and active.lower() == 'red':
+            if isinstance(active, string_types) and active.lower() == 'red':
                 self.pargs['known'] = 'dodgerblue'
             else:
                 self.pargs['known'] = 'red'
@@ -347,7 +349,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         """
         chans = zip(*self.get_channel_groups())[0]
         labels = list(self.pargs.pop('labels', defaults))
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         for i, l in enumerate(labels):
             if isinstance(l, (list, tuple)):

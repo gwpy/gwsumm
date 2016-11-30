@@ -28,6 +28,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from six import string_types
+
 # imports for filter
 from math import pi
 
@@ -145,7 +147,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         except AttributeError:
             filter_ = None
         else:
-            if isinstance(filter_, str):
+            if isinstance(filter_, string_types):
                 filter_ = safe_eval(filter_, strict=True)
 
         # get time-series data

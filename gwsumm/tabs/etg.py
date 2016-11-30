@@ -22,6 +22,8 @@
 import os
 from warnings import warn
 
+from six import string_types
+
 from astropy.io.registry import (register_reader, get_reader)
 
 from glue.lal import Cache
@@ -99,8 +101,8 @@ class EventTriggerTab(get_tab('default')):
         if etg is None:
             etg = self.name
         self.etg = etg
-        if table is None or isinstance(table, str):
-            tablename = isinstance(table, str) and table or self.etg
+        if table is None or isinstance(table, string_types):
+            tablename = isinstance(table, string_types) and table or self.etg
             try:
                 table = get_etg_table(tablename)
             except KeyError as e:
@@ -244,7 +246,7 @@ class EventTriggerTab(get_tab('default')):
     def process(self, *args, **kwargs):
         error = None
         # read the cache files
-        if isinstance(self.cache, str) and os.path.isfile(self.cache):
+        if isinstance(self.cache, string_types) and os.path.isfile(self.cache):
             with open(self.cache, 'r') as fobj:
                 try:
                     self.cache = Cache.fromfile(fobj).sieve(
@@ -254,7 +256,7 @@ class EventTriggerTab(get_tab('default')):
                         error = 'could not parse event cache file'
                     else:
                         raise
-        elif isinstance(self.cache, str):
+        elif isinstance(self.cache, string_types):
             error = 'could not locate event cache file'
             warn("Cache file %s not found." % self.cache)
         elif self.cache is not None and not isinstance(self.cache, Cache):

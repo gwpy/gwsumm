@@ -24,6 +24,8 @@ from __future__ import division
 import re
 from itertools import (izip, cycle)
 
+from six import string_types
+
 from numpy import isinf
 
 from astropy.units import Quantity
@@ -158,7 +160,7 @@ class TriggerDataPlot(TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
 
@@ -325,7 +327,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         labels = map(lambda s: str(s).strip('\n '), labels)
 
@@ -554,7 +556,7 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', None)
-        if isinstance(labels, (unicode, str)):
+        if isinstance(labels, string_types):
             labels = labels.split(',')
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []

@@ -22,6 +22,8 @@
 import re
 import warnings
 
+from six import string_types
+
 import numpy
 from numpy.lib import recfunctions
 
@@ -117,7 +119,7 @@ def register_etg_table(etg, table, force=False):
     KeyError
         if a `str` table cannot be resolved to a specific class
     """
-    if isinstance(table, str):
+    if isinstance(table, string_types):
         try:
             table = lsctables.TableByName[table]
         except KeyError as e:

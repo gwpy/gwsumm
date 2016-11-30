@@ -58,7 +58,7 @@ class AccountingTab(ParentTab):
         # add information
         new.plots = []
         new.channel = config.get(section, 'channel')
-        new.ifo = config.get(section, 'ifo')
+        new.ifo = config.get(section, 'IFO')
         new.modes = OrderedDict((int(idx), name) for (idx, name) in
                                 config.nditems(section) if idx.isdigit())
 

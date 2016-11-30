@@ -22,7 +22,6 @@
 import os.path
 import re
 import warnings
-import sys
 from StringIO import StringIO
 from importlib import import_module
 
@@ -32,11 +31,11 @@ import numpy
 
 from six.moves import http_client as httplib
 
-if sys.version_info[0] >= 3:
+try:
     from configparser import *
     from configparser import InterpolationMissingOptionError
     from configparser import __all__ as _cp__all__
-else:
+except ImportError:
     from ConfigParser import *
     from ConfigParser import InterpolationMissingOptionError
     from ConfigParser import __all__ as _cp__all__

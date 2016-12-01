@@ -76,7 +76,7 @@ def load(url, id_='main', error=False, success=None):
         success = '$("#%s").html(data);' % id_
     return markup.given_oneliner.script("""
     $.ajax({
-        url : %r,
+        url : '%s',
         type : 'GET',
         success: function(data, statusText, jqhxr){%s},
         error: function(xhr, status, error){%s}

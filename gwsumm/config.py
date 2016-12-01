@@ -312,7 +312,7 @@ class GWSummConfigParser(ConfigParser):
                             channel.bits.append(None)
                         if val.startswith('r"') or val.startswith('r\''):
                             val = eval(val)
-                        channel.bits.append(val)
+                        channel.bits.append(str(val))
                     else:
                         setattr(channel, key, safe_eval(val.rstrip()))
                 channels.append(channel)

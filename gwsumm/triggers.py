@@ -268,7 +268,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             tab = lsctables.New(TableClass, columns=columns).to_recarray(
                 get_as_columns=True)
         else:
-            tab = GWRecArray((0,), dtype=[(c, float) for c in columns])
+            tab = GWRecArray((0,), dtype=[(str(c), float) for c in columns])
         tab.segments = SegmentList()
         add_triggers(tab, key)
 

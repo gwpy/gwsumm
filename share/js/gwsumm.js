@@ -208,7 +208,8 @@ $(window).load(function() {
                            iframe: {scrolling: 'no'},
                            scrolling: 'no',
                            beforeShow: function() {resizeFancyboxIframe()},
-                           helpers: {overlay: {locked: false}}
+                           helpers: {overlay: {locked: false},
+                                     title: {type: 'inside'}}
   });
 
   // custom fancybox for stamp-pem bokeh plot

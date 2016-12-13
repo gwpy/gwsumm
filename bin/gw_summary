@@ -474,7 +474,7 @@ plugins = config.load_plugins()
 if plugins:
     vprint("    Loaded %d plugins:\n" % len(plugins))
     for mod in plugins:
-        vprint("        %s" % mod)
+        vprint("        %s\n" % mod)
 units = config.load_units()
 vprint("    Loaded %d units\n" % len(units))
 channels = config.load_channels()

@@ -189,6 +189,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             columns = config.get(etg.lower(), 'columns').split(',')
         except (NoSectionError, NoOptionError):
             columns = None
+        else:
+            columns = [c.strip() for c in columns]
 
     # read segments from global memory
     try:

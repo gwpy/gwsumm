@@ -156,7 +156,6 @@ class AccountingTab(ParentTab):
         # find segments
         for ts in data:
             modesegments = DataQualityDict()
-            del ts.unit
             for idx, name in self.modes.iteritems():
                 # get segments for state
                 tag = self.segmenttag % idx

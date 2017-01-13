@@ -181,7 +181,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                     ts.value[ts.value == 0] = 1e-100
             # set label
             try:
-                label = pargs.pop('label')
+                label = pargs['label']
             except KeyError:
                 try:
                     label = label_to_latex(flatdata[0].name)
@@ -193,16 +193,17 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                             str(flatdata[0].channel)).split('.')[0]):
                         label += ' [%s]' % (
                             label_to_latex(str(flatdata[0].channel)))
+                pargs['label'] = label
             # plot groups or single TimeSeries
             if len(clist) > 1:
-                ax.plot_timeseries_mmm(*data, label=label, **pargs)
+                ax.plot_timeseries_mmm(*data, **pargs)
             elif len(flatdata) == 0:
                 ax.plot_timeseries(
                     data[0].EntryClass([], epoch=self.start, unit='s',
-                                       name=label), label=label, **pargs)
+                                       name=label), **pargs)
             else:
                 for ts in data[0]:
-                    line = ax.plot_timeseries(ts, label=label, **pargs)[0]
+                    line = ax.plot_timeseries(ts, **pargs)[0]
                     label = None
                     pargs['color'] = line.get_color()
 
@@ -228,7 +229,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         self.apply_parameters(ax, **self.pargs)
 
         if (len(channels) > 1 or plotargs[0].get('label', None) in
-                [re.sub(r'(_|\\_)', r'\_', channels[0]), None]):
+                [re.sub(r'(_|\\_)', r'\_', channels[0]), None, '']):
             plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise

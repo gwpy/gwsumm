@@ -159,11 +159,10 @@ def get_partial_contenthandler(table):
 
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                  cache=None, columns=None, query=True, multiprocess=False,
-                 ligolwtable=None, return_=True):
+                 ligolwtable=None, filterstr=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
-
     # convert input segments to a segmentlist (for convenience)
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
@@ -216,7 +215,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         # if single file
         if cache is not None and len(cache) == 1:
             trigs = read_cache(cache, new, etg, nproc=nproc,
-                               tableclass=TableClass, **kwargs)
+                               tableclass=TableClass,
+                               filterstr=filterstr, **kwargs)
             if trigs is not None:
                 add_triggers(trigs, key)
                 ntrigs += len(trigs)
@@ -256,6 +256,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
                                        nproc=nproc, tableclass=TableClass,
+                                       filterstr=filterstr,
                                        **kwargs)
                 if trigs is not None:
                     add_triggers(trigs, key)
@@ -394,8 +395,17 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
         kwargs[key] = safe_eval(kwargs[key])
     return kwargs
 
+def filter_triggers(table, filterstr):
+    for token in filterstr.split(' '):
+        try:
+            for col in table.dtype.names:
+                token = token.replace(col, "table.%s" % col)
+            table = table[eval(token)]
+        except:
+            raise ValueError('Failed to parse trigger filter str: %s' % filterstr)
+    return table
 
-def read_cache(cache, segments, etg, nproc=1, tableclass=None, **kwargs):
+def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, **kwargs):
     """Read a table of events from a cache
 
     This function is mainly meant for use from the `get_triggers method
@@ -452,6 +462,11 @@ def read_cache(cache, segments, etg, nproc=1, tableclass=None, **kwargs):
                 table = table.to_recarray(get_as_columns=True)
         else:
             raise
+
+    # Filter table
+    if filterstr is not None:
+        table = filter_triggers(table, filterstr)
+
     # append new events to existing table
     try:
         csegs = cache_segments(cache)

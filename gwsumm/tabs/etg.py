@@ -98,6 +98,7 @@ class EventTriggerTab(get_tab('default')):
         self.url = url
         self.error = dict()
         # parse ETG and LIGO_LW table class
+        self.filterstr = None
         if etg is None:
             etg = self.name
         self.etg = etg
@@ -181,6 +182,12 @@ class EventTriggerTab(get_tab('default')):
         # set ETG for plots
         for p in new.plots + new.subplots:
             p.etg = new.etg.lower()
+
+        # get trigger filter
+        if config.has_option(section, 'trigger-filter'):
+            new.filterstr = config.get(section, 'trigger-filter')
+        else:
+            new.filterstr = None
 
         # get loudest options
         if config.has_option(section, 'loudest'):
@@ -280,6 +287,7 @@ class EventTriggerTab(get_tab('default')):
     def process_state(self, state, *args, **kwargs):
         if self.error.get(state, None):
             return
+        kwargs['filterstr'] = self.filterstr
         super(EventTriggerTab, self).process_state(state, *args, **kwargs)
 
     def write_state_html(self, state, pre=None):
@@ -317,7 +325,7 @@ class EventTriggerTab(get_tab('default')):
             if self.loudest:
                 # get triggers
                 table = get_triggers(self.channel, self.plots[0].etg, state,
-                                     query=False)
+                                     filterstr=self.filterstr, query=False)
                 # set table headers
                 headers = list(self.loudest['labels'])
                 columns = list(self.loudest['columns'])

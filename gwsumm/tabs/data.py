@@ -379,7 +379,7 @@ class DataTab(ProcessedTab, ParentTab):
 
     def process_state(self, state, nds=None, multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None, segmentcache=None,
+                      trigcache=None, segmentcache=None, filterstr=None,
                       segdb_error='raise', datafind_error='raise'):
         """Process data for this tab in a given state
 
@@ -540,7 +540,7 @@ class DataTab(ProcessedTab, ParentTab):
                                               all_data=all_data, state=state):
             get_triggers(channel, etg, state.active, config=config,
                          cache=trigcache, multiprocess=multiprocess,
-                         return_=False)
+                         filterstr=filterstr, return_=False)
 
         # --------------------------------------------------------------------
         # make plots

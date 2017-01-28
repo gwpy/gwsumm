@@ -215,8 +215,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         # if single file
         if cache is not None and len(cache) == 1:
             trigs = read_cache(cache, new, etg, nproc=nproc,
-                               tableclass=TableClass,
-                               filterstr=filterstr, **kwargs)
+                               tableclass=TableClass, **kwargs)
             if trigs is not None:
                 add_triggers(trigs, key)
                 ntrigs += len(trigs)
@@ -256,7 +255,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
                                        nproc=nproc, tableclass=TableClass,
-                                       filterstr=filterstr,
                                        **kwargs)
                 if trigs is not None:
                     add_triggers(trigs, key)
@@ -277,7 +275,14 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # work out time function
     if return_:
-        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        if filterstr is not None:
+            # if a filter string is provided, return a filtered copy of
+            # the trigger set stored in global memory
+            filtered = filter_triggers(globalv.TRIGGERS[key], filterstr)
+            filtered.segments = globalv.TRIGGERS[key].segments
+            return keep_in_segments(filtered, segments, etg)
+        else:
+            return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
     else:
         return
 
@@ -462,10 +467,6 @@ def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, *
                 table = table.to_recarray(get_as_columns=True)
         else:
             raise
-
-    # Filter table
-    if filterstr is not None:
-        table = filter_triggers(table, filterstr)
 
     # append new events to existing table
     try:

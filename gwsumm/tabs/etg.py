@@ -179,15 +179,17 @@ class EventTriggerTab(get_tab('default')):
                 pass
         new = super(EventTriggerTab, cls).from_ini(config, section, **kwargs)
 
-        # set ETG for plots
-        for p in new.plots + new.subplots:
-            p.etg = new.etg.lower()
 
         # get trigger filter
         if config.has_option(section, 'trigger-filter'):
             new.filterstr = config.get(section, 'trigger-filter')
         else:
             new.filterstr = None
+
+        # set ETG and trigger filter for plots
+        for p in new.plots + new.subplots:
+            p.etg = new.etg.lower()
+            p.filterstr = new.filterstr
 
         # get loudest options
         if config.has_option(section, 'loudest'):

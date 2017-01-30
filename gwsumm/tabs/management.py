@@ -159,11 +159,15 @@ class AccountingTab(ParentTab):
             for idx, name in self.modes.iteritems():
                 # get segments for state
                 tag = self.segmenttag % idx
-                if idx % 10:
-                    instate = ts == idx
-                else:
-                    instate = (ts >= idx) * (ts < idx+10)
+                instate = ts == idx
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
+                # append segments for group
+                group = int(idx //10. * 10)
+                gtag = self.segmenttag % group
+                try:
+                    modesegments[gtag] += modesegments[tag]
+                except KeyError:
+                    modesegments[gtag] = modesegments[tag]
             globalv.SEGMENTS += modesegments
 
         kwargs['segdb_error'] = 'ignore'

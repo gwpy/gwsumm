@@ -174,6 +174,11 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
             data, = get_func(name, SegmentList([seg]), **ioargs)
             for op_, val_ in cmath:
                 data = op_(data, val_)
-            ts = joinop(ts, data)  # apply combination math
+            # crop two datasets to match size
+            overlap = ts.xspan & data.xspan
+            ts = ts.crop(*overlap)
+            data = data.crop(*overlap)
+            # apply combination math
+            ts = joinop(ts, data)
         meta.append(ts)
     return meta

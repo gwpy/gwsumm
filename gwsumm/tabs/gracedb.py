@@ -43,6 +43,7 @@ LABELS = {
     'INJ': 'warning',
     'EM_READY': 'success',
     'PE_READY': 'success',
+    'EM_COINC': 'info',
 }
 
 

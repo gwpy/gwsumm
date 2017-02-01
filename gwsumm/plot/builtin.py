@@ -497,10 +497,10 @@ class SpectrumDataPlot(DataPlot):
                     sp.value[sp.value == 0] = 1e-100
 
             if use_percentiles:
-                ax.plot_spectrum_mmm(*data, **pargs)
+                ax.plot_frequencyseries_mmm(*data, **pargs)
             else:
                 pargs.pop('alpha', None)
-                ax.plot_spectrum(data[0], **pargs)
+                ax.plot_frequencyseries(data[0], **pargs)
 
             # allow channel data to set parameters
             if getattr(channel, 'frequency_range', None) is not None:

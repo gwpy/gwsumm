@@ -41,6 +41,7 @@ from numpy import isclose
 from astropy.time import Time
 
 from gwpy.segments import DataQualityFlag
+from gwpy.time import from_gps
 
 from .. import (globalv, html)
 from ..channels import (re_channel,
@@ -825,15 +826,19 @@ class DataTab(ProcessedTab, ParentTab):
                 # write segment summary
                 page.p('This flag was defined and had a known state during '
                        'the following segments:')
-                page.add(self.print_segments(flag.known))
+                page.add(str(self.print_segments(flag.known)))
                 # write segment table
                 page.p('This flag was active during the following segments:')
-                page.add(self.print_segments(flag.active))
+                page.add(str(self.print_segments(flag.active)))
 
                 page.div.close()
                 page.div.close()
                 page.div.close()
             page.div.close()
+
+        # write state information
+        page.add(str(self.write_state_information(state)))
+
         page.div.close()
         page.div.close()
 
@@ -841,16 +846,57 @@ class DataTab(ProcessedTab, ParentTab):
                                                      pre=self.foreword,
                                                      post=page)
 
+    def write_state_information(self, state):
+        page = html.markup.page()
+        # state information
+        page.h1("State information")
+        if state.name == ALLSTATE:
+            page.p("This page was generated using all available data, "
+                   "regardless of observatory operational state.")
+        else:
+            if state.filename:
+                defn = 'via a segment file'
+            if state.MATH_DEFINITION.search(state.definition):
+                defn = ('by the data condition <samp>%s</samp>'
+                        % state.definition)
+            else:
+                defn = ('by the data-quality flag <samp>%s</samp>'
+                        % state.definition)
+            page.p("This page was generated using data in the "
+                   "<strong>%s</strong> state. This is defined %s."
+                   % (state.name, defn))
+            page.add(str(self.print_segments(
+                state.active, table=True,
+                caption='Segments for <strong>%s</strong> state'
+                        % state.name)))
+        return page
+
+
     @staticmethod
-    def print_segments(flag):
+    def print_segments(flag, table=False, caption=None):
         """Print the contents of a `SegmentList` in HTML
         """
         if isinstance(flag, DataQualityFlag):
             flag = flag.active
         dtype = float(abs(flag)).is_integer() and int or float
-        segwizard = StringIO()
-        flag.write(segwizard, format='segwizard', coltype=dtype)
-        return html.markup.oneliner.pre(segwizard.getvalue())
+        if table:
+            headers = ['GPS start', 'GPS end', 'UTC start', 'UTC end',
+                       'Duration [s]']
+            data = []
+            for seg in flag:
+                data.append([
+                    dtype(seg[0]),
+                    dtype(seg[1]),
+                    from_gps(seg[0]).strftime('%B %d %Y, %H:%M:%S.%f')[:-3],
+                    from_gps(seg[1]).strftime('%B %d %Y, %H:%M:%S.%f')[:-3],
+                    dtype(abs(seg)),
+                ])
+            return html.table(headers, data, id='state-information',
+                              caption=caption)
+        else:
+            segwizard = StringIO()
+            flag.write(segwizard, format='segwizard', coltype=dtype)
+            return html.markup.oneliner.pre(segwizard.getvalue())
 
     # -------------------------------------------------------------------------
     # methods

@@ -66,6 +66,8 @@ class SummaryState(DataQualityFlag):
     key : `str`, optional
         registry key for this state, defaults to :attr:`~SummaryState.name`
     """
+    MATH_DEFINITION = re.compile('(%s)' % '|'.join(MATHOPS.keys()))
+
     def __init__(self, name, known=SegmentList(), active=SegmentList(),
                  description=None, definition=None, hours=None, key=None,
                  filename=None, url=None):
@@ -286,14 +288,10 @@ class SummaryState(DataQualityFlag):
         if self.ready:
             return self
         # fetch data
-        if self.definition:
-            match = re.search('(%s)' % '|'.join(MATHOPS.keys()),
-                              self.definition)
-        else:
-            match = None
+        match = self.MATH_DEFINITION.search(str(self.definition))
         if self.filename:
             self._read_segments(self.filename)
-        elif match:
+        elif self.definition and match is not None:
             channel, thresh = self.definition.split(match.groups()[0])
             channel = channel.rstrip()
             thresh = float(thresh.strip())

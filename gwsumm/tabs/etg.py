@@ -390,6 +390,9 @@ class EventTriggerTab(get_tab('default')):
                     page.div.close()
                     page.hr(class_='row-divider')
 
+            # write state information
+            page.add(str(self.write_state_information(state)))
+
         # write to file
         idx = self.states.index(state)
         with open(self.frames[idx], 'w') as fobj:

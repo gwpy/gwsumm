@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import hashlib
 import re
 from itertools import (izip, cycle)
 
@@ -78,8 +79,21 @@ class TriggerPlotMixin(object):
         chans = [re.split('[#@]', str(c), 1)[0] for c in self._channels]
         return ChannelList(map(Channel, chans))
 
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            if self.filterstr:
+                filts = "".join([filts,self.filterstr])
+            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+            return self.pid
 
-class TriggerDataPlot(TimeSeriesDataPlot):
+class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """Standard event trigger plot
     """
     type = 'triggers'
@@ -390,7 +404,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 register_plot(TriggerTimeSeriesDataPlot)
 
 
-class TriggerHistogramPlot(get_plot('histogram')):
+class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
     """HistogramPlot from a LIGO_LW Table
     """
     type = 'trigger-histogram'
@@ -503,7 +517,7 @@ class TriggerHistogramPlot(get_plot('histogram')):
 register_plot(TriggerHistogramPlot)
 
 
-class TriggerRateDataPlot(TimeSeriesDataPlot):
+class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """TimeSeriesDataPlot of trigger rate.
     """
     type = 'trigger-rate'

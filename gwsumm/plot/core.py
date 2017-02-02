@@ -324,8 +324,6 @@ class DataPlot(SummaryPlot):
             filts = "".join(map(str,
                 [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                  for c in self.channels]))
-            if self.filterstr:
-                filts = "".join([filts,self.filterstr])
             self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
             return self.pid
 

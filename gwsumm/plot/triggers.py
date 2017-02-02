@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import hashlib
 import re
 from itertools import (izip, cycle)
 
@@ -78,8 +79,21 @@ class TriggerPlotMixin(object):
         chans = [re.split('[#@]', str(c), 1)[0] for c in self._channels]
         return ChannelList(map(Channel, chans))
 
+    @property
+    def pid(self):
+        try:
+            return self._pid
+        except:
+            chans = "".join(map(str, self.channels))
+            filts = "".join(map(str,
+                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                 for c in self.channels]))
+            if self.filterstr:
+                filts = "".join([filts,self.filterstr])
+            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+            return self.pid
 
-class TriggerDataPlot(TimeSeriesDataPlot):
+class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """Standard event trigger plot
     """
     type = 'triggers'
@@ -216,7 +230,8 @@ class TriggerDataPlot(TimeSeriesDataPlot):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table = get_triggers(key, self.etg, valid, query=False)
+            table = get_triggers(key, self.etg, valid,
+                                 filterstr=self.filterstr, query=False)
             ntrigs += len(table)
             # access channel parameters for limits
             for c, column in zip(('x', 'y', 'c'), (xcolumn, ycolumn, ccolumn)):
@@ -389,7 +404,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 register_plot(TriggerTimeSeriesDataPlot)
 
 
-class TriggerHistogramPlot(get_plot('histogram')):
+class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
     """HistogramPlot from a LIGO_LW Table
     """
     type = 'trigger-histogram'
@@ -451,7 +466,8 @@ class TriggerHistogramPlot(get_plot('histogram')):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid, query=False)
+            table_ = get_triggers(key, self.etg, valid,
+                                  filterstr=self.filterstr, query=False)
             livetime.append(float(abs(table_.segments)))
             data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
@@ -501,7 +517,7 @@ class TriggerHistogramPlot(get_plot('histogram')):
 register_plot(TriggerHistogramPlot)
 
 
-class TriggerRateDataPlot(TimeSeriesDataPlot):
+class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """TimeSeriesDataPlot of trigger rate.
     """
     type = 'trigger-rate'
@@ -591,7 +607,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                 key = '%s,%s' % (str(channel), state and str(state) or 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid, query=False)
+            table_ = get_triggers(key, self.etg, valid,
+                                  filterstr=self.filterstr, query=False)
             if self.column:
                 rates = binned_event_rates(
                     table_, stride, self.column, bins, operator, self.start,

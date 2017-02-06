@@ -449,6 +449,7 @@ class SpectrumDataPlot(DataPlot):
         # parse plotting arguments
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
+        use_legend = False
 
         # get reference arguments
         refs = []
@@ -496,6 +497,9 @@ class SpectrumDataPlot(DataPlot):
                 for sp in data:
                     sp.value[sp.value == 0] = 1e-100
 
+            if 'label' in pargs:
+                use_legend = True
+
             if use_percentiles:
                 ax.plot_frequencyseries_mmm(*data, **pargs)
             else:
@@ -534,6 +538,8 @@ class SpectrumDataPlot(DataPlot):
                         refspec = refspec.filter(*ref.pop('filter'))
                     if 'scale' in ref:
                         refspec *= ref.pop('scale', 1)
+                    if 'label' in ref:
+                        use_legend = True
                     ax.plot(refspec, **ref)
 
         # customise
@@ -558,7 +564,7 @@ class SpectrumDataPlot(DataPlot):
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
 
-        if len(self.channels) > 1 or ax.legend_ is not None:
+        if use_legend or len(self.channels) > 1 or ax.legend_ is not None:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)

@@ -409,7 +409,7 @@ class SpectrumDataPlot(DataPlot):
                 'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': False,
-                'reference_linestyle': '--'}
+                'reference-linestyle': '--'}
 
     def draw(self):
         pargs = self.pargs.copy()
@@ -579,7 +579,7 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
                 'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': False,
-                'reference_linestyle': '--'}
+                'reference-linestyle': '--'}
 
     # override this to allow us to set the legend manually
     def _parse_labels(self, defaults=None):

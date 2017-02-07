@@ -853,10 +853,14 @@ class DataTab(ProcessedTab, ParentTab):
         if state.name == ALLSTATE:
             page.p("This page was generated using all available data, "
                    "regardless of observatory operational state.")
+        elif state.filename is None and state.definition is None:
+            page.p("This page was generated using data in the "
+                   "<strong>%s</strong> state, segments for which depend "
+                   "on the input data for a given figure." % state.name)
         else:
             if state.filename:
                 defn = 'via a segment file'
-            if state.MATH_DEFINITION.search(state.definition):
+            elif state.MATH_DEFINITION.search(state.definition):
                 defn = ('by the data condition <samp>%s</samp>'
                         % state.definition)
             else:

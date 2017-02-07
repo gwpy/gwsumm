@@ -501,10 +501,16 @@ class SpectrumDataPlot(DataPlot):
                 use_legend = True
 
             if use_percentiles:
-                ax.plot_frequencyseries_mmm(*data, **pargs)
+                try:
+                    ax.plot_frequencyseries_mmm(*data, **pargs)
+                except AttributeError:  # old GWpy
+                    ax.plot_spectrum_mmm(*data, **pargs)
             else:
                 pargs.pop('alpha', None)
-                ax.plot_frequencyseries(data[0], **pargs)
+                try:
+                    ax.plot_frequencyseries(data[0], **pargs)
+                except AttributeError:  # old GWpy
+                    ax.plot_spectrum(data[0], **pargs)
 
             # allow channel data to set parameters
             if getattr(channel, 'frequency_range', None) is not None:

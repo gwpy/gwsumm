@@ -5,7 +5,7 @@ python-cjson
 h5py
 lxml
 https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
-http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz
+http://software.ligo.org/lscsoft/source/glue-1.53.0.tar.gz
 http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz
 git+https://github.com/gwpy/gwpy
 libsass

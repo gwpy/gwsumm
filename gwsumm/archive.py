@@ -136,6 +136,9 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
         if backup:
             restore_backup(backup, outfile)
         raise
+    else:
+        if os.path.isfile(backup):
+            os.remove(backup)
 
 
 def read_data_archive(sourcefile):

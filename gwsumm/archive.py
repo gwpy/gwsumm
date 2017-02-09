@@ -24,7 +24,7 @@ import shutil
 import warnings
 import re
 import datetime
-import os.path
+import os
 
 from numpy import (rec, array)
 

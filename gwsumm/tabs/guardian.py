@@ -83,7 +83,7 @@ class GuardianTab(DataTab):
             raise ValueError("GuardianTab does not accept state selection")
         new.plots = []
         new.plotdir = plotdir
-        new.ifo = config.get(section, 'ifo')
+        new.ifo = config.get(section, 'IFO')
 
         # record node and states
         new.node = config.get(section, 'node')

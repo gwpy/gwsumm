@@ -21,6 +21,7 @@
 
 import os
 import re
+import warnings
 from glob import glob
 
 from six import string_types
@@ -43,7 +44,7 @@ from ..config import (GWSummConfigParser, NoSectionError, NoOptionError,
 from ..channels import get_channel
 from ..segments import get_segments
 from ..state import SummaryState
-from ..triggers import (register_etg_table, get_triggers, add_triggers)
+from ..triggers import (get_triggers, add_triggers)
 from ..plot import (get_plot, register_plot)
 from ..utils import re_quote
 
@@ -67,6 +68,8 @@ class HvetoTab(base):
                    'Cum. Efficiency [%]', 'Cum. Deadtime [%]']
 
     def __init__(self, *args, **kwargs):
+        warnings.warn('The %r tab has been deprecated and will be removed in '
+                      'an upcoming release' % self.type, DeprecationWarning)
         if kwargs['mode'] != Mode.day:
             raise RuntimeError("HvetoTab is only available in %s mode."
                                % Mode.day.name)
@@ -214,9 +217,11 @@ class HvetoTab(base):
         cache = Cache([CacheEntry.from_T050017(
                            os.path.join(self.directory, rawfile))])
         get_triggers('%s:hveto_start' % ifo, 'hveto', [self.span],
-                     config=config, cache=cache, return_=False)
+                     config=config, cache=cache, format='ligolw.sngl_burst',
+                     return_=False)
         get_triggers('%s:hveto_vetoed_all' % ifo, 'hveto', [self.span],
-                     config=config, cache=Cache(), return_=False)
+                     config=config, cache=Cache(), format='ligolw.sngl_burst',
+                     return_=False)
 
         for r in range(1, len(self.rounds) + 1):
             # read round veto triggers
@@ -225,7 +230,8 @@ class HvetoTab(base):
             cache = Cache([CacheEntry.from_T050017(
                                os.path.join(self.directory, rawfile))])
             trigs = get_triggers('%s:hveto_vetoed_round %d' % (ifo, r), 'hveto',
-                         [self.span], config=config, cache=cache)
+                                 [self.span], config=config, cache=cache,
+                                 format='ligolw.sngl_burst')
             add_triggers(trigs, '%s:hveto_vetoed_all,hveto' % ifo,
                          segments=SegmentList([self.span]))
             # read round veto segments
@@ -351,7 +357,6 @@ class HvetoTab(base):
         return self.frames[idx]
 
 register_tab(HvetoTab)
-register_etg_table('hveto', 'sngl_burst')
 
 
 def read_hveto_triggers(f, columns=HVETO_COLUMNS, filt=None, nproc=1):

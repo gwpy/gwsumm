@@ -22,8 +22,6 @@
 import os
 from warnings import warn
 
-from astropy.io.registry import (register_reader, get_reader)
-
 from glue.lal import Cache
 from glue.ligolw import (utils as llwutils)
 from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
@@ -31,12 +29,12 @@ from glue.ligolw.lsctables import (SnglInspiralTable, SummValueTable)
 from gwpy.segments import DataQualityFlag
 from gwpy.time import from_gps
 from gwpy.timeseries import (TimeSeries, TimeSeriesList)
-from gwpy.plotter.table import (get_table_column, get_row_value)
+from gwpy.table.utils import (get_table_column, get_row_value)
 
 from .. import (html, globalv)
 from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
 from ..data import find_cache_segments
-from ..triggers import (get_triggers, register_etg_table)
+from ..triggers import get_triggers
 from ..utils import re_quote
 from ..state import SummaryState
 from ..mode import (Mode, get_mode)
@@ -54,10 +52,9 @@ class DailyAhopeTab(base):
     type = 'daily-ahope'
 
     def __init__(self, *args, **kwargs):
-        super(DailyAhopeTab, self).__init__(*args, **kwargs)
-        register_etg_table(self.name.lower(), SnglInspiralTable)
-        register_reader(self.name.lower(), SnglInspiralTable,
-                        get_reader('ligolw', SnglInspiralTable))
+        warn('The %r tab has been deprecated and will be removed in '
+             'an upcoming release' % self.type, DeprecationWarning)
+        return super(DailyAhopeTab, self).__init__(*args, **kwargs)
 
     @classmethod
     def from_ini(cls, config, section, **kwargs):
@@ -339,6 +336,3 @@ class DailyAhopeTab(base):
 
 register_tab(DailyAhopeTab)
 register_tab(DailyAhopeTab, name='archived-daily-ihope')
-
-register_reader('daily ahope', SnglInspiralTable,
-                get_reader('ligolw', SnglInspiralTable))

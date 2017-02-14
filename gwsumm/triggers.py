@@ -25,15 +25,13 @@ import warnings
 from six import string_types
 
 import numpy
-from numpy.lib import recfunctions
+
+from astropy.table import vstack as vstack_tables
 
 from glue.lal import Cache
-from glue.ligolw.table import (StripTableName as strip_table_name,
-                               CompareTableNames as compare_table_names)
-from glue.ligolw.ligolw import PartialLIGOLWContentHandler
 
 from gwpy.io.cache import cache_segments
-from gwpy.table import (lsctables, GWRecArray)
+from gwpy.table import (lsctables, EventTable)
 from gwpy.table.utils import get_table_column
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
 from gwpy.segments import (DataQualityFlag, SegmentList)
@@ -48,30 +46,26 @@ from .utils import (re_cchar, vprint, count_free_cores, safe_eval)
 from .config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from .channels import get_channel
 
-TRIGFIND_FORMAT = {
-    re.compile('omicron', re.I): 'sngl_burst',
-    trigfind.pycbc_live: 'pycbc_live',
-    trigfind.kleinewelle: 'sngl_burst',
-    trigfind.dmt_omega: 'sngl_burst',
+# build list of format arguments for reading ETGs
+ETG_FORMAT = {
+    'cwb': 'root.cwb',
+    'daily_ihope': 'ligolw.sngl_inspiral',
+    'daily_ahope': 'ligolw.sngl_inspiral',
+    'dmt_omega': 'ligolw.sngl_burst',
+    'dmt_wsearch': 'ligolw.sngl_burst',
+    'kleinewelle': 'ligolw.sngl_burst',
+    'kw': 'ligolw.sngl_burst',
+    'omega': 'ascii',
+    'omegadq': 'ascii',
+    'omicron': 'ligolw.sngl_burst',
+    'pycbc_live': 'hdf5.pycbc_live',
 }
+for name in lsctables.TableByName:
+    ETG_FORMAT[name] = 'ligolw.%s' % name
 
-ETG_TABLE = lsctables.TableByName.copy()
-ETG_TABLE.update({
-    # single-IFO burst
-    'omicron': lsctables.SnglBurstTable,
-    'omega': lsctables.SnglBurstTable,
-    'omegadq': lsctables.SnglBurstTable,
-    'kleinewelle': lsctables.SnglBurstTable,
-    'kw': lsctables.SnglBurstTable,
-    'dmt_omega': lsctables.SnglBurstTable,
-    'dmt_wsearch': lsctables.SnglBurstTable,
-    # multi-IFO burst
-    'cwb': lsctables.SnglBurstTable,
-    # single-IFO inspiral
-    'daily_ihope': lsctables.SnglInspiralTable,
-    'daily_ahope': lsctables.SnglInspiralTable,
-})
-CONTENT_HANDLERS = {}
+
+def get_etg_format(etg):
+    return ETG_FORMAT[re_cchar.sub('_', etg).lower()]
 
 
 def get_etg_table(etg):
@@ -93,68 +87,13 @@ def get_etg_table(etg):
         if the ETG is not registered
     """
     try:
-        return ETG_TABLE[etg.lower()]
+        format_ = get_etg_format(etg)
     except KeyError as e:
-        try:
-            return ETG_TABLE[re_cchar.sub('_', etg.lower())]
-        except KeyError:
-            e.args = ('No LIGO_LW table registered to etg %r' % etg,)
-            raise
-
-
-def register_etg_table(etg, table, force=False):
-    """Register a specific LIGO_LW table to an ETG
-
-    Parameters
-    ----------
-    etg : `str`
-        name of Event Trigger Generator to register
-    table : `~gwpy.table.Table`, `str`
-        `Table` class to register, or the ``tableName`` of the relevant class
-    force : `bool`, optional, default: `False`
-        overwrite an existing registration for the given ETG
-
-    Raises
-    ------
-    KeyError
-        if a `str` table cannot be resolved to a specific class
-    """
-    if isinstance(table, string_types):
-        try:
-            table = lsctables.TableByName[table]
-        except KeyError as e:
-            e.args = ('Cannot parse table name %r' % table,)
-    if etg.lower() in ETG_TABLE and not force:
-        raise KeyError('LIGO_LW table already registered to etg %r' % etg,)
-    ETG_TABLE[etg.lower()] = table
-    return table
-
-
-def get_partial_contenthandler(table):
-    """Build a `PartialLIGOLWContentHandler` for the given table
-
-    Parameters
-    ----------
-    table : `type`
-        the table class to be read
-
-    Returns
-    -------
-    contenthandler : `type`
-        a subclass of `~glue.ligolw.ligolw.PartialLIGOLWContentHandler` to
-        read only the given `table`
-    """
-    def _filter_func(name, attrs):
-        if name == table.tagName and attrs.has_key('Name'):
-            return compare_table_names(attrs.get('Name'), table.tableName) == 0
-        else:
-            return False
-
-    class _ContentHandler(PartialLIGOLWContentHandler):
-        def __init__(self, document):
-            super(_ContentHandler, self).__init__(document, _filter_func)
-
-    return _ContentHandler
+        e.args = ('No LIGO_LW table registered to etg %r' % etg,)
+        raise
+    if format_.startswith('ligolw.'):
+        return lsctables.TableByName[format_[7:]]
+    raise KeyError("No LIGO_LW table registered to etg %r" % etg)
 
 
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
@@ -193,7 +132,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # read segments from global memory
     try:
-        havesegs = globalv.TRIGGERS[key].segments
+        havesegs = globalv.TRIGGERS[key].meta['segments']
     except KeyError:
         new = segments
     else:
@@ -209,13 +148,15 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         kwargs['columns'] = columns
         if etg.lower().replace('-', '_') in ['cwb', 'pycbc_live']:
             kwargs['ifo'] = get_channel(channel).ifo
-        if 'format' not in kwargs and 'ahope' not in etg.lower():
-            kwargs['format'] = etg.lower()
+        if 'format' not in kwargs:
+            try:
+                kwargs['format'] = get_etg_format(etg)
+            except KeyError:
+                kwargs['format'] = etg.lower()
 
         # if single file
         if cache is not None and len(cache) == 1:
             trigs = read_cache(cache, new, etg, nproc=nproc,
-                               tableclass=TableClass,
                                filterstr=filterstr, **kwargs)
             if trigs is not None:
                 add_triggers(trigs, key)
@@ -234,17 +175,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     except ValueError as e:
                         warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
                         continue
-                    else:
-                        for regex in TRIGFIND_FORMAT:
-                            if regex.match(etg):
-                                kwargs['format'] = TRIGFIND_FORMAT[regex]
-                                if TRIGFIND_FORMAT[regex] in lsctables.TableByName:
-                                    kwargs['get_as_columns'] = True
-                                break
-                    if etg.lower() == 'omega':
-                        kwargs.setdefault('format', 'omega')
-                    else:
-                        kwargs.setdefault('format', 'ligolw')
                 elif cache is not None:
                     segcache = cache
                 # read table
@@ -252,10 +182,10 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     from gwpy.table.io.hacr import get_hacr_triggers
                     trigs = get_hacr_triggers(channel, segment[0], segment[1],
                                               columns=columns)
-                    trigs.segments = SegmentList([segment])
+                    trigs.meta['segments'] = SegmentList([segment])
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
-                                       nproc=nproc, tableclass=TableClass,
+                                       nproc=nproc,
                                        filterstr=filterstr,
                                        **kwargs)
                 if trigs is not None:
@@ -268,11 +198,11 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     # create an empty table so that subsequent calls don't raise KeyErrors
     if query and key not in globalv.TRIGGERS:
         if TableClass is not None:
-            tab = lsctables.New(TableClass, columns=columns).to_recarray(
-                get_as_columns=True)
+            tab = EventTable(lsctables.New(TableClass, columns=columns),
+                             get_as_columns=True)
         else:
-            tab = GWRecArray((0,), dtype=[(str(c), float) for c in columns])
-        tab.segments = SegmentList()
+            tab = EventTable(names=columns)
+        tab.meta['segments'] = SegmentList()
         add_triggers(tab, key)
 
     # work out time function
@@ -283,22 +213,20 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
 
 def add_triggers(table, key, segments=None):
-    """Add a `GWRecArray` to the global memory cache
+    """Add a `EventTable` to the global memory cache
     """
     if segments is None:
-        segments = table.segments
+        segments = table.meta['segments']
     try:
         old = globalv.TRIGGERS[key]
     except KeyError:
         globalv.TRIGGERS[key] = table
-        globalv.TRIGGERS[key].segments = segments
+        globalv.TRIGGERS[key].meta['segments'] = segments
     else:
-        segs = old.segments
-        globalv.TRIGGERS[key] = recfunctions.stack_arrays(
-            (old, table), asrecarray=True, usemask=False,
-            autoconvert=True).view(type(table))
-        globalv.TRIGGERS[key].segments = segs + segments
-    globalv.TRIGGERS[key].segments.coalesce()
+        segs = old.meta['segments']
+        globalv.TRIGGERS[key] = vstack_tables((old, table))
+        globalv.TRIGGERS[key].meta['segments'] = segs + segments
+    globalv.TRIGGERS[key].meta['segments'].coalesce()
 
 
 def time_in_segments(times, segmentlist):
@@ -357,28 +285,31 @@ def keep_in_segments(table, segmentlist, etg=None):
     times = times[order]
     keep = time_in_segments(times, segmentlist)
     out = t2[keep]
-    out.segments = segmentlist & table.segments
+    out.meta['segments'] = segmentlist & table.meta['segments']
     return out
 
 
 def get_times(table, etg):
-    if etg == 'pycbc_live':
-        return table['end_time']
-    # guess from mapped LIGO_LW table
     try:
-        TableClass = get_etg_table(etg)
+        return table['time']
     except KeyError:
-        pass
-    else:
-        tablename = strip_table_name(TableClass.tableName)
-        if tablename.endswith('_burst'):
-            return table['peak_time'] + table['peak_time_ns'] * 1e-9
-        if tablename.endswith('_inspiral'):
-            return table['end_time'] + table['end_time_ns'] * 1e-9
-        if tablename.endswith('_ringdown'):
-            return table['start_time'] + table['start_time_ns'] * 1e-9
-    # use gwpy method (not guaranteed to work)
-    return get_table_column(table, 'time').astype(float)
+        if etg == 'pycbc_live':
+            return table['end_time']
+        # guess from mapped LIGO_LW table
+        try:
+            TableClass = get_etg_table(etg)
+        except KeyError:
+            pass
+        else:
+            tablename = TableClass.TableName(TableClass.tableName)
+            if tablename.endswith('_burst'):
+                return table['peak_time'] + table['peak_time_ns'] * 1e-9
+            if tablename.endswith('_inspiral'):
+                return table['end_time'] + table['end_time_ns'] * 1e-9
+            if tablename.endswith('_ringdown'):
+                return table['start_time'] + table['start_time_ns'] * 1e-9
+        # use gwpy method (not guaranteed to work)
+        return get_table_column(table, 'time').astype(float)
 
 
 def get_etg_read_kwargs(config, etg, exclude=['columns']):
@@ -393,6 +324,8 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
             kwargs.pop(key)
             continue
         kwargs[key] = safe_eval(kwargs[key])
+        if key.endswith('columns') and isinstance(kwargs[key], str):
+            kwargs[key] = kwargs[key].replace(' ', '').split(',')
     return kwargs
 
 def filter_triggers(table, filterstr):
@@ -405,7 +338,7 @@ def filter_triggers(table, filterstr):
             raise ValueError('Failed to parse trigger filter str: %s' % filterstr)
     return table
 
-def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, **kwargs):
+def read_cache(cache, segments, etg, nproc=1, filterstr=None, **kwargs):
     """Read a table of events from a cache
 
     This function is mainly meant for use from the `get_triggers method
@@ -420,15 +353,13 @@ def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, *
         the name of the trigger generator that created the files
     nproc : `int`, optional
         the number of parallel processes to use when reading
-    tableclass : `type`, optional
-        the :class:`glue.ligolw.table.Table` sub-class for this ETG
     **kwargs
-        other keyword arguments are passed to the `GWRecArray.read` or
+        other keyword arguments are passed to the `EventTable.read` or
         `{tableclass}.read` methods
 
     Returns
     -------
-    table : `~gwpy.table.GWRecArray`, `None`
+    table : `~gwpy.table.EventTable`, `None`
         a table of events, or `None` if the cache has no overlap with
         the segments
     """
@@ -443,25 +374,7 @@ def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, *
     if len(cache) == 0:
         return
     # read triggers
-    if (kwargs.get('format', None) == 'ligolw' and tableclass is not None and
-            'contenthandler' not in kwargs):
-        if tableclass not in CONTENT_HANDLERS:  # only generate once
-            CONTENT_HANDLERS[tableclass] = get_partial_contenthandler(
-                tableclass)
-        kwargs['contenthandler'] = CONTENT_HANDLERS[tableclass]
-        lsctables.use_in(kwargs['contenthandler'])
-    try:  # try directly reading a numpy.recarray
-        table = GWRecArray.read(cache, nproc=nproc, **kwargs)
-    except Exception as e:  # back up to LIGO_LW
-        if tableclass is not None and 'No reader' in str(e):
-            try:
-                table = tableclass.read(cache, **kwargs)
-            except Exception:
-                raise e
-            else:
-                table = table.to_recarray(get_as_columns=True)
-        else:
-            raise
+    table = EventTable.read(cache, nproc=nproc, **kwargs)
 
     # Filter table
     if filterstr is not None:
@@ -472,5 +385,5 @@ def read_cache(cache, segments, etg, nproc=1, tableclass=None, filterstr=None, *
         csegs = cache_segments(cache)
     except AttributeError:
         csegs = SegmentList()
-    table.segments = csegs
+    table.meta['segments'] = csegs
     return keep_in_segments(table, segments, etg)

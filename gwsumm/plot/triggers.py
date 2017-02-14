@@ -38,7 +38,7 @@ from gwpy.table.rate import (event_rate, binned_event_rates)
 from gwpy.table.utils import get_table_column
 
 from .. import globalv
-from ..utils import re_cchar
+from ..utils import (re_cchar, safe_eval)
 from ..data import (get_channel, get_timeseries, add_timeseries)
 from ..triggers import get_triggers
 from .registry import (get_plot, register_plot)
@@ -144,12 +144,15 @@ class TriggerDataPlot(TimeSeriesDataPlot):
         xcolumn, ycolumn, ccolumn = self.columns
 
         # initialise figure
-        if 'time' in xcolumn:
-            base = TimeSeriesPlot
-        elif 'freq' in xcolumn:
-            base = FrequencySeriesPlot
-        else:
-            base = Plot
+        try:
+            base = safe_eval(self.pargs.pop('base'), globals_=globals())
+        except KeyError:
+            if 'time' in xcolumn:
+                base = TimeSeriesPlot
+            elif 'freq' in xcolumn:
+                base = FrequencySeriesPlot
+            else:
+                base = Plot
         plot = self.plot = EventTablePlot(
             figsize=self.pargs.pop('figsize', [12, 6]), base=base)
         ax = plot.gca()
@@ -452,7 +455,7 @@ class TriggerHistogramPlot(get_plot('histogram')):
             else:
                 key = str(channel)
             table_ = get_triggers(key, self.etg, valid, query=False)
-            livetime.append(float(abs(table_.segments)))
+            livetime.append(float(abs(table_.meta['segments'])))
             data.append(get_table_column(table_, self.column))
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):

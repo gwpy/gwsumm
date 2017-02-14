@@ -29,13 +29,12 @@ from astropy.io.registry import (register_reader, get_reader)
 from glue.lal import Cache
 
 from gwpy.time import from_gps
-from gwpy.plotter.table import get_row_value
 
 from .. import html
 from ..config import NoOptionError
 from ..data import get_channel
 from ..state import (get_state, ALLSTATE, generate_all_state)
-from ..triggers import (get_etg_table, get_triggers, register_etg_table)
+from ..triggers import get_triggers
 from ..utils import re_quote
 from ..mode import (Mode, get_mode)
 from .registry import (get_tab, register_tab)
@@ -88,7 +87,7 @@ class EventTriggerTab(get_tab('default')):
     """
     type = 'triggers'
 
-    def __init__(self, name, channel=None, etg=None, table=None,
+    def __init__(self, name, channel=None, etg=None,
                  cache=None, url=None, **kwargs):
         """Create a new `EventTriggerTab`
         """
@@ -102,29 +101,6 @@ class EventTriggerTab(get_tab('default')):
         if etg is None:
             etg = self.name
         self.etg = etg
-        if table is None or isinstance(table, string_types):
-            tablename = isinstance(table, string_types) and table or self.etg
-            try:
-                table = get_etg_table(tablename)
-            except KeyError as e:
-                e.args = ("Cannot automatically determine LIGO_LW table for "
-                          "etg %r, please specify in configuration file or "
-                          "when creating EventTriggerTab" % tablename,)
-                table = None
-        # register custom readers for this type
-        if table is not None:
-            try:
-                register_etg_table(self.etg.lower(), table)
-            except KeyError:
-                pass
-            try:
-                register_reader(self.etg.lower(), table,
-                                get_reader('ligolw', table))
-            except Exception as e:
-                if 'already defined' in str(e):
-                    pass
-                else:
-                    raise
 
     @classmethod
     def from_ini(cls, config, section, **kwargs):
@@ -329,7 +305,7 @@ class EventTriggerTab(get_tab('default')):
                 # set table headers
                 headers = list(self.loudest['labels'])
                 columns = list(self.loudest['columns'])
-                if columns[0].endswith('time'):
+                if columns[0].endswith('time') or headers[0].endswith('time'):
                     headers.insert(1, 'UTC time')
                     date = True
                     tcol = columns[0]
@@ -349,9 +325,9 @@ class EventTriggerTab(get_tab('default')):
                     dt = self.loudest['dt']
                     while len(loudest) < self.loudest['N'] and i < rank.size:
                         e = table[rank[i]]
-                        t = get_row_value(e, tcol)
+                        t = e[tcol]
                         if i == 0 or all(
-                                abs((t - get_row_value(e2, tcol))) >= dt
+                                abs((t - e2[tcol])) >= dt
                                 for e2 in loudest):
                             loudest.append(e)
                         i += 1
@@ -360,10 +336,10 @@ class EventTriggerTab(get_tab('default')):
                         data.append([])
                         for column in columns:
                             data[-1].append(
-                                '%.3f' % float(get_row_value(row, column)))
+                                '%.3f' % float(row[column]))
                         if date:
                             data[-1].insert(
-                                1, from_gps(get_row_value(row, tcol)).strftime(
+                                1, from_gps(row[tcol]).strftime(
                                        '%B %d %Y, %H:%M:%S.%f')[:-3])
                     page.add(str(html.table(
                         headers, data,

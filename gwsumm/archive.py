@@ -26,9 +26,9 @@ import re
 import datetime
 import os
 
-from numpy import (rec, array)
+from numpy import (unicode_, ndarray)
 
-from gwpy.time import (from_gps, to_gps, LIGOTimeGPS)
+from gwpy.time import (from_gps, to_gps)
 from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
 from gwpy.segments import (SegmentList, Segment, DataQualityFlag)
@@ -36,7 +36,7 @@ from gwpy.segments import (SegmentList, Segment, DataQualityFlag)
 from . import (globalv, mode)
 from .data import (get_channel, add_timeseries, add_spectrogram,
                    add_coherence_component_spectrogram)
-from .triggers import (GWRecArray, add_triggers)
+from .triggers import (EventTable, add_triggers)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -130,14 +130,14 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
             if triggers:
                 group = h5file.create_group('triggers')
                 for key in globalv.TRIGGERS:
-                    archive_recarray(globalv.TRIGGERS[key], key, group)
+                    archive_table(globalv.TRIGGERS[key], key, group)
 
     except:
         if backup:
             restore_backup(backup, outfile)
         raise
     else:
-        if os.path.isfile(backup):
+        if backup is not None and os.path.isfile(backup):
             os.remove(backup)
 
 
@@ -217,7 +217,7 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for key in group:
-            load_recarray(group[key])
+            load_table(group[key])
 
 def backup_existing_archive(filename, suffix='.hdf',
                             prefix='gw_summary_archive_', dir=None):
@@ -259,40 +259,35 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
 
 # -- utility methods --------------------------------------------------------
 
-def archive_recarray(table, key, parent, compression='gzip'):
-    """Add a recarray to the given HDF5 group
+def segments_to_array(segmentlist):
+    out = ndarray((len(segmentlist), 2), dtype=float)
+    for i, seg in enumerate(segmentlist):
+        out[i] = seg
+    return out
+
+
+def segments_from_array(array):
+    out = SegmentList()
+    for row in array:
+        out.append(Segment(*row))
+    return out
+
+
+def archive_table(table, key, parent, compression='gzip'):
+    """Add a table to the given HDF5 group
     """
-    # write segments with an offset to preserve precision
-    try:
-        epoch = int(table.segments[0][0])
-    except IndexError:  # no segments read
-        return
-    group = parent.create_group(key)
-    segs = [(s[0] - epoch, s[1] - epoch) for s in table.segments]
-    dset = group.create_dataset('segments', data=array(segs, dtype=float),
-                                compression=compression)
-    dset.attrs['epoch'] = epoch
-    # write each column
-    for col in table.dtype.fields:
-        group.create_dataset(col, data=table[col], compression=compression)
+    table.meta['segments'] = segments_to_array(table.meta['segments'])
+    for col in table.columns:
+        if table[col].dtype.type is unicode_:
+            table.replace_column(col, table[col].astype(str))
+    table.write(parent, path=key, format='hdf5')
     return key
 
 
-def load_recarray(group):
-    """Read recarray from the given HDF5 group
+def load_table(dataset):
+    """Read table from the given HDF5 group
     """
-    columns = map(str, list(group))
-    # read segments
-    try:
-        epoch = LIGOTimeGPS(group['segments'].attrs['epoch'])
-    except (ValueError, TypeError):
-        epoch = LIGOTimeGPS(float(group['segments'].attrs['epoch']))
-    segments = SegmentList(Segment(epoch + x[0], epoch + x[1]) for
-                           x in group['segments'][:])
-    columns.pop(columns.index('segments'))
-    # read columns
-    data = [group[c] for c in columns]
-    # format and add
-    table = rec.fromarrays(data, names=columns).view(GWRecArray)
-    add_triggers(table, group.name.split('/')[-1], segments=segments)
+    table = EventTable.read(dataset, format='hdf5')
+    table.meta['segments'] = segments_from_array(table.meta['segments'])
+    add_triggers(table, dataset.name.split('/')[-1])
     return table

@@ -88,7 +88,7 @@ config = GWSummConfigParser(dict_type=OrderedDict)
 config.read(args.config)
 config.set(DEFAULTSECT, 'gps-start-time', str(int(args.gpsstart)))
 config.set(DEFAULTSECT, 'gps-end-time', str(int(args.gpsend)))
-config.set(DEFAULTSECT, 'ifo', args.ifo)
+config.set(DEFAULTSECT, 'IFO', args.ifo)
 sec = 'tab-%s' % args.node
 
 # read archive

@@ -197,9 +197,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     # if asked to read triggers, but didn't actually read any,
     # create an empty table so that subsequent calls don't raise KeyErrors
     if query and key not in globalv.TRIGGERS:
-        if TableClass is not None:
-            tab = EventTable(lsctables.New(TableClass, columns=columns),
-                             get_as_columns=True)
+        if columns is None and TableClass is not None:
+            tab = EventTable(lsctables.New(TableClass), get_as_columns=True)
         else:
             tab = EventTable(names=columns)
         tab.meta['segments'] = SegmentList()

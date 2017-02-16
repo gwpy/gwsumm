@@ -146,9 +146,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
         # store read kwargs
         kwargs = get_etg_read_kwargs(config, etg, exclude=['columns'])
-        kwargs['columns'] = columns
-        if etg.lower().replace('-', '_') in ['cwb', 'pycbc_live']:
-            kwargs['ifo'] = get_channel(channel).ifo
         if format is not None:
             kwargs['format'] = format
         if timecolumn is not None:
@@ -158,6 +155,12 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 kwargs['format'] = get_etg_format(etg)
             except KeyError:
                 kwargs['format'] = etg.lower()
+        if kwargs['format'].startswith('ascii.'):  # customise column selection
+            kwargs['include_names'] = columns
+        else:
+            kwargs['columns'] = columns
+        if etg.lower().replace('-', '_') in ['pycbc_live']:
+            kwargs['ifo'] = get_channel(channel).ifo
 
         # if single file
         if cache is not None and len(cache) == 1:
@@ -386,8 +389,17 @@ def read_cache(cache, segments, etg, nproc=1, filterstr=None, timecolumn=None,
     # if no files, skip
     if len(cache) == 0:
         return
+    # use multiprocessing except for ascii reading
+    # (since astropy doesn't allow it)
+    if kwargs.get('format', 'none').startswith('ascii.'):
+        cache = cache.pfnlist()
+    else:
+        kwargs['nproc'] = nproc
+    if len(cache) == 1:
+        cache = cache[0]
+
     # read triggers
-    table = EventTable.read(cache, nproc=nproc, **kwargs)
+    table = EventTable.read(cache, **kwargs)
     if timecolumn:
         table.meta['timecolumn'] = timecolumn
 

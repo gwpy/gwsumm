@@ -34,8 +34,6 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
 from gwpy.plotter.utils import (color_cycle, marker_cycle)
-from gwpy.table.rate import (event_rate, binned_event_rates)
-from gwpy.table.utils import get_table_column
 
 from .. import globalv
 from ..utils import (re_cchar, safe_eval)
@@ -456,7 +454,7 @@ class TriggerHistogramPlot(get_plot('histogram')):
                 key = str(channel)
             table_ = get_triggers(key, self.etg, valid, query=False)
             livetime.append(float(abs(table_.meta['segments'])))
-            data.append(get_table_column(table_, self.column))
+            data.append(table_[self.column])
             # allow channel data to set parameters
             if hasattr(channel, 'amplitude_range'):
                 self.pargs.setdefault('xlim', channel.amplitude_range)
@@ -596,12 +594,12 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                 key = str(channel)
             table_ = get_triggers(key, self.etg, valid, query=False)
             if self.column:
-                rates = binned_event_rates(
-                    table_, stride, self.column, bins, operator, self.start,
+                rates = table_.binned_event_rates(
+                    stride, self.column, bins, operator, self.start,
                     self.end, timecolumn=tcol).values()
             else:
-                rates = [event_rate(table_, stride, self.start, self.end,
-                                    timecolumn=tcol)]
+                rates = [table.event_rate(stride, self.start, self.end,
+                                          timecolumn=tcol)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
                 keys.append('%s_%s_EVENT_RATE_%s_%s'

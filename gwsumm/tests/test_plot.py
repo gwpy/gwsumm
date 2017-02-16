@@ -49,3 +49,10 @@ class PlotTests(unittest.TestCase):
         self.assertIs(plot.get_plot('test'), TestPlot)
         plot.register_plot(TestPlot, name='test-with-name')
         self.assertIs(plot.get_plot('test-with-name'), TestPlot)
+
+    def test_get_column_label(self):
+        self.assertEqual(plot.get_column_label('test'), 'Test')
+        self.assertEqual(plot.get_column_label('rho'), r'$\rho$')
+        self.assertEqual(plot.get_column_label('frequency'), 'Frequency [Hz]')
+        self.assertEqual(plot.get_column_label('mchirp'),
+                         r'Chirp mass [M$_\odot$]')

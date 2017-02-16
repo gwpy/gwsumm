@@ -38,6 +38,6 @@ COLUMN_LABEL = {
 
 def get_column_label(column):
     try:
-        return COLUMN_LABEL.get(column)
+        return COLUMN_LABEL[column]
     except KeyError:
         return get_column_string(column)

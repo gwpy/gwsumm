@@ -17,7 +17,7 @@ build-package() {
     wget $remote -O $tarball --quiet
     # unpack
     mkdir -p $tag
-    tar -zxf $tarball --strip-components=1 -C $tag
+    tar -xf $tarball --strip-components=1 -C $tag
     cd $tag
     # build and install
     ./configure --enable-silent-rules --quiet --prefix=$PREFIX $@
@@ -28,10 +28,11 @@ build-package() {
     rm -rf $tag $tarball
 }
 
-# build ldas-tools
-LDAS_TOOLS_VERSION="2.4.2"
-build-package ${REMOTE_SOURCE}/ldas-tools-${LDAS_TOOLS_VERSION}.tar.gz
-
 # build NDS2
-NDS2_CLIENT_VERSION="0.11.2"
 build-package ${REMOTE_SOURCE}/nds2-client-${NDS2_CLIENT_VERSION}.tar.gz --disable-swig-java --disable-mex-matlab
+
+# build LAL
+build-package ${REMOTE_SOURCE}/lalsuite/lal-${LAL_VERSION}.tar.xz --enable-swig-python
+
+# build LALFrame
+build-package ${REMOTE_SOURCE}/lalsuite/lalframe-${LALFRAME_VERSION}.tar.xz --enable-swig-python

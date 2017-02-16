@@ -129,7 +129,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         except (NoSectionError, NoOptionError):
             columns = None
         else:
-            columns = [c.strip() for c in columns]
+            columns = [c.strip(' \'\"') for c in columns]
 
     # read segments from global memory
     try:
@@ -320,7 +320,10 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
     try:
         kwargs = dict(config.nditems(etg))
     except NoSectionError:
-        return {}
+        try:
+            kwargs = dict(config.nditems(etg.lower()))
+        except NoSectionError:
+            return {}
     for key in kwargs.keys():
         if key in exclude:
             kwargs.pop(key)

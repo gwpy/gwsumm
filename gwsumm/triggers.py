@@ -97,8 +97,9 @@ def get_etg_table(etg):
 
 
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
-                 cache=None, columns=None, query=True, multiprocess=False,
-                 ligolwtable=None, filterstr=None, return_=True):
+                 cache=None, columns=None, format=None, query=True,
+                 multiprocess=False, ligolwtable=None, filterstr=None,
+                 return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -148,6 +149,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         kwargs['columns'] = columns
         if etg.lower().replace('-', '_') in ['cwb', 'pycbc_live']:
             kwargs['ifo'] = get_channel(channel).ifo
+        if format is not None:
+            kwargs['format'] = format
         if 'format' not in kwargs:
             try:
                 kwargs['format'] = get_etg_format(etg)

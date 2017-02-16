@@ -99,7 +99,7 @@ def get_etg_table(etg):
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                  cache=None, columns=None, format=None, query=True,
                  multiprocess=False, ligolwtable=None, filterstr=None,
-                 return_=True):
+                 timecolumn=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -151,6 +151,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             kwargs['ifo'] = get_channel(channel).ifo
         if format is not None:
             kwargs['format'] = format
+        if timecolumn is not None:
+            kwargs['timecolumn'] = timecolumn
         if 'format' not in kwargs:
             try:
                 kwargs['format'] = get_etg_format(etg)
@@ -292,9 +294,14 @@ def keep_in_segments(table, segmentlist, etg=None):
 
 
 def get_times(table, etg):
+    # allow user to have selected the time column
+    if table.meta.get('timecolumn'):
+        return table[table.meta['timecolumn']]
+    # otherwise search for it
     try:
         return table['time']
     except KeyError:
+        # shortcut pycbc
         if etg == 'pycbc_live':
             return table['end_time']
         # guess from mapped LIGO_LW table
@@ -343,10 +350,11 @@ def filter_triggers(table, filterstr):
             raise ValueError('Failed to parse trigger filter str: %s' % filterstr)
     return table
 
-def read_cache(cache, segments, etg, nproc=1, filterstr=None, **kwargs):
+def read_cache(cache, segments, etg, nproc=1, filterstr=None, timecolumn=None,
+               **kwargs):
     """Read a table of events from a cache
 
-    This function is mainly meant for use from the `get_triggers method
+    This function is mainly meant for use from the `get_triggers` method
 
     Parameters
     ----------
@@ -380,6 +388,8 @@ def read_cache(cache, segments, etg, nproc=1, filterstr=None, **kwargs):
         return
     # read triggers
     table = EventTable.read(cache, nproc=nproc, **kwargs)
+    if timecolumn:
+        table.meta['timecolumn'] = timecolumn
 
     # Filter table
     if filterstr is not None:

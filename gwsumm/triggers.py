@@ -28,7 +28,7 @@ import numpy
 
 from astropy.table import vstack as vstack_tables
 
-from glue.lal import Cache
+from glue.lal import (Cache, CacheEntry)
 
 from gwpy.io.cache import cache_segments
 from gwpy.table import (lsctables, EventTable)
@@ -407,10 +407,13 @@ def read_cache(cache, segments, etg, nproc=1, filterstr=None, timecolumn=None,
     if filterstr is not None:
         table = filter_triggers(table, filterstr)
 
+    # get back from cache entry
+    if isinstance(cache, CacheEntry):
+        cache = Cache([cache])
     # append new events to existing table
     try:
         csegs = cache_segments(cache)
-    except AttributeError:
+    except (AttributeError, TypeError):
         csegs = SegmentList()
     table.meta['segments'] = csegs
     return keep_in_segments(table, segments, etg)

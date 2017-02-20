@@ -441,11 +441,6 @@ def _get_timeseries_dict(channels, segments, config=None,
     else:
         nproc = multiprocess
 
-    if globalv.VERBOSE and not multiprocess:
-        verbose = '    '
-    else:
-        verbose = False
-
     # read channel information
     filter_ = dict()
     resample = dict()
@@ -563,18 +558,6 @@ def _get_timeseries_dict(channels, segments, config=None,
                 qdtype[channel] = dtype_.get(channel, ioargs.get('dtype'))
         ioargs['dtype'] = qdtype
 
-        # find channel type
-        if not nds:
-            ctype = set()
-            for channel in qchannels:
-                try:
-                    ctype.add(channel.ctype)
-                except AttributeError:
-                    ctype.add(get_channel_type(channel))
-            if len(ctype) == 1:
-                ctype = list(ctype)[0]
-            else:
-                ctype = None
         # loop through segments, recording data for each
         if len(new) and nproc > 1:
             vprint("    Fetching data (from %s) for %d channels [%s]"
@@ -619,9 +602,9 @@ def _get_timeseries_dict(channels, segments, config=None,
                             del c.filter
                 # read data
                 tsd = DictClass.read(segcache, qchannels,
-                                     start=segstart, end=segend, type=ctype,
+                                     start=segstart, end=segend,
                                      nproc=nproc, resample=qresample,
-                                     verbose=verbose, **ioargs)
+                                     **ioargs)
                 # put filters back
                 for c in qchannels:
                     if c.ndsname in filter_:

@@ -222,18 +222,16 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 def add_triggers(table, key, segments=None):
     """Add a `EventTable` to the global memory cache
     """
-    if segments is None:
-        segments = table.meta['segments']
+    if segments is not None:
+        table.meta['segments'] = segments
     try:
         old = globalv.TRIGGERS[key]
     except KeyError:
         globalv.TRIGGERS[key] = table
-        globalv.TRIGGERS[key].meta['segments'] = segments
     else:
         segs = old.meta['segments']
         globalv.TRIGGERS[key] = vstack_tables((old, table))
-        globalv.TRIGGERS[key].meta['segments'] = segs + segments
-    globalv.TRIGGERS[key].meta['segments'].coalesce()
+        globalv.TRIGGERS[key].meta['segments'].coalesce()
 
 
 def time_in_segments(times, segmentlist):

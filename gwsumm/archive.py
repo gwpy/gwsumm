@@ -260,6 +260,8 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
 # -- utility methods --------------------------------------------------------
 
 def segments_to_array(segmentlist):
+    """Convert a `SegmentList` to a 2-dimensional `numpy.ndarray`
+    """
     out = ndarray((len(segmentlist), 2), dtype=float)
     for i, seg in enumerate(segmentlist):
         out[i] = seg
@@ -267,6 +269,8 @@ def segments_to_array(segmentlist):
 
 
 def segments_from_array(array):
+    """Convert a 2-dimensional `numpy.ndarray` to a `SegmentList`
+    """
     out = SegmentList()
     for row in array:
         out.append(Segment(*row))
@@ -275,6 +279,22 @@ def segments_from_array(array):
 
 def archive_table(table, key, parent, compression='gzip'):
     """Add a table to the given HDF5 group
+
+    .. warning::
+
+       If the input ``table`` is empty, it will not be archived
+
+    Parameters
+    ----------
+    table : `~astropy.table.Table`
+        the data to archive
+
+    key : `str`
+        the path (relative to ``parent``) at which to store the table
+
+    parent : `h5py.Group`
+        the h5py group in which to add this dataset
+
     """
     table.meta.pop('psd', None)  # pycbc_live
     table.meta.pop('loudest', None)  # pycbc_live
@@ -288,6 +308,18 @@ def archive_table(table, key, parent, compression='gzip'):
 
 def load_table(dataset):
     """Read table from the given HDF5 group
+
+    The `EventTable` is read, stored in the memory archive, then returned
+
+    Parameters
+    ----------
+    dataset : `h5py.Dataset`
+        n-dimensional table to load from hdf5
+
+    Returns
+    -------
+    table : `~gwpy.table.EventTable`
+        the table of events loaded from hdf5
     """
     table = EventTable.read(dataset, format='hdf5')
     try:

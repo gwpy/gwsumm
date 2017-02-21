@@ -301,7 +301,10 @@ def archive_table(table, key, parent):
         return
     table.meta.pop('psd', None)  # pycbc_live
     table.meta.pop('loudest', None)  # pycbc_live
-    table.meta['segments'] = segments_to_array(table.meta['segments'])
+    try:
+        table.meta['segments'] = segments_to_array(table.meta['segments'])
+    except KeyError:
+        pass
     for col in table.columns:
         if table[col].dtype.type is unicode_:
             table.replace_column(col, table[col].astype(str))

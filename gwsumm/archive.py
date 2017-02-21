@@ -276,6 +276,8 @@ def segments_from_array(array):
 def archive_table(table, key, parent, compression='gzip'):
     """Add a table to the given HDF5 group
     """
+    table.meta.pop('psd', None)  # pycbc_live
+    table.meta.pop('loudest', None)  # pycbc_live
     table.meta['segments'] = segments_to_array(table.meta['segments'])
     for col in table.columns:
         if table[col].dtype.type is unicode_:
@@ -288,6 +290,9 @@ def load_table(dataset):
     """Read table from the given HDF5 group
     """
     table = EventTable.read(dataset, format='hdf5')
-    table.meta['segments'] = segments_from_array(table.meta['segments'])
+    try:
+        table.meta['segments'] = segments_from_array(table.meta['segments'])
+    except KeyError:
+        table.meta['segments'] = SegmentList()
     add_triggers(table, dataset.name.split('/')[-1])
     return table

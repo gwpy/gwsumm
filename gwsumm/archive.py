@@ -296,6 +296,9 @@ def archive_table(table, key, parent):
         the h5py group in which to add this dataset
 
     """
+    if len(table) == 0:
+        warnings.warn("%r table is empty and will not be archived" % key)
+        return
     table.meta.pop('psd', None)  # pycbc_live
     table.meta.pop('loudest', None)  # pycbc_live
     table.meta['segments'] = segments_to_array(table.meta['segments'])

@@ -277,7 +277,7 @@ def segments_from_array(array):
     return out
 
 
-def archive_table(table, key, parent, compression='gzip'):
+def archive_table(table, key, parent):
     """Add a table to the given HDF5 group
 
     .. warning::

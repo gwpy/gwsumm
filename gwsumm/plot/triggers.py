@@ -57,6 +57,9 @@ class TriggerPlotMixin(object):
 
     We don't need to get channel data for trigger plots.
     """
+    def __init__(self, *args, **kwargs):
+        self.filterstr = kwargs.pop('filterstr', None)
+        super(TriggerPlotMixin, self).__init__(*args, **kwargs)
 
     @property
     def channels(self):

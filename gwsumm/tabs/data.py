@@ -542,7 +542,7 @@ class DataTab(ProcessedTab, ParentTab):
                                               'trigger-timeseries',
                                               'trigger-rate',
                                               'trigger-histogram',
-                                              all_data=all_data, state=state):
+                                              all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
                          cache=trigcache, multiprocess=multiprocess,
                          filter=trigfilter, return_=False)

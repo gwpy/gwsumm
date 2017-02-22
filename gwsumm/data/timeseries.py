@@ -37,7 +37,7 @@ import nds2
 from astropy import units
 
 from glue import datafind
-from glue.lal import Cache
+from glue.lal import (Cache, CacheEntry)
 
 from gwpy.segments import SegmentList
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
@@ -82,6 +82,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- utilities ----------------------------------------------------------------
+
+re_gwf_gps_epoch = re.compile('[-\/](?P<gpsepoch>\d+)$')
+
 
 @use_configparser
 def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
@@ -207,6 +210,30 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
                                                 'L1_%s' % frametype, start,
                                                 gpsend, urltype=urltype,
                                                 on_gaps=gaps)[1:])
+
+    # extend cache beyond datafind's knowledge to reduce latency
+    try:
+        latest = cache[-1]
+        ngps = len(re_gwf_gps_epoch.search(
+            os.path.dirname(latest.path)).groupdict()['gpsepoch'])
+    except (IndexError, AttributeError):
+        pass
+    else:
+        while True:
+            s, e = latest.segment
+            if s >= gpsend:
+                break
+            # replace GPS time of file basename
+            new = latest.path.replace('-%d-' % s, '-%d-' % e)
+            # replace GPS epoch in dirname
+            new = new.replace('%s/' % str(s)[:ngps], '%s/' % str(e)[:ngps])
+            if os.path.isfile(new):
+                latest = CacheEntry.from_T050017(new)
+                cache.append(latest)
+            else:
+                break
+
+    # validate files existing and return
     cache, _ = cache.checkfilesexist()
     vprint(' %d found.\n' % len(cache))
     return cache

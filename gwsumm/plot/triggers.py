@@ -598,8 +598,8 @@ class TriggerRateDataPlot(TimeSeriesDataPlot):
                     stride, self.column, bins, operator, self.start,
                     self.end, timecolumn=tcol).values()
             else:
-                rates = [table.event_rate(stride, self.start, self.end,
-                                          timecolumn=tcol)]
+                rates = [table_.event_rate(stride, self.start, self.end,
+                                           timecolumn=tcol)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
                 keys.append('%s_%s_EVENT_RATE_%s_%s'

@@ -62,22 +62,10 @@ class TriggerPlotMixin(object):
         super(TriggerPlotMixin, self).__init__(*args, **kwargs)
 
     @property
-    def channels(self):
-        """List of channels for this plot
-
-        :type: `~gwpy.detector.ChannelList`
-        """
-        return ChannelList(map(Channel, self._channels))
-
-    @channels.setter
-    def channels(self, channellist):
-        self._channels = channellist
-
-    @property
     def allchannels(self):
         """List of all unique channels for this plot
         """
-        chans = [re.split('[#@]', str(c), 1)[0] for c in self._channels]
+        chans = set([re.split('[#@]', str(c), 1)[0] for c in self._channels])
         return ChannelList(map(Channel, chans))
 
     @property

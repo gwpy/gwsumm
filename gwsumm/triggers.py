@@ -19,9 +19,13 @@
 """Read and store transient event triggers
 """
 
+import operator
 import re
 import warnings
+import token
+from tokenize import generate_tokens
 
+from six.moves import StringIO
 from six import string_types
 
 import numpy
@@ -64,6 +68,26 @@ for name in lsctables.TableByName:
     ETG_FORMAT[name] = 'ligolw.%s' % name
 
 
+MATH_OPERATORS = {
+    '<': operator.lt,
+    '<=': operator.le,
+    '=': operator.eq,
+    '>=': operator.ge,
+    '>': operator.gt,
+    '==': operator.is_,
+    '!=': operator.is_not,
+}
+MATH_OPERATORS_NOT = {
+    '<': operator.ge,
+    '<=': operator.gt,
+    '=': operator.ne,
+    '>=': operator.lt,
+    '>': operator.le,
+    '==': operator.is_not,
+    '!=': operator.is_,
+}
+
+
 def get_etg_format(etg):
     return ETG_FORMAT[re_cchar.sub('_', etg).lower()]
 
@@ -98,7 +122,7 @@ def get_etg_table(etg):
 
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                  cache=None, columns=None, format=None, query=True,
-                 multiprocess=False, ligolwtable=None, filterstr=None,
+                 multiprocess=False, ligolwtable=None, filter=None,
                  timecolumn=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
@@ -164,8 +188,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
         # if single file
         if cache is not None and len(cache) == 1:
-            trigs = read_cache(cache, new, etg, nproc=nproc,
-                               filterstr=filterstr, **kwargs)
+            trigs = read_cache(cache, new, etg, nproc=nproc, **kwargs)
             if trigs is not None:
                 add_triggers(trigs, key)
                 ntrigs += len(trigs)
@@ -193,9 +216,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     trigs.meta['segments'] = SegmentList([segment])
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
-                                       nproc=nproc,
-                                       filterstr=filterstr,
-                                       **kwargs)
+                                       nproc=nproc, **kwargs)
                 if trigs is not None:
                     add_triggers(trigs, key)
                     ntrigs += len(trigs)
@@ -214,7 +235,14 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # work out time function
     if return_:
-        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        if filter:
+            if isinstance(filter, string_types):
+                filter = filter.split(' ')
+            # if a filter string is provided, return a filtered copy of
+            # the trigger set stored in global memory
+            return filter_triggers(trigs, *filter)
+        return trigs
     else:
         return
 
@@ -341,18 +369,79 @@ def get_etg_read_kwargs(config, etg, exclude=['columns']):
             kwargs[key] = kwargs[key].replace(' ', '').split(',')
     return kwargs
 
-def filter_triggers(table, filterstr):
-    for token in filterstr.split(' '):
-        try:
-            for col in table.dtype.names:
-                token = token.replace(col, "table.%s" % col)
-            table = table[eval(token)]
-        except:
-            raise ValueError('Failed to parse trigger filter str: %s' % filterstr)
-    return table
 
-def read_cache(cache, segments, etg, nproc=1, filterstr=None, timecolumn=None,
-               **kwargs):
+def parse_filter(value):
+    """Parse a `str` of the form 'column>50'
+
+    Returns
+    -------
+    column : `str`
+        the name of the column on which to operate
+    math : `list` of (`str`, `callable`) pairs
+        the list of thresholds and their associated math operators
+
+    Examples
+    --------
+    >>> condition("snr>10")
+    ('snr', [(10.0, <built-in function gt>)])
+    >>> condition("50 < peak_frequency < 100")
+    ('peak_frequency', [(50.0, <built-in function ge>), (100.0, <build-in function lt>)])
+    """
+    # parse condition
+    parts = list(generate_tokens(StringIO(value).readline))
+    # find paramname
+    names = filter(lambda t: t[0] == token.NAME, parts)
+    if len(names) != 1:
+        raise ValueError("Multiple column names parse from condition %r"
+                         % value)
+    name = names[0][1]
+    limits = zip(*filter(lambda t: t[0] == token.NUMBER, parts))[1]
+    operators = zip(*filter(lambda t: t[0] == token.OP, parts))[1]
+    if len(limits) != len(operators):
+        ValueError("Number of limits doesn't match number of operators "
+                   "in condition %r" % value)
+    math = []
+    for lim, op in zip(limits, operators):
+        try:
+            if value.find(lim) < value.find(op):
+                math.append((float(lim), MATH_OPERATORS_NOT[op]))
+            else:
+                math.append((float(lim), MATH_OPERATORS[op]))
+        except KeyError as e:
+            e.args = ('Unrecognised math operator %r' % op,)
+            raise
+    return (name, math)
+
+
+def filter_triggers(table, *conditions):
+    """Filter an `EventTable` by applying conditions
+
+    Parameters
+    ----------
+    *conditions
+        one of more `str` conditions of the form ``column<=threshold``,
+        e.g. ``snr>10``
+
+    Returns
+    -------
+    filteredtable : `EventTable`
+        a view of the input `EventTable` including only those rows that
+        pass all conditions
+    """
+    keep = numpy.ones(len(table), dtype=bool)
+    # convert filterstr into conditions
+    for mathstr in conditions:
+        if isinstance(mathstr, string_types):
+            name, math = parse_filter(mathstr)
+        else:
+            name, math = mathstr
+        column = table[name]
+        for lim, operator_ in math:
+            keep &= operator_(table[name], lim)
+    return table[keep]
+
+
+def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     """Read a table of events from a cache
 
     This function is mainly meant for use from the `get_triggers` method
@@ -400,10 +489,6 @@ def read_cache(cache, segments, etg, nproc=1, filterstr=None, timecolumn=None,
     table = EventTable.read(cache, **kwargs)
     if timecolumn:
         table.meta['timecolumn'] = timecolumn
-
-    # Filter table
-    if filterstr is not None:
-        table = filter_triggers(table, filterstr)
 
     # get back from cache entry
     if isinstance(cache, CacheEntry):

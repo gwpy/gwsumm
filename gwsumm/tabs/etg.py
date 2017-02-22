@@ -155,15 +155,17 @@ class EventTriggerTab(get_tab('default')):
                 pass
         new = super(EventTriggerTab, cls).from_ini(config, section, **kwargs)
 
-        # set ETG for plots
-        for p in new.plots + new.subplots:
-            p.etg = new.etg.lower()
 
         # get trigger filter
-        if config.has_option(section, 'trigger-filter'):
-            new.filterstr = config.get(section, 'trigger-filter')
+        if config.has_option(section, 'event-filter'):
+            new.filterstr = config.get(section, 'event-filter')
         else:
             new.filterstr = None
+
+        # set ETG and trigger filter for plots
+        for p in new.plots + new.subplots:
+            p.etg = new.etg.lower()
+            p.filterstr = new.filterstr
 
         # get loudest options
         if config.has_option(section, 'loudest'):
@@ -263,7 +265,7 @@ class EventTriggerTab(get_tab('default')):
     def process_state(self, state, *args, **kwargs):
         if self.error.get(state, None):
             return
-        kwargs['filterstr'] = self.filterstr
+        kwargs['trigfilter'] = self.filterstr
         super(EventTriggerTab, self).process_state(state, *args, **kwargs)
 
     def write_state_html(self, state, pre=None):
@@ -301,7 +303,7 @@ class EventTriggerTab(get_tab('default')):
             if self.loudest:
                 # get triggers
                 table = get_triggers(self.channel, self.plots[0].etg, state,
-                                     filterstr=self.filterstr, query=False)
+                                     filter=self.filterstr, query=False)
                 # set table headers
                 headers = list(self.loudest['labels'])
                 columns = list(self.loudest['columns'])

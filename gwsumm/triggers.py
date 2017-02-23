@@ -170,6 +170,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
         # store read kwargs
         kwargs = get_etg_read_kwargs(config, etg, exclude=['columns'])
+        trigfindkwargs = dict((k[9:], kwargs.pop(k)) for k in kwargs.keys() if
+                               k.startswith('trigfind-'))
+
         if format is not None:
             kwargs['format'] = format
         if timecolumn is not None:
@@ -200,9 +203,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     kwargs['filt'] = lambda t: t.channel == str(channel)
                 if cache is None and not etg.lower() == 'hacr':
                     try:
-                        segcache = trigfind.find_trigger_urls(str(channel), etg,
-                                                              segment[0],
-                                                              segment[1])
+                        segcache = trigfind.find_trigger_urls(
+                            str(channel), etg, segment[0], segment[1],
+                            **trigfindkwargs)
                     except ValueError as e:
                         warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
                         continue

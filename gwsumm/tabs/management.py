@@ -159,7 +159,7 @@ class AccountingTab(ParentTab):
             for idx, name in self.modes.iteritems():
                 # get segments for state
                 tag = self.segmenttag % idx
-                instate = ts == idx
+                instate = ts == idx * ts.unit
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
                 # append segments for group
                 group = int(idx //10. * 10)

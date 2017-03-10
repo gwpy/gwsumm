@@ -87,9 +87,9 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                             name = '%s,%s' % (ts.name, ts.epoch.gps)
                         try:
                             if isinstance(ts, StateVector):
-                                ts.write(sgroup, name=name, format='hdf')
+                                ts.write(sgroup, path=name, format='hdf5')
                             else:
-                                ts.write(tgroup, name=name, format='hdf')
+                                ts.write(tgroup, path=name, format='hdf5')
                         except ValueError as e:
                             warnings.warn(str(e))
                         except RuntimeError as e:
@@ -110,7 +110,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         for spec in speclist:
                             name = '%s,%s' % (key, spec.epoch.gps)
                             try:
-                                spec.write(group, name=name, format='hdf')
+                                spec.write(group, path=name, format='hdf5')
                             except ValueError as e:
                                 warnings.warn(str(e))
                             except RuntimeError as e:
@@ -124,7 +124,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 group = h5file.create_group('segments')
                 # loop over channels
                 for name, dqflag in globalv.SEGMENTS.iteritems():
-                    dqflag.write(group, name=name, format='hdf')
+                    dqflag.write(group, path=name, format='hdf5')
 
             # record all triggers
             if triggers:
@@ -158,7 +158,7 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for dataset in group.itervalues():
-            ts = TimeSeries.read(dataset, format='hdf')
+            ts = TimeSeries.read(dataset, format='hdf5')
             if (re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name) and
                     ts.sample_rate.value == 1.0):
                 ts.channel.type = 's-trend'
@@ -182,7 +182,7 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for dataset in group.itervalues():
-            sv = StateVector.read(dataset, format='hdf')
+            sv = StateVector.read(dataset, format='hdf5')
             sv.channel = get_channel(sv.channel)
             add_timeseries(sv, key=sv.channel.ndsname)
 
@@ -198,7 +198,7 @@ def read_data_archive(sourcefile):
                 group = dict()
             for key, dataset in group.iteritems():
                 key = key.rsplit(',', 1)[0]
-                spec = Spectrogram.read(dataset, format='hdf')
+                spec = Spectrogram.read(dataset, format='hdf5')
                 spec.channel = get_channel(spec.channel)
                 add_(spec, key=key)
 
@@ -207,8 +207,8 @@ def read_data_archive(sourcefile):
             group = h5file['segments']
         except KeyError:
             group = dict()
-        for name, dataset in group.iteritems():
-            dqflag = DataQualityFlag.read(dataset, format='hdf')
+        for name in group:
+            dqflag = DataQualityFlag.read(group, path=name, format='hdf5')
             globalv.SEGMENTS += {name: dqflag}
 
         # read all triggers

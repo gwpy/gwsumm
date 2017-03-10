@@ -38,6 +38,7 @@ except ImportError:
     from mpl_toolkits.axes_grid import make_axes_locatable
 
 from astropy.units import Quantity
+from astropy.io.registry import IORegistryError
 
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.plotter import *
@@ -330,17 +331,16 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             else:
                 ratio = getattr(allspec, ratio)(axis=0)
         elif isinstance(ratio, string_types) and os.path.isfile(ratio):
-            try:
+            try:  # try auto-identify format
                 ratio = FrequencySeries.read(ratio)
-            except IOError as e:
+            except IOError as e:  # skip if file can't be read
                 warnings.warn('IOError: %s' % str(e))
-            except Exception as e:
-                # hack for old versions of GWpy
-                # TODO: remove me when GWSumm requires GWpy > 0.1
-                if 'Format could not be identified' in str(e):
-                    ratio = FrequencySeries.read(ratio, format='dat')
+            except IORegistryError as e:  # try format identification
+                if ratio.endswith('.gz'):
+                    fmt = os.path.splitext(ratio[:-3])[-1]
                 else:
-                    raise
+                    fmt = os.path.splitext(ratio)[-1]
+                ratio = FrequencySeries.read(ratio, format=fmt.lstrip('.'))
 
         # allow channel data to set parameters
         if getattr(channel, 'frequency_range', None) is not None:
@@ -527,17 +527,17 @@ class SpectrumDataPlot(DataPlot):
         for i, ref in enumerate(refs):
             if 'source' in ref:
                 source = ref.pop('source')
-                try:
+                try:  # try auto-identify format
                     refspec = FrequencySeries.read(source)
-                except IOError as e:
+                except IOError as e:  # skip if file can't be read
                     warnings.warn('IOError: %s' % str(e))
-                except Exception as e:
-                    # hack for old versions of GWpy
-                    # TODO: remove me when GWSumm requires GWpy > 0.1
-                    if 'Format could not be identified' in str(e):
-                        refspec = FrequencySeries.read(source, format='dat')
+                except IORegistryError as e:  # try format identification
+                    if source.endswith('.gz'):
+                        fmt = os.path.splitext(source[:-3])[-1]
                     else:
-                        raise
+                        fmt = os.path.splitext(source)[-1]
+                    refspec = FrequencySeries.read(source,
+                                                   format=fmt.lstrip('.'))
                 else:
                     ref.setdefault('zorder', -len(refs) + 1)
                     if 'filter' in ref:
@@ -966,17 +966,17 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         for i, ref in enumerate(refs):
             if 'source' in ref:
                 source = ref.pop('source')
-                try:
+                try:  # try auto-identify format
                     refspec = FrequencySeries.read(source)
-                except IOError as e:
+                except IOError as e:  # skip if file can't be read
                     warnings.warn('IOError: %s' % str(e))
-                except Exception as e:
-                    # hack for old versions of GWpy
-                    # TODO: remove me when GWSumm requires GWpy > 0.1
-                    if 'Format could not be identified' in str(e):
-                        refspec = FrequencySeries.read(source, format='dat')
+                except IORegistryError as e:  # try format identification
+                    if source.endswith('.gz'):
+                        fmt = os.path.splitext(source[:-3])[-1]
                     else:
-                        raise
+                        fmt = os.path.splitext(source)[-1]
+                    refspec = FrequencySeries.read(source,
+                                                   format=fmt.lstrip('.'))
                 else:
                     if 'filter' in ref:
                         refspec = refspec.filter(*ref.pop('filter'))

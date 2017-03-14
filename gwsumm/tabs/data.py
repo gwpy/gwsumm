@@ -559,9 +559,10 @@ class DataTab(ProcessedTab, ParentTab):
         # filter out plots that aren't for this state
         new_plots = [p for p in self.plots + self.subplots if
                      p.new and (p.state is None or p.state.name == state.name)]
+        multiprocess = min(len(new_plots), multiprocess)
 
         # setup plotting queue
-        if multiprocess:
+        if multiprocess > 1:
             queue = Queue()
         else:
             queue = None

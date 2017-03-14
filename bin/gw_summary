@@ -45,13 +45,6 @@ from urlparse import urlparse
 
 from dateutil.relativedelta import relativedelta
 
-try:
-    import ROOT
-except ImportError:
-    pass
-else:
-    ROOT.PyConfig.IgnoreCommandLineOptions = True
-
 # set matplotlib backend
 from matplotlib import use
 use('Agg')

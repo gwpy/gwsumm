@@ -620,6 +620,8 @@ def _get_timeseries_dict(channels, segments, config=None,
                     # and ignore segments shorter than 1 full average
                     if (segend - segstart) < 60:
                         continue
+                    segcache = segcache.sieve(
+                        segment=type(segment)(segstart, segend))
                 else:
                     segstart, segend = map(float, segment)
                 # pull filters out because they can break multiprocessing

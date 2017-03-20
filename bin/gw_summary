@@ -31,6 +31,14 @@ options acceptable for each mode.
 
 from __future__ import (division, print_function)
 
+# XXX HACK XXX
+# plots don't work with multiprocessing with lal.LIGOTimeGPS
+from gwpy import time
+from gwpy.time import _tconvert
+from glue.lal import LIGOTimeGPS
+time.LIGOTimeGPS = LIGOTimeGPS
+_tconvert.LIGOTimeGPS = LIGOTimeGPS
+
 import os
 import datetime
 import argparse

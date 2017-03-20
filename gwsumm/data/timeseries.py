@@ -56,6 +56,7 @@ from ..channels import (get_channel, update_missing_channel_params,
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
+warnings.filterwarnings("ignore", "LAL has no unit corresponding")
 
 OPERATOR = {
     '*': operator.mul,

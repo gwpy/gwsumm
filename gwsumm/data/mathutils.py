@@ -22,6 +22,8 @@
 import operator
 import re
 
+import numpy
+
 from gwpy.detector import Channel
 from gwpy.segments import SegmentList
 
@@ -174,11 +176,43 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
             data, = get_func(name, SegmentList([seg]), **ioargs)
             for op_, val_ in cmath:
                 data = op_(data, val_)
-            # crop two datasets to match size
-            overlap = ts.xspan & data.xspan
-            ts = ts.crop(*overlap)
-            data = data.crop(*overlap)
             # apply combination math
-            ts = joinop(ts, data)
+            ts = _join(ts, data, joinop)
         meta.append(ts)
     return meta
+
+
+def _join(a, b, op):
+    """Method to combine two data structures, handling shape mismatches
+
+    This method is for internal use only, and should not be called from
+    outside
+    """
+    # crop arrays to common time segment
+    overlap = a.xspan & b.xspan
+    a = a.crop(*overlap)
+    b = b.crop(*overlap)
+    # try and join now
+    try:
+        return op(a, b)
+    except ValueError as e:
+        # if error is _not_ a shape mismatch, raise
+        if 'operands could not be broadcast' not in str(e):
+            raise
+        # if the FFTlength is not the same, raise (no interpolation)
+        if a.df != b.df or a.f0 != b.f0:
+            raise
+        # otherwise, shorten the larger array in frequency
+        nf = a.shape[1] - b.shape[1]
+        new = numpy.zeros((a.shape[0], abs(nf)))
+        if nf > 0:  # reshape 'b'
+            del b.frequencies
+            b2 = numpy.concatenate((b, new), axis=1)
+            b2.__array_finalize__(b)
+            b = b2
+        elif nf < 0:  # reshape 'a'
+            del a.frequencies
+            a2 = numpy.concatenate((a, new), axis=1)
+            a2.__array_finalize__(a)
+            a = a2
+        return op(a, b)

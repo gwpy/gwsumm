@@ -79,8 +79,6 @@ class GuardianTab(DataTab):
         """Define a new `GuardianTab`.
         """
         new = super(DataTab, cls).from_ini(config, section, **kwargs)
-        if len(new.states) > 1 or new.states[0].name != ALLSTATE:
-            raise ValueError("GuardianTab does not accept state selection")
         new.plots = []
         new.plotdir = plotdir
         new.ifo = config.get(section, 'IFO')
@@ -117,34 +115,40 @@ class GuardianTab(DataTab):
         flags = [new.segmenttag % name for name in pstates]
         labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]
 
-        # segment plot
-        new.plots.append(get_plot('guardian')(
-            flags, new.span[0], new.span[1], labels=labels, outdir=plotdir,
-            known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
-            tag='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
-            title='%s Guardian %s state' % (
-                new.ifo, new.node.replace('_', r'\_')), zorder=2))
-
-        # pie
+        # define colours
         cmap = get_cmap('brg')(Normalize(-1, 1)(
             numpy.linspace(-1, 1, len(pstates))))[::-1]
         th = len(flags) > 8 and (new.span[1] - new.span[0])/200. or 0
-        new.plots.append(get_plot('segment-pie')(
-            flags, new.span[0], new.span[1], labels=pstates, colors=cmap,
-            tag='GRD_%s_SEGMENT_PIE' % re.sub('[-\s]', '_', new.node),
-            startangle=180, counterclock=False, wedge_linewidth=0.01,
-            outdir=plotdir, title='%s Guardian %s state' % (
-                new.ifo, new.node.replace('_', r'\_')),
-            legend_fontsize=16, legend_sorted=True, legend_threshold=th,
-        ))
 
-        # bar
-        new.plots.append(get_plot('segment-bar')(
-            flags, new.span[0], new.span[1], labels=pstates, sorted=True,
-            tag='GRD_%s_SEGMENT_BAR' % re.sub('[-\s]', '_', new.node),
-            outdir=plotdir, title='%s Guardian %s state' % (
-                new.ifo, new.node.replace('_', r'\_')),
-        ))
+        for state in new.states:
+            # segment plot
+            new.plots.append(get_plot('guardian')(
+                flags, new.span[0], new.span[1], state=state,
+                labels=labels, outdir=plotdir,
+                known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
+                pid='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
+                title='%s Guardian %s state' % (
+                    new.ifo, new.node.replace('_', r'\_')), zorder=2))
+
+            # pie
+            new.plots.append(get_plot('segment-pie')(
+                flags, new.span[0], new.span[1], state=state,
+                labels=pstates, colors=cmap,
+                pid='GRD_%s_SEGMENT_PIE' % re.sub('[-\s]', '_', new.node),
+                startangle=180, counterclock=False, wedge_linewidth=0.01,
+                outdir=plotdir, title='%s Guardian %s state' % (
+                    new.ifo, new.node.replace('_', r'\_')),
+                legend_fontsize=16, legend_sorted=True, legend_threshold=th,
+            ))
+
+            # bar
+            new.plots.append(get_plot('segment-bar')(
+                flags, new.span[0], new.span[1], state=state,
+                labels=pstates, sorted=True,
+                pid='GRD_%s_SEGMENT_BAR' % re.sub('[-\s]', '_', new.node),
+                outdir=plotdir, title='%s Guardian %s state' % (
+                    new.ifo, new.node.replace('_', r'\_')),
+            ))
         return new
 
     def process(self, nds=None, multiprocess=True,
@@ -152,6 +156,14 @@ class GuardianTab(DataTab):
                 segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.
         """
+        # finalize state information
+        self.finalize_states(
+            config=config, segdb_error=kwargs.get('segdb_error', 'raise'),
+            datafind_error=datafind_error)
+        vprint("States finalised [%d total]\n" % len(self.states))
+        vprint("    Default state: %r\n" % str(self.defaultstate))
+
+        # remove plots that have already been generated
         for p in self.plots:
             if p.outputfile in globalv.WRITTEN_PLOTS:
                 p.new = False
@@ -160,7 +172,7 @@ class GuardianTab(DataTab):
         # work out which channels are needed
 
         prefix = '%s:GRD-%s_%%s' % (self.ifo, self.node)
-        state = sorted(self.states, key=lambda s: abs(s.active))[0]
+        state = sorted(self.states, key=lambda s: abs(s.active))[-1]
 
         try:
             version = get_timeseries(
@@ -226,7 +238,7 @@ class GuardianTab(DataTab):
     def write_state_html(self, state):
         """Write the HTML for the given state of this `GuardianTab`
         """
-        page = self.scaffold_plots()
+        page = self.scaffold_plots(state=state)
         page.div(class_='alert alert-info alert-dismissible')
         # add close button
         page.button(type="button", class_="close", **{'data-dismiss': "alert"})

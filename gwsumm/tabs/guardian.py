@@ -171,11 +171,11 @@ class GuardianTab(DataTab):
         except ValueError:
             version = 1201
 
-        suffices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE']
+        prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE']
         if version >= 1200:
-            suffices.append('OP')
+            prefices.append('OP')
         alldata = get_timeseries_dict(
-            [prefix % x for x in suffices],
+            [prefix % x for x in prefices],
             state, config=config, nds=nds, multiprocess=multiprocess,
             cache=datacache, datafind_error=datafind_error,
             dtype='int16').values()

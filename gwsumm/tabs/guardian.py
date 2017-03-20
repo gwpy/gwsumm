@@ -121,12 +121,16 @@ class GuardianTab(DataTab):
         th = len(flags) > 8 and (new.span[1] - new.span[0])/200. or 0
 
         for state in new.states:
+            # get common plot tag prefix
+            tagprefix = 'GRD_%s' % re.sub('[-\s]', '_', new.node.upper())
+            if state.name != ALLSTATE:  # include state name if not 'All'
+                tagprefix = '%s_%s' % (state.name, tagprefix)
             # segment plot
             new.plots.append(get_plot('guardian')(
                 flags, new.span[0], new.span[1], state=state,
                 labels=labels, outdir=plotdir,
                 known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
-                pid='GRD_%s_SEGMENTS' % re.sub('[-\s]', '_', new.node),
+                tag='%s_SEGMENTS' % tagprefix,
                 title='%s Guardian %s state' % (
                     new.ifo, new.node.replace('_', r'\_')), zorder=2))
 
@@ -134,7 +138,7 @@ class GuardianTab(DataTab):
             new.plots.append(get_plot('segment-pie')(
                 flags, new.span[0], new.span[1], state=state,
                 labels=pstates, colors=cmap,
-                pid='GRD_%s_SEGMENT_PIE' % re.sub('[-\s]', '_', new.node),
+                tag='%s_SEGMENT_PIE' % tagprefix,
                 startangle=180, counterclock=False, wedge_linewidth=0.01,
                 outdir=plotdir, title='%s Guardian %s state' % (
                     new.ifo, new.node.replace('_', r'\_')),
@@ -145,7 +149,7 @@ class GuardianTab(DataTab):
             new.plots.append(get_plot('segment-bar')(
                 flags, new.span[0], new.span[1], state=state,
                 labels=pstates, sorted=True,
-                pid='GRD_%s_SEGMENT_BAR' % re.sub('[-\s]', '_', new.node),
+                tag='%s_SEGMENT_BAR' % tagprefix,
                 outdir=plotdir, title='%s Guardian %s state' % (
                     new.ifo, new.node.replace('_', r'\_')),
             ))

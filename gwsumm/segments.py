@@ -211,8 +211,6 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                     if coalesce:
                         segs = segs.coalesce()
                     out[compound] = op(out[compound], segs)
-                    out[compound].known &= segs.known
-                    out[compound].active &= segs.known
             out[compound].known &= validity
             out[compound].active &= validity
             if coalesce:

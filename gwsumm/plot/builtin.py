@@ -99,7 +99,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         if visible:
             kwargs.setdefault('edgecolor', 'darkgreen')
             kwargs.setdefault('facecolor', GREEN)
-            kwargs.setdefault('known', {'facecolor': 'red', 'edgecolor': 'darkred'})
+            kwargs.setdefault('known', {'facecolor': 'red',
+                                        'edgecolor': 'darkred'})
             sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
             ax.set_epoch(epoch)
             sax.set_epoch(epoch)
@@ -118,7 +119,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         ax.set_epoch(epoch)
         return sax
 
-    def init_plot(self, plot=TimeSeriesPlot, geometry=(1,1)):
+    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1)):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
@@ -175,7 +176,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             for ts in flatdata:
                 # double-check empty
                 if (hasattr(ts, 'metadata') and
-                        not 'x0' in ts.metadata) or not ts.x0:
+                        'x0' not in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
                 # double-check log scales
                 if self.pargs.get('logy', False):
@@ -561,7 +562,7 @@ class SpectrumDataPlot(DataPlot):
             if not isinstance(hlines[-1], float):
                 lineparams = hlines.pop(-1)
             else:
-                lineparams = {'color':'r', 'linestyle': '--'}
+                lineparams = {'color': 'r', 'linestyle': '--'}
         for yval in hlines:
             try:
                 yval = float(yval)
@@ -652,7 +653,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                 histargs['range'] = self.pargs.get('xlim')
             # set alpha
             if len(self.channels) > 1:
-                 histargs.setdefault('alpha', 0.7)
+                histargs.setdefault('alpha', 0.7)
         return kwargs
 
     def draw(self, outputfile=None):
@@ -687,7 +688,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                 self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)
 
         # get range
-        if not 'range' in histargs[0]:
+        if 'range' not in histargs[0]:
             l = axes[0].common_limits(data)
             for d in histargs:
                 d['range'] = l
@@ -823,9 +824,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
             self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
         # histogram
         hist_kwargs = self.parse_hist_kwargs()
-        h, xedges, yedges = numpy.histogram2d(data[0], data[1],
-                                              **hist_kwargs)
-        h = numpy.ma.masked_where(h==0, h)
+        h, xedges, yedges = numpy.histogram2d(data[0], data[1], **hist_kwargs)
+        h = numpy.ma.masked_where(h == 0, h)
         x, y = numpy.meshgrid(xedges, yedges, copy=False, sparse=True)
         # plot
         pcmesh_kwargs = self.parse_pcmesh_kwargs()
@@ -934,7 +934,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         plotargs.pop('label')
 
         specgram = get_spectrogram(self.channels[0], valid, query=False,
-                                    format='asd').join(gap='ignore')
+                                   format='asd').join(gap='ignore')
 
         if specgram.size:
             asd = specgram.median(axis=0)
@@ -949,10 +949,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
             ax.plot_variance(variance, cmap=cmap, **plotargs)
-        #else:
-        #    ax.scatter([1], [1], c=[1], visible=False, vmin=plotargs['vmin'],
-        #               vmax=plotargs['vmax'], cmap=plotargs['cmap'])
-        #plot.add_colorbar(ax=ax, log=True, label='Fractional time at amplitude')
 
         # allow channel data to set parameters
         if getattr(self.channels[0], 'frequency_range', None) is not None:
@@ -993,7 +989,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             if not isinstance(hlines[-1], float):
                 lineparams = hlines.pop(-1)
             else:
-                lineparams = {'color':'r', 'linestyle': '--'}
+                lineparams = {'color': 'r', 'linestyle': '--'}
         for yval in hlines:
             try:
                 yval = float(yval)

@@ -104,7 +104,7 @@ class SvgMixin(object):
         # write HTML wrapper
         html = self.outputfile.replace('.svg', '.html')
         with open(html, 'w') as f:
-           f.write(HTML_WRAPPER % os.path.basename(self.outputfile))
+            f.write(HTML_WRAPPER % os.path.basename(self.outputfile))
         return html
 
 
@@ -244,5 +244,4 @@ class SegmentLabelSvgMixin(SvgMixin):
             if key.startswith('text_') or key.startswith('label_'):
                 xmlid[key].set('style', 'pointer-events: none;')
 
-        #self.plot.save(outputfile.replace('.svg', '.png'))
         return self.finalize_svg(tree, outputfile, script=HOVERSCRIPT)

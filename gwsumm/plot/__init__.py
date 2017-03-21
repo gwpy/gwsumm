@@ -43,6 +43,17 @@ The available classes are:
 from matplotlib import __version__ as mpl_version
 
 from gwpy.plotter import rcParams
+
+from .registry import *
+from .utils import *
+from .core import *
+from .builtin import *
+from .segments import *
+from .triggers import *
+from .range import *
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
 rcParams.update({
     'figure.subplot.bottom': 0.17,
     'figure.subplot.left': 0.1,
@@ -56,13 +67,3 @@ rcParams.update({
 # use new viridis colormap by default
 if '1.5' <= mpl_version < '2.0':
     rcParams['image.cmap'] = 'viridis'
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-from .registry import *
-from .utils import *
-from .core import *
-from .builtin import *
-from .segments import *
-from .triggers import *
-from .range import *

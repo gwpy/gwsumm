@@ -119,7 +119,7 @@ class SummaryPlot(object):
         return self._caption
 
     @caption.setter
-    def caption(self,text):
+    def caption(self, text):
         self._caption = text
 
     # ------------------------------------------------------------------------
@@ -173,8 +173,8 @@ class DataPlot(SummaryPlot):
         a descriptive tag for this `TabSummaryPlot`, used as part of the output
         file name
     outdir : `str`
-        output directory path for this `TabSummaryPlot`, defaults to the current
-        directory
+        output directory path for this `TabSummaryPlot`, defaults to
+        the current directory
     href : `str`
         custom URL for this plot to link towards.
     **kwargs
@@ -301,8 +301,9 @@ class DataPlot(SummaryPlot):
         try:
             return self._tag
         except AttributeError:
-            state = re_cchar.sub('_', self.state is None and 'MULTI' or
-                                      self.state.name).rstrip('_')
+            state = re_cchar.sub(
+                '_',
+                self.state is None and 'MULTI' or self.state.name).rstrip('_')
             type_ = re_cchar.sub('_', self.type)
             self._tag = '_'.join([state, self.pid, type_]).upper()
             return self.tag
@@ -321,9 +322,9 @@ class DataPlot(SummaryPlot):
             return self._pid
         except:
             chans = "".join(map(str, self.channels))
-            filts = "".join(map(str,
-                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
-                 for c in self.channels]))
+            filts = "".join(map(str, [
+                getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                for c in self.channels]))
             self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
             return self.pid
 
@@ -396,7 +397,8 @@ class DataPlot(SummaryPlot):
             if (key.endswith('color') and isinstance(val, (list, tuple)) and
                     isinstance(val[0], (int, float))):
                 plotargs[key] = [val]*len(self.get_channel_groups())
-            elif (not isinstance(val, (list, tuple)) or len(val) != len(chans)):
+            elif (not isinstance(val, (list, tuple)) or
+                  len(val) != len(chans)):
                 plotargs[key] = [val]*len(self.get_channel_groups())
         out = []
         for i in range(len(chans)):
@@ -466,8 +468,7 @@ class DataPlot(SummaryPlot):
         order = ['rms', 'mean', 'av', 'min', 'max']
         for channel, clist in out:
             clist.sort(key=lambda c: c.name.split('.')[-1] in order and
-                                        order.index(c.name.split('.')[-1])+1 or
-                                        10)
+                       order.index(c.name.split('.')[-1])+1 or 10)
         return out
 
     @classmethod
@@ -562,7 +563,7 @@ class DataPlot(SummaryPlot):
                 self.plot.save(fp, **savekwargs)
             except (IOError, RuntimeError) as e:
                 warnings.warn("Caught %s: %s [retrying...]"
-                             % (type(e).__name__, str(e)))
+                              % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
             if isinstance(fp, string_types):
                 vprint("        %s written\n" % fp)
@@ -610,7 +611,6 @@ class _SingleCallPlot(object):
                 plotargs[kwarg] = safe_eval(val)
                 plotargs[kwarg] = val
         return plotargs
-
 
 
 class BarPlot(_SingleCallPlot, DataPlot):

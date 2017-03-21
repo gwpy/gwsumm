@@ -79,7 +79,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         padding = kwargs.pop('padding', None)
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
-                                                 outdir=outdir, **kwargs)
+                                              outdir=outdir, **kwargs)
         self._allflags = []
         self.flags = flags
         self.preview_labels = False
@@ -417,7 +417,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                     if channel.sample_rate is not None:
                         stateseries.sample_rate = channel.sample_rate
                 stateseries.bits = bits_
-                if not 'int' in str(stateseries.dtype):
+                if 'int' not in str(stateseries.dtype):
                     stateseries = stateseries.astype('uint32')
                 newflags = stateseries.to_dqflags().values()
                 if flags is None:
@@ -569,7 +569,8 @@ class DutyDataPlot(SegmentDataPlot):
         if sep:
             if self.pargs.get('side_by_side'):
                 raise ValueError('DutyDataPlot parameters \'sep\' and '
-                                 '\'side_by_side\' should not be used together')
+                                 '\'side_by_side\' should not be used '
+                                 'together')
             geometry = (len(self.flags), 1)
         else:
             geometry = (1, 1)
@@ -666,10 +667,10 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['linewidth'] = 0
                 ax.bar((times + self.bins * offset)[:now], height[:now],
                        bottom=bottom[:now], align='center',
-                      width=width, color=color, **pargs)
+                       width=width, color=color, **pargs)
                 if style == 'fill':
-                    ax.plot(times[:now+1], duty[:now+1], drawstyle='steps-post',
-                            color=ec, linewidth=lw)
+                    ax.plot(times[:now+1], duty[:now+1],
+                            drawstyle='steps-post', color=ec, linewidth=lw)
 
             # plot mean
             if rollingmean:
@@ -830,7 +831,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
                         if channel.sample_rate is not None:
                             stateseries.sample_rate = channel.sample_rate
                     stateseries.bits = channel.bits
-                    if not 'int' in str(stateseries.dtype):
+                    if 'int' not in str(stateseries.dtype):
                         stateseries = stateseries.astype('uint32')
                     newflags = stateseries.to_dqflags()
                     if flags[type_] is None:
@@ -934,7 +935,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         'wedge-edgecolor': 'white',
     }
 
-    def init_plot(self, plot=Plot, geometry=(1,1)):
+    def init_plot(self, plot=Plot, geometry=(1, 1)):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
@@ -953,11 +954,6 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
     def draw(self, outputfile=None):
         (plot, axes) = self.init_plot(plot=Plot)
         ax = axes[0]
-
-        # get labels
-        #flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
-        #labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
-        #labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
 
         # extract plotting arguments
         future = self.pargs.pop('include_future', False)
@@ -1024,7 +1020,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         # add time to top
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
-            extra = Rectangle((0,0), 1, 1, fc='w', fill=False, ec='none',
+            extra = Rectangle((0, 0), 1, 1, fc='w', fill=False, ec='none',
                               linewidth=0)
         # sort entries
         if legsort:
@@ -1112,7 +1108,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         else:
             valid = SegmentList([self.span])
         # construct compound flags for each network size
-        flags = dict((f[:2],f) for f in self.flags)
+        flags = dict((f[:2], f) for f in self.flags)
         network = ''.join(sorted(set(flags.keys())))
         self.pargs.setdefault('title', '%s network duty factor' % network)
         networkflags = []
@@ -1168,7 +1164,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         3600: 'hours',
     }
 
-    def init_plot(self, plot=Plot, geometry=(1,1)):
+    def init_plot(self, plot=Plot, geometry=(1, 1)):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
@@ -1306,7 +1302,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             data.append(map(lambda x: float(abs(x)), segs.active))
 
         # get range
-        if not 'range' in histargs[0]:
+        if 'range' not in histargs[0]:
             l = axes[0].common_limits(data)
             for d in histargs:
                 d['range'] = l

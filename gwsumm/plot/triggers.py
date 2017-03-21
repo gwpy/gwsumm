@@ -74,13 +74,14 @@ class TriggerPlotMixin(object):
             return self._pid
         except:
             chans = "".join(map(str, self.channels))
-            filts = "".join(map(str,
-                [getattr(c, 'filter', getattr(c, 'frequency_response', ''))
-                 for c in self.channels]))
+            filts = "".join(map(str, [
+                getattr(c, 'filter', getattr(c, 'frequency_response', ''))
+                for c in self.channels]))
             if self.filterstr:
-                filts = "".join([filts,self.filterstr])
+                filts = "".join([filts, self.filterstr])
             self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
             return self.pid
+
 
 class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """Standard event trigger plot
@@ -467,7 +468,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 self.pargs.setdefault('xlim', channel.amplitude_range)
 
         # get range
-        if not 'range' in histargs[0]:
+        if 'range' not in histargs[0]:
             for kwset in histargs:
                 kwset['range'] = ax.common_limits(data)
 
@@ -485,16 +486,16 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                     p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
                 ax.hist([], **p2)
 
-        ## tight scale the axes
+        # tight scale the axes
         try:
-             d = pargs.pop('orientation', 'vertical')
+            d = pargs.pop('orientation', 'vertical')
         except NameError:
-             pass
+            pass
         else:
-             if d == 'vertical':
-                 ax.autoscale_view(tight=True, scaley=False)
-             elif d == 'horizontal':
-                 ax.autoscale_view(tight=True, scalex=False)
+            if d == 'vertical':
+                ax.autoscale_view(tight=True, scaley=False)
+            elif d == 'horizontal':
+                ax.autoscale_view(tight=True, scalex=False)
 
         # customise plot
         self.apply_parameters(ax, **self.pargs)
@@ -521,7 +522,7 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                      'ylabel': 'Rate [Hz]'})
 
     def __init__(self, *args, **kwargs):
-        if not 'stride' in kwargs:
+        if 'stride' not in kwargs:
             raise ValueError("'stride' must be configured for all rate plots.")
         if 'column' in kwargs and 'bins' not in kwargs:
             raise ValueError("'bins' must be configured for rate plots if "

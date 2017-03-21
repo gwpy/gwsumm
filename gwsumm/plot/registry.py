@@ -50,7 +50,7 @@ def register_plot(plot, name=None, force=False):
     """
     if name is None:
         name = plot.type
-    if not name in _PLOTS or force:
+    if name not in _PLOTS or force:
         _PLOTS[name] = plot
     else:
         raise ValueError("Plot '%s' has already been registered to the %s "

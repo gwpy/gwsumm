@@ -131,15 +131,17 @@ def count_free_cores(max=cpu_count()):
     """Count the number of CPU cores not currently used by this job.
     """
     if max is True:
-       max = cpu_count()
-    active = 1 #len(active_children()
+        max = cpu_count()
+    active = 1
     return max - (active + 1)
 
 
 _re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')
 
+
 def get_odc_bitmask(odcchannel):
     return _re_odc.sub('BITMASK', str(odcchannel))
+
 
 def safe_eval(val, strict=False, globals_=None, locals_=None):
     """Evaluate the given string as a line of python, if possible
@@ -198,13 +200,13 @@ def safe_eval(val, strict=False, globals_=None, locals_=None):
                          % (match, val))
     # format args for eval
     if globals_ is None and locals_ is None:
-       args = ()
+        args = ()
     elif globals_ is None and locals_ is not None:
-       args = (globals(), locals_)
+        args = (globals(), locals_)
     elif locals_ is None and globals_ is not None:
-       args = (globals_,)
+        args = (globals_,)
     else:
-       args = (globals_, locals_)
+        args = (globals_, locals_)
     # try and eval str
     try:
         return eval(val, *args)

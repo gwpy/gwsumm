@@ -26,6 +26,7 @@ from . import globalv
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
 # -- operating Mode -----------------------------------------------------------
 
 # https://docs.python.org/3/library/enum.html#orderedenum
@@ -101,6 +102,7 @@ def get_mode(m=None):
             return Mode[str(m).lower()]
         except KeyError:
             raise ValueError("%s is not a valid Mode" % m)
+
 
 def set_mode(m):
     """Set the current mode.

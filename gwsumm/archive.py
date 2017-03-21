@@ -219,6 +219,7 @@ def read_data_archive(sourcefile):
         for key in group:
             load_table(group[key])
 
+
 def backup_existing_archive(filename, suffix='.hdf',
                             prefix='gw_summary_archive_', dir=None):
     """Create a copy of an existing archive.

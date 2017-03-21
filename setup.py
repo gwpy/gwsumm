@@ -23,9 +23,6 @@
 from __future__ import print_function
 
 import sys
-if sys.version < '2.6':
-    raise ImportError("Python versions older than 2.6 are not supported.")
-
 import glob
 import os
 
@@ -33,6 +30,9 @@ from distutils import log
 from setuptools import (Command, setup, find_packages)
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_py import build_py
+
+if sys.version < '2.6':
+    raise ImportError("Python versions older than 2.6 are not supported.")
 
 # set basic metadata
 PACKAGENAME = 'gwsumm'
@@ -231,7 +231,8 @@ setup(name=DISTNAME,
       dependency_links=[
           'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
           'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
-          'https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz#egg=trigfind-0.3',
+          'https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz'
+          '#egg=trigfind-0.3',
       ],
       data_files=data_files,
       use_2to3=True,

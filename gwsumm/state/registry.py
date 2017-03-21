@@ -48,7 +48,7 @@ def register_state(state, key=None, force=False):
     """
     if key is None:
         key = state.key
-    if not key in globalv.STATES or force:
+    if key not in globalv.STATES or force:
         globalv.STATES[key] = state
     else:
         raise ValueError("State %r has already been registered." % key)

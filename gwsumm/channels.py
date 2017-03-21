@@ -158,8 +158,8 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                     except AttributeError:
                         pass
                     for param in filter(
-                            lambda x: x.endswith('_range') and not hasattr(new, x),
-                            vars(source)):
+                            lambda x: x.endswith('_range') and not
+                            hasattr(new, x), vars(source)):
                         setattr(new, param, getattr(source, param))
             # determine sample rate for trends
             if type_ == 'm-trend':

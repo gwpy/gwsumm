@@ -81,8 +81,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     if padding is None and isinstance(flag, DataQualityFlag):
         padding = {flag: flag.padding}
     elif padding is None:
-        padding = dict((flag, isinstance(flag, DataQualityFlag) and
-                              flag.padding or None) for flag in flags)
+        padding = dict((flag,
+                        isinstance(flag, DataQualityFlag) and
+                        flag.padding or None) for flag in flags)
 
     # check validity
     if validity is None:
@@ -111,9 +112,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     # read segments from global memory and get the union of needed times
     try:
-        old = reduce(operator.and_, (globalv.SEGMENTS.get(
-                                        f, DataQualityFlag(f)).known
-                                    for f in flags))
+        old = reduce(
+            operator.and_,
+            (globalv.SEGMENTS.get(f, DataQualityFlag(f)).known for f in flags))
     except TypeError:
         old = SegmentList()
     newsegs = validity - old
@@ -269,9 +270,9 @@ def format_padding(flags, padding):
         padding = list(eval(str))
     # zip list into dict
     if (isinstance(padding, (list)) or
-            (isinstance(padding, tuple) and len(padding)
-             and (any(isinstance(p, (list, tuple)) for p in padding)
-                  or len(padding) > 2))):
+            (isinstance(padding, tuple) and len(padding) and
+             (any(isinstance(p, (list, tuple)) for p in padding) or
+              len(padding) > 2))):
         return OrderedDict(zip(flags, padding))
     # otherwise copy single padding param for all flags
     elif not isinstance(padding, dict):

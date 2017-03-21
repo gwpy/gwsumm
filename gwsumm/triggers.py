@@ -171,7 +171,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         # store read kwargs
         kwargs = get_etg_read_kwargs(config, etg, exclude=['columns'])
         trigfindkwargs = dict((k[9:], kwargs.pop(k)) for k in kwargs.keys() if
-                               k.startswith('trigfind-'))
+                              k.startswith('trigfind-'))
 
         if format is not None:
             kwargs['format'] = format
@@ -207,7 +207,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                             str(channel), etg, segment[0], segment[1],
                             **trigfindkwargs)
                     except ValueError as e:
-                        warnings.warn("Caught %s: %s" % (type(e).__name__, str(e)))
+                        warnings.warn("Caught %s: %s"
+                                      % (type(e).__name__, str(e)))
                         continue
                 elif cache is not None:
                     segcache = cache
@@ -388,7 +389,8 @@ def parse_filter(value):
     >>> condition("snr>10")
     ('snr', [(10.0, <built-in function gt>)])
     >>> condition("50 < peak_frequency < 100")
-    ('peak_frequency', [(50.0, <built-in function ge>), (100.0, <build-in function lt>)])
+    ('peak_frequency', [(50.0, <built-in function ge>),
+                        (100.0, <build-in function lt>)])
     """
     # parse condition
     parts = list(generate_tokens(StringIO(value).readline))

@@ -134,7 +134,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                               datafind_error=datafind_error, nds=nds)
         sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
     else:
-        sampling = None;
+        sampling = None
 
     # initialize component lists if they don't exist yet
     for ck in ckeys:
@@ -361,12 +361,12 @@ def get_coherence_spectrum(channel_pair, segments, config=None,
             # FIXME: how to calculate percentiles correctly?
             globalv.COHERENCE_SPECTRUM[cmin] = FrequencySeries(
                 abs(complex_percentile(cdict['Cxy'], 5))**2 /
-                    cdict['Cxx'].percentile(95) /
-                    cdict['Cyy'].percentile(95), f0=Cxx.f0, df=Cxx.df)
+                cdict['Cxx'].percentile(95) / cdict['Cyy'].percentile(95),
+                f0=Cxx.f0, df=Cxx.df)
             globalv.COHERENCE_SPECTRUM[cmax] = FrequencySeries(
                 abs(complex_percentile(cdict['Cxy'], 95))**2 /
-                    cdict['Cxx'].percentile(5) /
-                    cdict['Cyy'].percentile(5), f0=Cxx.f0, df=Cxx.df)
+                cdict['Cxx'].percentile(5) / cdict['Cyy'].percentile(5),
+                f0=Cxx.f0, df=Cxx.df)
 
         # set the spectrum's name manually; this will be used for the legend
         globalv.COHERENCE_SPECTRUM[name].name = (

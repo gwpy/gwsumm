@@ -66,7 +66,8 @@ def parse_math_definition(definition):
     Examples
     --------
     >>> parse_math_definition('H1:TEST * L1:TEST^2')
-    ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))], [<built-in function mul>])
+    ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))],
+     [<built-in function mul>])
     """
     breaks = re_channel.finditer(definition)
     channels = []

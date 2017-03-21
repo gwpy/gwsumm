@@ -20,8 +20,6 @@
 """
 
 from functools import wraps
-import operator
-import re
 
 try:
     from collections import OrderedDict
@@ -32,95 +30,10 @@ from glue.segments import segmentlist as GlueSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 
-from ..channels import (get_channel, re_channel)
+from ..channels import get_channel
 from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-
-# -- parse channel names that include mathematical operations -----------------
-
-OPERATOR = {
-    '*': operator.mul,
-    '-': operator.sub,
-    '+': operator.add,
-    '/': operator.div,
-    '^': operator.pow,
-    '**': operator.pow,
-}
-
-re_math = re.compile('(?P<operator>.+?)'
-                     '(?P<value>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)$')
-
-
-def parse_math_definition(definition):
-    """Parse the definition for a channel combination
-
-    This method can only handle commutative operations, no fancy stuff
-    with parentheses. Something like ``A*B`` is fine, but not ``(A+B)^2``
-
-    Returns
-    -------
-    channels : `list` of `tuple`
-        a list of 2-tuples containing the name of each channel, and any
-        mathematical operations to be applied to that channel only
-    operators : `list` of `callable`
-        the list of functions that combine one channel and the previous,
-        if `channels` is a list of length ``N``, then the `operators` list
-        will have length ``N-1``
-
-    Examples
-    --------
-    >>> parse_math_definition('H1:TEST * L1:TEST^2')
-    ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))], [<built-in function mul>])
-    """
-    breaks = re_channel.finditer(definition)
-    channels = []
-    operators = []
-    match = next(breaks)
-    while True:
-        # find channel
-        a, b = match.span()
-        cname = definition[a:b]
-        channels.append((cname, None))
-
-        # find next channel and parse whatever's inbetween
-        try:
-            match = next(breaks)
-        except StopIteration:
-            c = None
-        else:
-            c = match.span()[0]
-
-        # parse math string
-        mathstr = definition[b:c].strip()
-        if not mathstr and c is None:  # if at end, break
-            break
-        elif not mathstr:  # otherwise no operator, panic
-            raise ValueError("Cannot parse math operator between channels "
-                             "in definition %r" % definition)
-        if c is not None:  # if between channels, find the combiner
-            operators.append(get_operator(mathstr[-1]))
-            mathstr = mathstr[:-1]
-        try:  # then parse some math to apply to the current channel
-            cop = re_math.match(mathstr).groupdict()
-        except AttributeError:
-            if mathstr:
-                raise ValueError("Cannot parse math operation %r" % mathstr)
-        else:
-            op = get_operator(cop['operator'])
-            value = float(cop['value'])
-            channels[-1] = (cname, (op, value))  # record math to be done
-        if c is None:  # if at the end, break
-            break
-    return channels, operators
-
-
-def get_operator(opstr):
-    try:
-        return OPERATOR[opstr]
-    except KeyError:
-        raise ValueError("Cannot parse math operator %r" % opstr)
 
 
 # -- method decorators --------------------------------------------------------
@@ -159,7 +72,7 @@ def use_configparser(f):
 # signal-processing parameters
 
 FFT_PARAMS = OrderedDict([
-    ('method', str),  # keep this one first (DMM) 
+    ('method', str),  # keep this one first (DMM)
     ('fftlength', float),
     ('overlap', float),
     ('window', None),
@@ -239,5 +152,3 @@ def make_globalv_key(channels, fftparams=None):
     if fftparams is not None:
         parts.append(fftparams)
     return ';'.join(map(str, parts))
-
-

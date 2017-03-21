@@ -49,9 +49,9 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 CIS_URL = 'https://cis.ligo.org'
 
 re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
-                         '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
-                         '(?:\.[a-z]+)?'  # trend type
-                         '(?:,[a-z-]+)?')  # NDS channel type
+                        '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
+                        '(?:\.[a-z]+)?'  # trend type
+                        '(?:,[a-z-]+)?')  # NDS channel type
 
 
 class ThreadChannelQuery(threading.Thread):
@@ -123,7 +123,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         else:
             raise ValueError("Ambiguous channel request '%s', multiple "
                              "existing channels recovered:\n    %s"
-                         % (str(channel), '\n    '.join(cstrings)))
+                             % (str(channel), '\n    '.join(cstrings)))
     else:
         matches = list(Channel.MATCH.finditer(name))
         # match single raw channel
@@ -157,9 +157,9 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                         new.filter = source.filter
                     except AttributeError:
                         pass
-                    for param in filter(lambda x: x.endswith('_range') and
-                                                  not hasattr(new, x),
-                                        vars(source)):
+                    for param in filter(
+                            lambda x: x.endswith('_range') and not hasattr(new, x),
+                            vars(source)):
                         setattr(new, param, getattr(source, param))
             # determine sample rate for trends
             if type_ == 'm-trend':
@@ -251,7 +251,7 @@ def split(channelstring):
             break
         # check for complete line without NDS type
         line = channelstring.split('\n')[0].rstrip('\', \n')
-        if not ',' in line:
+        if ',' not in line:
             try:
                 channelstring = channelstring.split('\n', 1)[1]
             except IndexError:

@@ -26,13 +26,13 @@ import os.path
 
 from six import string_types
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
 from . import markup
 from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
 from .._version import get_versions
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}

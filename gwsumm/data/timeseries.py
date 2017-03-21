@@ -402,8 +402,9 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
             frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
-            allchannels = set([c for group in
-                map(split_channel_combination, channels) for c in group])
+            allchannels = set([
+                c for group in map(split_channel_combination, channels) for
+                c in group])
             for channel in allchannels:
                 channel = get_channel(channel)
                 ifo = channel.ifo
@@ -527,10 +528,6 @@ def _get_timeseries_dict(channels, segments, config=None,
                 new = type(new)([s for s in new if abs(s) >= 60.])
             elif frametype is not None and frametype.endswith('%s_T' % ifo):
                 new = type(new)([s for s in new if abs(s) >= 1.])
-            #elif ((globalv.NOW - new[0][0]) < 86400 * 10 and
-            #      frametype == '%s_R' % ifo and
-            #      find_types(site=ifo[0], match='_C\Z')):
-            #    frametype = '%s_C' % ifo
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=frametype,
                                      exact_match=True)
@@ -666,7 +663,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                 raise
                     # filter with gain
                     elif (isinstance(filt, tuple) and len(filt) == 3 and
-                              len(filt[0] + filt[1]) == 0):
+                          len(filt[0] + filt[1]) == 0):
                         try:
                             data *= filt[2]
                         except TypeError:
@@ -693,7 +690,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                     data._unit = globalv.DATA[key][-1].unit
                 # update channel type for trends
                 if (data.channel.type is None and
-                       data.channel.trend is not None):
+                    data.channel.trend is not None):
                     if data.dt.to('s').value == 1:
                         data.channel.type = 's-trend'
                     elif data.dt.to('s').value == 60:
@@ -805,7 +802,7 @@ def add_timeseries(timeseries, key=None, coalesce=True):
 
     Parameters
     ----------
-    timeseries : `~gwpy.timeseries.TimeSeries` or `~gwpy.timeseries.StateVector`
+    timeseries : `TimeSeries` or `StateVector`
         the data series to add
 
     key : `str`, optional

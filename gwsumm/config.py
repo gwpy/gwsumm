@@ -58,7 +58,10 @@ from .html import (get_css, get_js)
 from .utils import (nat_sorted, re_cchar, safe_eval, OBSERVATORY_MAP)
 from .channels import (get_channels, split as split_channels)
 
-__all__ = _cp__all__ + ['InterpolationMissingOptionError', 'GWSummConfigParser']
+__all__ = _cp__all__ + [
+    'InterpolationMissingOptionError',
+    'GWSummConfigParser',
+]
 
 
 class GWSummConfigParser(ConfigParser):
@@ -107,7 +110,7 @@ class GWSummConfigParser(ConfigParser):
         """
         # if its already what we need, just return this instance
         if isinstance(cp, cls):
-           return cp
+            return cp
         # set up temporary buffer
         buf = StringIO()
         # write to buffer
@@ -206,8 +209,7 @@ class GWSummConfigParser(ConfigParser):
         else:
             nleap = leap_seconds(int(start))
             self.set(section, 'leap-seconds', str(nleap))
-            self.set(section, 'gps-start-time-noleap',
-                       str(int(start) - nleap))
+            self.set(section, 'gps-start-time-noleap', str(int(start) - nleap))
             self.set(section, 'gps-end-time-noleap', str(int(end) - nleap))
 
     def finalize(self):

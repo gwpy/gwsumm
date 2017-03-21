@@ -62,16 +62,16 @@ def load(url, id_='main', error=False, success=None):
     """
     ps = urlparse(url)
     if not ps.netloc and not error:
-        return markup.given_oneliner.script('$("#%s").load("%s");' % (id_, url))
+        return markup.given_oneliner.script('$("#%s").load("%s");'
+                                            % (id_, url))
     elif ps.netloc and not error:
         error = ('alert("Cannot load content from %r, use browser console '
-                'to inspect failure.");')
+                 'to inspect failure.");')
     else:
         if not isinstance(error, (string_types, markup.page)):
             error = 'Failed to load content from %r' % url
         error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
-                                '<p>%s</p></div>");'
-                 % (id_, error))
+                 '<p>%s</p></div>");' % (id_, error))
     if success is None:
         success = '$("#%s").html(data);' % id_
     return markup.given_oneliner.script("""
@@ -101,7 +101,8 @@ def comments_box(name, identifier=None, title=None, url=None):
             var dsq = document.createElement('script');
             dsq.type = 'text/javascript'; dsq.async = true;
             dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+            (document.getElementsByTagName('head')[0] ||
+             document.getElementsByTagName('body')[0]).appendChild(dsq);
         })();
     """)
     page.script.close()

@@ -19,8 +19,6 @@
 """This module defines the `Tab` API, and all of the built-in tab objects
 """
 
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
 # core
 from .registry import *
 from .core import *
@@ -40,3 +38,5 @@ from .management import *
 from .etg import *
 from .fscan import *
 from .gracedb import *
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

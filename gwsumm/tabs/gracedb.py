@@ -163,7 +163,7 @@ class GraceDbTab(get_tab('default')):
                         continue
                 if col == 'graceid':
                     page.td()
-                    href='%s/events/view/%s' % (self.url, v)
+                    href = '%s/events/view/%s' % (self.url, v)
                     page.a(v, href=href, target='_blank', rel='external')
                     page.td.close()
                 elif col != 'gpstime' and isinstance(v, float):

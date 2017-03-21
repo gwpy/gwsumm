@@ -208,7 +208,7 @@ class HvetoTab(base):
                 # fix channel name
                 c = '%s:%s' % (ifo, self.rounds[-1]['Winning channel'])
                 if etg and re.search('_%s\Z' % etg, c, re.I):
-                     c = c.rsplit('_', 1)[0]
+                    c = c.rsplit('_', 1)[0]
                 self.rounds[-1]['Winning channel'] = c
 
         # read starting triggers
@@ -252,13 +252,13 @@ class HvetoTab(base):
 
         # find some plots
         for plot in ['OVERAL_HISTOGRAM', 'OVERAL_EFF_DT'][::-1]:
-             filename = (
-                 '%s-HVETO_%s-%d-%d.png' % (ifo, plot, start, duration))
-             plotfile = os.path.join(self.directory, filename)
-             if os.path.isfile(plotfile):
-                 p = SummaryPlot(os.path.join(self.url, filename), new=False)
-                 p.state = self.states[0]
-                 self.plots.insert(0, p)
+            filename = (
+                '%s-HVETO_%s-%d-%d.png' % (ifo, plot, start, duration))
+            plotfile = os.path.join(self.directory, filename)
+            if os.path.isfile(plotfile):
+                p = SummaryPlot(os.path.join(self.url, filename), new=False)
+                p.state = self.states[0]
+                self.plots.insert(0, p)
 
         # delete data from archive
         del globalv.SEGMENTS[self.states[0].definition]
@@ -319,7 +319,8 @@ class HvetoTab(base):
             headers = list(self.summaryrows)
             data = []
             for i, round in enumerate(self.rounds):
-                data.append([str(i + 1)] + [str(round[key]) for key in headers])
+                data.append(
+                    [str(i + 1)] + [str(round[key]) for key in headers])
                 channel = get_channel(data[-1][1])
                 # format CIS url and type
                 if re.search('\.[a-z]+\Z', channel.name):
@@ -331,8 +332,8 @@ class HvetoTab(base):
                     ctype = 'Raw'
                 if c2.url:
                     data[-1][1] = html.markup.oneliner.a(str(channel),
-                                                  href=c2.url,
-                                                  target='_blank')
+                                                         href=c2.url,
+                                                         target='_blank')
                 else:
                     data[-1][1] = str(channel)
             page.add(str(html.table(['Round'] + headers, data)))

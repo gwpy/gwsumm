@@ -173,7 +173,6 @@ class FscanTab(base):
             if i % 6 == 6 or i == len(self.navigation) - 1:
                 page.div.close()
 
-
         if self.plots:
             page.hr(class_='row-divider')
             page.div(class_='scaffold well')
@@ -200,7 +199,7 @@ class FscanTab(base):
                        role="button", type="button", class_="btn btn-warning")
                 page.div.close()
                 page.div.close()
-                if i % ncols == ncols -1:
+                if i % ncols == ncols - 1:
                     page.div.close()
             if i % ncols != ncols - 1:
                 page.div.close()

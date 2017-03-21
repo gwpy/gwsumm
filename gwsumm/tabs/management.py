@@ -162,7 +162,7 @@ class AccountingTab(ParentTab):
                 instate = ts == idx * ts.unit
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
                 # append segments for group
-                group = int(idx //10. * 10)
+                group = int(idx // 10. * 10)
                 gtag = self.segmenttag % group
                 try:
                     modesegments[gtag] += modesegments[tag]

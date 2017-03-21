@@ -52,7 +52,7 @@ def register_tab(tab, name=None, force=False):
     """
     if name is None:
         name = tab.type
-    if not name in _TABS or force:
+    if name not in _TABS or force:
         _TABS[name] = tab
     else:
         raise ValueError("Tab '%s' has already been registered to the %s "

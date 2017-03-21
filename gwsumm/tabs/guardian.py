@@ -113,7 +113,7 @@ class GuardianTab(DataTab):
                        new.grdstates.iteritems())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
         pstates = [l for i, l in enumerate(new.grdstates.values()[::-1])
-                  if plot[-i-1]]
+                   if plot[-i-1]]
         flags = [new.segmenttag % name for name in pstates]
         labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]
 
@@ -455,7 +455,8 @@ class GuardianStatePlot(get_plot('segments')):
             ax.legend([v, n, a, b], ['Alive', 'Nominal', 'Request', 'Active'],
                       **legendargs)
         else:
-            ax.legend([n, a, b], ['Nominal', 'Request', 'Active'], **legendargs)
+            ax.legend([n, a, b], ['Nominal', 'Request', 'Active'],
+                      **legendargs)
 
         # customise plot
         for key, val in self.pargs.iteritems():
@@ -474,12 +475,12 @@ class GuardianStatePlot(get_plot('segments')):
         sax = None
         legentry = OrderedDict()
         grdmode = get_timeseries(
-           '%s:GRD-%s_MODE' % (self.ifo, self.node),
-           valid, query=False).join(gap='pad', pad=-1)
+            '%s:GRD-%s_MODE' % (self.ifo, self.node),
+            valid, query=False).join(gap='pad', pad=-1)
         try:
-           grdop = get_timeseries(
-              '%s:GRD-%s_OP' % (self.ifo, self.node),
-              valid, query=False).join(gap='pad', pad=-1)
+            grdop = get_timeseries(
+                '%s:GRD-%s_OP' % (self.ifo, self.node),
+                valid, query=False).join(gap='pad', pad=-1)
         except KeyError:
             modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
             colors = ('yellow', (0., .4, 1.), (.5, .0, .75))
@@ -539,9 +540,9 @@ class GuardianStatePlot(get_plot('segments')):
         # make custom legend
         if sax is not None:
             if legentry:
-                sax.legend(legentry.values(), legentry.keys(), loc='lower left',
-                           bbox_to_anchor=(1.01, 0.), borderaxespad=0,
-                           fontsize=12, title='Node mode')
+                sax.legend(legentry.values(), legentry.keys(),
+                           loc='lower left', bbox_to_anchor=(1.01, 0.),
+                           borderaxespad=0, fontsize=12, title='Node mode')
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.set_epoch(float(self.pargs.get('epoch', self.start)))
             ax.set_epoch(sax.get_epoch())

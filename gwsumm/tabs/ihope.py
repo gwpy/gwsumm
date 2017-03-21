@@ -293,7 +293,8 @@ class DailyAhopeTab(base):
                 page.h1('Loudest events')
                 page.p('The following table displays the %d loudest events as '
                        'recorded by Daily Ahope (with at least %s-second '
-                       'separation).' % (self.loudest['N'], self.loudest['dt']))
+                       'separation).'
+                       % (self.loudest['N'], self.loudest['dt']))
                 headers = self.loudest['labels']
                 if 'time' in headers[0]:
                     headers.insert(1, 'UTC time')

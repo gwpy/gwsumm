@@ -70,6 +70,7 @@ class ProcessedTab(object):
     """Abstract base class to detect necessity to run Tab.process()
     """
     type = '_processed'
+
     def process(self):
         """This method must be overridden by all subclasses
         """
@@ -322,22 +323,6 @@ class DataTab(ProcessedTab, ParentTab):
         except ValueError:
             allstate = generate_all_state(self.start, self.end)
         allstate.fetch(config=config)
-        # shortcut segment query for each state
-        #alldefs = {}
-        #for state in self.states:
-        #    if state.name == ALLSTATE or state.ready or not state.definition:
-        #        continue
-        #    try:
-        #        alldefs[state.url].append(state)
-        #    except KeyError:
-        #        alldefs[state.url] = [state]
-        #for url,states_ in alldefs.iteritems():
-        #    allvalid = reduce(operator.or_,
-        #                      [state.known for state in states_])
-        #    defs = [s.definition for s in states_]
-        #    get_segments(defs, allvalid, config=config, url=url#,
-        #                 segdb_error=segdb_error, return_=False, **kwargs)
-        # individually double-check, set ready condition
         for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
@@ -376,7 +361,6 @@ class DataTab(ProcessedTab, ParentTab):
                 vprint("Pre-processing all-data requests\n")
             self.process_state(state, config=config, multiprocess=multiprocess,
                                **stateargs)
-
 
     def process_state(self, state, nds=None, multiprocess=True,
                       config=GWSummConfigParser(), datacache=None,
@@ -493,7 +477,7 @@ class DataTab(ProcessedTab, ParentTab):
                              multiprocess=multiprocess, **fp2)
 
         if len(csgchannels):
-            if (len(csgchannels)%2 != 0):
+            if (len(csgchannels) % 2 != 0):
                 raise ValueError("Error processing coherence spectrograms: "
                                  "you must supply exactly 2 channels for "
                                  "each spectrogram.")
@@ -532,8 +516,8 @@ class DataTab(ProcessedTab, ParentTab):
         if len(dqflags):
             vprint("    %d data-quality flags identified for segments\n"
                    % len(dqflags))
-            get_segments(dqflags, state, config=config, segdb_error=segdb_error,
-                         cache=segmentcache)
+            get_segments(dqflags, state, config=config,
+                         segdb_error=segdb_error, cache=segmentcache)
 
         # --------------------------------------------------------------------
         # process triggers
@@ -773,9 +757,9 @@ class DataTab(ProcessedTab, ParentTab):
                 caption="Channels used to generate data on this page")))
 
         allflags = sorted(set([
-            (f, p) for plot in filter(lambda p: p.data == 'segments' and
-                                                p.type != 'guardian',
-                                      self.plots)
+            (f, p) for plot in filter(
+                lambda p: p.data == 'segments' and p.type != 'guardian',
+                self.plots)
             for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
         if len(allflags):
             re_int_decimal = re.compile('\.00(?=(\s|\%))')
@@ -880,7 +864,6 @@ class DataTab(ProcessedTab, ParentTab):
                         % state.name)))
         return page
 
-
     @staticmethod
     def print_segments(flag, table=False, caption=None):
         """Print the contents of a `SegmentList` in HTML
@@ -934,7 +917,7 @@ class DataTab(ProcessedTab, ParentTab):
             out = list()
             add = out.extend
         for plot in self.plots:
-            if not plot.data in types:
+            if plot.data not in types:
                 continue
             if isnew and not plot.new:
                 continue
@@ -968,7 +951,7 @@ class DataTab(ProcessedTab, ParentTab):
         uniq = kwargs.pop('unique', True)
         out = set()
         for plot in self.plots:
-            if not plot.data in types:
+            if plot.data not in types:
                 continue
             if isnew and not plot.new:
                 continue
@@ -1003,7 +986,7 @@ class DataTab(ProcessedTab, ParentTab):
         isnew = kwargs.pop('new', True)
         out = set()
         for plot in self.plots:
-            if not plot.type in types:
+            if plot.type not in types:
                 continue
             if isnew and not plot.new:
                 continue

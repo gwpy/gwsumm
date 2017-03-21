@@ -155,7 +155,6 @@ class EventTriggerTab(get_tab('default')):
                 pass
         new = super(EventTriggerTab, cls).from_ini(config, section, **kwargs)
 
-
         # get trigger filter
         if config.has_option(section, 'event-filter'):
             new.filterstr = config.get(section, 'event-filter')
@@ -251,7 +250,8 @@ class EventTriggerTab(get_tab('default')):
         if error:
             for state in self.states:
                 self.error[state] = (
-                    'danger', 'This analysis seems to have failed: %s.' % error)
+                    'danger',
+                    'This analysis seems to have failed: %s.' % error)
         # only process if the cachfile was found
         if kwargs.get('trigcache', None) is None:
             kwargs['trigcache'] = self.cache
@@ -260,7 +260,7 @@ class EventTriggerTab(get_tab('default')):
         except IOError as e:
             msg = "GWSumm failed to process these data.<pre>%s</pre>" % str(e)
             for state in self.states:
-                self.error[state] = ( 'danger', msg)
+                self.error[state] = ('danger', msg)
 
     def process_state(self, state, *args, **kwargs):
         if self.error.get(state, None):
@@ -345,10 +345,10 @@ class EventTriggerTab(get_tab('default')):
                                        '%B %d %Y, %H:%M:%S.%f')[:-3])
                     page.add(str(html.table(
                         headers, data,
-                        caption="%d loudest <samp>%s</samp> (%s) events by %s "
-                                "with minimum %ss separation" % (
-                            self.loudest['N'], self.channel, self.etg,
-                            rankstr, self.loudest['dt']))))
+                        caption=("%d loudest <samp>%s</samp> (%s) events by %s "
+                                 "with minimum %ss separation"
+                                 % (self.loudest['N'], self.channel, self.etg,
+                                    rankstr, self.loudest['dt'])))))
 
             if self.subplots:
                 page.hr(class_='row-divider')

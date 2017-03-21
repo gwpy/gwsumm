@@ -67,6 +67,7 @@ BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
 re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 
+
 class SEIWatchDogTab(base):
     """Summarise the WatchDog trips recorded from the SEI system.
     """
@@ -138,7 +139,8 @@ class SEIWatchDogTab(base):
                                        cache=datacache)
         vprint("    All time-series data loaded\n")
 
-        vprint("    %d channels identified as StateVectors\n" % len(svchannels))
+        vprint("    %d channels identified as StateVectors\n"
+               % len(svchannels))
         latchdata = get_timeseries_dict(svchannels, state, config=config,
                                         nds=nds, multiprocess=multiprocess,
                                         datafind_error=datafind_error,
@@ -235,16 +237,16 @@ class SEIWatchDogTab(base):
                                   % (self.ifo, self.chambers[1]))
         hepimask = hepichannel.bits + ['HEPI Unknown']
         if self.chambers == HAMs:
-             isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
-                                        % (self.ifo, self.chambers[0]))]
-             isimask = isichannels[0].bits + ['ISI Unknown']
+            isichannels = [get_channel(HAM_ISI_LATCH_CHANNEL
+                                       % (self.ifo, self.chambers[0]))]
+            isimask = isichannels[0].bits + ['ISI Unknown']
         else:
-             isichannels = [get_channel(BSC_ST1_LATCH_CHANNEL
-                                        % (self.ifo, self.chambers[0])),
-                            get_channel(BSC_ST2_LATCH_CHANNEL
-                                        % (self.ifo, self.chambers[0]))]
-             isimask = (isichannels[0].bits + ['ISI ST1 Unknown'] +
-                        isichannels[1].bits + ['ISI ST2 Unknown'])
+            isichannels = [get_channel(BSC_ST1_LATCH_CHANNEL
+                                       % (self.ifo, self.chambers[0])),
+                           get_channel(BSC_ST2_LATCH_CHANNEL
+                                       % (self.ifo, self.chambers[0]))]
+            isimask = (isichannels[0].bits + ['ISI ST1 Unknown'] +
+                       isichannels[1].bits + ['ISI ST2 Unknown'])
         mask = hepimask + isimask
 
         # count trips
@@ -310,7 +312,7 @@ class SEIWatchDogTab(base):
         page.tr(class_='header')
         page.th('Totals')
         for i in range(totals.shape[1]):
-            t = totals[:,i].sum()
+            t = totals[:, i].sum()
             page.th(t)
         page.tr.close()
         page.thead.close()
@@ -319,8 +321,7 @@ class SEIWatchDogTab(base):
 
         # build trip groups
         self.trips.sort(key=lambda (x, y, z, p):
-                                (x, z in mask and (mask).index(z) or 1000,
-                                 p is None))
+                        (x, z in mask and (mask).index(z) or 1000, p is None))
         groups = OrderedDict()
         j = 0
         for i in xrange(len(self.trips)):
@@ -353,8 +354,9 @@ class SEIWatchDogTab(base):
         for id in groups:
             t, chamber, trigger, plot = self.trips[id]
             t2 = Time(t, format='gps', scale='utc')
-            tlocal = Time(t2.datetime.replace(tzinfo=utc).astimezone(localzone),
-                          format='datetime', scale='utc')
+            tlocal = Time(
+                t2.datetime.replace(tzinfo=utc).astimezone(localzone),
+                format='datetime', scale='utc')
             rows.append([t, t2.iso, tlocal.iso, chamber, trigger])
             if plot:
                 rows[-1].append(html.markup.oneliner.a(
@@ -380,10 +382,10 @@ class SEIWatchDogTab(base):
                 rows[-1].append('-')
         page.add(str(html.table(
             headers, rows,
-            caption='List of %s watch-dog trips in interval [%d .. %d) - trips '
-                    'are considered \'associated\' if they fall within %s '
-                    'seconds of each other.' % (
-                    chambertype, self.start, self.end, self.window))))
+            caption=('List of %s watch-dog trips in interval [%d .. %d) - '
+                     'trips are considered \'associated\' if they fall within '
+                     '%s seconds of each other.'
+                     % (chambertype, self.start, self.end, self.window)))))
 
         wdp = []
         for i, p in enumerate(self.plots):
@@ -460,19 +462,19 @@ class SeiWatchDogPlot(get_plot('data')):
 
         # get channels
         mapsec = 'sei-wd-map-%s' % sensor
-        if (not config.has_section(mapsec) and
-                re.match('ISI ST\d ', sensor)):
+        if not config.has_section(mapsec) and re.match('ISI ST\d ', sensor):
             mapsec = ('sei-wd-map-%s'
                       % (' '.join(sensor.split(' ', 2)[::2])))
         stubs = zip(*sorted([o for o in config.items(mapsec) if o[0].isdigit()],
-                             key=lambda (x, y): x))[1]
+                            key=lambda (x, y): x))[1]
         if re.search('ISI ST\d ', sensor):
             stage = sensor.split(' ')[1]
             channels = [get_channel('%s:%s-%s_%s_%s'
                                     % (ifo, system, chamber, stage, stub))
                         for stub in stubs]
         else:
-            channels = [get_channel('%s:%s-%s_%s' % (ifo, system, chamber, stub))
+            channels = [get_channel('%s:%s-%s_%s'
+                                    % (ifo, system, chamber, stub))
                         for stub in stubs]
 
         # set types
@@ -527,7 +529,7 @@ class SeiWatchDogPlot(get_plot('data')):
                               sharex=True,
                               subplot_kw={'projection': 'timeseries'},
                               FigureClass=TimeSeriesPlot, figsize=[12, 6])
-        axes[0,0].set_xlim(start, end)
+        axes[0, 0].set_xlim(start, end)
         for channel, ax in zip(self.chanlist, axes.flat):
             ax.set_epoch(self.gpstime)
             # plot data
@@ -550,8 +552,8 @@ class SeiWatchDogPlot(get_plot('data')):
                 tick.label.set_fontsize(16)
         plot.text(0.5, 0.04, 'Time [seconds] from trip (%s)' % self.gpstime,
                   ha='center', va='bottom', fontsize=24)
-        plot.text(0.01, 0.5, 'Amplitude %s' % self.unit, ha='left', va='center',
-                  rotation='vertical', fontsize=24)
+        plot.text(0.01, 0.5, 'Amplitude %s' % self.unit, ha='left',
+                  va='center', rotation='vertical', fontsize=24)
 
         plot.suptitle('%s %s %s watchdog trip: %s'
                       % (self.ifo, self.chamber, self.sensor, self.gpstime),

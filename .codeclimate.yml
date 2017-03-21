@@ -32,3 +32,4 @@ exclude_paths:
   - gwsumm/_version.py
   - docs/*
   - gwsumm/tests/*
+  - gwsumm/html/markup.py

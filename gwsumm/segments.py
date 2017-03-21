@@ -65,11 +65,65 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
     Parameters
     ----------
-    FIXME
+    flag : `str`, `list`
+        either the name of one flag, or a list of names
+
+    validity : `~gwpy.segments.SegmentList`
+        the segments over which to search for other segments
+
+    query : `bool`, optional, default: `True`
+        actually execute a read/query operation (if needed), otherwise
+        just retrieve segments that have already been cached
+
+    config : `~configparser.ConfigParser`, optional
+        the configuration for your analysis, if you have one. If
+        present the ``[segment-database]`` section will be queried
+        for the following options
+
+        - ``gps-start-time``, and ``gps-end-time``, if ``validity`` is
+          not given
+        - ``url`` (the remote hostname for the segment database) if
+          the ``url`` keyword is not given
+
+    cache : :class:`glue.lal.Cache`, optional
+        a cache of files from which to read segments, otherwise segments
+        will be downloaded from the segment database
+
+    coalesce : `bool`, optional, default: `True`
+        coalesce all segmentlists before returning, otherwise just return
+        segments as they were downloaded/read
+
+    padding : `tuple`, or `dict` of `tuples`, optional
+        `(start, end)` padding with which to pad segments that are
+        downloaded/read
+
+    segdb_error : `str`, optional, default: ``'raise'``
+        how to handle errors returned from the segment database, one of
+
+        - ``'raise'`` (default) : raise the exception as normal
+        - ``'warn'`` : print the exception as a warning, but return no
+          segments
+        - ``'ignore'`` : silently ignore the error and return no segments
+
+    url : `str`, optional
+        the remote hostname for the target segment database
+
+    return_ : `bool`, optional, default: `True`
+        internal flag to enable (True) or disable (False) actually returning
+        anything. This is useful if you want to download/read segments now
+        but not use them until later (e.g. plotting)
 
     Returns
     -------
-    FIXME
+    flag : `~gwpy.segments.DataQualityFlag`
+        the flag object representing segments for the given single flag, OR
+
+    flagdict : `~gwpy.segments.DataQualityDict`
+        the dict of `~gwpy.segments.DataQualityFlag` objects for multiple flags,
+        if ``flag`` is given as a `list`, OR
+
+    None
+       if ``return_=False``
     """
     if isinstance(flag, string_types):
         flags = flag.split(',')

@@ -105,9 +105,16 @@ def nat_sorted(l, key=None):
         sorted() version of input ``l``
     """
     k = key and map(key, l) or l
-    convert = lambda text: int(text) if text.isdigit() else text
-    alphanum_key = lambda key: [convert(c) for c in
-                                re.split('([0-9]+)', k[l.index(key)])]
+
+    def convert(text):
+        if text.isdigit():
+            return int(text)
+        else:
+            return text
+
+    def alphanum_key(key):
+        return [convert(c) for c in re.split('([0-9]+)', k[l.index(key)])]
+
     return sorted(l, key=alphanum_key)
 
 

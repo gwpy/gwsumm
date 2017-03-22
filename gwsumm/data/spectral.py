@@ -21,6 +21,7 @@
 
 from __future__ import division
 
+import os.path
 import operator
 import warnings
 try:
@@ -35,13 +36,15 @@ from math import pi
 
 import numpy
 
+from scipy import interpolate
+
 from astropy import units
 
 from gwpy.segments import (DataQualityFlag, SegmentList)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
-from .. import globalv
+from .. import (globalv, io)
 from ..utils import (vprint, count_free_cores, safe_eval)
 from ..channels import (get_channel, re_channel,
                         split_combination as split_channel_combination)
@@ -147,7 +150,9 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         except AttributeError:
             filter_ = None
         else:
-            if isinstance(filter_, string_types):
+            if isinstance(filter_, string_types) and os.path.isfile(filter_):
+                filter_ = io.read_frequencyseries(filter_)
+            elif isinstance(filter_, string_types):
                 filter_ = safe_eval(filter_, strict=True)
 
         # get time-series data
@@ -186,7 +191,10 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                     specgram._unit = unit ** 2 / units.Hertz
                 else:
                     raise
-            if filter_ and fftparams['method'] not in ['rayleigh']:
+            if isinstance(filter_, FrequencySeries) and (
+                    fftparams['method'] not in ['rayleigh']):
+                specgram = apply_transfer_function_series(specgram, filter_)
+            elif filter_ and fftparams['method'] not in ['rayleigh']:
                 # manually setting x0 is a hack against precision error
                 # somewhere inside the **(1/2.) operation (Quantity)
                 x0 = specgram.x0.value
@@ -341,3 +349,19 @@ def size_for_spectrogram(size, stride, fftlength, overlap):
     if x > size:
         x -= fftlength
     return x
+
+
+def apply_transfer_function_series(specgram, tfunc):
+    """Multiply a spectrogram by a transfer function `FrequencySeries`
+
+    This method interpolates the transfer function onto the frequency vector
+    of the spectrogram, so should work regardless of the inputs
+    """
+    # interpolate transfer function onto spectrogram frequency series
+    interpolator = interpolate.interp1d(tfunc.frequencies.value, tfunc.value)
+    itfunc = numpy.zeros((1, specgram.frequencies.size))
+    known = specgram.frequencies.value >= tfunc.frequencies.value[0]
+    known &= specgram.frequencies.value <= tfunc.frequencies.value[-1]
+    itfunc[0,:][known] = interpolator(specgram.frequencies.value[known])
+    # and multiply
+    return (specgram ** (1/2.) * itfunc) ** 2

@@ -52,8 +52,6 @@ class AccountingTab(ParentTab):
     @classmethod
     def from_ini(cls, config, section, plotdir='plots', **kwargs):
         new = super(ParentTab, cls).from_ini(config, section, **kwargs)
-        if len(new.states) > 1 or new.states[0].name != ALLSTATE:
-            raise ValueError("AccountingTab does not accept state selection")
 
         # add information
         new.plots = []
@@ -90,13 +88,15 @@ class AccountingTab(ParentTab):
             segcolors = [colors.get(flag, None) for flag in flags]
             if not any(segcolors):
                 segcolors = None
-            new.plots.append(get_plot('segments')(
-                [new.segmenttag % idx for idx in flags],
-                new.span[0], new.span[1], labels=flags.values(),
-                outdir=plotdir, tag='%s_SEGMENTS_%s' % (tag, ptag.upper()),
-                active=segcolors,
-                known={'alpha': 0.1, 'facecolor': 'lightgray'},
-                title='%s operating mode %s' % (new.ifo, ptag)))
+            for state in new.states:
+                new.plots.append(get_plot('segments')(
+                    [new.segmenttag % idx for idx in flags],
+                    new.span[0], new.span[1], labels=flags.values(),
+                    state=state, outdir=plotdir,
+                    pid='%s_SEGMENTS_%s' % (tag, ptag.upper()),
+                    active=segcolors,
+                    known={'alpha': 0.1, 'facecolor': 'lightgray'},
+                    title='%s operating mode %s' % (new.ifo, ptag)))
 
         # plot pie charts
         try:
@@ -107,25 +107,27 @@ class AccountingTab(ParentTab):
         piecolors = [colors.get(flag, None) for flag in groups]
         if not any(piecolors):
             piecolors = None
-        new.plots.append(get_plot('segment-pie')(
-            [new.segmenttag % idx for idx in groups],
-            new.span[0], new.span[1], labels=groups.values(),
-            outdir=plotdir, tag='%s_PIE_%s' % (tag, ptag.upper()),
-            colors=piecolors, explode=explode,
-            title='%s operating mode %s' % (new.ifo, ptag)))
 
-        # plot bar chart
-        new.plots.append(get_plot('duty')(
-            [new.segmenttag % idx for idx in groups],
-            new.span[0], new.span[1],
-            labels=[f.replace(' ', '\n') for f in groups.values()],
-            outdir=plotdir, tag='%s_SEGMENT_BAR_%s' % (tag, ptag.upper()),
-            colors=piecolors, stacked=True, ylim=[0, 100],
-            ylabel=r'Percentage [\%] of available time',
-            legend_loc='upper left', legend_bbox_to_anchor=(1.01, 1),
-            legend_fontsize=12, legend_borderaxespad=0, legend_frameon=False,
-            legend_handlelength=1.0, legend_handletextpad=.5,
-            title='%s operating mode %s' % (new.ifo, ptag)))
+        for state in new.states:
+            new.plots.append(get_plot('segment-pie')(
+                [new.segmenttag % idx for idx in groups],
+                new.span[0], new.span[1], state=state, labels=groups.values(),
+                outdir=plotdir, pid='%s_PIE_%s' % (tag, ptag.upper()),
+                colors=piecolors, explode=explode,
+                title='%s operating mode %s' % (new.ifo, ptag)))
+
+            new.plots.append(get_plot('duty')(
+                [new.segmenttag % idx for idx in groups],
+                new.span[0], new.span[1], state=state,
+                labels=[f.replace(' ', '\n') for f in groups.values()],
+                outdir=plotdir, pid='%s_SEGMENT_BAR_%s' % (tag, ptag.upper()),
+                colors=piecolors, stacked=True, ylim=[0, 100],
+                ylabel=r'Percentage [\%] of available time',
+                legend_loc='upper left', legend_bbox_to_anchor=(1.01, 1),
+                legend_fontsize=12, legend_borderaxespad=0,
+                legend_frameon=False,
+                legend_handlelength=1.0, legend_handletextpad=.5,
+                title='%s operating mode %s' % (new.ifo, ptag)))
 
         return new
 
@@ -162,7 +164,7 @@ class AccountingTab(ParentTab):
                 instate = ts == idx * ts.unit
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
                 # append segments for group
-                group = int(idx // 10. * 10)
+                group = int(idx //10. * 10)
                 gtag = self.segmenttag % group
                 try:
                     modesegments[gtag] += modesegments[tag]
@@ -179,7 +181,7 @@ class AccountingTab(ParentTab):
     def write_state_html(self, state):
         """Write the HTML for the given state of this `GuardianTab`
         """
-        page = self.scaffold_plots()
+        page = self.scaffold_plots(state=state)
 
         page.div(class_='row')
         page.div(class_='col-md-12')

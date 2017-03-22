@@ -40,12 +40,11 @@ except ImportError:
 from astropy.units import Quantity
 from astropy.io.registry import IORegistryError
 
-from gwpy.frequencyseries import FrequencySeries
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
 from gwpy.segments import SegmentList
 
-from .. import globalv
+from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, get_spectrogram,
@@ -332,16 +331,10 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             else:
                 ratio = getattr(allspec, ratio)(axis=0)
         elif isinstance(ratio, string_types) and os.path.isfile(ratio):
-            try:  # try auto-identify format
-                ratio = FrequencySeries.read(ratio)
+            try:
+                ratio = io.read_frequencyseries(ratio)
             except IOError as e:  # skip if file can't be read
                 warnings.warn('IOError: %s' % str(e))
-            except IORegistryError as e:  # try format identification
-                if ratio.endswith('.gz'):
-                    fmt = os.path.splitext(ratio[:-3])[-1]
-                else:
-                    fmt = os.path.splitext(ratio)[-1]
-                ratio = FrequencySeries.read(ratio, format=fmt.lstrip('.'))
 
         # allow channel data to set parameters
         if getattr(channel, 'frequency_range', None) is not None:
@@ -528,17 +521,10 @@ class SpectrumDataPlot(DataPlot):
         for i, ref in enumerate(refs):
             if 'source' in ref:
                 source = ref.pop('source')
-                try:  # try auto-identify format
-                    refspec = FrequencySeries.read(source)
+                try:
+                    refspec = io.read_frequencyseries(source)
                 except IOError as e:  # skip if file can't be read
                     warnings.warn('IOError: %s' % str(e))
-                except IORegistryError as e:  # try format identification
-                    if source.endswith('.gz'):
-                        fmt = os.path.splitext(source[:-3])[-1]
-                    else:
-                        fmt = os.path.splitext(source)[-1]
-                    refspec = FrequencySeries.read(source,
-                                                   format=fmt.lstrip('.'))
                 else:
                     ref.setdefault('zorder', -len(refs) + 1)
                     if 'filter' in ref:
@@ -962,17 +948,10 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         for i, ref in enumerate(refs):
             if 'source' in ref:
                 source = ref.pop('source')
-                try:  # try auto-identify format
-                    refspec = FrequencySeries.read(source)
+                try:
+                    refspec = io.read_frequencyseries(source)
                 except IOError as e:  # skip if file can't be read
                     warnings.warn('IOError: %s' % str(e))
-                except IORegistryError as e:  # try format identification
-                    if source.endswith('.gz'):
-                        fmt = os.path.splitext(source[:-3])[-1]
-                    else:
-                        fmt = os.path.splitext(source)[-1]
-                    refspec = FrequencySeries.read(source,
-                                                   format=fmt.lstrip('.'))
                 else:
                     if 'filter' in ref:
                         refspec = refspec.filter(*ref.pop('filter'))

@@ -22,7 +22,7 @@
 
 import time
 
-from gwpy.time import tconvert
+from gwpy.time import to_gps
 from gwpy.segments import DataQualityDict
 from gwpy.detector import ChannelList
 
@@ -44,7 +44,7 @@ START = time.time()
 # run time variables
 MODE = 0
 WRITTEN_PLOTS = []
-NOW = int(tconvert('now'))
+NOW = int(to_gps('now'))
 HTMLONLY = False
 
 # comments

@@ -11,3 +11,4 @@ git+https://github.com/gwpy/gwpy
 libsass
 jsmin
 astropy_helpers
+ligo_gracedb

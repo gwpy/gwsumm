@@ -1,6 +1,6 @@
 enum34
 pykerberos
-m2crypto
+M2Crypto
 python-cjson
 h5py
 lxml

@@ -43,15 +43,17 @@ OPERATOR = {
     '**': operator.pow,
 }
 
-re_math = re.compile('(?P<operator>.+?)'
-                     '(?P<value>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)')
+re_operator = re.compile('\s+[+/^\*-]+\s+')
+re_value = re.compile('[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
 
 
 def parse_math_definition(definition):
     """Parse the definition for a channel combination
 
     This method can only handle commutative operations, no fancy stuff
-    with parentheses. Something like ``A*B`` is fine, but not ``(A+B)^2``
+    with parentheses. Something like ``A * B`` is fine, but not ``(A + B) ^ 2``
+
+    All operands, operators, and values should be space-separated.
 
     Returns
     -------
@@ -69,49 +71,45 @@ def parse_math_definition(definition):
     ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))],
      [<built-in function mul>])
     """
-    breaks = re_channel.finditer(definition)
     channels = []
     operators = []
+    ops = re_operator.finditer(definition)
     try:
-        match = next(breaks)
-    except StopIteration:  # no channel names parsed at all, just return
+        match = next(ops)
+    except StopIteration:
         return [(definition, None)], []
-    if Channel.MATCH.match(definition):  # channel name matches (GEO)
-        return [(definition, None)], []
+    x = 0
     while True:
-        # find channel
         a, b = match.span()
-        cname = definition[a:b]
-        channels.append((cname, []))
+        op = get_operator(match.group().strip())
 
-        # find next channel and parse whatever's inbetween
+        # parse channel name
+        before = definition[x:a]
+        channels.append((before, []))
+
+        # find next operator
         try:
-            match = next(breaks)
+            match = next(ops)
         except StopIteration:
             c = None
         else:
             c = match.span()[0]
 
-        # parse math string
-        mathstr = definition[b:c].strip()
-        if not mathstr and c is None:  # if at end, break
+        # parse operator or channel name
+        after = definition[b:c]
+        try:
+            a2, b2 = re_value.match(after).span()
+        except AttributeError:  # no match
+            operators.append(op)
+            if c is None:
+                channels.append((definition[b:], []))
+        else:
+            channels[-1][1].append((op, after[a2:b2]))
+
+        x = b
+        if c is None:
             break
-        elif not mathstr:  # otherwise no operator, panic
-            raise ValueError("Cannot parse math operator between channels "
-                             "in definition %r" % definition)
-        if c is not None:  # if between channels, find the combiner
-            operators.append(get_operator(mathstr[-1]))
-            mathstr = mathstr[:-1].strip()
-        matches = [m.groupdict() for m in re_math.finditer(mathstr)]
-        if mathstr and not matches:
-            raise ValueError("Cannot parse math operation %r" % mathstr)
-        elif matches:
-            for cop in matches:
-                op = get_operator(cop['operator'].strip())
-                value = float(cop['value'])
-                channels[-1][1].append((op, value))  # record math to be done
-        if c is None:  # if at the end, break
-            break
+
     return channels, operators
 
 

@@ -49,7 +49,7 @@ from ..utils import (vprint, count_free_cores, safe_eval)
 from ..channels import (get_channel, re_channel,
                         split_combination as split_channel_combination)
 from .utils import (use_segmentlist, make_globalv_key, get_fftparams)
-from .mathutils import get_with_math
+from .mathutils import (get_with_math, parse_math_definition)
 from .timeseries import (get_timeseries, get_timeseries_dict)
 
 OPERATOR = {
@@ -61,6 +61,8 @@ OPERATOR = {
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
+# -- spectrogram --------------------------------------------------------------
 
 @use_segmentlist
 def get_spectrogram(channel, segments, config=None, cache=None,
@@ -87,7 +89,8 @@ def get_spectrogram(channel, segments, config=None, cache=None,
     elif return_:
         return get_with_math(
             channel, segments, _get_spectrogram, _get_spectrogram,
-            config=config, query=False, format=format, return_=True)
+            config=config, query=False, format=format, return_=True,
+            **fftparams)
 
 
 @use_segmentlist
@@ -95,7 +98,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                      query=True, nds=None, format='power', return_=True,
                      frametype=None, multiprocess=True,
                      datafind_error='raise', **fftparams):
-
     channel = get_channel(channel)
 
     # if we aren't given a method, check to see whether data have already
@@ -120,17 +122,20 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     # keep FftParams as a dict for convenience
     fftparams = fftparams.dict()
 
+    # read segments from global memory
+    havesegs = globalv.SPECTROGRAMS.get(key, SpectrogramList()).segments
+    new = segments - havesegs
+    query &= abs(new) != 0
+
     # extract spectrogram stride from dict
     try:
         stride = float(fftparams.pop('stride'))
     except TypeError as e:
-        e.args = ('cannot parse a spectrogram stride from the kwargs given, '
-                  'please give some or all of fftlength, overlap, stride',)
-        raise
-
-    # read segments from global memory
-    havesegs = globalv.SPECTROGRAMS.get(key, SpectrogramList()).segments
-    new = segments - havesegs
+        if query:
+            e.args = ('cannot parse a spectrogram stride from the kwargs '
+                      'given, please give some or all of fftlength, overlap, '
+                      'stride',)
+            raise
 
     # get processes
     if multiprocess is True:
@@ -142,7 +147,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 
     globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
-    query &= abs(new) != 0
     if query:
         # read channel information
         try:
@@ -234,64 +238,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     return out.coalesce()
 
 
-def get_spectrum(channel, segments, config=None, cache=None, query=True,
-                 nds=None, format='power', return_=True, **fftparams):
-    """Retrieve the time-series and generate a spectrogram of the given
-    channel
-    """
-    channel = get_channel(channel)
-    if isinstance(segments, DataQualityFlag):
-        name = ','.join([channel.ndsname, segments.name])
-        segments = segments.active
-    else:
-        name = channel.ndsname
-    name += ',%s' % format
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
-
-    if name not in globalv.SPECTRUM:
-        vprint("    Calculating 5/50/95 percentile spectra for %s"
-               % name.rsplit(',', 1)[0])
-        fftparams.setdefault('fftlength', 1)
-        fftparams.setdefault('overlap', 0.5)
-        if 'stride' not in fftparams and 'fftlength' in fftparams:
-            fftparams.setdefault('stride', fftparams['fftlength'])
-
-        speclist = get_spectrogram(channel, segments, config=config,
-                                   cache=cache, query=query, nds=nds,
-                                   format=format, **fftparams)
-        try:
-            specgram = speclist.join(gap='ignore')
-        except ValueError as e:
-            if 'units do not match' in str(e):
-                warnings.warn(str(e))
-                for spec in speclist[1:]:
-                    spec.unit = speclist[0].unit
-                specgram = speclist.join(gap='ignore')
-            else:
-                raise
-        try:
-            globalv.SPECTRUM[name] = specgram.percentile(50)
-        except (ValueError, IndexError):
-            globalv.SPECTRUM[name] = FrequencySeries([], channel=channel, f0=0,
-                                                     df=1, unit=units.Unit(''))
-            globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
-            globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
-        else:
-            globalv.SPECTRUM[cmin] = specgram.percentile(5)
-            globalv.SPECTRUM[cmax] = specgram.percentile(95)
-        vprint(".\n")
-
-    if not return_:
-        return
-
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
-    out = (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
-           globalv.SPECTRUM[cmax])
-    return out
-
-
 def add_spectrogram(specgram, key=None, coalesce=True):
     """Add a `Spectrogram` to the global memory cache
     """
@@ -365,3 +311,114 @@ def apply_transfer_function_series(specgram, tfunc):
     itfunc[0,:][known] = interpolator(specgram.frequencies.value[known])
     # and multiply
     return (specgram ** (1/2.) * itfunc) ** 2
+
+
+# -- spectrum -----------------------------------------------------------------
+
+@use_segmentlist
+def get_spectrum(channel, segments, config=None, cache=None,
+                 query=True, nds=None, format='power', return_=True,
+                 frametype=None, multiprocess=True, datafind_error='raise',
+                 **fftparams):
+    """Retrieve the time-series and generate a spectrogram of the given
+    channel
+    """
+    channel = get_channel(channel)
+    if isinstance(segments, DataQualityFlag):
+        name = ','.join([channel.ndsname, segments.name])
+        segments = segments.active
+    else:
+        name = channel.ndsname
+    name += ',%s' % format
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+
+    # read data for all sub-channels
+    specs = []
+    channels = zip(*parse_math_definition(str(channel))[0])[0]
+    if len(channels) == 0:
+        channels = [channel]
+    for c in channels:
+        specs.append(_get_spectrum(c, segments, config=config, cache=cache,
+                                   query=query, nds=nds, format=format,
+                                   return_=return_, frametype=frametype,
+                                   multiprocess=multiprocess,
+                                   datafind_error=datafind_error,
+                                   **fftparams))
+    if return_ and len(channels) == 1:
+        return specs[0]
+    elif return_:
+        return [get_with_math(
+                    channel, segments, _get_spectrum, _get_spectrum,
+                    config=config, format=format, return_=True,
+                    which=which)[0] for which in ['mean', 'min', 'max']]
+
+
+def _get_spectrum(channel, segments, config=None, cache=None, query=True,
+                  nds=None, format='power', return_=True, which='all',
+                  **fftparams):
+    """Retrieve the time-series and generate a spectrogram of the given
+    channel
+    """
+    channel = get_channel(channel)
+    if isinstance(segments, DataQualityFlag):
+        name = ','.join([channel.ndsname, segments.name])
+        segments = segments.active
+    else:
+        name = channel.ndsname
+    name += ',%s' % format
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+
+    if name not in globalv.SPECTRUM:
+        if os.path.isfile(channel.ndsname):
+            globalv.SPECTRUM[name] = io.read_frequencyseries(channel.ndsname)
+            globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
+            globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
+        else:
+            vprint("    Calculating 5/50/95 percentile spectra for %s"
+                   % name.rsplit(',', 1)[0])
+            fftparams.setdefault('fftlength', 1)
+            fftparams.setdefault('overlap', 0.5)
+            if 'stride' not in fftparams and 'fftlength' in fftparams:
+                fftparams.setdefault('stride', fftparams['fftlength'])
+
+            speclist = get_spectrogram(channel, segments, config=config,
+                                       cache=cache, query=query, nds=nds,
+                                       format=format, **fftparams)
+            try:
+                specgram = speclist.join(gap='ignore')
+            except ValueError as e:
+                if 'units do not match' in str(e):
+                    warnings.warn(str(e))
+                    for spec in speclist[1:]:
+                        spec.unit = speclist[0].unit
+                    specgram = speclist.join(gap='ignore')
+                else:
+                    raise
+            try:
+                globalv.SPECTRUM[name] = specgram.percentile(50)
+            except (ValueError, IndexError):
+                globalv.SPECTRUM[name] = FrequencySeries(
+                    [], channel=channel, f0=0, df=1, unit=units.Unit(''))
+                globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
+                globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
+            else:
+                globalv.SPECTRUM[cmin] = specgram.percentile(5)
+                globalv.SPECTRUM[cmax] = specgram.percentile(95)
+            vprint(".\n")
+
+    if not return_:
+        return
+
+    if which == 'all':
+        return (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
+                globalv.SPECTRUM[cmax])
+    elif which == 'mean':
+        return globalv.SPECTRUM[name]
+    elif which == 'min':
+        return globalv.SPECTRUM[cmin]
+    elif which == 'max':
+        return globalv.SPECTRUM[cmax]
+    raise ValueError("Unrecognised value for `which`: %r" % which)
+    return out

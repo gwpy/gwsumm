@@ -26,6 +26,7 @@ import numpy
 
 from gwpy.detector import Channel
 from gwpy.segments import SegmentList
+from gwpy.frequencyseries import FrequencySeries
 
 from ..channels import (get_channel, re_channel)
 
@@ -155,15 +156,24 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         tsdict = load_func(chans, segments, **ioargs)
     # shortcut single channel with no math
     if len(names) == 1 and not singleops[0][1]:
-        return tsdict.values()[0]
+        if isinstance(tsdict.values()[0], list):
+            return tsdict.values()[0]
+        else:
+            return tsdict.values()
     # get union of segments for all sub-channels
     tslist = [tsdict[c.ndsname] for c in chans]
-    datasegs = reduce(operator.and_, [tsl.segments for tsl in tslist])
-    # build meta-timeseries for all intersected segments
-    meta = type(tsdict.values()[0])()
+    if isinstance(tslist[0], FrequencySeries):
+        datasegs = segments
+        meta = []
+    else:
+        datasegs = reduce(operator.and_, [tsl.segments for tsl in tslist])
+        meta = type(tsdict.values()[0])()
     for seg in datasegs:
         # get data for first channel
-        ts, = get_func(names[0], SegmentList([seg]), **ioargs)
+        if isinstance(tslist[0], FrequencySeries):
+            ts = get_func(names[0], SegmentList([seg]), **ioargs)
+        else:
+            ts, = get_func(names[0], SegmentList([seg]), **ioargs)
         ts.name = str(channel)
         # apply math to this channel
         cmath = singleops[0][1]
@@ -172,10 +182,12 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         # for each other channel do the same
         for joinop, ch in zip(joinoperators, singleops[1:]):
             name, cmath = ch
-            data, = get_func(name, SegmentList([seg]), **ioargs)
+            if isinstance(tslist[0], FrequencySeries):
+                data = get_func(name, SegmentList([seg]), **ioargs)
+            else:
+                data, = get_func(name, SegmentList([seg]), **ioargs)
             for op_, val_ in cmath:
                 data = op_(data, val_)
-            # apply combination math
             ts = _join(ts, data, joinop)
         meta.append(ts)
     return meta
@@ -187,13 +199,15 @@ def _join(a, b, op):
     This method is for internal use only, and should not be called from
     outside
     """
-    # crop arrays to common time segment
-    overlap = a.xspan & b.xspan
-    a = a.crop(*overlap)
-    b = b.crop(*overlap)
+    # crop time-axis to select overlapping data
+    if a.xunit.physical_type == 'time':
+        overlap = a.xspan & b.xspan
+        a = a.crop(*overlap)
+        b = b.crop(*overlap)
     # try and join now
     try:
         return op(a, b)
+    # handle mismatched frequency scale
     except ValueError as e:
         # if error is _not_ a shape mismatch, raise
         if 'operands could not be broadcast' not in str(e):
@@ -201,17 +215,26 @@ def _join(a, b, op):
         # if the FFTlength is not the same, raise (no interpolation)
         if a.df != b.df or a.f0 != b.f0:
             raise
-        # otherwise, shorten the larger array in frequency
-        nf = a.shape[1] - b.shape[1]
-        new = numpy.zeros((a.shape[0], abs(nf)))
-        if nf > 0:  # reshape 'b'
-            del b.frequencies
-            b2 = numpy.concatenate((b, new), axis=1)
-            b2.__array_finalize__(b)
-            b = b2
-        elif nf < 0:  # reshape 'a'
-            del a.frequencies
-            a2 = numpy.concatenate((a, new), axis=1)
-            a2.__array_finalize__(a)
-            a = a2
+        # otherwise, lengthen the shorted array in frequency
+        if a.ndim == 1:  # frequencyseries
+            nf = a.size - b.size
+            if nf > 0:
+                b = numpy.require(b, requirements=['O'])
+                b.resize((b.size + nf,))
+            elif nf < 0:
+                a = numpy.require(a, requirements=['O'])
+                a.resize((a.size - nf,))
+        else:  # spectrogram
+            nf = a.shape[1] - b.shape[1]
+            new = numpy.zeros((a.shape[0], abs(nf)))
+            if nf > 0:  # reshape 'b'
+                del b.frequencies
+                b2 = numpy.concatenate((b, new), axis=1)
+                b2.__array_finalize__(b)
+                b = b2
+            elif nf < 0:  # reshape 'a'
+                del a.frequencies
+                a2 = numpy.concatenate((a, new), axis=1)
+                a2.__array_finalize__(a)
+                a = a2
         return op(a, b)

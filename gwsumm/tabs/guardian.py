@@ -194,7 +194,7 @@ class GuardianTab(DataTab):
             [prefix % x for x in prefices],
             state, config=config, nds=nds, multiprocess=multiprocess,
             cache=datacache, datafind_error=datafind_error,
-            dtype='int16').values()
+            dtype='int32').values()
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------

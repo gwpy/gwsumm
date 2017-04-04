@@ -81,33 +81,43 @@ def parse_math_definition(definition):
         return [(definition, None)], []
     x = 0
     while True:
+        # parse operator position and method
         a, b = match.span()
         op = get_operator(match.group().strip())
 
-        # parse channel name
-        before = definition[x:a]
-        channels.append((before, []))
+        # parse before operator
+        before = definition[:a]
 
         # find next operator
         try:
             match = next(ops)
-        except StopIteration:
+        except:  # no further operators
             c = None
-        else:
-            c = match.span()[0]
+        else:  # operator found
+            c, d = match.span()
 
-        # parse operator or channel name
+        # parse after operator
         after = definition[b:c]
+        x = b  # truncate definition for next time
+
+        # match value after operator
         try:
             a2, b2 = re_value.match(after).span()
-        except AttributeError:  # no match
+        except AttributeError:  # not a value (must be channel name)
+            # record joining operator
             operators.append(op)
-            if c is None:
-                channels.append((definition[b:], []))
+            # record new channel
+            channels.append((definition[b:c], []))
         else:
-            channels[-1][1].append((op, after[a2:b2]))
+            # parse value as a float and pair with operator
+            value = float(after[a2:b2])
+            math = (op, value)
+            try:
+                channels[-1][1].append(math)
+            except IndexError:
+                channels.append((before, [math]))
 
-        x = b
+        # no more operators, so we're done
         if c is None:
             break
 

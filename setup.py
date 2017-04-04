@@ -67,10 +67,10 @@ setup_requires = [
     'jsmin',
 ]
 install_requires = [
-    'numpy>=1.5',
+    'numpy>=1.10',
     'matplotlib>=1.3.0',
     'astropy>=1.0',
-    'gwpy>=0.1',
+    'gwpy>=0.3',
     'trigfind>=0.2.1',
 ]
 requires = [

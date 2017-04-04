@@ -56,6 +56,13 @@ from ..channels import (get_channel, update_missing_channel_params,
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
+try:
+    from LDAStools import frameCPP
+except ImportError:
+    HAS_FRAMECPP = False
+else:
+    HAS_FRAMECPP = True
+
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
 
 OPERATOR = {
@@ -78,6 +85,14 @@ FRAMETYPE_REGEX = {
     'DMT SenseMon on front-end h(t)': re.compile(
         'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
+
+# list of GWF frametypes that contain only ADC channels
+#     allows big memory/time savings when reading with frameCPP
+ADC_TYPES = [
+    'R', 'C',  # old LIGO raw and commissioning types
+    'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
+    'raw',  # Virgo raw type
+]
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -566,6 +581,11 @@ def _get_timeseries_dict(channels, segments, config=None,
             cachesegments = find_cache_segments(fcache)
             new &= cachesegments
             source = 'frames'
+
+            # set ctype if reading with framecpp
+            if cache is None and frametype in ADC_TYPES and HAS_FRAMECPP:
+                ioargs['type'] = 'adc'
+
         for channel in channels:
             channel.frametype = frametype
 

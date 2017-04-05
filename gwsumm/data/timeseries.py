@@ -90,7 +90,9 @@ FRAMETYPE_REGEX = {
 #     allows big memory/time savings when reading with frameCPP
 ADC_TYPES = [
     'R', 'C',  # old LIGO raw and commissioning types
+    'T', 'M',  # old LIGO trend types
     'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
+    'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
     'raw',  # Virgo raw type
 ]
 

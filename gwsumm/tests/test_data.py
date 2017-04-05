@@ -127,7 +127,7 @@ class DataTests(unittest.TestCase):
 
     def test_parse_math_definition(self):
         chans, operators = mathutils.parse_math_definition(
-            "L1:TEST*2 + L1:TEST2^5")
+            "L1:TEST * 2 + L1:TEST2 ^ 5")
         self.assertEqual(len(chans), 2)
         self.assertListEqual(operators, [operator.add])
         self.assertIsInstance(chans[0], tuple)

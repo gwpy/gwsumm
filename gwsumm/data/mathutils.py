@@ -26,6 +26,7 @@ import numpy
 
 from gwpy.detector import Channel
 from gwpy.segments import SegmentList
+from gwpy.frequencyseries import FrequencySeries
 
 from ..channels import (get_channel, re_channel)
 
@@ -43,15 +44,17 @@ OPERATOR = {
     '**': operator.pow,
 }
 
-re_math = re.compile('(?P<operator>.+?)'
-                     '(?P<value>[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?)')
+re_operator = re.compile('\s+[+/^\*-]+\s+')
+re_value = re.compile('[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
 
 
 def parse_math_definition(definition):
     """Parse the definition for a channel combination
 
     This method can only handle commutative operations, no fancy stuff
-    with parentheses. Something like ``A*B`` is fine, but not ``(A+B)^2``
+    with parentheses. Something like ``A * B`` is fine, but not ``(A + B) ^ 2``
+
+    All operands, operators, and values should be space-separated.
 
     Returns
     -------
@@ -69,49 +72,55 @@ def parse_math_definition(definition):
     ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))],
      [<built-in function mul>])
     """
-    breaks = re_channel.finditer(definition)
     channels = []
     operators = []
+    ops = re_operator.finditer(definition)
     try:
-        match = next(breaks)
-    except StopIteration:  # no channel names parsed at all, just return
+        match = next(ops)
+    except StopIteration:
         return [(definition, None)], []
-    if Channel.MATCH.match(definition):  # channel name matches (GEO)
-        return [(definition, None)], []
+    x = 0
     while True:
-        # find channel
+        # parse operator position and method
         a, b = match.span()
-        cname = definition[a:b]
-        channels.append((cname, []))
+        op = get_operator(match.group().strip())
 
-        # find next channel and parse whatever's inbetween
+        # parse before operator
+        before = definition[:a]
+
+        # find next operator
         try:
-            match = next(breaks)
-        except StopIteration:
+            match = next(ops)
+        except:  # no further operators
             c = None
-        else:
-            c = match.span()[0]
+        else:  # operator found
+            c, d = match.span()
 
-        # parse math string
-        mathstr = definition[b:c].strip()
-        if not mathstr and c is None:  # if at end, break
+        # parse after operator
+        after = definition[b:c]
+        x = b  # truncate definition for next time
+
+        # match value after operator
+        try:
+            a2, b2 = re_value.match(after).span()
+        except AttributeError:  # not a value (must be channel name)
+            # record joining operator
+            operators.append(op)
+            # record new channel
+            channels.append((definition[b:c], []))
+        else:
+            # parse value as a float and pair with operator
+            value = float(after[a2:b2])
+            math = (op, value)
+            try:
+                channels[-1][1].append(math)
+            except IndexError:
+                channels.append((before, [math]))
+
+        # no more operators, so we're done
+        if c is None:
             break
-        elif not mathstr:  # otherwise no operator, panic
-            raise ValueError("Cannot parse math operator between channels "
-                             "in definition %r" % definition)
-        if c is not None:  # if between channels, find the combiner
-            operators.append(get_operator(mathstr[-1]))
-            mathstr = mathstr[:-1].strip()
-        matches = [m.groupdict() for m in re_math.finditer(mathstr)]
-        if mathstr and not matches:
-            raise ValueError("Cannot parse math operation %r" % mathstr)
-        elif matches:
-            for cop in matches:
-                op = get_operator(cop['operator'].strip())
-                value = float(cop['value'])
-                channels[-1][1].append((op, value))  # record math to be done
-        if c is None:  # if at the end, break
-            break
+
     return channels, operators
 
 
@@ -157,15 +166,24 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         tsdict = load_func(chans, segments, **ioargs)
     # shortcut single channel with no math
     if len(names) == 1 and not singleops[0][1]:
-        return tsdict.values()[0]
+        if isinstance(tsdict.values()[0], list):
+            return tsdict.values()[0]
+        else:
+            return tsdict.values()
     # get union of segments for all sub-channels
     tslist = [tsdict[c.ndsname] for c in chans]
-    datasegs = reduce(operator.and_, [tsl.segments for tsl in tslist])
-    # build meta-timeseries for all intersected segments
-    meta = type(tsdict.values()[0])()
+    if isinstance(tslist[0], FrequencySeries):
+        datasegs = segments
+        meta = []
+    else:
+        datasegs = reduce(operator.and_, [tsl.segments for tsl in tslist])
+        meta = type(tsdict.values()[0])()
     for seg in datasegs:
         # get data for first channel
-        ts, = get_func(names[0], SegmentList([seg]), **ioargs)
+        if isinstance(tslist[0], FrequencySeries):
+            ts = get_func(names[0], SegmentList([seg]), **ioargs)
+        else:
+            ts, = get_func(names[0], SegmentList([seg]), **ioargs)
         ts.name = str(channel)
         # apply math to this channel
         cmath = singleops[0][1]
@@ -174,10 +192,12 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         # for each other channel do the same
         for joinop, ch in zip(joinoperators, singleops[1:]):
             name, cmath = ch
-            data, = get_func(name, SegmentList([seg]), **ioargs)
+            if isinstance(tslist[0], FrequencySeries):
+                data = get_func(name, SegmentList([seg]), **ioargs)
+            else:
+                data, = get_func(name, SegmentList([seg]), **ioargs)
             for op_, val_ in cmath:
                 data = op_(data, val_)
-            # apply combination math
             ts = _join(ts, data, joinop)
         meta.append(ts)
     return meta
@@ -189,13 +209,15 @@ def _join(a, b, op):
     This method is for internal use only, and should not be called from
     outside
     """
-    # crop arrays to common time segment
-    overlap = a.xspan & b.xspan
-    a = a.crop(*overlap)
-    b = b.crop(*overlap)
+    # crop time-axis to select overlapping data
+    if a.xunit.physical_type == 'time':
+        overlap = a.xspan & b.xspan
+        a = a.crop(*overlap)
+        b = b.crop(*overlap)
     # try and join now
     try:
         return op(a, b)
+    # handle mismatched frequency scale
     except ValueError as e:
         # if error is _not_ a shape mismatch, raise
         if 'operands could not be broadcast' not in str(e):
@@ -203,17 +225,26 @@ def _join(a, b, op):
         # if the FFTlength is not the same, raise (no interpolation)
         if a.df != b.df or a.f0 != b.f0:
             raise
-        # otherwise, shorten the larger array in frequency
-        nf = a.shape[1] - b.shape[1]
-        new = numpy.zeros((a.shape[0], abs(nf)))
-        if nf > 0:  # reshape 'b'
-            del b.frequencies
-            b2 = numpy.concatenate((b, new), axis=1)
-            b2.__array_finalize__(b)
-            b = b2
-        elif nf < 0:  # reshape 'a'
-            del a.frequencies
-            a2 = numpy.concatenate((a, new), axis=1)
-            a2.__array_finalize__(a)
-            a = a2
+        # otherwise, lengthen the shorted array in frequency
+        if a.ndim == 1:  # frequencyseries
+            nf = a.size - b.size
+            if nf > 0:
+                b = numpy.require(b, requirements=['O'])
+                b.resize((b.size + nf,))
+            elif nf < 0:
+                a = numpy.require(a, requirements=['O'])
+                a.resize((a.size - nf,))
+        else:  # spectrogram
+            nf = a.shape[1] - b.shape[1]
+            new = numpy.zeros((a.shape[0], abs(nf)))
+            if nf > 0:  # reshape 'b'
+                del b.frequencies
+                b2 = numpy.concatenate((b, new), axis=1)
+                b2.__array_finalize__(b)
+                b = b2
+            elif nf < 0:  # reshape 'a'
+                del a.frequencies
+                a2 = numpy.concatenate((a, new), axis=1)
+                a2.__array_finalize__(a)
+                a = a2
         return op(a, b)

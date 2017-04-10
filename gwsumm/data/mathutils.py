@@ -86,12 +86,16 @@ def parse_math_definition(definition):
         op = get_operator(match.group().strip())
 
         # parse before operator
-        before = definition[:a]
+        before = definition[x:a]
+
+        # record first channel
+        if not x:
+            channels.append((before, []))
 
         # find next operator
         try:
             match = next(ops)
-        except:  # no further operators
+        except StopIteration:  # no further operators
             c = None
         else:  # operator found
             c, d = match.span()
@@ -112,10 +116,7 @@ def parse_math_definition(definition):
             # parse value as a float and pair with operator
             value = float(after[a2:b2])
             math = (op, value)
-            try:
-                channels[-1][1].append(math)
-            except IndexError:
-                channels.append((before, [math]))
+            channels[-1][1].append(math)
 
         # no more operators, so we're done
         if c is None:

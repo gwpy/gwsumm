@@ -126,6 +126,25 @@ class DataTests(unittest.TestCase):
                           None, stride=0)
 
     def test_parse_math_definition(self):
+        # a + b
+        chans, operators = mathutils.parse_math_definition(
+            "L1:TEST + L1:TEST2")
+        self.assertEqual(len(chans), 2)
+        self.assertListEqual(operators, [operator.add])
+        self.assertEqual(chans[0][0], 'L1:TEST')
+        self.assertEqual(chans[0][1], [])
+        self.assertEqual(chans[1][0], 'L1:TEST2')
+        self.assertEqual(chans[1][1], [])
+        # a + b * 2
+        chans, operators = mathutils.parse_math_definition(
+            "L1:TEST + L1:TEST2 * 2")
+        self.assertEqual(len(chans), 2)
+        self.assertListEqual(operators, [operator.add])
+        self.assertEqual(chans[0][0], 'L1:TEST')
+        self.assertEqual(chans[0][1], [])
+        self.assertEqual(chans[1][0], 'L1:TEST2')
+        self.assertEqual(chans[1][1], [(operator.mul, 2)])
+        # a * 2 + b ^ 5
         chans, operators = mathutils.parse_math_definition(
             "L1:TEST * 2 + L1:TEST2 ^ 5")
         self.assertEqual(len(chans), 2)

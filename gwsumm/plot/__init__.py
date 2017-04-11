@@ -55,10 +55,13 @@ from .range import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 rcParams.update({
-    'grid.color': 'gray',
     'svg.fonttype': 'none',
 })
 
 # use new viridis colormap by default
 if '1.5' <= mpl_version < '2.0':
     rcParams['image.cmap'] = 'viridis'
+
+# use gray grid lines (that's the default in mpl 2)
+if mpl_version < '2.0':
+    rcParams['grid.color'] = 'gray'

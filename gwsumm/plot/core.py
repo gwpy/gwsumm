@@ -30,7 +30,7 @@ from urlparse import urlparse
 
 from six import string_types
 
-from matplotlib import rc_context
+from matplotlib import (rc_context, __version__ as mpl_version)
 
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
@@ -526,24 +526,24 @@ class DataPlot(SummaryPlot):
     def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.
         """
-        # customise axes
+        # customise axes for all mpl versions
         for ax in self.plot.axes:
-            # quick fix for x-axis labels hitting the axis
-            if not self.type == 'bar' or self.type.endswith('-bar'):
-                ax.tick_params(axis='x', pad=10)
-                ax.xaxis.labelpad = 10
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
-                ax.title.set_y(1.01)
-            # lighten color of axes and legend borders
-            color = rcParams['grid.color']
-            for edge in ax.spines:
-                ax.spines[edge].set_edgecolor(color)
-            if ax.legend_ and ax.legend_.get_frame().get_edgecolor() != 'none':
-                ax.legend_.get_frame().set_edgecolor(color)
-        # customise colorbars
-        for cb in self.plot.colorbars:
-            cb.outline.set_edgecolor(color)
+                ax.title.set_y(1.005)
+        # customise axes for mpl 1.x only
+        if mpl_version < '2.0':
+            for ax in self.plot.axes:
+                # lighten color of axes and legend borders
+                color = rcParams['grid.color']
+                for edge in ax.spines:
+                    ax.spines[edge].set_edgecolor(color)
+                if (ax.legend_ and
+                        ax.legend_.get_frame().get_edgecolor() != 'none'):
+                    ax.legend_.get_frame().set_edgecolor(color)
+            # customise colorbars
+            for cb in self.plot.colorbars:
+                cb.outline.set_edgecolor(color)
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile

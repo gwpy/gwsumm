@@ -76,7 +76,7 @@ requires = [
     'numpy',
     'astropy',
     'matplotlib',
-    'lscsoft-glue',
+    'lscsoft_glue',
     'gwpy',
     'h5py',
     'dqsegdb',

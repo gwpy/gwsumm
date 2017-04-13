@@ -81,7 +81,7 @@ requires = [
     'h5py',
     'dqsegdb',
     'lxml',
-    'trigfind>=0.3',
+    'trigfind',
 ]
 tests_require = [
     'pytest>=2.8'

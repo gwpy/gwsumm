@@ -71,16 +71,17 @@ install_requires = [
     'matplotlib>=1.3.0',
     'astropy>=1.0',
     'gwpy>=0.3',
-    'trigfind>=0.2.1',
 ]
 requires = [
-    'glue',
     'numpy',
-    'matplotlib',
     'astropy',
+    'matplotlib',
+    'lscsoft_glue',
     'gwpy',
     'h5py',
+    'dqsegdb',
     'lxml',
+    'trigfind',
 ]
 tests_require = [
     'pytest>=2.8'
@@ -229,8 +230,6 @@ setup(name=DISTNAME,
       requires=requires,
       extras_require=extras_require,
       dependency_links=[
-          'http://software.ligo.org/lscsoft/source/glue-1.49.1.tar.gz',
-          'http://software.ligo.org/lscsoft/source/dqsegdb-1.2.2.tar.gz',
           'https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz'
           '#egg=trigfind-0.3',
       ],

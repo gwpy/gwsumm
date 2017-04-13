@@ -2,12 +2,11 @@ numpy>=1.10
 enum34
 pykerberos
 M2Crypto
-python-cjson
 h5py
 lxml
-https://github.com/ligovirgo/trigfind/archive/v0.4.tar.gz
-http://software.ligo.org/lscsoft/source/glue-1.53.0.tar.gz
-http://software.ligo.org/lscsoft/source/dqsegdb-1.4.0.tar.gz
+lscsoft-glue
+dqsegdb
+https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
 gwpy>=0.3
 libsass
 jsmin

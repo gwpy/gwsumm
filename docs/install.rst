@@ -11,13 +11,9 @@ Dependencies
 The GWSumm package has the following build-time dependencies (i.e. required for installation):
 
 * `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
-* `NumPy <http://www.numpy.org>`_ >= 1.5
-* `Astropy <http://astropy.org>`_ >= 0.3
-* `GWpy <https://gwpy.github.io>`_ >= 0.1a5
-
-.. note::
-
-   The `GLUE <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_ package isn't available through PyPI, meaning you will have to install it manually from the link.
+* `NumPy <http://www.numpy.org>`_ >= 1.10
+* `Astropy <http://astropy.org>`_ >= 1.3
+* `GWpy <https://gwpy.github.io>`_ >= 0.3
 
 **Runtime dependencies**
 

@@ -6,7 +6,7 @@ M2Crypto
 h5py
 lxml
 lscsoft-glue
-dqsegdb
+dqsegdb>=1.4.2
 https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
 gwpy>=0.3
 libsass

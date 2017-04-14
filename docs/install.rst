@@ -12,7 +12,7 @@ The GWSumm package has the following build-time dependencies (i.e. required for 
 
 * `glue <https://www.lsc-group.phys.uwm.edu/daswg/projects/glue.html>`_
 * `NumPy <http://www.numpy.org>`_ >= 1.10
-* `Astropy <http://astropy.org>`_ >= 1.3
+* `Astropy <http://astropy.org>`_ >= 1.2.1
 * `GWpy <https://gwpy.github.io>`_ >= 0.3
 
 **Runtime dependencies**

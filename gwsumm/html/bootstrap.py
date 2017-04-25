@@ -421,12 +421,9 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
         if sys.argv[0].endswith('__main__.py'):
             package = sys.argv[0].rsplit(os.path.sep, 2)[1]
             cmdline = 'python -m %s %s' % (package, ' '.join(sys.argv[1:]))
-        elif (os.path.split(sys.argv[0])[0] in
-              os.environ.get('PATH', '').split(os.pathsep)):
-            cmdline = ' '.join([os.path.basename(sys.argv[0])] + sys.argv[1:])
         else:
             cmdline = ' '.join(sys.argv)
-        page.pre(cmdline)
+        page.pre(cmdline.replace(' --html-only', ''))
     if config is not None:
         page.h2("Configuration files")
         page.p("GWSumm processes are configured through INI-format files. The "

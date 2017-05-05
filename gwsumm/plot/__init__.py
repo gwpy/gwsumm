@@ -51,6 +51,7 @@ from .builtin import *
 from .segments import *
 from .triggers import *
 from .range import *
+from .noisebudget import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

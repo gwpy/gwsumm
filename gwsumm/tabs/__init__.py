@@ -29,8 +29,6 @@ from .misc import *
 from .data import *
 
 # application-specific extras
-from .ihope import *
-from .hveto import *
 from .sei import *
 from .guardian import *
 from .stamp import *

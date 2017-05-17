@@ -8,7 +8,7 @@ lxml
 lscsoft-glue
 dqsegdb>=1.4.2
 https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
-gwpy>=0.3
+gwpy==0.4
 libsass
 jsmin
 astropy_helpers

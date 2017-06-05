@@ -68,8 +68,8 @@ else:
 
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
+from gwpy.signal.fft import lal as fft_lal
 from gwpy.time import (tconvert, to_gps, Time)
-from gwpy.frequencyseries import lal_ as lalpsd
 
 from gwsumm import (globalv, mode, __version__)
 from gwsumm.config import *
@@ -431,11 +431,11 @@ except ValueError:
 # set LAL FFT plan wisdom level
 duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
 if duration > 200000:
-     lalpsd.LAL_FFTPLAN_LEVEL = 3
+     fft_lal.LAL_FFTPLAN_LEVEL = 3
 elif duration > 40000:
-     lalpsd.LAL_FFTPLAN_LEVEL = 2
+     fft_lal.LAL_FFTPLAN_LEVEL = 2
 else:
-     lalpsd.LAL_FFTPLAN_LEVEL = 1
+     fft_lal.LAL_FFTPLAN_LEVEL = 1
 
 # set processing options
 if opts.multiprocess == 1:

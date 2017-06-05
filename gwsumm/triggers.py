@@ -33,10 +33,10 @@ import numpy
 from astropy.table import vstack as vstack_tables
 
 from glue.lal import (Cache, CacheEntry)
+from glue.ligolw import lsctables
 
 from gwpy.io.cache import cache_segments
-from gwpy.table import (lsctables, EventTable)
-from gwpy.table.utils import get_table_column
+from gwpy.table import EventTable
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
 from gwpy.segments import (DataQualityFlag, SegmentList)
 
@@ -350,8 +350,7 @@ def get_times(table, etg):
                 return table['end_time'] + table['end_time_ns'] * 1e-9
             if tablename.endswith('_ringdown'):
                 return table['start_time'] + table['start_time_ns'] * 1e-9
-        # use gwpy method (not guaranteed to work)
-        return get_table_column(table, 'time').astype(float)
+        raise
 
 
 def get_etg_read_kwargs(config, etg, exclude=['columns']):

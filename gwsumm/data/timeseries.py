@@ -32,13 +32,12 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-import nds2
-
 from astropy import units
 
 from glue import datafind
 from glue.lal import (Cache, CacheEntry)
 
+from gwpy.io import nds2 as io_nds2
 from gwpy.segments import SegmentList
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorDict)
@@ -46,7 +45,6 @@ try:
     from gwpy.timeseries import StateVectorList
 except ImportError:
     StateVectorList = TimeSeriesList
-from gwpy.io import nds as ndsio
 
 from .. import globalv
 from ..utils import (vprint, count_free_cores)
@@ -301,16 +299,16 @@ def find_frame_type(channel):
     """
     if channel.frametype is None:
         try:
-            ndstype = ndsio.NDS2_CHANNEL_TYPE[channel.type]
+            ndstype = io_nds2.Nds2ChannelType.find(channel.type)
         except (AttributeError, KeyError):
-            ndstype = channel.type = nds2.channel.CHANNEL_TYPE_RAW
-        if ndstype == nds2.channel.CHANNEL_TYPE_MTREND:
+            ndstype = channel.type = 'raw'
+        if ndstype == io_nds2.Nds2ChannelType.MTREND:
             ftype = 'M'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_STREND:
+        elif ndstype == io_nds2.Nds2ChannelType.STREND:
             ftype = 'T'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_RDS:
+        elif ndstype == io_nds2.Nds2ChannelType.RDS:
             ftype = 'LDAS_C02_L2'
-        elif ndstype == nds2.channel.CHANNEL_TYPE_ONLINE:
+        elif ndstype == io_nds2.Nds2ChannelType.ONLINE:
             ftype = 'lldetchar'
         else:
             ftype = 'R'
@@ -522,15 +520,7 @@ def _get_timeseries_dict(channels, segments, config=None,
         if nds and config.has_option('nds', 'host'):
             host = config.get('nds', 'host')
             port = config.getint('nds', 'port')
-            try:
-                ndsconnection = nds2.connection(host, port)
-            except RuntimeError as e:
-                if 'SASL authentication' in str(e):
-                    from gwpy.io.nds import kinit
-                    kinit()
-                    ndsconnection = nds2.connection(host, port)
-                else:
-                    raise
+            ndsconnection = io_nds2.connect(host, port)
             frametype = source = 'nds'
             ndstype = channels[0].type
         elif nds:

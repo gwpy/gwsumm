@@ -56,15 +56,13 @@ from .noisebudget import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 rcParams.update({
-    'figure.subplot.bottom': 0.17,
-    'figure.subplot.left': 0.1,
-    'figure.subplot.right': 0.9,
-    'figure.subplot.top': 0.90,
-    'axes.labelsize': 20,
-    'grid.color': 'gray',
     'svg.fonttype': 'none',
 })
 
 # use new viridis colormap by default
 if '1.5' <= mpl_version < '2.0':
     rcParams['image.cmap'] = 'viridis'
+
+# use gray grid lines (that's the default in mpl 2)
+if mpl_version < '2.0':
+    rcParams['grid.color'] = 'gray'

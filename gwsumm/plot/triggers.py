@@ -295,7 +295,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 columns = [loudest_by, xcolumn, ycolumn]
             else:
                 columns = [loudest_by, xcolumn, ycolumn, ccolumn]
-            ax.add_loudest(table, *columns)
+            ax.add_loudest(table, *columns, fontsize='large')
             # pin loudest to edge of axes if outside
             loudest = ax.collections[-1]
             x, y = loudest.get_offsets()[0]

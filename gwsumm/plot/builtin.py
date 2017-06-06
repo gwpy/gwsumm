@@ -118,15 +118,15 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         ax.set_epoch(epoch)
         return sax
 
-    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1)):
+    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1), **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        figsize = self.pargs.pop('figsize', [12, 6])
+        figsize = self.pargs.pop('figsize', kwargs.pop('figsize', [12, 6]))
         self.plot, axes = subplots(
             nrows=geometry[0], ncols=geometry[1], sharex=True,
             subplot_kw={'projection': plot._DefaultAxesClass.name},
-            FigureClass=plot, figsize=figsize, squeeze=True)
+            FigureClass=plot, figsize=figsize, squeeze=True, **kwargs)
         if geometry[0] * geometry[1] == 1:
             axes = [axes]
         for ax in axes:

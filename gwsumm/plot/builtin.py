@@ -91,6 +91,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
             method.
         """
+        # allow user to disable the state segments axes
+        if self.pargs.pop('no-state-segments', False):
+            visible = False
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         if visible is None:
@@ -100,33 +103,29 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             kwargs.setdefault('facecolor', GREEN)
             kwargs.setdefault('known', {'facecolor': 'red',
                                         'edgecolor': 'darkred'})
-            sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
+            sax = self.plot.add_state_segments(self.state, ax, height=.2,
+                                               pad=.1,  plotargs=kwargs)
             ax.set_epoch(epoch)
             sax.set_epoch(epoch)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')
             sax.set_epoch(epoch)
+            ax.set_xlim(xlim)
+            ax.set_epoch(epoch)
+            return sax
         else:
-            try:
-                div = ax.get_axes_locator()._axes_divider
-            except AttributeError:
-                div = make_axes_locatable(ax)
-            div.append_axes('bottom', 0.2, 0.1, axes_class=SegmentAxes,
-                            sharex=ax, add_to_figure=False)
-            sax = None
-        ax.set_xlim(xlim)
-        ax.set_epoch(epoch)
-        return sax
+            self.plot.subplots_adjust(bottom=0.18)
+            return None
 
-    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1)):
+    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1), **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        figsize = self.pargs.pop('figsize', [12, 6])
+        figsize = self.pargs.pop('figsize', kwargs.pop('figsize', [12, 6]))
         self.plot, axes = subplots(
             nrows=geometry[0], ncols=geometry[1], sharex=True,
             subplot_kw={'projection': plot._DefaultAxesClass.name},
-            FigureClass=plot, figsize=figsize, squeeze=True)
+            FigureClass=plot, figsize=figsize, squeeze=True, **kwargs)
         if geometry[0] * geometry[1] == 1:
             axes = [axes]
         for ax in axes:

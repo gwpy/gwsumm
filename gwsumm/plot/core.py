@@ -573,6 +573,8 @@ class DataPlot(SummaryPlot):
 
     def apply_parameters(self, ax, **pargs):
         for key in pargs:
+            if key.startswith('no-'):  # skip no-xxx keys
+                continue
             val = pargs[key]
             if key in ['xlim', 'ylim'] and isinstance(val, string_types):
                 val = eval(val)

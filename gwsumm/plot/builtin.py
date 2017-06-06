@@ -91,6 +91,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
             method.
         """
+        # allow user to disable the state segments axes
+        if self.pargs.pop('no-state-segments', False):
+            visible = False
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         if visible is None:

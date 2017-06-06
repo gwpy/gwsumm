@@ -100,23 +100,19 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             kwargs.setdefault('facecolor', GREEN)
             kwargs.setdefault('known', {'facecolor': 'red',
                                         'edgecolor': 'darkred'})
-            sax = self.plot.add_state_segments(self.state, ax, plotargs=kwargs)
+            sax = self.plot.add_state_segments(self.state, ax, height=.2,
+                                               pad=.1,  plotargs=kwargs)
             ax.set_epoch(epoch)
             sax.set_epoch(epoch)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')
             sax.set_epoch(epoch)
+            ax.set_xlim(xlim)
+            ax.set_epoch(epoch)
+            return sax
         else:
-            try:
-                div = ax.get_axes_locator()._axes_divider
-            except AttributeError:
-                div = make_axes_locatable(ax)
-            div.append_axes('bottom', 0.2, 0.1, axes_class=SegmentAxes,
-                            sharex=ax, add_to_figure=False)
-            sax = None
-        ax.set_xlim(xlim)
-        ax.set_epoch(epoch)
-        return sax
+            self.plot.subplots_adjust(bottom=0.18)
+            return None
 
     def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1), **kwargs):
         """Initialise the Figure and Axes objects for this

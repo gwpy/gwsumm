@@ -73,6 +73,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         for c in self.channels:
             c._timeseries = True
 
+    # -- utilities ------------------------------
+
     def add_state_segments(self, ax, visible=None, **kwargs):
         """Add an `Axes` below the given ``ax`` displaying the `SummaryState`
         for this `TimeSeriesDataPlot`.
@@ -117,6 +119,25 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             self.plot.subplots_adjust(bottom=0.18)
             return None
 
+    def add_future_shade(self, gps=None, facecolor='gray', alpha=.1,
+                         **kwargs):
+        """Shade those parts of the figure that display times in the future
+        """
+        # allow user to override
+        if self.pargs.pop('no-future-shade', False):
+            return
+        # get time 'now'
+        if gps is None:
+            gps = globalv.NOW
+        end = float(self.end)
+        for ax in self.plot.axes:
+            # only shade time axes that include future times
+            if not isinstance(ax, TimeSeriesAxes) or end <= gps:
+                continue
+            ax.axvspan(gps, end, facecolor=facecolor, alpha=alpha, **kwargs)
+
+    # -- init/finalize --------------------------
+
     def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1), **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
@@ -143,6 +164,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             ax.set_xlim(float(self.start), float(self.end))
         return super(TimeSeriesDataPlot, self).finalize(
                    outputfile=outputfile, close=close, **savekwargs)
+
+    # -- main draw method -----------------------
 
     def draw(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
@@ -236,6 +259,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             plot.add_colorbar(ax=ax, visible=False)
 
         self.add_state_segments(ax)
+        self.add_future_shade()
+
         return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesDataPlot)
@@ -372,6 +397,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             except AttributeError:
                 setattr(ax, key, val)
         self.add_state_segments(ax)
+        self.add_future_shade()
+
         return self.finalize()
 
 register_plot(SpectrogramDataPlot)

@@ -241,6 +241,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
+        self.add_future_shade()
         return self.finalize(outputfile=outputfile)
 
 register_plot(SimpleTimeVolumeDataPlot)

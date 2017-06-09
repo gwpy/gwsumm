@@ -72,12 +72,13 @@ OPERATOR = {
 
 FRAMETYPE_REGEX = {
     'commissioning': re.compile('[A-Z][0-9]_C\Z'),
-    'science': re.compile('[A-Z][0-9]_R\Z'),
+    'raw data': re.compile('([A-Z][0-9]_R\Z|raw)'),
     'second-trend': re.compile('[A-Z][0-9]_T\Z'),
     'minute-trend': re.compile('[A-Z][0-9]_M\Z'),
-    'low-latency h(t)': re.compile('[A-Z][0-9]_DMT_C00\Z'),
+    'low-latency h(t)': re.compile('([A-Z][0-9]_DMT_C00\Z|[A-Z][0-9]_llhoft)'),
     'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
-    'calibrated h(t) version 1': re.compile('[A-Z][0-9]_HOFT_C01\Z'),
+    'calibrated h(t) version 1': re.compile(
+        '([A-Z][0-9]_HOFT_C01|G1_RDS_C01_L3)\Z'),
     'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
     'DMT SenseMon on GDS h(t)': re.compile('SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
     'DMT SenseMon on front-end h(t)': re.compile(

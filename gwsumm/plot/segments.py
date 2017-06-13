@@ -935,6 +935,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
         'legend-frameon': False,
+        'legend-fontsize': 14,
         'wedge-width': .55,
         'wedge-edgecolor': 'white',
     }
@@ -1159,6 +1160,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         'color': GREEN,
         'edgecolor': 'green',
         'alpha': .6,
+        'align': 'edge',  # FIXME, updated for mpl 2.0, can simplify code
     }
     SCALE_UNIT = {
         None: 'seconds',

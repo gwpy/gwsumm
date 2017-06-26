@@ -491,18 +491,19 @@ def _get_timeseries_dict(channels, segments, config=None,
     resample = dict()
     dtype_ = dict()
     for channel in channels:
+        name = channel.ndsname
         try:
-            filter_[channel.ndsname] = channel.filter
+            filter_[name] = channel.filter
         except AttributeError:
             pass
         try:
-            resample[channel] = float(channel.resample)
+            resample[name] = float(channel.resample)
         except AttributeError:
             pass
         if channel.dtype is None:
-            dtype_[channel] = ioargs.get('dtype')
+            dtype_[name] = ioargs.get('dtype')
         else:
-            dtype_[channel] = channel.dtype
+            dtype_[name] = channel.dtype
 
     # work out whether to use NDS or not
     if nds is None and cache is not None:
@@ -581,13 +582,13 @@ def _get_timeseries_dict(channels, segments, config=None,
         qresample = {}
         qdtype = {}
         for channel in channels:
-            oldsegs = globalv.DATA.get(channel.ndsname,
-                                       ListClass()).segments
+            name = channel.ndsname
+            oldsegs = globalv.DATA.get(name, ListClass()).segments
             if abs(new - oldsegs) != 0:
-                qchannels.append(channel)
+                qchannels.append(name)
                 if channel in resample:
-                    qresample[channel] = resample[channel]
-                qdtype[channel] = dtype_.get(channel, ioargs.get('dtype'))
+                    qresample[name] = resample[channel]
+                qdtype[name] = dtype_.get(name, ioargs.get('dtype'))
         ioargs['dtype'] = qdtype
 
         # loop through segments, recording data for each
@@ -629,21 +630,13 @@ def _get_timeseries_dict(channels, segments, config=None,
                         segment=type(segment)(segstart, segend))
                 else:
                     segstart, segend = map(float, segment)
-                # pull filters out because they can break multiprocessing
-                if nproc > 1:
-                    for c in qchannels:
-                        if c.ndsname in filter_:
-                            del c.filter
                 # read data
                 tsd = DictClass.read(segcache, qchannels,
                                      start=segstart, end=segend,
                                      nproc=nproc, resample=qresample,
                                      **ioargs)
-                # put filters back
-                for c in qchannels:
-                    if c.ndsname in filter_:
-                        c.filter = filter_[c.ndsname]
-            for (channel, data) in tsd.iteritems():
+
+            for channel, data in zip(channels, tsd.values()):
                 key = keys[channel.ndsname]
                 if (key in globalv.DATA and
                         data.span in globalv.DATA[key].segments):

@@ -40,6 +40,7 @@ from matplotlib.patches import Rectangle
 
 from gwpy.plotter import *
 from gwpy.plotter.tex import label_to_latex
+from gwpy.plotter.utils import rUNDERSCORE
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
 

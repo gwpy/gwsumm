@@ -101,6 +101,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     # work out what new segments are needed
     # need to truncate to segments of integer numbers of strides
     stride = float(fftparams.pop('stride'))
+    method = fftparams.pop('method', None)
     new = type(segments)()
     for seg in segments - globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments:
@@ -231,14 +232,14 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 
                     # calculate the component spectrogram
                     if comp == 'Cxy':
-                        specgram = ts1.spectrogram(stride, nproc=nproc,
-                                                   cross=ts2, **fftparams)
+                        specgram = ts1.csd_spectrogram(
+                            ts2, stride, nproc=nproc, **fftparams)
                     elif comp == 'Cxx':
                         specgram = ts1.spectrogram(stride, nproc=nproc,
-                                                   **fftparams)
+                                                   method=method, **fftparams)
                     elif comp == 'Cyy':
                         specgram = ts2.spectrogram(stride, nproc=nproc,
-                                                   **fftparams)
+                                                   method=method, **fftparams)
 
                     if filter_:
                         specgram = (specgram**(1/2.)).filter(*filter_,

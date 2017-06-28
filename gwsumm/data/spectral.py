@@ -179,7 +179,15 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
             ts = ts.crop(ts.span[0], ts.span[0] + d, copy=False)
             # calculate spectrogram
             try:
-                specgram = ts.spectrogram(stride, nproc=nproc, **fftparams)
+                # rayleigh spectrogram has its own instance method
+                if fftparams.get('method', None) == 'rayleigh':
+                    spec_kw = fftparams.copy()
+                    spec_kw.pop('method')
+                    spec_func = ts.rayleigh_spectrogram
+                else:
+                    spec_kw = fftparams
+                    spec_func = ts.spectrogram
+                specgram = spec_func(stride, nproc=nproc, **spec_kw)
             except ZeroDivisionError:
                 if stride == 0:
                     raise ZeroDivisionError("Spectrogram stride is 0")

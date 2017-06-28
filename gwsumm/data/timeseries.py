@@ -491,7 +491,7 @@ def _get_timeseries_dict(channels, segments, config=None,
     resample = dict()
     dtype_ = dict()
     for channel in channels:
-        name = channel.ndsname
+        name = str(channel)
         try:
             filter_[name] = channel.filter
         except AttributeError:
@@ -582,7 +582,7 @@ def _get_timeseries_dict(channels, segments, config=None,
         qresample = {}
         qdtype = {}
         for channel in channels:
-            name = channel.ndsname
+            name = str(channel)
             oldsegs = globalv.DATA.get(name, ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
@@ -648,7 +648,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                         data = data.crop(*(data.span - seg))
                         break
                 try:
-                    filt = filter_[channel.ndsname]
+                    filt = filter_[str(channel)]
                 except KeyError:
                     pass
                 else:

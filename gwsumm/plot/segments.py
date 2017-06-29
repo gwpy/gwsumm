@@ -440,7 +440,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
 
         # customise plot
         if 'ylim' not in self.pargs:
-            self.pargs['ylim'] = (-5, nflags-.5)
+            self.pargs['ylim'] = (-.5, nflags-.5)
         self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise

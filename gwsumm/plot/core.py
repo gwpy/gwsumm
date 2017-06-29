@@ -532,9 +532,9 @@ class DataPlot(SummaryPlot):
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.005)
             # set tight limits around data
-            if 'xlim' not in self.pargs:
+            if 'xlim' not in self.pargs and 'xbound' not in self.pargs:
                 ax.autoscale(enable=True, axis='x', tight=True)
-            if 'ylim' not in self.pargs:
+            if 'ylim' not in self.pargs and 'ybound' not in self.pargs:
                 ax.autoscale(enable=True, axis='y', tight=True)
 
         # customise axes for mpl 1.x only

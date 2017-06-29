@@ -380,11 +380,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
 

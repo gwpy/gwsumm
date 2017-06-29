@@ -678,12 +678,7 @@ class DutyDataPlot(SegmentDataPlot):
                 bottom += height
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            for ax in axes:
-                try:
-                    getattr(ax, 'set_%s' % key)(val)
-                except AttributeError:
-                    setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if 'hours' in self.pargs.get('ylabel', ''):
             ax.get_yaxis().get_major_locator().set_params(
                 steps=[1, 2, 4, 8, 12, 24])
@@ -1042,11 +1037,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         legt.set_ha('left')
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
 
         # copy title and move axes
         if ax.get_title():
@@ -1237,11 +1228,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         self.pargs.setdefault('xlim', (-.5, len(data)-.5))
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise
         self.pargs['xlim'] = None

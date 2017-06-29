@@ -228,11 +228,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
                         linestyle='--', color='red')
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if (len(self.channels) > 1 or plotargs[0].get('label', None) in
                 [re.sub(r'(_|\\_)', r'\_', str(self.channels[0])), None]):
             plot.add_legend(ax=ax, **legendargs)

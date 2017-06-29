@@ -161,7 +161,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
-            ax.set_xlim(float(self.start), float(self.end))
+            # add this to pargs to prevent autoscaling in DataPlot.finalize
+            self.pargs['xlim'] = (float(self.start), float(self.end))
+            ax.set_xlim(*self.pargs['xlim'])
         return super(TimeSeriesDataPlot, self).finalize(
                    outputfile=outputfile, close=close, **savekwargs)
 

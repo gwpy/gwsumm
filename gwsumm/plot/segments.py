@@ -283,13 +283,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             ax.set_xlim(*xlim)
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
         if 'ylim' not in self.pargs:
-            ax.set_ylim(-0.5, len(self.flags) - 0.5)
+            self.pargs['ylim'] = (-.5, len(self.flags) - 0.5)
+        self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise
         if mask is None and not plot.colorbars:
@@ -443,13 +439,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 ax.plot(flag, **kwargs)
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
         if 'ylim' not in self.pargs:
-            ax.set_ylim(-0.5, nflags - 0.5)
+            self.pargs['ylim'] = (-5, nflags-.5)
+        self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise
         if mask is None and not plot.colorbars:
@@ -910,13 +902,9 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         ax.set_xlim(*xlim)
 
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
         if 'ylim' not in self.pargs:
-            ax.set_ylim(-nflags+0.5, 0.5)
+            self.pargs['ylim'] = (-nflags+.5, .5)
+        self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise
         if not plot.colorbars:

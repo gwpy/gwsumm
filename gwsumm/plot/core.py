@@ -531,6 +531,12 @@ class DataPlot(SummaryPlot):
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.005)
+            # set tight limits around data
+            if 'xlim' not in self.pargs:
+                ax.autoscale(enable=True, axis='x', tight=True)
+            if 'ylim' not in self.pargs:
+                ax.autoscale(enable=True, axis='y', tight=True)
+
         # customise axes for mpl 1.x only
         if mpl_version < '2.0':
             for ax in self.plot.axes:

@@ -31,7 +31,8 @@ import h5py
 from numpy import (random, testing as nptest)
 
 from gwpy.table import EventTable
-from gwpy.timeseries import TimeSeries
+from gwpy.timeseries import (TimeSeries, StateVector)
+from gwpy.spectrogram import Spectrogram
 
 from common import unittest
 from gwsumm import (archive, data, globalv, channels)
@@ -42,6 +43,9 @@ TEST_DATA = TimeSeries([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], epoch=100,
                        unit='meter', sample_rate=1, channel='X1:TEST-CHANNEL',
                        name='TEST DATA')
 TEST_DATA.channel = channels.get_channel(TEST_DATA.channel)
+
+
+# -- utilities ----------------------------------------------------------------
 
 def empty_globalv_DATA(f):
     @wraps(f)
@@ -55,50 +59,65 @@ def empty_globalv_DATA(f):
     return wrapped_f
 
 
-class ArchiveTests(unittest.TestCase):
-    """`TestCase` for the `gwsumm.archive` module
-    """
-    def test_write_archive(self, delete=True):
-        data.add_timeseries(TEST_DATA)
-        fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
-        try:
-            archive.write_data_archive(fname)
-        finally:
-            if delete and os.path.isfile(fname):
-                os.remove(fname)
-        return fname
+def create_timeseries(data, **metadata):
+    SeriesClass = metadata.pop('series_class', TimeSeries)
+    d = SeriesClass(data, **metadata)
+    d.channel = channels.get_channel(d.channel)
+    return d
 
-    @empty_globalv_DATA
-    def test_read_archive(self):
-        fname = self.test_write_archive(delete=False)
-        try:
-            archive.read_data_archive(fname)
-        finally:
+
+# -- tests --------------------------------------------------------------------
+
+
+def test_write_archive(delete=True):
+    data.add_timeseries(TEST_DATA)
+    data.add_timeseries(create_timeseries([1, 2, 3, 2, 1],
+                                          series_class=StateVector,
+                                          channel='X1:TEST-STATE_VECTOR'))
+    data.add_spectrogram(create_timeseries([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
+                                           series_class=Spectrogram,
+                                           channel='X1:TEST-SPECTROGRAM'))
+    fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
+    try:
+        archive.write_data_archive(fname)
+        archive.write_data_archive(fname)  # test again to validate backups
+    finally:
+        if delete and os.path.isfile(fname):
             os.remove(fname)
-        ts = data.get_timeseries('X1:TEST-CHANNEL',
-                                 [(100, 110)], query=False).join()
-        nptest.assert_array_equal(ts.value, TEST_DATA.value)
-        for attr in ['epoch', 'unit', 'sample_rate', 'channel', 'name']:
-            self.assertEqual(getattr(ts, attr), getattr(TEST_DATA, attr))
+    return fname
 
-    def test_archive_load_table(self):
-        t = EventTable(random.random((100, 5)),
-                       names=['a', 'b', 'c', 'd', 'e'])
-        empty = EventTable(names=['a', 'b'])
-        try:
-            fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
-            h5file = h5py.File(fname)
-            # check table gets archived and read transparently
-            archive.archive_table(t, 'test-table', h5file)
-            t2 = archive.load_table(h5file['test-table'])
-            nptest.assert_array_equal(t.as_array(), t2.as_array())
-            self.assertEqual(t.dtype, t2.dtype)
-            # check empty table does not get archived, with warning
-            with pytest.warns(UserWarning):
-                n = archive.archive_table(empty, 'test-empty', h5file)
-            self.assertIsNone(n)
-            self.assertNotIn('test-empty', h5file)
-        finally:
-            if os.path.exists(fname):
-                os.remove(fname)
-        # test empty table doesn't get archived
+
+@empty_globalv_DATA
+def test_read_archive():
+    fname = test_write_archive(delete=False)
+    try:
+        archive.read_data_archive(fname)
+    finally:
+        os.remove(fname)
+    ts = data.get_timeseries('X1:TEST-CHANNEL',
+                             [(100, 110)], query=False).join()
+    nptest.assert_array_equal(ts.value, TEST_DATA.value)
+    for attr in ['epoch', 'unit', 'sample_rate', 'channel', 'name']:
+        assert getattr(ts, attr) == getattr(TEST_DATA, attr)
+
+
+def test_archive_load_table():
+    t = EventTable(random.random((100, 5)),
+                   names=['a', 'b', 'c', 'd', 'e'])
+    empty = EventTable(names=['a', 'b'])
+    try:
+        fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
+        h5file = h5py.File(fname)
+        # check table gets archived and read transparently
+        archive.archive_table(t, 'test-table', h5file)
+        t2 = archive.load_table(h5file['test-table'])
+        nptest.assert_array_equal(t.as_array(), t2.as_array())
+        assert t.dtype == t2.dtype
+        # check empty table does not get archived, with warning
+        with pytest.warns(UserWarning):
+            n = archive.archive_table(empty, 'test-empty', h5file)
+        assert n is None
+        assert 'test-empty' not in h5file
+    finally:
+        if os.path.exists(fname):
+            os.remove(fname)

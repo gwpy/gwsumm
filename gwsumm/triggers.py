@@ -239,7 +239,10 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # work out time function
     if return_:
-        trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        try:
+            trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        except KeyError:  # filtering didn't work, don't really care
+            trigs = globalv.TRIGGERS[key]
         if filter:
             if isinstance(filter, string_types):
                 filter = filter.split(' ')

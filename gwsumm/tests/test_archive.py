@@ -33,6 +33,7 @@ from numpy import (random, testing as nptest)
 from gwpy.table import EventTable
 from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrogram import Spectrogram
+from gwpy.segments import (Segment, SegmentList)
 
 from common import unittest
 from gwsumm import (archive, data, globalv, channels, triggers)
@@ -47,15 +48,17 @@ TEST_DATA.channel = channels.get_channel(TEST_DATA.channel)
 
 # -- utilities ----------------------------------------------------------------
 
-def empty_globalv_DATA():
+def empty_globalv():
     globalv.DATA = type(globalv.DATA)()
+    globalv.SEGMENTS = type(globalv.SEGMENTS)()
+    globalv.TRIGGERS = type(globalv.TRIGGERS)()
 
 
 def with_empty_globalv_DATA(f):
     @wraps(f)
     def wrapped_f(*args, **kwargs):
         _data = globalv.DATA
-        empty_globalv_DATA()
+        globalv.DATA = type(globalv.DATA)()
         try:
             return f(*args, **kwargs)
         finally:
@@ -83,9 +86,9 @@ def test_write_archive(delete=True):
     data.add_spectrogram(create([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
                                 series_class=Spectrogram,
                                 channel='X1:TEST-SPECTROGRAM'))
-    triggers.add_triggers(EventTable(random.random((100, 5)),
-                                     names=['a', 'b', 'c', 'd', 'e']),
-                          'X1:TEST-TABLE')
+    t = EventTable(random.random((100, 5)), names=['a', 'b', 'c', 'd', 'e'])
+    t.meta['segments'] = SegmentList([Segment(0, 100)])
+    triggers.add_triggers(t, 'X1:TEST-TABLE,testing')
     fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
     try:
         archive.write_data_archive(fname)
@@ -99,20 +102,25 @@ def test_write_archive(delete=True):
 @with_empty_globalv_DATA
 def test_read_archive():
     fname = test_write_archive(delete=False)
-    empty_globalv_DATA()
+    empty_globalv()
     try:
         archive.read_data_archive(fname)
     finally:
         os.remove(fname)
+    # check timeseries
     ts = data.get_timeseries('X1:TEST-CHANNEL',
                              [(100, 110)], query=False).join()
     nptest.assert_array_equal(ts.value, TEST_DATA.value)
     for attr in ['epoch', 'unit', 'sample_rate', 'channel', 'name']:
         assert getattr(ts, attr) == getattr(TEST_DATA, attr)
+    # check trend series
     ts = data.get_timeseries('X1:TEST-TREND.mean,m-trend', [(0, 300)],
                              query=False).join()
     assert ts.channel.type == 'm-trend'
     assert ts.span == (0, 300)
+    # check triggers
+    t = triggers.get_triggers('X1:TEST-TABLE', 'testing', [(0, 100)])
+    assert len(t) == 100
 
 
 def test_archive_load_table():

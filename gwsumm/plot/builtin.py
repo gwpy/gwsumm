@@ -161,7 +161,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         plot = self.plot
         ax = plot.axes[0]
         if 'xlim' not in self.pargs:
-            ax.set_xlim(float(self.start), float(self.end))
+            # add this to pargs to prevent autoscaling in DataPlot.finalize
+            self.pargs['xlim'] = (float(self.start), float(self.end))
+            ax.set_xlim(*self.pargs['xlim'])
         return super(TimeSeriesDataPlot, self).finalize(
                    outputfile=outputfile, close=close, **savekwargs)
 
@@ -842,22 +844,9 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         # plot
         pcmesh_kwargs = self.parse_pcmesh_kwargs()
         ax.pcolormesh(x, y, h.T, **pcmesh_kwargs)
+
         # customise plot
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                if key == 'grid':
-                    if val == 'off':
-                        ax.grid('off')
-                    elif val in ['both', 'major', 'minor']:
-                        ax.grid('on', which=val)
-                    else:
-                        raise ValueError("Invalid ax.grid argument; "
-                                         "valid options are: 'off', "
-                                         "'both', 'major' or 'minor'")
-                else:
-                    setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         # add extra axes and finalise
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)

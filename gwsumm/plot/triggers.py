@@ -252,7 +252,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                           label=label, **pargs)
 
         # customise plot
-        legendargs = self.parse_legend_kwargs(markerscale=4)
+        legendargs = self.parse_legend_kwargs(markerscale=3)
         logx = self.pargs.pop('logx', self.pargs.pop('xscale', None) == 'log')
         logy = self.pargs.pop('logy', self.pargs.pop('yscale', None) == 'log')
         if len(self.channels) == 1:
@@ -380,11 +380,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
-        for key, val in self.pargs.iteritems():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
 

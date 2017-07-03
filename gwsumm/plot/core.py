@@ -531,6 +531,12 @@ class DataPlot(SummaryPlot):
             # move title up to create gap between axes
             if ax.get_title() and ax.title.get_position()[1] == 1.0:
                 ax.title.set_y(1.005)
+            # set tight limits around data
+            if 'xlim' not in self.pargs and 'xbound' not in self.pargs:
+                ax.autoscale(enable=True, axis='x', tight=True)
+            if 'ylim' not in self.pargs and 'ybound' not in self.pargs:
+                ax.autoscale(enable=True, axis='y', tight=True)
+
         # customise axes for mpl 1.x only
         if mpl_version < '2.0':
             for ax in self.plot.axes:
@@ -571,17 +577,31 @@ class DataPlot(SummaryPlot):
             self.plot.close()
         return outputfile
 
-    def apply_parameters(self, ax, **pargs):
-        for key in pargs:
-            if key.startswith('no-'):  # skip no-xxx keys
-                continue
-            val = pargs[key]
-            if key in ['xlim', 'ylim'] and isinstance(val, string_types):
-                val = eval(val)
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+    def apply_parameters(self, *axes, **pargs):
+        for ax in axes:
+            for key in pargs:
+                if key.startswith('no-'):  # skip no-xxx keys
+                    continue
+                val = pargs[key]
+                if key in ['xlim', 'ylim'] and isinstance(val, string_types):
+                    val = eval(val)
+                elif key == 'grid':
+                    self._apply_grid_params(ax, val)
+                    continue
+                try:
+                    getattr(ax, 'set_%s' % key)(val)
+                except AttributeError:
+                    setattr(ax, key, val)
+
+    def _apply_grid(self, ax, val):
+        if val == 'off':
+            ax.grid('off')
+        elif val in ['both', 'major', 'minor']:
+            ax.grid('on', which=val)
+        else:
+            raise ValueError("Invalid ax.grid argument; "
+                             "valid options are: 'off', "
+                             "'both', 'major' or 'minor'")
 
 
 register_plot(DataPlot)

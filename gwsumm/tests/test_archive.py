@@ -35,7 +35,7 @@ from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrogram import Spectrogram
 
 from common import unittest
-from gwsumm import (archive, data, globalv, channels)
+from gwsumm import (archive, data, globalv, channels, triggers)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -77,6 +77,9 @@ def test_write_archive(delete=True):
     data.add_spectrogram(create_timeseries([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
                                            series_class=Spectrogram,
                                            channel='X1:TEST-SPECTROGRAM'))
+    triggers.add_triggers(EventTable(random.random((100, 5)),
+                                     names=['a', 'b', 'c', 'd', 'e']),
+                          'X1:TEST-TABLE')
     fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
     try:
         archive.write_data_archive(fname)
@@ -92,6 +95,11 @@ def test_read_archive():
     fname = test_write_archive(delete=False)
     try:
         archive.read_data_archive(fname)
+    except KeyError:
+        print(fname)
+        with h5py.File(fname, 'r') as f:
+            print(list(f['triggers'].keys()))
+        raise
     finally:
         os.remove(fname)
     ts = data.get_timeseries('X1:TEST-CHANNEL',

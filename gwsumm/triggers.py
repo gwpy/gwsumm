@@ -261,9 +261,11 @@ def add_triggers(table, key, segments=None):
     except KeyError:
         globalv.TRIGGERS[key] = table
     else:
-        segs = old.meta['segments']
         globalv.TRIGGERS[key] = vstack_tables((old, table))
-        globalv.TRIGGERS[key].meta['segments'].coalesce()
+        try:
+            globalv.TRIGGERS[key].meta['segments'].coalesce()
+        except KeyError:
+            globalv.TRIGGERS[key].meta['segments'] = SegmentList()
 
 
 def time_in_segments(times, segmentlist):

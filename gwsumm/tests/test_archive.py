@@ -47,11 +47,15 @@ TEST_DATA.channel = channels.get_channel(TEST_DATA.channel)
 
 # -- utilities ----------------------------------------------------------------
 
-def empty_globalv_DATA(f):
+def empty_globalv_DATA():
+    globalv.DATA = type(globalv.DATA)()
+
+
+def with_empty_globalv_DATA(f):
     @wraps(f)
     def wrapped_f(*args, **kwargs):
         _data = globalv.DATA
-        globalv.DATA = type(globalv.DATA)()
+        empty_globalv_DATA()
         try:
             return f(*args, **kwargs)
         finally:
@@ -59,7 +63,7 @@ def empty_globalv_DATA(f):
     return wrapped_f
 
 
-def create_timeseries(data, **metadata):
+def create(data, **metadata):
     SeriesClass = metadata.pop('series_class', TimeSeries)
     d = SeriesClass(data, **metadata)
     d.channel = channels.get_channel(d.channel)
@@ -71,12 +75,14 @@ def create_timeseries(data, **metadata):
 
 def test_write_archive(delete=True):
     data.add_timeseries(TEST_DATA)
-    data.add_timeseries(create_timeseries([1, 2, 3, 2, 1],
-                                          series_class=StateVector,
-                                          channel='X1:TEST-STATE_VECTOR'))
-    data.add_spectrogram(create_timeseries([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
-                                           series_class=Spectrogram,
-                                           channel='X1:TEST-SPECTROGRAM'))
+    data.add_timeseries(create([1, 2, 3, 4, 5],
+                               dt=60., channel='X1:TEST-TREND.mean'))
+    data.add_timeseries(create([1, 2, 3, 2, 1],
+                               series_class=StateVector,
+                               channel='X1:TEST-STATE_VECTOR'))
+    data.add_spectrogram(create([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
+                                series_class=Spectrogram,
+                                channel='X1:TEST-SPECTROGRAM'))
     triggers.add_triggers(EventTable(random.random((100, 5)),
                                      names=['a', 'b', 'c', 'd', 'e']),
                           'X1:TEST-TABLE')
@@ -90,16 +96,12 @@ def test_write_archive(delete=True):
     return fname
 
 
-@empty_globalv_DATA
+@with_empty_globalv_DATA
 def test_read_archive():
     fname = test_write_archive(delete=False)
+    empty_globalv_DATA()
     try:
         archive.read_data_archive(fname)
-    except KeyError:
-        print(fname)
-        with h5py.File(fname, 'r') as f:
-            print(list(f['triggers'].keys()))
-        raise
     finally:
         os.remove(fname)
     ts = data.get_timeseries('X1:TEST-CHANNEL',
@@ -107,6 +109,10 @@ def test_read_archive():
     nptest.assert_array_equal(ts.value, TEST_DATA.value)
     for attr in ['epoch', 'unit', 'sample_rate', 'channel', 'name']:
         assert getattr(ts, attr) == getattr(TEST_DATA, attr)
+    ts = data.get_timeseries('X1:TEST-TREND.mean,m-trend', [(0, 300)],
+                             query=False).join()
+    assert ts.channel.type == 'm-trend'
+    assert ts.span == (0, 300)
 
 
 def test_archive_load_table():

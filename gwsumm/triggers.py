@@ -474,20 +474,12 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
         cache = cache.sieve(segmentlist=segments)
         cache = cache.checkfilesexist()[0]
         cache.sort(key=lambda x: x.segment[0])
-        if etg == 'pycbc_live':  # remove empty HDF5 files
-            cache = type(cache)(
-                filter_pycbc_live_files(cache, ifo=kwargs['ifo']))
-    # if no files, skip
+        cache = cache.pfnlist()  # some readers only like filenames
+    if etg == 'pycbc_live':  # remove empty HDF5 files
+        cache = filter_pycbc_live_files(cache, ifo=kwargs['ifo'])
+
     if len(cache) == 0:
         return
-    # use multiprocessing except for ascii reading
-    # (since astropy doesn't allow it)
-    if kwargs.get('format', 'none').startswith('ascii.'):
-        cache = cache.pfnlist()
-    else:
-        kwargs['nproc'] = nproc
-    if len(cache) == 1:
-        cache = cache[0]
 
     # read triggers
     table = EventTable.read(cache, **kwargs)

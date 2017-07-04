@@ -480,14 +480,6 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
 
     if len(cache) == 0:
         return
-    # use multiprocessing except for ascii reading
-    # (since astropy doesn't allow it)
-    if kwargs.get('format', 'none').startswith('ascii.'):
-        cache = cache.pfnlist()
-    else:
-        kwargs['nproc'] = nproc
-    if len(cache) == 1:
-        cache = cache[0]
 
     # read triggers
     table = EventTable.read(cache, **kwargs)

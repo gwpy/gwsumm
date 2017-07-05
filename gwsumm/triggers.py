@@ -239,7 +239,10 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # work out time function
     if return_:
-        trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        try:
+            trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+        except KeyError:  # filtering didn't work, don't really care
+            trigs = globalv.TRIGGERS[key]
         if filter:
             if isinstance(filter, string_types):
                 filter = filter.split(' ')
@@ -261,9 +264,11 @@ def add_triggers(table, key, segments=None):
     except KeyError:
         globalv.TRIGGERS[key] = table
     else:
-        segs = old.meta['segments']
         globalv.TRIGGERS[key] = vstack_tables((old, table))
-        globalv.TRIGGERS[key].meta['segments'].coalesce()
+        try:
+            globalv.TRIGGERS[key].meta['segments'].coalesce()
+        except KeyError:
+            globalv.TRIGGERS[key].meta['segments'] = SegmentList()
 
 
 def time_in_segments(times, segmentlist):

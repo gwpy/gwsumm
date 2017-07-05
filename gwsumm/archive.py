@@ -17,6 +17,14 @@
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
 """This module handles HDF archiving of data.
+
+In production for LIGO, the LIGO Summary Pages (LSP) Service runs at regular
+intervals (about every 10 minutes), so an HDF5 file is used to archive the
+data read and produced from one instance so that the next instance doesn't
+have to re-read and re-produce the same data.
+
+All data products are stored just using the 'standard' gwpy `.write()` method
+for that object.
 """
 
 import tempfile
@@ -51,23 +59,34 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
     ----------
     outfile : `str`
         path to target HDF5 file
-    timeseries : `bool`, default: `True`
+
+    timeseries : `bool`, optional
         include `TimeSeries` data in archive
-    spectrogram : `bool`, default: `True`
+
+    spectrogram : `bool`, optional
         include `Spectrogram` data in archive
+
+    segments : `bool`, optional
+        include `DataQualityFlag` data in archive
+
+    triggers : `bool`, optional
+        include `EventTable` data in archive
     """
     from h5py import File
 
+    # backup existing file, in case something fails
     backup = backup_existing_archive(outfile)
 
     try:
         with File(outfile, 'w') as h5file:
-            # record all time-series data
+
+            # -- timeseries ---------------------
+
             if timeseries:
                 tgroup = h5file.create_group('timeseries')
                 sgroup = h5file.create_group('statevector')
                 # loop over channels
-                for c, tslist in globalv.DATA.iteritems():
+                for c, tslist in globalv.DATA.items():
                     # ignore trigger rate TimeSeries
                     if re_rate.search(str(c)):
                         continue
@@ -80,69 +99,62 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                                 (not hasattr(c, '_timeseries') or
                                  not c._timeseries)):
                             continue
+                        # archive timeseries
                         try:
                             name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
                                                  ts.epoch.gps)
                         except AttributeError:
                             name = '%s,%s' % (ts.name, ts.epoch.gps)
-                        try:
-                            if isinstance(ts, StateVector):
-                                ts.write(sgroup, path=name, format='hdf5')
-                            else:
-                                ts.write(tgroup, path=name, format='hdf5')
-                        except ValueError as e:
-                            warnings.warn(str(e))
-                        except RuntimeError as e:
-                            if 'Name already exists' in str(e):
-                                warnings.warn("%s [%s]" % (str(e), name))
-                            else:
-                                raise
+                        if isinstance(ts, StateVector):
+                            group = sgroup
+                        else:
+                            group = tgroup
+                        _write_object(ts, group, path=name, format='hdf5')
 
-            # record all spectrogram data
+            # -- spectrogram --------------------
+
             if spectrogram:
                 for tag, gdict in zip(
                         ['spectrogram', 'coherence-components'],
                         [globalv.SPECTROGRAMS, globalv.COHERENCE_COMPONENTS]):
                     group = h5file.create_group(tag)
                     # loop over channels
-                    for key, speclist in gdict.iteritems():
+                    for key, speclist in gdict.items():
                         # loop over time-series
                         for spec in speclist:
                             name = '%s,%s' % (key, spec.epoch.gps)
-                            try:
-                                spec.write(group, path=name, format='hdf5')
-                            except ValueError as e:
-                                warnings.warn(str(e))
-                            except RuntimeError as e:
-                                if 'Name already exists' in str(e):
-                                    warnings.warn("%s [%s]" % (str(e), name))
-                                else:
-                                    raise
+                            _write_object(spec, group, path=name,
+                                          format='hdf5')
 
-            # record all segment data
+            # -- segments -----------------------
+
             if segments:
                 group = h5file.create_group('segments')
                 # loop over channels
-                for name, dqflag in globalv.SEGMENTS.iteritems():
+                for name, dqflag in globalv.SEGMENTS.items():
                     dqflag.write(group, path=name, format='hdf5')
 
-            # record all triggers
+            # -- triggers -----------------------
+
             if triggers:
                 group = h5file.create_group('triggers')
                 for key in globalv.TRIGGERS:
                     archive_table(globalv.TRIGGERS[key], key, group)
 
-    except:
+    except:  # if it fails for any reason, reinstate the backup
         if backup:
             restore_backup(backup, outfile)
         raise
-    else:
+    finally:  # remove the backup regardless of what happens
         if backup is not None and os.path.isfile(backup):
             os.remove(backup)
 
 
 def read_data_archive(sourcefile):
-    """Read archived data from an HDF5 archive source.
+    """Read archived data from an HDF5 archive source
+
+    This method reads all found data into the data containers defined by
+    the `gwsumm.globalv` module, then returns nothing.
 
     Parameters
     ----------
@@ -152,12 +164,10 @@ def read_data_archive(sourcefile):
     from h5py import File
 
     with File(sourcefile, 'r') as h5file:
-        # read all time-series data
-        try:
-            group = h5file['timeseries']
-        except KeyError:
-            group = dict()
-        for dataset in group.itervalues():
+
+        # -- timeseries -------------------------
+
+        for dataset in h5file.get('timeseries', {}).values():
             ts = TimeSeries.read(dataset, format='hdf5')
             if (re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name) and
                     ts.sample_rate.value == 1.0):
@@ -176,48 +186,38 @@ def read_data_archive(sourcefile):
                 t = globalv.DATA[ts.channel.ndsname][-1].span[-1]
                 add_timeseries(ts.crop(start=t), key=ts.channel.ndsname)
 
-        # read all state-vector data
-        try:
-            group = h5file['statevector']
-        except KeyError:
-            group = dict()
-        for dataset in group.itervalues():
+        # -- statevector -- ---------------------
+
+        for dataset in h5file.get('statevector', {}).values():
             sv = StateVector.read(dataset, format='hdf5')
             sv.channel = get_channel(sv.channel)
             add_timeseries(sv, key=sv.channel.ndsname)
 
-        # read all spectrogram data
-        for tag in ['spectrogram', 'coherence-components']:
-            if tag == 'coherence-components':
-                add_ = add_coherence_component_spectrogram
-            else:
-                add_ = add_spectrogram
-            try:
-                group = h5file[tag]
-            except KeyError:
-                group = dict()
-            for key, dataset in group.iteritems():
+        # -- spectrogram ------------------------
+
+        for tag, add_ in zip(
+                ['spectrogram', 'coherence-components'],
+                [add_spectrogram, add_coherence_component_spectrogram]):
+            for key, dataset in h5file.get(tag, {}).items():
                 key = key.rsplit(',', 1)[0]
                 spec = Spectrogram.read(dataset, format='hdf5')
                 spec.channel = get_channel(spec.channel)
                 add_(spec, key=key)
 
-        # read all segments
+        # -- segments ---------------------------
+
         try:
             group = h5file['segments']
         except KeyError:
             group = dict()
-        for name in group:
-            dqflag = DataQualityFlag.read(group, path=name, format='hdf5')
+        for name, dataset in h5file.get('segments', {}).items():
+            dqflag = DataQualityFlag.read(dataset, format='hdf5')
             globalv.SEGMENTS += {name: dqflag}
 
-        # read all triggers
-        try:
-            group = h5file['triggers']
-        except KeyError:
-            group = dict()
-        for key in group:
-            load_table(group[key])
+        # -- triggers ---------------------------
+
+        for dataset in h5file.get('triggers', {}).values():
+            load_table(dataset)
 
 
 def backup_existing_archive(filename, suffix='.hdf',
@@ -259,6 +259,20 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
 
 
 # -- utility methods --------------------------------------------------------
+
+def _write_object(data, *args, **kwargs):
+    """Internal method to write something to HDF5 with error handling
+    """
+    try:
+        return data.write(*args, **kwargs)
+    except ValueError as e:
+        warnings.warn(str(e))
+    except RuntimeError as e:
+        if 'Name already exists' in str(e):
+            warnings.warn(str(e))
+        else:
+            raise
+
 
 def segments_to_array(segmentlist):
     """Convert a `SegmentList` to a 2-dimensional `numpy.ndarray`

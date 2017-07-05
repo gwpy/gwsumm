@@ -586,8 +586,8 @@ def _get_timeseries_dict(channels, segments, config=None,
             oldsegs = globalv.DATA.get(name, ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
-                if channel in resample:
-                    qresample[name] = resample[channel]
+                if name in resample:
+                    qresample[name] = resample[name]
                 qdtype[name] = dtype_.get(name, ioargs.get('dtype'))
         ioargs['dtype'] = qdtype
 

@@ -644,8 +644,15 @@ def _get_timeseries_dict(channels, segments, config=None,
                     continue
                 if data.unit is None:
                     data.unit = 'undef'
-                for seg in globalv.DATA[key].segments:
-                    if seg.intersects(data.span):
+                for i, seg in enumerate(globalv.DATA[key].segments):
+                    if seg in data.span:
+                        # new data completely covers existing segment
+                        # (and more), so just remove the old stuff
+                        globalv.DATA[key].pop(i)
+                        break
+                    elif seg.intersects(data.span):
+                        # new data extends existing segment, so only keep
+                        # the really new stuff
                         data = data.crop(*(data.span - seg))
                         break
                 try:

@@ -211,7 +211,8 @@ def read_data_archive(sourcefile):
         except KeyError:
             group = dict()
         for name, dataset in h5file.get('segments', {}).items():
-            dqflag = DataQualityFlag.read(dataset, format='hdf5')
+            dqflag = DataQualityFlag.read(h5file, path=dataset.name,
+                                          format='hdf5')
             globalv.SEGMENTS += {name: dqflag}
 
         # -- triggers ---------------------------

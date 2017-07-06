@@ -314,6 +314,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # add state segments
         if isinstance(plot, TimeSeriesPlot):
             self.add_state_segments(ax)
+            self.add_future_shade()
 
         # finalise
         return self.finalize()

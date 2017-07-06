@@ -14,7 +14,6 @@ from matplotlib.colors import LogNorm
 from glue.lal import Cache
 
 from gwpy.segments import Segment
-from gwpy.table.utils import get_row_value
 from gwpy.time import to_gps
 from gwpy.plotter import EventTablePlot
 

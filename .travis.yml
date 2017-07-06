@@ -67,6 +67,8 @@ script:
   # test executables
   - coverage run --append `which gw_summary` --help
   - coverage run --append `which gw_summary_pipe` --help
+  - coverage run --append `which gwsumm-plot-triggers` --help
+  - coverage run --append `which gwsumm-plot-guardian` --help
 
 after_success:
   - coveralls

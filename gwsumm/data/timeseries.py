@@ -636,7 +636,8 @@ def _get_timeseries_dict(channels, segments, config=None,
                                      nproc=nproc, resample=qresample,
                                      **ioargs)
 
-            for channel, data in zip(channels, tsd.values()):
+            for c, data in tsd.items():
+                channel = get_channel(c)
                 key = keys[channel.ndsname]
                 if (key in globalv.DATA and
                         data.span in globalv.DATA[key].segments):

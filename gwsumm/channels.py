@@ -112,9 +112,18 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         name, type_ = str(channel).rsplit(',', 1)
         found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
     else:
-        type_ = isinstance(channel, Channel) and channel.type or None
         name = str(channel)
-        found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
+        # if given Channel object, try and search for specific parameters
+        if isinstance(channel, Channel):
+            type_ = channel.type
+            found = globalv.CHANNELS.sieve(
+                name=name, type=type_, exact_match=True)
+            if len(found) == 0:
+                found = globalv.CHANNELS.sieve(name=name, exact_match=True)
+        # otherwise just check for the name
+        else:
+            type_ = None
+            found = globalv.CHANNELS.sieve(name=name, exact_match=True)
     if len(found) == 1:
         return found[0]
     elif len(found) > 1:
@@ -128,9 +137,12 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                              % (str(channel), '\n    '.join(cstrings)))
     else:
         matches = list(Channel.MATCH.finditer(name))
+        if isinstance(channel, Channel):
+            new = channel
+        else:
+            new = Channel(name)
         # match single raw channel
         if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-            new = Channel(str(channel))
             new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
         # match single trend
         elif len(matches) == 1:
@@ -141,8 +153,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                 type_ = 's-trend'
             elif type_ is None:
                 type_ = 'm-trend'
-            name += ',%s' % type_
-            new = Channel(name)
+            new.type = type_
             if find_trend_source:
                 try:
                     source = get_channel(new.name.rsplit('.')[0])

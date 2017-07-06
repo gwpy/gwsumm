@@ -740,17 +740,7 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     rate = str(channel.sample_rate)
                 # format unit
-                if channel.unit:
-                    try:
-                        unit = channel.unit.to_string(
-                            'unicode').encode('ascii', 'xmlcharrefreplace')
-                    except ValueError:
-                        try:
-                            unit = channel.unit.long_names[0]
-                        except IndexError:
-                            unit = str(channel.unit)
-                else:
-                    unit = 'Unknown'
+                unit = channel.unit and str(channel.unit) or 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.table(
                 headers, data, id='channel-information',

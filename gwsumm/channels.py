@@ -28,6 +28,8 @@ try:
 except ImportError:
     GSSError = None
 
+from astropy.units import Unit
+
 try:
     from gwpy.io.nds import NDS2_CHANNEL_TYPE
 except ImportError:
@@ -229,9 +231,10 @@ def update_missing_channel_params(channel, **kwargs):
     **kwargs
         `(key, value)` pairs to set
     """
-    target = get_channel(channel)
+    target = get_channel(str(channel))
     for param in ['unit', 'sample_rate', 'frametype']:
-        if getattr(target, param) is None:
+        if getattr(target, param) is None or (
+                param == 'unit' and getattr(target, param) is Unit('undef')):
             setattr(target, param, getattr(channel, param))
     for param in kwargs:
         if getattr(target, param) is None:

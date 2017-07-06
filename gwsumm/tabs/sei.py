@@ -516,7 +516,7 @@ class SeiWatchDogPlot(get_plot('data')):
         else:
             from glue.datafind import GWDataFindHTTPConnection
             conn = GWDataFindHTTPConnection()
-            cache = conn.find_frame_urls(self.ifo[0], '%s_C' % self.ifo,
+            cache = conn.find_frame_urls(self.ifo[0], '%s_R' % self.ifo,
                                          self.start, self.end, urltype='file')
             if len(cache) == 0:
                 data = {}
@@ -544,13 +544,14 @@ class SeiWatchDogPlot(get_plot('data')):
                     linestyle='--', color='red')
             ax.set_ylim(*ylim)
             ax.set_xlabel('')
+            ax.set_ylabel('')
             ax.set_title(channel.texname, fontsize=10)
             ax.xaxis.set_minor_locator(NullLocator())
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(10)
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_fontsize(16)
-        plot.text(0.5, 0.04, 'Time [seconds] from trip (%s)' % self.gpstime,
+        plot.text(0.5, 0.02, 'Time [seconds] from trip (%s)' % self.gpstime,
                   ha='center', va='bottom', fontsize=24)
         plot.text(0.01, 0.5, 'Amplitude %s' % self.unit, ha='left',
                   va='center', rotation='vertical', fontsize=24)

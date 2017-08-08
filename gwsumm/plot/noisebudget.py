@@ -45,14 +45,27 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                 'format': 'asd',
                 'sum-label': 'Sum of noises',
                 'sum-linestyle': '--',
-                'sum-color': 'black'}
+                'sum-color': 'black',
+                'residual-label': 'Residual',
+                'residual-linestyle': ':',
+                'residual-color': 'Grey'}
+
+    def _parse_extra_params(self, prefix, **defaults):
+        """Parse parameters for an extra plot element
+        """
+        re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
+        extras = defaults.copy()
+        for key in self.pargs.keys():
+            m = re_prefix.match(key)
+            if m:
+                extras[key[m.span()[1]:]] = self.pargs.pop(key)
+        return extras
 
     def parse_sum_params(self, **defaults):
-        sumargs = defaults.copy()
-        for key in self.pargs.keys():
-            if re.match('sum[-_]', key):
-                sumargs[key[4:]] = self.pargs.pop(key)
-        return sumargs
+        return self._parse_extra_params('sum', **defaults)
+
+    def parse_residual_params(self, **defaults):
+        return self._parse_extra_params('residual', **defaults)
 
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
@@ -90,6 +103,8 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                                 format=sdform, method=None)[0]
             if i:
                 sumdata.append(data)
+            else:
+                darmdata = data
 
             # anticipate log problems
             if self.pargs['logx']:
@@ -116,10 +131,17 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         sum_ = sumdata[0] ** 2
         for d in sumdata[1:]:
             sum_ += d ** 2
-        sum_ **= (1/2.)
-        ax.plot_frequencyseries(sum_, zorder=1, **sumargs)
+        ax.plot_frequencyseries(sum_ ** (1/2.), zorder=1, **sumargs)
         ax.lines.insert(1, ax.lines.pop(-1))
 
+        # plot residual of noises
+        if not self.pargs.pop('no-residual', False):
+            resargs = self.parse_residual_params()
+            residual = (darmdata ** 2 - sum_) ** (1/2.)
+            ax.plot_frequencyseries(residual, zorder=-1000, **resargs)
+            ax.lines.insert(1, ax.lines.pop(-1))
+
+        # finalize
         self.apply_parameters(ax, **self.pargs)
         plot.add_legend(ax=ax, **legendargs)
         plot.add_colorbar(ax=ax, visible=False)

@@ -301,7 +301,7 @@ def find_frame_type(channel):
     if channel.frametype is None:
         try:
             ndstype = io_nds2.Nds2ChannelType.find(channel.type)
-        except (AttributeError, KeyError):
+        except (AttributeError, KeyError, ValueError):
             ndstype = channel.type = 'raw'
         if ndstype == io_nds2.Nds2ChannelType.MTREND:
             ftype = 'M'

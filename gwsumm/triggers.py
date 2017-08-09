@@ -203,7 +203,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     kwargs['filt'] = lambda t: t.channel == str(channel)
                 if cache is None and not etg.lower() == 'hacr':
                     try:
-                        segcache = trigfind.find_trigger_urls(
+                        segcache = trigfind.find_trigger_files(
                             str(channel), etg, segment[0], segment[1],
                             **trigfindkwargs)
                     except ValueError as e:

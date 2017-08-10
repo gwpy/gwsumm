@@ -23,11 +23,6 @@ import threading
 import re
 from Queue import Queue
 
-try:
-    from kerberos import GSSError
-except ImportError:
-    GSSError = None
-
 from astropy.units import Unit
 
 try:

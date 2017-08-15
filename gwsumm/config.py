@@ -147,15 +147,10 @@ class GWSummConfigParser(ConfigParser):
         - `observatory` - the name of the observatory, e.g. ``LIGO Livingston``
 
         """
-        warnings.warn('In an upcoming release the `ifo` configuration option '
-                      'will be changed to hold the lower-case interferometer '
-                      'prefix, all configuration files should be modified to '
-                      'instead use the `IFO` option for the upper-case '
-                      'prefix.', DeprecationWarning)
         if observatory is None:
             observatory = OBSERVATORY_MAP.get(ifo)
         self.set(section, 'IFO', ifo)
-        self.set(section, 'ifo', ifo)  # for backwards compatibility
+        self.set(section, 'ifo', ifo.lower())
         self.set(section, 'SITE', ifo[0].upper())
         self.set(section, 'site', ifo[0].lower())
         if observatory is not None:

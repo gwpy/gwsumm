@@ -21,15 +21,14 @@
 
 import os.path
 import re
-import warnings
 from importlib import import_module
 
 from six import string_types
 from six.moves import StringIO
 
 # import these for evaluating lambda expressions in the configuration file
-import math
-import numpy
+import math  # pylint: disable=unused-import
+import numpy  # pylint: disable=unused-import
 
 from six.moves import http_client as httplib
 
@@ -55,7 +54,7 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
-from .utils import (nat_sorted, re_cchar, safe_eval, OBSERVATORY_MAP)
+from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
 from .channels import (get_channels, split as split_channels)
 
 __all__ = _cp__all__ + [

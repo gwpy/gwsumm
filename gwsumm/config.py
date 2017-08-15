@@ -78,19 +78,11 @@ class GWSummConfigParser(ConfigParser):
     __init__.__doc__ = ConfigParser.__init__.__doc__
 
     def ndoptions(self, section, **kwargs):
-        try:
-            options = ConfigParser.options(self, section, **kwargs)
-        except ValueError as e:
-            e.args = ('[%s]: %s' % (section, str(e)),)
-            raise
+        options = ConfigParser.options(self, section, **kwargs)
         return [o for o in options if o not in self._defaults]
 
     def nditems(self, section, **kwargs):
-        try:
-            items = ConfigParser.items(self, section, **kwargs)
-        except ValueError as e:
-            e.args = ('[%s]: %s' % (section, str(e)),)
-            raise
+        items = ConfigParser.items(self, section, **kwargs)
         return [i for i in items if i[0] not in self._defaults]
 
     def read(self, filenames):

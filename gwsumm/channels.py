@@ -238,10 +238,12 @@ def update_missing_channel_params(channel, **kwargs):
         `(key, value)` pairs to set
     """
     target = get_channel(str(channel))
-    for param in ['unit', 'sample_rate', 'frametype']:
-        if getattr(target, param) is None or (
-                param == 'unit' and getattr(target, param) is Unit('undef')):
-            setattr(target, param, getattr(channel, param))
+    if isinstance(channel, Channel):
+        for param in ['unit', 'sample_rate', 'frametype']:
+            if getattr(target, param) is None or (
+                    param == 'unit' and
+                    getattr(target, param) is Unit('undef')):
+                setattr(target, param, getattr(channel, param))
     for param in kwargs:
         if getattr(target, param) is None:
             setattr(target, param, kwargs[param])
@@ -291,7 +293,5 @@ def split_combination(channelstring):
     """Split a math-combination of channels
     """
     channel = Channel(channelstring)
-    if channel.ifo == 'G1':
-        return channel.ndsname.split(' ')
-    else:
-        return re_channel.findall(channel.ndsname)
+    return [c for c in channel.ndsname.split(' ') if
+            re_channel.match(c)]

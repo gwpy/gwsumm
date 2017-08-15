@@ -352,7 +352,7 @@ class GWSummConfigParser(ConfigParser):
         try:
             new = dict(self.nditems(section))
         except NoSectionError:
-            return []
+            return dict()
         else:
             for key, value in new.items():
                 new[key] = safe_eval(value)
@@ -361,7 +361,7 @@ class GWSummConfigParser(ConfigParser):
 
     def get_css(self, section='html'):
         # get critical CSS
-        css = get_css()
+        css = get_css().copy()
         for key in css:
             try:
                 css[key] = self.get(section, '%s-css' % key)
@@ -381,7 +381,7 @@ class GWSummConfigParser(ConfigParser):
 
     def get_javascript(self, section='html'):
         # get critical JS
-        js = get_js()
+        js = get_js().copy()
         for key in js:
             try:
                 js[key] = self.get(section, '%s-js' % key)

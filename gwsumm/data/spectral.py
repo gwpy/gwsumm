@@ -56,7 +56,7 @@ OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
-    '/': operator.div,
+    '/': operator.truediv,
 }
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

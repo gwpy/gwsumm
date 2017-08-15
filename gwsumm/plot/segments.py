@@ -124,7 +124,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
     @padding.setter
     def padding(self, pad):
-        for f, p in format_padding(self._allflags, pad).iteritems():
+        for f, p in format_padding(self._allflags, pad).items():
             if isinstance(p, (float, int)):
                 f.padding = (p, p)
             else:
@@ -828,7 +828,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
                     if flags[type_] is None:
                         flags[type_] = newflags
                     else:
-                        for i, flag in newflags.iteritems():
+                        for i, flag in newflags.items():
                             flags[type_][i] += flag
             i = 0
             for i, bit in enumerate(channel.bits):
@@ -986,7 +986,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
 
         # set wedge params
         for wedge in patches:
-            for key, val in wedgeargs.iteritems():
+            for key, val in wedgeargs.items():
                 getattr(wedge, 'set_%s' % key)(val)
 
         # make legend
@@ -1304,7 +1304,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
         # customise plot
         legendargs = self.parse_legend_kwargs()
         for i, ax in enumerate(axes):
-            for key, val in self.pargs.iteritems():
+            for key, val in self.pargs.items():
                 if key == 'title' and i > 0:
                     continue
                 if key == 'xlabel' and i < (len(axes) - 1):

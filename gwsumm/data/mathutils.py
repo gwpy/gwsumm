@@ -39,7 +39,7 @@ OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
-    '/': operator.div,
+    '/': operator.truediv,
     '^': operator.pow,
     '**': operator.pow,
 }

@@ -393,7 +393,7 @@ class DataPlot(SummaryPlot):
             elif val is not None:
                 plotargs[kwarg] = safe_eval(val)
         chans = zip(*self.get_channel_groups())[0]
-        for key, val in plotargs.iteritems():
+        for key, val in plotargs.items():
             if (key.endswith('color') and isinstance(val, (list, tuple)) and
                     isinstance(val[0], (int, float))):
                 plotargs[key] = [val]*len(self.get_channel_groups())
@@ -497,11 +497,11 @@ class DataPlot(SummaryPlot):
             params['all_data'] = params.pop('all-data')
 
         # parse other parameters
-        for key, val in params.iteritems():
+        for key, val in params.items():
             params[key] = safe_eval(val)
         params.update(kwargs)
         # escape text
-        for key, val in params.iteritems():
+        for key, val in params.items():
             if key in ['title', 'ylabel', 'xlabel']:
                 params[key] = re.sub(r'(?<!\\)_(?!.*{)', '\_', params[key])
         # format and return

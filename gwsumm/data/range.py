@@ -46,7 +46,7 @@ def get_range_channel(channel, **rangekwargs):
     re_float = re.compile('[.-]')
     rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
                                 re_float.sub('_', str(val))) for key, val in
-                    rangekwargs.iteritems()])
+                    rangekwargs.items()])
     channel = get_channel(channel)
     return '%s_%s' % (channel.ndsname, rkey)
 

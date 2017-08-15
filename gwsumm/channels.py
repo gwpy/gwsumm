@@ -21,7 +21,8 @@
 
 import threading
 import re
-from Queue import Queue
+
+from six.moves.queue import Queue
 
 from astropy.units import Unit
 
@@ -221,7 +222,7 @@ def get_channels(channels, **kwargs):
             raise c
         else:
             result.append(c)
-    return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
+    return list(zip(*sorted(result, key=lambda x: x[0])))[1]
 
 
 def update_missing_channel_params(channel, **kwargs):

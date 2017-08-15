@@ -446,7 +446,7 @@ class DataTab(ProcessedTab, ParentTab):
             fftparams = dict(config.nditems('fft'))
         except NoSectionError:
             fftparams = {}
-        for key, val in fftparams.iteritems():
+        for key, val in fftparams.items():
             try:
                 fftparams[key] = eval(val)
             except (NameError, SyntaxError):
@@ -711,7 +711,7 @@ class DataTab(ProcessedTab, ParentTab):
                     ftype = '<samp>%s</samp>' % channel.frametype
                 else:
                     ftype = 'Unknown'
-                for desc, regex in FRAMETYPE_REGEX.iteritems():
+                for desc, regex in FRAMETYPE_REGEX.items():
                     if regex.match(str(channel.frametype)):
                         ftype += ' <small>[%s]</small>' % desc
                         break
@@ -750,7 +750,7 @@ class DataTab(ProcessedTab, ParentTab):
             (f, p) for plot in filter(
                 lambda p: p.data == 'segments' and p.type != 'guardian',
                 self.plots)
-            for (f, p) in plot.padding.iteritems()]), key=lambda x: x[0])
+            for (f, p) in plot.padding.items()]), key=lambda x: x[0])
         if len(allflags):
             re_int_decimal = re.compile('\.00(?=(\s|\%))')
             page.h1('Segment information')
@@ -912,7 +912,7 @@ class DataTab(ProcessedTab, ParentTab):
             if isnew and not plot.new:
                 continue
             skip = False
-            for key, val in kwargs.iteritems():
+            for key, val in kwargs.items():
                 if getattr(plot, key) != val:
                     skip = True
                     break
@@ -946,7 +946,7 @@ class DataTab(ProcessedTab, ParentTab):
             if isnew and not plot.new:
                 continue
             skip = False
-            for key, val in kwargs.iteritems():
+            for key, val in kwargs.items():
                 if getattr(plot, key) != val:
                     skip = True
                     break
@@ -981,7 +981,7 @@ class DataTab(ProcessedTab, ParentTab):
             if isnew and not plot.new:
                 continue
             skip = False
-            for key, val in kwargs.iteritems():
+            for key, val in kwargs.items():
                 if getattr(plot, key) != val:
                     skip = True
                     break

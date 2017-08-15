@@ -22,10 +22,10 @@
 import os.path
 import re
 import warnings
-from StringIO import StringIO
 from importlib import import_module
 
 from six import string_types
+from six.moves import StringIO
 
 # import these for evaluating lambda expressions in the configuration file
 import math
@@ -101,7 +101,7 @@ class GWSummConfigParser(ConfigParser):
         for fp in filenames:
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)
-        self.files = map(os.path.abspath, readok)
+        self.files = list(map(os.path.abspath, readok))
         return readok
 
     @classmethod
@@ -275,7 +275,7 @@ class GWSummConfigParser(ConfigParser):
                 name = name.strip(' \n')
                 if not self.has_section(name):
                     self.add_section(name)
-                for key, val in items.iteritems():
+                for key, val in items.items():
                     if not self.has_option(name, key):
                         self.set(name, key, val)
 
@@ -379,11 +379,11 @@ class GWSummConfigParser(ConfigParser):
         for key in css:
             try:
                 css[key] = self.get(section, '%s-css' % key)
-            except NoSectionError:
-                return css.values()
+            except NoSectionError:  # no overrides are present, stop here
+                return list(css.values())
             except NoOptionError:
                 continue
-        files = css.values()
+        files = list(css.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-css')
@@ -400,10 +400,10 @@ class GWSummConfigParser(ConfigParser):
             try:
                 js[key] = self.get(section, '%s-js' % key)
             except NoSectionError:
-                return js.values()
+                return list(js.values())
             except NoOptionError:
                 continue
-        files = js.values()
+        files = list(js.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-js')

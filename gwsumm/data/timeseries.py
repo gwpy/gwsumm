@@ -67,7 +67,7 @@ OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
-    '/': operator.div,
+    '/': operator.truediv,
 }
 
 FRAMETYPE_REGEX = {
@@ -430,7 +430,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
                     frametypes[id_].append(channel)
                 else:
                     frametypes[id_] = [channel]
-        for ftype, channellist in frametypes.iteritems():
+        for ftype, channellist in frametypes.items():
             _get_timeseries_dict(channellist, segments, config=config,
                                  cache=cache, query=query, nds=nds,
                                  multiprocess=multiprocess, frametype=ftype[1],

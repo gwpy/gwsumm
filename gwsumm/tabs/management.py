@@ -68,10 +68,10 @@ class AccountingTab(ParentTab):
         tag = new.channel.split(':', 1)[-1].replace('-', '_')
 
         groups = type(new.modes)(
-            (idx, name.strip('*')) for (idx, name) in new.modes.iteritems()
+            (idx, name.strip('*')) for (idx, name) in new.modes.items()
             if int(idx) % 10 == 0)
         pstates = OrderedDict(
-            (idx, name) for (idx, name) in new.modes.iteritems() if
+            (idx, name) for (idx, name) in new.modes.items() if
             not name.startswith('*'))
 
         # parse colors
@@ -158,7 +158,7 @@ class AccountingTab(ParentTab):
         # find segments
         for ts in data:
             modesegments = DataQualityDict()
-            for idx, name in self.modes.iteritems():
+            for idx, name in self.modes.items():
                 # get segments for state
                 tag = self.segmenttag % idx
                 instate = ts == idx * ts.unit
@@ -188,9 +188,9 @@ class AccountingTab(ParentTab):
 
         # get segment data
         groups = type(self.modes)((idx, name) for idx, name in
-                                  self.modes.iteritems() if idx % 10 == 0)
+                                  self.modes.items() if idx % 10 == 0)
         modes = type(self.modes)(
-            (idx, name) for idx, name in self.modes.iteritems() if
+            (idx, name) for idx, name in self.modes.items() if
             not name.startswith('*'))
         headers = ['Index', 'Name', 'Active seconds',
                    'Hours', '%']
@@ -203,7 +203,7 @@ class AccountingTab(ParentTab):
             tots = 0
             toth = 0
             totp = 0
-            for idx, name in flags.iteritems():
+            for idx, name in flags.items():
                 flag = get_segments(self.segmenttag % idx,
                                     state.active, query=False).copy()
                 actives = abs(flag.active)

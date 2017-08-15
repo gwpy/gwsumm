@@ -480,7 +480,7 @@ def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
         id_ = dict()
     # format links
     baselinks = [markup.oneliner.a(key, title=key, **{'data-new-base': val})
-                 for (key, val) in bases.iteritems() if key != this]
+                 for (key, val) in bases.items() if key != this]
     # slam it all together
     page = markup.page()
     if baselinks:

@@ -104,7 +104,7 @@ def nat_sorted(l, key=None):
     lsorted : `list`
         sorted() version of input ``l``
     """
-    k = key and map(key, l) or l
+    k = key and list(map(key, l)) or l
 
     def convert(text):
         if text.isdigit():

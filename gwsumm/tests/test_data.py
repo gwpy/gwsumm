@@ -25,10 +25,11 @@ import operator
 import tempfile
 import shutil
 
-try:  # py3
-    from urllib.request import urlopen
-except ImportError:  # py2
-    from urllib2 import urlopen
+from six.moves.urllib.request import urlopen
+
+import pytest
+
+from numpy import testing as nptest
 
 from glue.lal import (Cache, CacheEntry)
 
@@ -36,9 +37,10 @@ from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 
-from common import (unittest, empty_globalv_CHANNELS)
 from gwsumm import (data, globalv)
 from gwsumm.data import (utils, mathutils)
+
+from common import empty_globalv_CHANNELS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -63,11 +65,11 @@ def download(remote, target=None):
     return target
 
 
-class DataTests(unittest.TestCase):
-    """`TestCase` for the `gwsumm.data` module
+class TestData(object):
+    """Tests for :mod:`gwsumm.data`:
     """
     @classmethod
-    def setUpClass(cls):
+    def setup_class(cls):
         cls.FRAMES = {}
         cls._tempdir = tempfile.mkdtemp(prefix='gwsumm-test-data-')
         # get data
@@ -79,7 +81,7 @@ class DataTests(unittest.TestCase):
                 cls.FRAMES[channel].append(CacheEntry.from_T050017(target))
 
     @classmethod
-    def tearDownClass(cls):
+    def teardown_class(cls):
         # remove the temporary data
         shutil.rmtree(cls._tempdir)
 
@@ -87,123 +89,128 @@ class DataTests(unittest.TestCase):
 
     def test_find_frame_type(self):
         channel = Channel('L1:TEST-CHANNEL')
-        self.assertEqual(data.find_frame_type(channel), 'L1_R')
+        assert data.find_frame_type(channel) == 'L1_R'
+
         channel = Channel('C1:TEST-CHANNEL')
-        self.assertEqual(data.find_frame_type(channel), 'R')
+        assert data.find_frame_type(channel) == 'R'
+
         channel = Channel('H1:TEST-CHANNEL.rms,s-trend')
-        self.assertEqual(data.find_frame_type(channel), 'H1_T')
+        assert data.find_frame_type(channel) == 'H1_T'
+
         channel = Channel('H1:TEST-CHANNEL.rms,m-trend')
-        self.assertEqual(data.find_frame_type(channel), 'H1_M')
+        assert data.find_frame_type(channel) == 'H1_M'
+
         channel = Channel('H1:TEST-CHANNEL.rms,reduced')
-        self.assertEqual(data.find_frame_type(channel), 'H1_LDAS_C02_L2')
+        assert data.find_frame_type(channel) == 'H1_LDAS_C02_L2'
+
         channel = Channel('H1:TEST-CHANNEL.rms,online')
-        self.assertEqual(data.find_frame_type(channel), 'H1_lldetchar')
+        assert data.find_frame_type(channel) == 'H1_lldetchar'
 
     def test_get_channel_type(self):
-        self.assertEqual(data.get_channel_type('L1:TEST-CHANNEL'), 'adc')
-        self.assertEqual(data.get_channel_type('G1:DER_DATA_HL'), 'proc')
-        self.assertEqual(data.get_channel_type('H1:GDS-CALIB_STRAIN'), 'proc')
-        self.assertEqual(data.get_channel_type('V1:GDS-CALIB_STRAIN'), 'adc')
+        assert data.get_channel_type('L1:TEST-CHANNEL') == 'adc'
+        assert data.get_channel_type('G1:DER_DATA_HL') == 'proc'
+        assert data.get_channel_type('H1:GDS-CALIB_STRAIN') == 'proc'
+        assert data.get_channel_type('V1:GDS-CALIB_STRAIN') == 'adc'
 
     @empty_globalv_CHANNELS
     def test_make_globalv_key(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
             stride=123.456, window='test-window', method='test-method')
         key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
-        self.assertEqual(
-            key, 'L1:TEST-CHANNEL;test-method;;;test-window;123.456')
+        assert key == 'L1:TEST-CHANNEL;test-method;;;test-window;123.456'
 
     def test_get_fftparams(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL')
-        self.assertIsInstance(fftparams, utils.FftParams)
+        assert isinstance(fftparams, utils.FftParams)
+
         for key in utils.FFT_PARAMS.keys():
-            self.assertIsNone(getattr(fftparams, key))
+            assert getattr(fftparams, key) is None
+
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
                                         overlap=0)
-        self.assertEqual(fftparams.window, 'hanning')
-        self.assertEqual(fftparams.overlap, 0)
-        self.assertRaises(ZeroDivisionError, utils.get_fftparams,
-                          None, stride=0)
+        assert fftparams.window == 'hanning'
+        assert fftparams.overlap == 0
 
-    def test_parse_math_definition(self):
-        # a + b
-        chans, operators = mathutils.parse_math_definition(
-            "L1:TEST + L1:TEST2")
-        self.assertEqual(len(chans), 2)
-        self.assertListEqual(operators, [operator.add])
-        self.assertEqual(chans[0][0], 'L1:TEST')
-        self.assertEqual(chans[0][1], [])
-        self.assertEqual(chans[1][0], 'L1:TEST2')
-        self.assertEqual(chans[1][1], [])
-        # a + b * 2
-        chans, operators = mathutils.parse_math_definition(
-            "L1:TEST + L1:TEST2 * 2")
-        self.assertEqual(len(chans), 2)
-        self.assertListEqual(operators, [operator.add])
-        self.assertEqual(chans[0][0], 'L1:TEST')
-        self.assertEqual(chans[0][1], [])
-        self.assertEqual(chans[1][0], 'L1:TEST2')
-        self.assertEqual(chans[1][1], [(operator.mul, 2)])
-        # a * 2 + b ^ 5
-        chans, operators = mathutils.parse_math_definition(
-            "L1:TEST * 2 + L1:TEST2 ^ 5")
-        self.assertEqual(len(chans), 2)
-        self.assertListEqual(operators, [operator.add])
-        self.assertIsInstance(chans[0], tuple)
-        self.assertEqual(chans[0][0], 'L1:TEST')
-        self.assertIsInstance(chans[0][1], list)
-        self.assertEqual(len(chans[0][1]), 1)
-        self.assertTupleEqual(chans[0][1][0], (operator.mul, 2))
-        self.assertIsInstance(chans[1], tuple)
-        self.assertEqual(chans[1][0], 'L1:TEST2')
-        self.assertTupleEqual(chans[1][1][0], (operator.pow, 5))
+        with pytest.raises(ZeroDivisionError):
+            utils.get_fftparams(None, stride=0)
+
+    @pytest.mark.parametrize('definition, math', [
+        ('L1:TEST + L1:TEST2', (
+            [('L1:TEST', []),
+             ('L1:TEST2', [])],
+            [operator.add])),
+        ('L1:TEST + L1:TEST2 * 2', (
+            [('L1:TEST', []),
+             ('L1:TEST2', [(operator.mul, 2)])],
+            [operator.add])),
+       ('L1:TEST * 2 + L1:TEST2 ^ 5', (
+            [('L1:TEST', [(operator.mul, 2)]),
+             ('L1:TEST2', [(operator.pow, 5)])],
+            [operator.add])),
+    ])
+    def test_parse_math_definition(self, definition, math):
+        chans, operators = mathutils.parse_math_definition(definition)
+        assert chans == math[0]
+        assert operators == math[1]
 
     # -- test add/get methods -------------------
 
     def test_add_timeseries(self):
         a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
                        sample_rate=1)
+
         # test simple add using 'name'
         data.add_timeseries(a)
-        self.assertIn('test name', globalv.DATA)
-        self.assertEqual(globalv.DATA['test name'], [a])
+        assert 'test name' in  globalv.DATA
+        assert globalv.DATA['test name'] == [a]
+
         # test add using key kwarg
         data.add_timeseries(a, key='test key')
-        self.assertIn('test key', globalv.DATA)
-        self.assertEqual(globalv.DATA['test key'], [a])
+        assert 'test key' in globalv.DATA
+        assert globalv.DATA['test key'] == [a]
+
         # test add to existing key with coalesce
         b = TimeSeries([6, 7, 8, 9, 10], name='test name 2', epoch=5,
                        sample_rate=1)
         data.add_timeseries(b, key='test key', coalesce=True)
-        self.assertEqual(globalv.DATA['test key'],
-                         [a.append(b, inplace=False)])
+        assert len(globalv.DATA['test key']) == 1
+        nptest.assert_array_equal(globalv.DATA['test key'][0].value,
+                                  a.append(b, inplace=False).value)
 
     def test_get_timeseries(self):
+        # empty globalv.DATA
+        globalv.DATA = type(globalv.DATA)()
+
         # test simple get after add
         a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
                        sample_rate=1)
         data.add_timeseries(a)
-        b = data.get_timeseries('test name', [(0, 5)])
-        self.assertEqual(a, b)
+        b, = data.get_timeseries('test name', [(0, 5)])
+        nptest.assert_array_equal(a.value, b.value)
+        assert a.sample_rate.value == b.sample_rate.value
+
         # test more complicated add with a cache
-        a = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+        a, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                 cache=self.FRAMES['H1:LOSC-STRAIN'])
-        b = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
-        self.assertEqual(a, b)
+        b, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
+        nptest.assert_array_equal(a.value, b.value)
 
     @empty_globalv_CHANNELS
     def test_get_spectrogram(self):
-        self.assertRaises(TypeError, data.get_spectrogram, 'H1:LOSC-STRAIN',
-                          LOSC_SEGMENTS, cache=self.FRAMES['H1:LOSC-STRAIN'])
+        with pytest.raises(TypeError):
+            data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'])
         a = data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                  cache=self.FRAMES['H1:LOSC-STRAIN'],
                                  stride=4, fftlength=2, overlap=1)
 
     def test_get_spectrum(self):
-        a = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                              cache=self.FRAMES['H1:LOSC-STRAIN'])
-        a = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS, format='asd',
-                              cache=self.FRAMES['H1:LOSC-STRAIN'])
+        a, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+        b, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                    format='asd',
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+        nptest.assert_array_equal(a.value ** (1/2.), b.value)
 
     def test_get_coherence_spectrogram(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])

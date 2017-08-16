@@ -77,6 +77,12 @@ class GWSummConfigParser(ConfigParser):
         ConfigParser.__init__(self, *args, **kwargs)
     __init__.__doc__ = ConfigParser.__init__.__doc__
 
+    def read_file(self, *args, **kwargs):
+        try:
+            return ConfigParser.read_file(self, *args, **kwargs)
+        except AttributeError:
+            return self.readfp(*args, **kwargs)
+
     def ndoptions(self, section, **kwargs):
         options = ConfigParser.options(self, section, **kwargs)
         return [o for o in options if o not in self._defaults]

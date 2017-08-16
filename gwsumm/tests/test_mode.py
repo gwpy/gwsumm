@@ -22,40 +22,47 @@
 
 import datetime
 
-from common import unittest
+import pytest
+
 from gwsumm import (globalv, mode)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+DEFAULT_MODE = mode.get_mode()
 
-class ModeTests(unittest.TestCase):
-    """`TestCase` for the channels.py module
+
+def teardown_module():
+    """Undo any set_mode() operations from this module
     """
-    @classmethod
-    def setUpClass(cls):
-        cls._defaultmode = mode.get_mode()
+    mode.set_mode(DEFAULT_MODE)
 
-    @classmethod
-    def tearDownClass(cls):
-        mode.set_mode(cls._defaultmode)
 
-    def test_get_mode(self):
-        m = mode.get_mode()
-        self.assertEqual(m, globalv.MODE)
+def test_get_mode():
+    assert mode.get_mode().value == globalv.MODE
+    assert mode.get_mode(10) == mode.Mode.day
+    assert mode.get_mode('week') == mode.Mode.week
+    with pytest.raises(ValueError):
+        mode.get_mode('invalid mode')
 
-    def test_set_mode(self):
-        mode.set_mode(0)
-        self.assertEqual(globalv.MODE, mode.Mode(0))
-        self.assertEqual(globalv.MODE, mode.Mode.static)
-        mode.set_mode('GPS')
-        self.assertEqual(globalv.MODE, mode.Mode.gps)
 
-    def test_get_base(self):
-        date = datetime.date(2015, 9, 22)
-        for m, basestr in zip(
-                ['DAY', 'WEEK', 'MONTH', 'YEAR'],
-                ['day/20150922', 'week/20150922',
-                 'month/201509', 'year/2015']):
-            mode.set_mode(m)
-            base = mode.get_base(date)
-            self.assertEqual(base, basestr)
+def test_set_mode():
+    mode.set_mode(0)
+    assert globalv.MODE == mode.Mode(0).value
+
+    mode.set_mode('GPS')
+    assert globalv.MODE == mode.Mode.gps.value
+
+    with pytest.raises(ValueError):
+        mode.set_mode('invalid mode')
+
+
+@pytest.mark.parametrize('m, basestr', [
+    ('day', 'day/20150914'),
+    ('week', 'week/20150914'),
+    ('month', 'month/201509'),
+    ('year', 'year/2015'),
+])
+def test_get_base(m, basestr):
+    date = datetime.date(2015, 9, 14)
+    mode.set_mode(m)
+    assert mode.get_base(date) == basestr

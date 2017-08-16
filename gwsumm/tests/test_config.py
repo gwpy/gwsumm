@@ -134,15 +134,18 @@ class TestGWSummConfigParser(object):
         assert 'X1' in cnfg.sections()
         assert '%(IFO)s' not in cnfg.sections()
 
-    def test_set_ifo_options(self):
+    @pytest.mark.parametrize('ifo, obs, exp', [
+        ('L1', None, 'LIGO Livingston'),
+        ('X1', 'Einstein Telescope', 'Einstein Telescope'),
+    ])
+    def test_set_ifo_options(self, ifo, obs, exp):
         cp = self.new()
-        cp.set_ifo_options('X1', observatory='Einstein Telescope')
-        assert cp.get(config.DEFAULTSECT, 'IFO') == 'X1'
-        assert cp.get(config.DEFAULTSECT, 'ifo') == 'x1'
-        assert cp.get(config.DEFAULTSECT, 'SITE') == 'X'
-        assert cp.get(config.DEFAULTSECT, 'site') == 'x'
-        assert cp.get(config.DEFAULTSECT,
-                      'observatory') == 'Einstein Telescope'
+        cp.set_ifo_options(ifo, observatory=obs)
+        assert cp.get(config.DEFAULTSECT, 'IFO') == ifo.upper()
+        assert cp.get(config.DEFAULTSECT, 'ifo') == ifo.lower()
+        assert cp.get(config.DEFAULTSECT, 'SITE') == ifo[0].upper()
+        assert cp.get(config.DEFAULTSECT, 'site') == ifo[0].lower()
+        assert cp.get(config.DEFAULTSECT, 'observatory') == exp
 
     def test_set_date_options(self):
         cp = self.new()
@@ -210,6 +213,13 @@ class TestGWSummConfigParser(object):
         cp.load_channels()
         c = get_channel('X1:TEST-CHANNEL_2')
         assert c.resample == 128
+
+        # test bit parsing
+        cp.set('X1:TEST-CHANNEL', '0', 'Bit 0')
+        cp.set('X1:TEST-CHANNEL', '1', 'r"A\_B"')
+        cp.load_channels()
+        c = get_channel('X1:TEST-CHANNEL')
+        assert c.bits == ['Bit 0', r'A\_B']
 
         # test channels section
         cp.add_section('channels-test')

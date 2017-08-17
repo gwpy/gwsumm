@@ -237,8 +237,7 @@ class DataTab(ProcessedTab, ParentTab):
             mods = {}
             for key, val in cp.nditems(section):
                 if key.startswith('%d-' % index):
-                    opt = key.split('-', 1)[1]
-                    mods[opt] = safe_eval(val)
+                    mods[key.split('-', 1)[1]] = val
 
             # parse definition for section references
             try:

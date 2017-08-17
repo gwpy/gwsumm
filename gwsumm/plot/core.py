@@ -38,14 +38,25 @@ from gwpy.plotter.utils import rUNDERSCORE
 
 from . import rcParams
 from .registry import register_plot
-from .. import globalv
 from ..channels import (get_channel, split as split_channels)
-from ..utils import (vprint, safe_eval)
+from ..config import GWSummConfigParser
+from ..state import get_state
+from ..utils import (vprint, safe_eval, re_quote)
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
 re_cchar = re.compile("[\W\s_]+")
 
+
+# -- utilities ----------------------------------------------------------------
+
+def format_label(l):
+    l = str(l).strip('\n ')
+    l = re_quote.sub('', l)
+    return rUNDERSCORE.sub(r'\_', l)
+
+
+# -- basic Plot object --------------------------------------------------------
 
 class SummaryPlot(object):
     """An image to displayed in GWSumm HTML output.
@@ -122,8 +133,7 @@ class SummaryPlot(object):
     def caption(self, text):
         self._caption = text
 
-    # ------------------------------------------------------------------------
-    # TabSummaryPlot methods
+    # -- SummaryPlot methods -----------------------
 
     @classmethod
     def from_ini(cls, *args, **kwargs):
@@ -170,10 +180,10 @@ class DataPlot(SummaryPlot):
     end : `float`
         GPS end time of this `DataPlot`.
     tag : `str`
-        a descriptive tag for this `TabSummaryPlot`, used as part of the output
+        a descriptive tag for this `DataPlot`, used as part of the output
         file name
     outdir : `str`
-        output directory path for this `TabSummaryPlot`, defaults to
+        output directory path for this `DataPlot`, defaults to
         the current directory
     href : `str`
         custom URL for this plot to link towards.
@@ -189,7 +199,7 @@ class DataPlot(SummaryPlot):
     :meth:`add_data_source`  routine for appending data sources to the plot
     =======================  ==============================================
     """
-    #: name for TabSummaryPlot subclass
+    #: name for DataPlot subclass
     type = 'data'
     #: dict of default plotting kwargs
     defaults = {}
@@ -227,12 +237,11 @@ class DataPlot(SummaryPlot):
         self.read = read
         self.fileformat = fileformat
 
-    # ------------------------------------------------------------------------
-    # TabSummaryPlot properties
+    # -- properties -----------------------------
 
     @property
     def span(self):
-        """The GPS [start, stop) interval for this `TabSummaryPlot`.
+        """The GPS [start, stop) interval for this `DataPlot`.
         """
         return self._span
 
@@ -258,7 +267,7 @@ class DataPlot(SummaryPlot):
     @state.setter
     def state(self, state_):
         if isinstance(state_, string_types):
-            self._state = globalv.STATES[state_]
+            self._state = get_state(state_)
         else:
             self._state = state_
 
@@ -266,7 +275,7 @@ class DataPlot(SummaryPlot):
     def channels(self):
         """List of data-source
         :class:`Channels <~gwpy.detector.channel.Channel>` for this
-        `TabSummaryPlot`.
+        `DataPlot`.
 
         :type: :class:`~gwpy.detector.channel.ChannelList`
         """
@@ -290,7 +299,7 @@ class DataPlot(SummaryPlot):
 
     @property
     def ifos(self):
-        """Interferometer set for this `TabSummaryPlot`
+        """Interferometer set for this `DataPlot`
         """
         return set([c.ifo for c in self.allchannels if c.ifo])
 
@@ -310,7 +319,10 @@ class DataPlot(SummaryPlot):
 
     @tag.setter
     def tag(self, filetag):
-        self._tag = filetag or self.type.upper()
+        if filetag is None:
+            del self.tag
+        else:
+            self._tag = filetag
 
     @tag.deleter
     def tag(self):
@@ -338,7 +350,7 @@ class DataPlot(SummaryPlot):
 
     @property
     def outputfile(self):
-        """Output file for this `TabSummaryPlot`.
+        """Output file for this `DataPlot`.
         """
         ifos = ''.join(sorted(self.ifos))
         tag = self.tag
@@ -359,76 +371,7 @@ class DataPlot(SummaryPlot):
     def href(self, url):
         self._href = url and os.path.normpath(url) or None
 
-    # ------------------------------------------------------------------------
-    # TabSummaryPlot methods
-
-    def parse_legend_kwargs(self, **defaults):
-        """Pop the legend arguments from the `pargs` for this Plot
-        """
-        legendargs = defaults.copy()
-        for key in self.pargs.keys():
-            if re.match('legend[-_]', key):
-                legendargs[key[7:]] = self.pargs.pop(key)
-        return legendargs
-
-    def parse_plot_kwargs(self, **defaults):
-        """Pop keyword arguments for `Axes.plot` from the `pargs` for this Plot
-        """
-        plotargs = defaults.copy()
-        plotargs.setdefault('label', self._parse_labels())
-        for kwarg in self.DRAW_PARAMS:
-            try:
-                val = self.pargs.pop(kwarg)
-            except KeyError:
-                try:
-                    val = self.pargs.pop('%ss' % kwarg)
-                except KeyError:
-                    val = None
-            if (val is not None and isinstance(val, string_types) and
-                    'self' in val):
-                try:
-                    plotargs[kwarg] = safe_eval(val, locals_={'self': self})
-                except ZeroDivisionError:
-                    plotargs[kwarg] = 0
-            elif val is not None:
-                plotargs[kwarg] = safe_eval(val)
-        chans = zip(*self.get_channel_groups())[0]
-        for key, val in plotargs.items():
-            if (key.endswith('color') and isinstance(val, (list, tuple)) and
-                    isinstance(val[0], (int, float))):
-                plotargs[key] = [val]*len(self.get_channel_groups())
-            elif (not isinstance(val, (list, tuple)) or
-                  len(val) != len(chans)):
-                plotargs[key] = [val]*len(self.get_channel_groups())
-        out = []
-        for i in range(len(chans)):
-            out.append(dict((key, val[i]) for key, val in plotargs.items() if
-                            val is not None and val[i] is not None))
-        return out
-
-    def _parse_labels(self, defaults=None):
-        """Pop the labels for plotting from the `pargs` for this Plot
-        """
-        chans = zip(*self.get_channel_groups())[0]
-        if defaults is None:
-            defaults = chans
-        labels = self.pargs.pop('labels', defaults)
-        if isinstance(labels, string_types):
-            labels = labels.split(',')
-        labels = map(lambda s: rUNDERSCORE.sub(r'\_', str(s).strip('\n ')),
-                     labels)
-        while len(labels) < len(chans):
-            labels.append(None)
-        return labels
-
-    def parse_rcParams(self, params):
-        """Parse matplotlib rcParams settings from a dict of plot params
-        """
-        self.rcParams = {}
-        for key in params.keys():
-            if key in rcParams:
-                self.rcParams[key] = params.pop(key)
-        return self.rcParams
+    # -- basic methods --------------------------
 
     def add_channel(self, channel):
         self._channels.append(channel)
@@ -475,6 +418,8 @@ class DataPlot(SummaryPlot):
     def from_ini(cls, config, section, start, end, channels=None, **kwargs):
         """Define a new `DataPlot`.
         """
+        config = GWSummConfigParser.from_configparser(config)
+
         # read parameters
         try:
             params = dict(config.nditems(section))
@@ -507,7 +452,171 @@ class DataPlot(SummaryPlot):
         # format and return
         return cls(channels, start, end, **params)
 
-    # -- figure processing ----------------------------------------------------
+
+    # -- plot parameter parsing -----------------
+
+    def _parse_param(self, pdict, key, allow_plural=False):
+        """Parse a configuration parameter for this Plot from a dict
+
+        Parameters
+        ----------
+        pdict : `dict`
+            the dict to evaluate from
+
+        key : `str`
+            the key to evaluated
+
+        allow_plural : `bool`, optional
+            try to find plural version of ``key`` if singular not found,
+            i.e. ``'colors'`` instead of ``'color'``, default is `False`
+
+        Returns
+        -------
+        values : `list`
+            a mapping of the parsed value for each channel in this plot
+
+        Raises
+        ------
+        KeyError
+            if ``key`` is not found in ``pdict``
+
+        Notes
+        -----
+        This method uses `gwsumm.utils.safe_eval` to `eval` strings into
+        python objects.
+
+        Examples
+        --------
+        Consider a `DataPlot` with two channels to display
+
+        >>> from gwsumm.plot import DataPlot
+        >>> a = DataPlot(['channel1', 'channel2'], 0, 1)
+
+        We can then parse params as follows:
+
+        >>> a._parse_param({'marker': 'x'}, 'marker')
+        ['x', 'x']
+        >>> a._parse_param({'linestyles': ['-', '--']}, 'linestyle'}
+        ['-', '--']
+        >>> a._parse_param({'colors': "'red','green'"}, 'color'}
+        ['red', 'green']
+        """
+        # parse keyword
+        try:
+            val = self.pargs.pop(key)
+        except KeyError as e:
+            if not allow_plural:
+                raise
+            # check for plural
+            try:
+                val = self.pargs.pop('%ss' % key)
+            except KeyError:
+                raise e
+
+        # evaluate (safely) allowing references to self as 'plot'
+        if isinstance(val, string_types):
+            try:
+                val = safe_eval(val, locals_={'plot': self})
+            except ZeroDivisionError:  # e.g. zero livetime
+                val = 0
+
+        # don't use sets
+        if isinstance(val, set):
+            val = list(val)
+
+        # if not already a list, or the list isn't 1->1 with channels
+        nchans = len(self.get_channel_groups())
+        if not isinstance(val, (list, tuple)) or len(val) != nchans:
+            return [val] * nchans
+
+        return val
+
+    def _parse_extra_params(self, prefix, **defaults):
+        """Parse parameters for an extra plot element
+
+        Parameters
+        ----------
+        prefix : `str`
+            the text prefix identifying parameters for the extra element
+
+        **defaults
+            any default options to use
+
+        Returns
+        -------
+        params : `dict`
+        """
+        re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
+        extras = defaults.copy()
+        for key in self.pargs.keys():
+            m = re_prefix.match(key)
+            if m:
+                extras[key[m.span()[1]:]] = safe_eval(self.pargs.pop(key))
+        return extras
+
+    def parse_legend_kwargs(self, **defaults):
+        """Pop the legend arguments from the `pargs` for this `Plot`
+        """
+        return self._parse_extra_params('legend', **defaults)
+
+    def parse_plot_kwargs(self, **defaults):
+        """Pop keyword arguments for `Axes.plot` from the `pargs` for this Plot
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('label', self._parse_labels())
+
+        # loop over known Axes.plot kwargs and parse
+        for kwarg in self.DRAW_PARAMS:
+            try:
+                plotargs[kwarg] = self._parse_param(
+                    self.pargs, kwarg, allow_plural=True)
+            except KeyError:
+                continue
+
+        # map from dict of lists to list of dicts (one per channel)
+        out = []
+        nchans = len(self.get_channel_groups())
+        for i in range(nchans):
+            out.append(dict((key, val[i]) for key, val in plotargs.items() if
+                            val is not None and val[i] is not None))
+        return out
+
+    def _parse_labels(self, defaults=None):
+        """Pop the labels for plotting from the `pargs` for this Plot
+        """
+        # set default label to show channel name
+        chans = zip(*self.get_channel_groups())[0]
+        if defaults is None:
+            defaults = chans
+
+        # parse user labels
+        try:
+            labels = self._parse_param(self.pargs, 'label', allow_plural=True)
+        except KeyError:
+            labels = defaults
+
+        if list(set(labels)) == labels[0] and labels[0] is not None:
+            labels = labels[0].split(',')
+
+        # escape underscores
+        labels = list(map(format_label, labels))
+
+        # fill gaps with None
+        while len(labels) < len(chans):
+            labels.append(None)
+
+        return labels
+
+    def parse_rcParams(self, params):
+        """Parse matplotlib rcParams settings from a dict of plot params
+        """
+        self.rcParams = {}
+        for key in params.keys():
+            if key in rcParams:
+                self.rcParams[key] = safe_eval(params.pop(key))
+        return self.rcParams
+
+    # -- figure processing ----------------------
 
     def process(self, outputfile=None, close=True):
         with rc_context(rc=self.rcParams):
@@ -550,6 +659,7 @@ class DataPlot(SummaryPlot):
             # customise colorbars
             for cb in self.plot.colorbars:
                 cb.outline.set_edgecolor(color)
+
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
@@ -593,7 +703,7 @@ class DataPlot(SummaryPlot):
                 except AttributeError:
                     setattr(ax, key, val)
 
-    def _apply_grid(self, ax, val):
+    def _apply_grid_params(self, ax, val):
         if val == 'off':
             ax.grid('off')
         elif val in ['both', 'major', 'minor']:

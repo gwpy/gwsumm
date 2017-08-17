@@ -48,6 +48,7 @@ def register_state(state, key=None, force=False):
     """
     if key is None:
         key = state.key
+    key = key.lower()
     if key not in globalv.STATES or force:
         globalv.STATES[key] = state
     else:
@@ -76,7 +77,7 @@ def get_state(key):
     """
     key = re_quote.sub('', key)
     try:
-        return globalv.STATES[key]
+        return globalv.STATES[key.lower()]
     except KeyError:
         raise ValueError("No SummaryState registered with name '%s'" % key)
 

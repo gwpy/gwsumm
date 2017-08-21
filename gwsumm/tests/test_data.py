@@ -40,7 +40,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwsumm import (data, globalv)
 from gwsumm.data import (utils, mathutils)
 
-from common import empty_globalv_CHANNELS
+from .common import empty_globalv_CHANNELS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -60,7 +60,7 @@ def download(remote, target=None):
         suffix = os.path.splitext(remote)[1]
         _, target = tempfile.mkstemp(suffix=suffix, prefix='gwsumm-tests-')
     response = urlopen(remote)
-    with open(target, 'w') as f:
+    with open(target, 'wb') as f:
         f.write(response.read())
     return target
 

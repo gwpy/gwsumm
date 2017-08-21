@@ -33,8 +33,9 @@ from copy import copy
 from multiprocessing import (Process, Queue)
 from multiprocessing.queues import Empty
 from time import sleep
-from StringIO import StringIO
 from datetime import timedelta
+
+from six.moves import StringIO
 
 from numpy import isclose
 

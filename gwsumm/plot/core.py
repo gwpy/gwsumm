@@ -26,9 +26,9 @@ import os.path
 import re
 import warnings
 from math import (floor, ceil)
-from urlparse import urlparse
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 from matplotlib import (rc_context, __version__ as mpl_version)
 
@@ -337,7 +337,8 @@ class DataPlot(SummaryPlot):
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                 for c in self.channels]))
-            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+            h = (chans + filts).encode('utf-8')
+            self._pid = hashlib.md5(h).hexdigest()[:6]
             return self.pid
 
     @pid.setter
@@ -403,7 +404,7 @@ class DataPlot(SummaryPlot):
                 out.append((c.texname, [c]))
             else:
                 try:
-                    id_ = zip(*out)[0].index(name)
+                    id_ = list(zip(*out))[0].index(name)
                 except (IndexError, ValueError):
                     out.append((name, [c]))
                 else:
@@ -548,7 +549,7 @@ class DataPlot(SummaryPlot):
         """
         re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
-        for key in self.pargs.keys():
+        for key in list(self.pargs.keys()):
             m = re_prefix.match(key)
             if m:
                 extras[key[m.span()[1]:]] = safe_eval(self.pargs.pop(key))
@@ -585,7 +586,7 @@ class DataPlot(SummaryPlot):
         """Pop the labels for plotting from the `pargs` for this Plot
         """
         # set default label to show channel name
-        chans = zip(*self.get_channel_groups())[0]
+        chans = list(zip(*self.get_channel_groups()))[0]
         if defaults is None:
             defaults = chans
 
@@ -611,7 +612,7 @@ class DataPlot(SummaryPlot):
         """Parse matplotlib rcParams settings from a dict of plot params
         """
         self.rcParams = {}
-        for key in params.keys():
+        for key in list(params.keys()):
             if key in rcParams:
                 self.rcParams[key] = safe_eval(params.pop(key))
         return self.rcParams

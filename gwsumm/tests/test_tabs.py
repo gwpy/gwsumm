@@ -126,7 +126,7 @@ class TestPlotTab(TestTab):
     def test_init(self):
         plots = ['test.png']
         tab = self._test_init('Test', plots=plots)
-        assert tab.plots == map(SummaryPlot, plots)
+        assert tab.plots == list(map(SummaryPlot, plots))
         assert tab.layout is None
 
     def test_add_plot(self):

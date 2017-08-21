@@ -32,6 +32,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from six.moves import reduce
+
 from astropy import units
 
 from glue import datafind
@@ -456,7 +458,7 @@ def _get_timeseries_dict(channels, segments, config=None,
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
-    channels = map(get_channel, channels)
+    channels = list(map(get_channel, channels))
 
     # set classes
     if statevector:

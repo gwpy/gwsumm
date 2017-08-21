@@ -29,7 +29,7 @@ from gwsumm.mode import (get_mode, set_mode)
 
 from gwpy.detector import Channel
 
-from common import (unittest, empty_globalv_CHANNELS)
+from .common import empty_globalv_CHANNELS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

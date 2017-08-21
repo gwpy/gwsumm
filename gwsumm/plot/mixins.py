@@ -22,7 +22,8 @@
 import abc
 import os.path
 import re
-from StringIO import StringIO
+
+from six.moves import StringIO
 
 from lxml import etree
 

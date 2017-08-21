@@ -53,29 +53,19 @@ def empty_globalv():
     globalv.TRIGGERS = type(globalv.TRIGGERS)()
 
 
-def with_empty_globalv_DATA(f):
-    @wraps(f)
-    def wrapped_f(*args, **kwargs):
-        _data = globalv.DATA
-        globalv.DATA = type(globalv.DATA)()
-        try:
-            return f(*args, **kwargs)
-        finally:
-            globalv.DATA = _data
-    return wrapped_f
-
-
 def create(data, **metadata):
     SeriesClass = metadata.pop('series_class', TimeSeries)
     d = SeriesClass(data, **metadata)
     d.channel = channels.get_channel(d.channel)
+    if not d.name:
+        d.name = d.channel.texname
     return d
 
 
 # -- tests --------------------------------------------------------------------
 
-
 def test_write_archive(delete=True):
+    empty_globalv()
     data.add_timeseries(TEST_DATA)
     data.add_timeseries(create([1, 2, 3, 4, 5],
                                dt=60., channel='X1:TEST-TREND.mean'))
@@ -98,7 +88,6 @@ def test_write_archive(delete=True):
     return fname
 
 
-@with_empty_globalv_DATA
 def test_read_archive():
     fname = test_write_archive(delete=False)
     empty_globalv()

@@ -119,7 +119,10 @@ class TestGWSummConfigParser(object):
 
         # check that base ConfigParser gets converted to GWSummConfigParser
         cp = config.ConfigParser()
-        cp.readfp(TEST_CONFIG)
+        try:
+            cp.read_file(TEST_CONFIG)
+        except AttributeError:
+            cp.readfp(TEST_CONFIG)
         TEST_CONFIG.seek(0)
         copy = self.PARSER.from_configparser(cp)
         assert isinstance(copy, self.PARSER)

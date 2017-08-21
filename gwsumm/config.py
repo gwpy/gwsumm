@@ -115,7 +115,7 @@ class GWSummConfigParser(ConfigParser):
         buf.seek(0)
         # read new GWSummConfigParser
         new = cls()
-        new.readfp(buf)
+        new.read_file(buf)
         return new
 
     def __repr__(self):

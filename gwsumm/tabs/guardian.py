@@ -123,7 +123,7 @@ class GuardianTab(DataTab):
         for state in new.states:
             # get common plot tag prefix
             tagprefix = 'GRD_%s' % re.sub('[-\s]', '_', new.node.upper())
-            if state.name != ALLSTATE:  # include state name if not 'All'
+            if state.name.lower() != ALLSTATE:  # include state name if not All
                 tagprefix = '%s_%s' % (state.name, tagprefix)
             # segment plot
             new.plots.append(get_plot('guardian')(

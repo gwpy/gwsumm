@@ -98,8 +98,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             visible = False
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
-        if visible is None:
-            visible = self.state is not None and self.state.name != ALLSTATE
+        if visible is None and self.state is not None and (
+                self.state.name.lower() != ALLSTATE):
+            visible = True
         if visible:
             kwargs.setdefault('edgecolor', 'darkgreen')
             kwargs.setdefault('facecolor', GREEN)

@@ -30,7 +30,6 @@ from glue.lal import Cache
 from gwpy.segments import (DataQualityDict, SegmentList)
 
 from ..config import (GWSummConfigParser, NoOptionError)
-from ..state import ALLSTATE
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..data import get_timeseries

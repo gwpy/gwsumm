@@ -30,7 +30,7 @@ from .registry import register_state
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-ALLSTATE = 'All'
+ALLSTATE = 'all'
 
 
 def generate_all_state(start, end, register=True, **kwargs):

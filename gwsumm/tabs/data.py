@@ -828,7 +828,7 @@ class DataTab(ProcessedTab, ParentTab):
         page = html.markup.page()
         # state information
         page.h1("State information")
-        if state.name == ALLSTATE:
+        if state.name.lower() == ALLSTATE:
             page.p("This page was generated using all available data, "
                    "regardless of observatory operational state.")
         elif state.filename is None and state.definition is None:

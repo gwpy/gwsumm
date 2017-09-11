@@ -114,7 +114,7 @@ def set_mode(m):
             m = Mode[str(m).lower()]
         except KeyError:
             raise ValueError("%s is not a valid Mode" % m)
-    globalv.MODE = m
+    globalv.MODE = m.value
 
 
 # -- Mode utilities -----------------------------------------------------------

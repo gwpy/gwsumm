@@ -21,15 +21,14 @@
 
 import os.path
 import re
-import warnings
-from StringIO import StringIO
 from importlib import import_module
 
 from six import string_types
+from six.moves import StringIO
 
 # import these for evaluating lambda expressions in the configuration file
-import math
-import numpy
+import math  # pylint: disable=unused-import
+import numpy  # pylint: disable=unused-import
 
 from six.moves import http_client as httplib
 
@@ -55,7 +54,7 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
-from .utils import (nat_sorted, re_cchar, safe_eval, OBSERVATORY_MAP)
+from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
 from .channels import (get_channels, split as split_channels)
 
 __all__ = _cp__all__ + [
@@ -78,20 +77,18 @@ class GWSummConfigParser(ConfigParser):
         ConfigParser.__init__(self, *args, **kwargs)
     __init__.__doc__ = ConfigParser.__init__.__doc__
 
-    def ndoptions(self, section, **kwargs):
+    def read_file(self, *args, **kwargs):
         try:
-            options = ConfigParser.options(self, section, **kwargs)
-        except ValueError as e:
-            e.args = ('[%s]: %s' % (section, str(e)),)
-            raise
+            return ConfigParser.read_file(self, *args, **kwargs)
+        except AttributeError:
+            return self.readfp(*args, **kwargs)
+
+    def ndoptions(self, section, **kwargs):
+        options = ConfigParser.options(self, section, **kwargs)
         return [o for o in options if o not in self._defaults]
 
     def nditems(self, section, **kwargs):
-        try:
-            items = ConfigParser.items(self, section, **kwargs)
-        except ValueError as e:
-            e.args = ('[%s]: %s' % (section, str(e)),)
-            raise
+        items = ConfigParser.items(self, section, **kwargs)
         return [i for i in items if i[0] not in self._defaults]
 
     def read(self, filenames):
@@ -101,7 +98,7 @@ class GWSummConfigParser(ConfigParser):
         for fp in filenames:
             if fp not in readok:
                 raise IOError("Cannot read file: %s" % fp)
-        self.files = map(os.path.abspath, readok)
+        self.files = list(map(os.path.abspath, readok))
         return readok
 
     @classmethod
@@ -118,7 +115,7 @@ class GWSummConfigParser(ConfigParser):
         buf.seek(0)
         # read new GWSummConfigParser
         new = cls()
-        new.readfp(buf)
+        new.read_file(buf)
         return new
 
     def __repr__(self):
@@ -156,15 +153,10 @@ class GWSummConfigParser(ConfigParser):
         - `observatory` - the name of the observatory, e.g. ``LIGO Livingston``
 
         """
-        warnings.warn('In an upcoming release the `ifo` configuration option '
-                      'will be changed to hold the lower-case interferometer '
-                      'prefix, all configuration files should be modified to '
-                      'instead use the `IFO` option for the upper-case '
-                      'prefix.', DeprecationWarning)
         if observatory is None:
             observatory = OBSERVATORY_MAP.get(ifo)
         self.set(section, 'IFO', ifo)
-        self.set(section, 'ifo', ifo)  # for backwards compatibility
+        self.set(section, 'ifo', ifo.lower())
         self.set(section, 'SITE', ifo[0].upper())
         self.set(section, 'site', ifo[0].lower())
         if observatory is not None:
@@ -275,7 +267,7 @@ class GWSummConfigParser(ConfigParser):
                 name = name.strip(' \n')
                 if not self.has_section(name):
                     self.add_section(name)
-                for key, val in items.iteritems():
+                for key, val in items.items():
                     if not self.has_option(name, key):
                         self.set(name, key, val)
 
@@ -366,7 +358,7 @@ class GWSummConfigParser(ConfigParser):
         try:
             new = dict(self.nditems(section))
         except NoSectionError:
-            return []
+            return dict()
         else:
             for key, value in new.items():
                 new[key] = safe_eval(value)
@@ -375,15 +367,15 @@ class GWSummConfigParser(ConfigParser):
 
     def get_css(self, section='html'):
         # get critical CSS
-        css = get_css()
+        css = get_css().copy()
         for key in css:
             try:
                 css[key] = self.get(section, '%s-css' % key)
-            except NoSectionError:
-                return css.values()
+            except NoSectionError:  # no overrides are present, stop here
+                return list(css.values())
             except NoOptionError:
                 continue
-        files = css.values()
+        files = list(css.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-css')
@@ -395,15 +387,15 @@ class GWSummConfigParser(ConfigParser):
 
     def get_javascript(self, section='html'):
         # get critical JS
-        js = get_js()
+        js = get_js().copy()
         for key in js:
             try:
                 js[key] = self.get(section, '%s-js' % key)
             except NoSectionError:
-                return js.values()
+                return list(js.values())
             except NoOptionError:
                 continue
-        files = js.values()
+        files = list(js.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-js')

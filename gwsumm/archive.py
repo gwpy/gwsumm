@@ -102,9 +102,9 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         # archive timeseries
                         try:
                             name = '%s,%s,%s' % (ts.name, ts.channel.ndsname,
-                                                 ts.epoch.gps)
+                                                 ts.t0.value)
                         except AttributeError:
-                            name = '%s,%s' % (ts.name, ts.epoch.gps)
+                            name = '%s,%s' % (ts.name, ts.t0.value)
                         if isinstance(ts, StateVector):
                             group = sgroup
                         else:
@@ -122,7 +122,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                     for key, speclist in gdict.items():
                         # loop over time-series
                         for spec in speclist:
-                            name = '%s,%s' % (key, spec.epoch.gps)
+                            name = '%s,%s' % (key, spec.t0.value)
                             _write_object(spec, group, path=name,
                                           format='hdf5')
 

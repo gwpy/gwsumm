@@ -21,12 +21,8 @@
 
 import threading
 import re
-from Queue import Queue
 
-try:
-    from kerberos import GSSError
-except ImportError:
-    GSSError = None
+from six.moves.queue import Queue
 
 from astropy.units import Unit
 
@@ -43,7 +39,7 @@ else:
 from gwpy.detector import Channel
 
 from . import globalv
-from .mode import Mode
+from .mode import (get_mode, Mode)
 from .utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -149,7 +145,7 @@ def get_channel(channel, find_trend_source=True, timeout=5):
             # set default trend type based on mode
             if type_ is None and ':DMT-' in name:  # DMT is always m-trend
                 type_ = 'm-trend'
-            elif type_ is None and globalv.MODE == Mode.gps:
+            elif type_ is None and get_mode() == Mode.gps:
                 type_ = 's-trend'
             elif type_ is None:
                 type_ = 'm-trend'
@@ -226,7 +222,7 @@ def get_channels(channels, **kwargs):
             raise c
         else:
             result.append(c)
-    return zip(*sorted(result, key=lambda (idx, chan): idx))[1]
+    return list(zip(*sorted(result, key=lambda x: x[0])))[1]
 
 
 def update_missing_channel_params(channel, **kwargs):
@@ -243,10 +239,12 @@ def update_missing_channel_params(channel, **kwargs):
         `(key, value)` pairs to set
     """
     target = get_channel(str(channel))
-    for param in ['unit', 'sample_rate', 'frametype']:
-        if getattr(target, param) is None or (
-                param == 'unit' and getattr(target, param) is Unit('undef')):
-            setattr(target, param, getattr(channel, param))
+    if isinstance(channel, Channel):
+        for param in ['unit', 'sample_rate', 'frametype']:
+            if getattr(target, param) is None or (
+                    param == 'unit' and
+                    getattr(target, param) is Unit('undef')):
+                setattr(target, param, getattr(channel, param))
     for param in kwargs:
         if getattr(target, param) is None:
             setattr(target, param, kwargs[param])
@@ -296,7 +294,5 @@ def split_combination(channelstring):
     """Split a math-combination of channels
     """
     channel = Channel(channelstring)
-    if channel.ifo == 'G1':
-        return channel.ndsname.split(' ')
-    else:
-        return re_channel.findall(channel.ndsname)
+    return [c for c in channel.ndsname.split(' ') if
+            re_channel.match(c)]

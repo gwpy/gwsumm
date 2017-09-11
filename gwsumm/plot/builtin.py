@@ -98,8 +98,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             visible = False
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
-        if visible is None:
-            visible = self.state is not None and self.state.name != ALLSTATE
+        if visible is None and self.state is not None and (
+                self.state.name.lower() != ALLSTATE):
+            visible = True
         if visible:
             kwargs.setdefault('edgecolor', 'darkgreen')
             kwargs.setdefault('facecolor', GREEN)
@@ -391,7 +392,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel, cmap=cmap)
 
         # customise and finalise
-        for key, val in self.pargs.iteritems():
+        for key, val in self.pargs.items():
             if key == 'ratio':
                 continue
             try:
@@ -565,7 +566,7 @@ class SpectrumDataPlot(DataPlot):
 
         # customise
         hlines = list(self.pargs.pop('hline', []))
-        for key, val in self.pargs.iteritems():
+        for key, val in self.pargs.items():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:
@@ -723,7 +724,7 @@ class TimeSeriesHistogramPlot(DataPlot):
         # customise plot
         legendargs = self.parse_legend_kwargs()
         for i, ax in enumerate(axes):
-            for key, val in self.pargs.iteritems():
+            for key, val in self.pargs.items():
                 if key == 'title' and i > 0:
                     continue
                 if key == 'xlabel' and i < (len(axes) - 1):

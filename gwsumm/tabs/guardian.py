@@ -108,7 +108,7 @@ class GuardianTab(DataTab):
 
         new.set_layout([1, 2])
         grdidxs = dict((state, idx) for idx, state in
-                       new.grdstates.iteritems())
+                       new.grdstates.items())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
         pstates = [l for i, l in enumerate(new.grdstates.values()[::-1])
                    if plot[-i-1]]
@@ -123,7 +123,7 @@ class GuardianTab(DataTab):
         for state in new.states:
             # get common plot tag prefix
             tagprefix = 'GRD_%s' % re.sub('[-\s]', '_', new.node.upper())
-            if state.name != ALLSTATE:  # include state name if not 'All'
+            if state.name.lower() != ALLSTATE:  # include state name if not All
                 tagprefix = '%s_%s' % (state.name, tagprefix)
             # segment plot
             new.plots.append(get_plot('guardian')(
@@ -207,7 +207,7 @@ class GuardianTab(DataTab):
             rsegs = DataQualityDict()
             nsegs = DataQualityDict()
             oksegs = (okdata == 1).to_dqflag(name='Node OK')
-            for v, name in self.grdstates.iteritems():
+            for v, name in self.grdstates.items():
                 # get segments for state
                 tag = self.segmenttag % name
                 instate = sdata == v
@@ -475,7 +475,7 @@ class GuardianStatePlot(get_plot('segments')):
                       **legendargs)
 
         # customise plot
-        for key, val in self.pargs.iteritems():
+        for key, val in self.pargs.items():
             try:
                 getattr(ax, 'set_%s' % key)(val)
             except AttributeError:

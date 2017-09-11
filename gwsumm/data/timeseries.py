@@ -32,6 +32,8 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
+from six.moves import reduce
+
 from astropy import units
 
 from glue import datafind
@@ -67,7 +69,7 @@ OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
-    '/': operator.div,
+    '/': operator.truediv,
 }
 
 FRAMETYPE_REGEX = {
@@ -430,7 +432,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
                     frametypes[id_].append(channel)
                 else:
                     frametypes[id_] = [channel]
-        for ftype, channellist in frametypes.iteritems():
+        for ftype, channellist in frametypes.items():
             _get_timeseries_dict(channellist, segments, config=config,
                                  cache=cache, query=query, nds=nds,
                                  multiprocess=multiprocess, frametype=ftype[1],
@@ -456,7 +458,7 @@ def _get_timeseries_dict(channels, segments, config=None,
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
-    channels = map(get_channel, channels)
+    channels = list(map(get_channel, channels))
 
     # set classes
     if statevector:

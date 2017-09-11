@@ -240,7 +240,7 @@ class SummaryState(DataQualityFlag):
             for i, (h0, h1) in enumerate(hours):
                 hours[i] = (h0 - offset / 3600., h1 - offset / 3600.)
         # generate state
-        if name == ALLSTATE:
+        if name.lower() == ALLSTATE:
             return generate_all_state(start, end, register=False, **params)
         else:
             return cls(name, known=[(start, end)], hours=hours, **params)

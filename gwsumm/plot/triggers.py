@@ -23,7 +23,7 @@ from __future__ import division
 
 import hashlib
 import re
-from itertools import (izip, cycle)
+from itertools import cycle
 
 from six import string_types
 
@@ -213,7 +213,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         if self.state and not self.all_data:
             valid &= self.state.active
         ntrigs = 0
-        for channel, label, pargs in izip(self.channels, labels, plotargs):
+        for channel, label, pargs in zip(self.channels, labels, plotargs):
             try:
                 channel = get_channel(channel)
             except ValueError:

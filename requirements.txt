@@ -3,10 +3,9 @@ astropy>=1.2.1
 matplotlib>=2.0
 enum34
 pykerberos
-M2Crypto
 h5py
 lxml
-lscsoft-glue
+lscsoft-glue>=1.56.0
 dqsegdb>=1.4.2
 https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
 gwpy>=0.5

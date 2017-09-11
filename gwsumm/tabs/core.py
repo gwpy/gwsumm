@@ -35,10 +35,10 @@ keyword arguments.
 
 import os
 import re
-from urlparse import urlparse
 from shutil import copyfile
 
 from six import string_types
+from six.moves.urllib.parse import urlparse
 
 from gwpy.utils.compat import OrderedDict
 
@@ -669,9 +669,9 @@ class BaseTab(object):
                              for t in groups[group]]
                     groups[group] = zip(*sorted(
                         zip(groups[group], names),
-                        key=(lambda (t, n):
-                             n.lower() in ['summary', 'overview'] and
-                             ' %s' % n.upper() or n.lower())))[0]
+                        key=(lambda x:
+                             x[1].lower() in ['summary', 'overview'] and
+                             ' %s' % x[1].upper() or x[1].lower())))[0]
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):

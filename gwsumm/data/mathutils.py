@@ -39,7 +39,7 @@ OPERATOR = {
     '*': operator.mul,
     '-': operator.sub,
     '+': operator.add,
-    '/': operator.div,
+    '/': operator.truediv,
     '^': operator.pow,
     '**': operator.pow,
 }
@@ -157,7 +157,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     # parse definition
     singleops, joinoperators = parse_math_definition(str(channel))
     channel = get_channel(channel)
-    names = zip(*singleops)[0]
+    names = list(zip(*singleops))[0]
     chans = map(get_channel, names)
     # get raw data
     if load_func is get_func:  # if load_func returns a single channel
@@ -167,10 +167,11 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         tsdict = load_func(chans, segments, **ioargs)
     # shortcut single channel with no math
     if len(names) == 1 and not singleops[0][1]:
-        if isinstance(tsdict.values()[0], list):
-            return tsdict.values()[0]
+        vals = list(tsdict.values())
+        if isinstance(vals[0], list):
+            return vals[0]
         else:
-            return tsdict.values()
+            return vals
     # get union of segments for all sub-channels
     tslist = [tsdict[c.ndsname] for c in chans]
     if isinstance(tslist[0], FrequencySeries):

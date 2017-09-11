@@ -27,9 +27,9 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict
-from itertools import izip_longest
 
 from six import string_types
+from six.moves import zip_longest
 
 import numpy
 
@@ -210,7 +210,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                            "spectrogram for %s and %s @ %d Hz" % (
                                comp, str(channel1), str(channel2), sampling))
 
-                for ts1, ts2 in izip_longest(tslist1, tslist2):
+                for ts1, ts2 in zip_longest(tslist1, tslist2):
 
                     # ensure there is enough data to do something with
                     if comp in ('Cxx', 'Cxy') and abs(ts1.span) < stride:

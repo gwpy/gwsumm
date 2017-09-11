@@ -320,8 +320,9 @@ class SEIWatchDogTab(base):
         page.div.close()
 
         # build trip groups
-        self.trips.sort(key=lambda (x, y, z, p):
-                        (x, z in mask and (mask).index(z) or 1000, p is None))
+        self.trips.sort(
+            key=lambda x: (x[0], x[2] in mask and
+                           (mask).index(x[2]) or 1000, x[3] is None))
         groups = OrderedDict()
         j = 0
         for i in xrange(len(self.trips)):
@@ -466,7 +467,7 @@ class SeiWatchDogPlot(get_plot('data')):
             mapsec = ('sei-wd-map-%s'
                       % (' '.join(sensor.split(' ', 2)[::2])))
         stubs = zip(*sorted([o for o in config.items(mapsec) if o[0].isdigit()],
-                            key=lambda (x, y): x))[1]
+                            key=lambda x: x[0]))[1]
         if re.search('ISI ST\d ', sensor):
             stage = sensor.split(' ')[1]
             channels = [get_channel('%s:%s-%s_%s_%s'

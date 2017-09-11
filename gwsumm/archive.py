@@ -269,7 +269,7 @@ def _write_object(data, *args, **kwargs):
     except ValueError as e:
         warnings.warn(str(e))
     except RuntimeError as e:
-        if 'Name already exists' in str(e):
+        if 'name already exists' in str(e).lower():
             warnings.warn(str(e))
         else:
             raise

@@ -49,6 +49,7 @@ TEST_DATA.channel = channels.get_channel(TEST_DATA.channel)
 
 def empty_globalv():
     globalv.DATA = type(globalv.DATA)()
+    globalv.SPECTROGRAMS = type(globalv.SPECTROGRAMS)()
     globalv.SEGMENTS = type(globalv.SEGMENTS)()
     globalv.TRIGGERS = type(globalv.TRIGGERS)()
 

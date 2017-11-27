@@ -40,9 +40,7 @@ The available classes are:
    TriggerRateDataPlot
 """
 
-from matplotlib import __version__ as mpl_version
-
-from gwpy.plotter import rcParams
+from matplotlib import (__version__ as mpl_version, rcParams)
 
 from .registry import *
 from .utils import *

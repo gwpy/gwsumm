@@ -36,6 +36,7 @@ import numpy
 
 from dateutil.relativedelta import relativedelta
 
+from matplotlib import rcParams
 from matplotlib.patches import Rectangle
 
 from gwpy.plotter import *

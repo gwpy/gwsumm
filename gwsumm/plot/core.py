@@ -30,13 +30,12 @@ from math import (floor, ceil)
 from six import string_types
 from six.moves.urllib.parse import urlparse
 
-from matplotlib import (rc_context, __version__ as mpl_version)
+from matplotlib import (rcParams, rc_context, __version__ as mpl_version)
 
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.plotter.utils import rUNDERSCORE
 
-from . import rcParams
 from .registry import register_plot
 from ..channels import (get_channel, split as split_channels)
 from ..config import GWSummConfigParser

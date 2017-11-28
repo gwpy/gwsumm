@@ -32,6 +32,7 @@ from numpy import isinf
 from astropy.units import Quantity
 
 from gwpy.detector import (Channel, ChannelList)
+from gwpy.segments import SegmentList
 from gwpy.plotter import *
 from gwpy.plotter.table import get_column_string
 from gwpy.plotter.utils import (color_cycle, marker_cycle)

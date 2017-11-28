@@ -46,7 +46,7 @@ from gwpy.segments import SegmentList
 
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
-from ..utils import re_cchar
+from ..utils import (re_cchar, safe_eval)
 from ..data import (get_channel, get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum,
                     get_coherence_spectrum)
@@ -475,15 +475,7 @@ class SpectrumDataPlot(DataPlot):
         use_legend = False
 
         # get reference arguments
-        refs = []
-        refkey = 'None'
-        for key in sorted(self.pargs.keys()):
-            if key == 'reference' or re.match('reference\d+\Z', key):
-                refs.append(dict())
-                refs[-1]['source'] = self.pargs.pop(key)
-                refkey = key
-            if re.match('%s[-_]' % refkey, key):
-                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
+        refs = self.parse_references()
 
         # add data
         if self.type == 'coherence-spectrum':
@@ -592,6 +584,25 @@ class SpectrumDataPlot(DataPlot):
             plot.add_colorbar(ax=ax, visible=False)
 
         return self.finalize()
+
+    def parse_references(self, prefix='reference(\d+)?\Z'):
+        """Parse parameters for displaying one or more reference traces
+        """
+        # get reference arguments
+        refs = []
+        refkey = 'None'
+        re_prefix = re.compile(prefix)
+        while True:
+            # iterate through keys finding reference entries
+            for key in sorted(self.pargs.keys()):
+                if re_prefix.match(key):
+                    refs.append(self._parse_extra_params(key))
+                    refs[-1]['source'] = self.pargs.pop(key)
+                    break
+            else:  # no more references found
+                break
+
+        return refs
 
 register_plot(SpectrumDataPlot)
 
@@ -906,15 +917,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         legendargs = self.parse_legend_kwargs()
 
         # get reference arguments
-        refs = []
-        refkey = 'None'
-        for key in sorted(self.pargs.keys()):
-            if key == 'reference' or re.match('reference\d+\Z', key):
-                refs.append(dict())
-                refs[-1]['source'] = self.pargs.pop(key)
-                refkey = key
-            if re.match('%s[-_]' % refkey, key):
-                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
+        refs = self.parse_references()
 
         # get channel arguments
         if hasattr(self.channels[0], 'asd_range'):

@@ -60,7 +60,7 @@ from .mixins import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TimeSeriesDataPlot = get_plot('timeseries')
-GREEN = (0.2, 0.8, 0.2)
+GREEN = '#33cc33'
 
 
 class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):

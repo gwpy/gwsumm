@@ -202,6 +202,9 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
                 data = op_(data, val_)
             ts = _join(ts, data, joinop)
         meta.append(ts)
+    if not meta:
+        meta.append(type(tslist[0])([], epoch=tslist[0].epoch,
+                    channel=channel))
     return meta
 
 

@@ -27,7 +27,7 @@ from itertools import cycle
 
 from six import string_types
 
-from numpy import isinf
+from numpy import (ones_like, isinf)
 
 from astropy.units import Quantity
 
@@ -474,7 +474,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
         for arr, d, pargs in zip(data, livetime, histargs):
             pargs.setdefault('label', None)
             if isinstance(pargs.get('weights', None), (float, int)):
-                pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
+                pargs['weights'] = ones_like(arr) * pargs['weights']
             try:
                 ax.hist(arr, **pargs)
             except ValueError:  # empty dataset

@@ -386,7 +386,7 @@ config.set(DEFAULTSECT, 'user', getpass.getuser())
 config.read(opts.config_file)
 
 try:
-    ifo = config.get(DEFAULTSECT, 'ifo')
+    ifo = config.get(DEFAULTSECT, 'IFO')
 except NoOptionError:
     ifo = None
 finally:
@@ -395,7 +395,7 @@ finally:
 # interpolate section names
 interp = {}
 if ifo:
-    interp['ifo'] = ifo  # FIXME change to ifo.lower() one configs are uptodate
+    interp['ifo'] = ifo.lower()
     interp['IFO'] = ifo.title()
 config.interpolate_section_names(**interp)
 

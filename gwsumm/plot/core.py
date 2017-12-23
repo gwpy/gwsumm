@@ -516,7 +516,7 @@ class DataPlot(SummaryPlot):
         # evaluate (safely) allowing references to self as 'plot'
         if isinstance(val, string_types):
             try:
-                val = safe_eval(val, locals_={'plot': self})
+                val = safe_eval(val, locals_={'plot': self, 'self': self})
             except ZeroDivisionError:  # e.g. zero livetime
                 val = 0
 

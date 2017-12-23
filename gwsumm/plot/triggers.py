@@ -477,7 +477,10 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 pargs['weights'] = ones_like(arr) * pargs['weights']
             try:
                 ax.hist(arr, **pargs)
-            except ValueError:  # empty dataset
+            except ValueError:
+                if arr.size:  # if not empty, real problem
+                    raise
+                # empty dataset, so fake something
                 p2 = pargs.copy()
                 p2.pop('weights')  # mpl errors on weights
                 if p2.get('log', False) or self.pargs.get('logx', False):

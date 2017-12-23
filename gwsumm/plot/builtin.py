@@ -377,12 +377,21 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
         # plot data
         for specgram in specgrams:
+
+            # only plot frequencies of interest
+            if self.pargs.get('ylim') is not None:
+                specgram = specgram.crop_frequencies(*self.pargs['ylim'])
+
             # undo demodulation
             specgram = undo_demodulation(specgram, channel,
                                          self.pargs.get('ylim', None))
+
             # calculate ratio
             if ratio is not None:
+                if self.pargs.get('ylim') is not None:
+                    ratio = ratio.crop(*self.pargs['ylim'])
                 specgram = specgram.ratio(ratio)
+
             # plot
             ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
 

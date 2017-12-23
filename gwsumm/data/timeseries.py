@@ -594,7 +594,7 @@ def _get_timeseries_dict(channels, segments, config=None,
         ioargs['dtype'] = qdtype
 
         # loop through segments, recording data for each
-        if len(new) and nproc > 1:
+        if len(new):
             vprint("    Fetching data (from %s) for %d channels [%s]"
                    % (source, len(qchannels), nds and ndstype or frametype))
         for segment in new:

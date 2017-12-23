@@ -42,11 +42,8 @@ from glue.lal import (Cache, CacheEntry)
 from gwpy.io import nds2 as io_nds2
 from gwpy.segments import SegmentList
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
-                             StateVector, StateVectorDict)
-try:
-    from gwpy.timeseries import StateVectorList
-except ImportError:
-    StateVectorList = TimeSeriesList
+                             StateVector, StateVectorList, StateVectorDict)
+from gwpy.timeseries.io.gwf import get_default_gwf_api
 
 from .. import globalv
 from ..utils import (vprint, count_free_cores)
@@ -55,13 +52,6 @@ from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
-
-try:
-    from LDAStools import frameCPP
-except ImportError:
-    HAS_FRAMECPP = False
-else:
-    HAS_FRAMECPP = True
 
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
 
@@ -89,6 +79,12 @@ FRAMETYPE_REGEX = {
 
 # list of GWF frametypes that contain only ADC channels
 #     allows big memory/time savings when reading with frameCPP
+try:
+    GWF_API = get_default_gwf_api()
+except ImportError:
+    GWF_API = None
+
+# frameCPP I/O optimisations
 ADC_TYPES = [
     'R', 'C',  # old LIGO raw and commissioning types
     'T', 'M',  # old LIGO trend types
@@ -572,9 +568,10 @@ def _get_timeseries_dict(channels, segments, config=None,
             new &= cachesegments
             source = 'frames'
 
-            # set ctype if reading with framecpp
-            if cache is None and frametype in ADC_TYPES and HAS_FRAMECPP:
-                ioargs['type'] = 'adc'
+            if cache is None and GWF_API == 'framecpp':
+                # set ctype if reading with framecpp (using datafind)
+                if frametype in ADC_TYPES:
+                    ioargs['type'] = 'adc'
 
         for channel in channels:
             channel.frametype = frametype

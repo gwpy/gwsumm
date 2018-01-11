@@ -36,8 +36,9 @@ from six.moves import reduce
 
 from astropy import units
 
-from glue import datafind
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue import (datafind, lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
 from gwpy.segments import SegmentList
@@ -54,6 +55,10 @@ from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
+
+# avoid DeprecationWarnings from glue re: CacheEntry
+Cache = glue_lal.Cache
+glue_lal.CacheEntry = Cache.entry_class = CacheEntry
 
 OPERATOR = {
     '*': operator.mul,

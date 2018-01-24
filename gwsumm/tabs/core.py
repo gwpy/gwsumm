@@ -35,12 +35,11 @@ keyword arguments.
 
 import os
 import re
+from collections import OrderedDict
 from shutil import copyfile
 
 from six import string_types
 from six.moves.urllib.parse import urlparse
-
-from gwpy.utils.compat import OrderedDict
 
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment

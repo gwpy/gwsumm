@@ -28,6 +28,7 @@ except ImportError:
     from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
 import warnings
 import operator
+from collections import OrderedDict
 
 from six import string_types
 
@@ -36,7 +37,6 @@ try:
 except ImportError:  # astropy < 1.2
     IORegistryError = Exception
 
-from gwpy.utils.compat import OrderedDict
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
                            SegmentList, Segment)
 

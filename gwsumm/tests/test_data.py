@@ -185,41 +185,47 @@ class TestData(object):
         a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
                        sample_rate=1)
         data.add_timeseries(a)
-        b, = data.get_timeseries('test name', [(0, 5)])
+        b, = data.get_timeseries('test name', [(0, 5)], multiprocess=False)
         nptest.assert_array_equal(a.value, b.value)
         assert a.sample_rate.value == b.sample_rate.value
 
         # test more complicated add with a cache
         a, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                cache=self.FRAMES['H1:LOSC-STRAIN'])
-        b, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                 multiprocess=False)
+        b, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                 multiprocess=False)
         nptest.assert_array_equal(a.value, b.value)
 
     @empty_globalv_CHANNELS
     def test_get_spectrogram(self):
         with pytest.raises(TypeError):
             data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                 cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                 multiprocess=False)
         a = data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                  cache=self.FRAMES['H1:LOSC-STRAIN'],
-                                 stride=4, fftlength=2, overlap=1)
+                                 stride=4, fftlength=2, overlap=1,
+                                 multiprocess=False)
 
     def test_get_spectrum(self):
         a, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                    multiprocess=False)
         b, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                     format='asd',
-                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                    multiprocess=False)
         nptest.assert_array_equal(a.value ** (1/2.), b.value)
 
     def test_get_coherence_spectrogram(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
         a = data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1)
+            stride=4, fftlength=2, overlap=1, multiprocess=False)
 
     def test_get_coherence_spectrum(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
         a = data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1)
+            stride=4, fftlength=2, overlap=1, multiprocess=False)

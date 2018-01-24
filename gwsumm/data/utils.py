@@ -29,11 +29,23 @@ except ImportError:
 from glue.segments import segmentlist as GlueSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
+from gwpy.signal.fft import (get_default_fft_api, lal as fft_lal)
 
 from ..channels import get_channel
 from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# get FFT scheme
+FFT_SCHEME = None
+if get_default_fft_api().startswith('pycbc'):
+    from pycbc.scheme import (DefaultScheme, MKLScheme)
+    try:
+        FFT_SCHEME = MKLScheme()
+    except RuntimeError:
+        FFT_SCHEME = DefaultScheme()
+elif get_default_fft_api() == 'lal':
+    fft_lal.LAL_FFTPLAN_LEVEL = 2
 
 
 # -- method decorators --------------------------------------------------------
@@ -77,7 +89,13 @@ FFT_PARAMS = OrderedDict([
     ('overlap', float),
     ('window', None),
     ('stride', float),
+    ('scheme', None),
 ])
+
+DEFAULT_FFT_PARAMS = {
+    'method': 'median',
+    'scheme': FFT_SCHEME,
+}
 
 
 class FftParams(object):
@@ -92,21 +110,34 @@ class FftParams(object):
             setattr(self, key, kwargs[key])
 
     def __setattr__(self, key, val):
-        if val is not None and FFT_PARAMS[key] is not None:
+        if val is not None and FFT_PARAMS[key] is not None:  # type cast
             val = FFT_PARAMS[key](val)
         super(FftParams, self).__setattr__(key, val)
 
     def __str__(self):
-        return ';'.join(str(getattr(self, slot)) if getattr(self, slot) else ''
-                        for slot in self.__slots__)
+        out = []
+        for slot in self.__slots__:
+            attr = getattr(self, slot)
+            if not attr:
+                out.append('')
+            elif slot == 'scheme':
+                out.append(type(attr).__name__)
+            else:
+                out.append(str(attr))
+        return ';'.join(out)
 
     def dict(self):
         return dict((x, getattr(self, x)) for x in self.__slots__)
 
 
 def get_fftparams(channel, **defaults):
+    # configure FftParams
+    params = {k: v for k, v in DEFAULT_FFT_PARAMS.items() if v is not None}
+    params.update(defaults)
+    fftparams = FftParams(**params)
+
+    # update FftParams with per-channel overrides
     channel = get_channel(channel)
-    fftparams = FftParams(**defaults)
     for key in fftparams.__slots__:
         try:
             setattr(fftparams, key, getattr(channel, key))

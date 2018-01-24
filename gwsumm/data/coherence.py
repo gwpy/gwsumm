@@ -57,7 +57,6 @@ def get_coherence_spectrogram(channel_pair, segments, config=None,
     """Retrieve the time-series and generate a coherence spectrogram of
     the two given channels
     """
-
     specs = _get_coherence_spectrogram(channel_pair, segments,
                                        config=config, cache=cache,
                                        query=query, nds=nds,
@@ -101,7 +100,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     # work out what new segments are needed
     # need to truncate to segments of integer numbers of strides
     stride = float(fftparams.pop('stride'))
-    method = fftparams.pop('method', None)
     new = type(segments)()
     for seg in segments - globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments:
@@ -110,6 +108,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             continue
         dur = dur // stride * stride
         new.append(type(seg)(seg[0], seg[0]+dur))
+
+    # extract FFT params for TimeSeries.spectrogram
+    spec_fftparams = fftparams.copy()
+    for key in ('method', 'scheme',):
+        fftparams.pop(key, None)
 
     # get processes
     if multiprocess is True:
@@ -236,10 +239,10 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                             ts2, stride, nproc=nproc, **fftparams)
                     elif comp == 'Cxx':
                         specgram = ts1.spectrogram(stride, nproc=nproc,
-                                                   method=method, **fftparams)
+                                                   **spec_fftparams)
                     elif comp == 'Cyy':
                         specgram = ts2.spectrogram(stride, nproc=nproc,
-                                                   method=method, **fftparams)
+                                                   **spec_fftparams)
 
                     if filter_:
                         specgram = (specgram**(1/2.)).filter(*filter_,

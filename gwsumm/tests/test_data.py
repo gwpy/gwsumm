@@ -52,6 +52,8 @@ LOSC_DATA = {
 }
 LOSC_SEGMENTS = SegmentList([Segment(1126259446, 1126259478)])
 
+FFT_SCHEME_NAME = type(utils.FFT_SCHEME).__name__ if utils.FFT_SCHEME else ''
+
 
 def download(remote, target=None):
     """Download a file
@@ -117,14 +119,23 @@ class TestData(object):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
             stride=123.456, window='test-window', method='test-method')
         key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
-        assert key == 'L1:TEST-CHANNEL;test-method;;;test-window;123.456'
+        assert key == ';'.join([
+            'L1:TEST-CHANNEL',  # channel
+            'test-method',  # method
+            '',  # fftlength
+            '',  # overlap
+            'test-window',  # window
+            '123.456',  # stride
+            FFT_SCHEME_NAME,  # FFT scheme
+        ])
 
     def test_get_fftparams(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL')
         assert isinstance(fftparams, utils.FftParams)
 
         for key in utils.FFT_PARAMS.keys():
-            assert getattr(fftparams, key) is None
+            assert (getattr(fftparams, key) is
+                    utils.DEFAULT_FFT_PARAMS.get(key, None))
 
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
                                         overlap=0)

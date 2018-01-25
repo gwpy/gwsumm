@@ -30,9 +30,6 @@ import getpass
 import re
 
 from copy import copy
-from multiprocessing import (Process, Queue)
-from multiprocessing.queues import Empty
-from time import sleep
 from datetime import timedelta
 
 from six.moves import StringIO
@@ -43,6 +40,7 @@ from astropy.time import Time
 
 from gwpy.segments import DataQualityFlag
 from gwpy.time import from_gps
+from gwpy.utils.mp import multiprocess_with_queues
 
 from .. import (globalv, html)
 from ..channels import (re_channel,
@@ -343,7 +341,8 @@ class DataTab(ProcessedTab, ParentTab):
         # load state segments
         self.finalize_states(
             config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
-            datafind_error=stateargs.get('datafind_error', 'raise'))
+            datafind_error=stateargs.get('datafind_error', 'raise'),
+            multiprocess=multiprocess)
         vprint("States finalised [%d total]\n" % len(self.states))
         vprint("    Default state: %r\n" % str(self.defaultstate))
 
@@ -538,64 +537,42 @@ class DataTab(ProcessedTab, ParentTab):
             vprint("    Done.\n")
             return
 
-        vprint("    Plotting... \n")
-
         # filter out plots that aren't for this state
-        new_plots = [p for p in self.plots + self.subplots if
-                     p.new and (p.state is None or p.state.name == state.name)]
-        multiprocess = min(len(new_plots), multiprocess)
+        new_plots = [p for p in self.plots + self.subplots if p.new and
+                     (p.state is None or p.state.name == state.name)]
 
-        # setup plotting queue
-        if multiprocess > 1:
-            queue = Queue()
+        # separate plots into serial and parallel groups
+        if int(multiprocess) <= 1:
+            serial = new_plots
+            parallel = []
         else:
-            queue = None
+            serial = [p for p in new_plots if not p._threadsafe]
+            parallel = [p for p in new_plots if p._threadsafe]
 
-        # setup plotting processes
-        if queue:
-            def process_image(q):
-                while True:
-                    try:
-                        plot = q.get(block=False)
-                    except Empty:
-                        break
-                    else:
-                        plot.process()
-        # process each one
-        nproc = 0
-        for plot in sorted(new_plots, key=lambda p: p._threadsafe and 1 or 2):
-            # in case a single tab requests the same plot twice, check again:
-            if plot.outputfile in globalv.WRITTEN_PLOTS:
-                continue
-            globalv.WRITTEN_PLOTS.append(plot.outputfile)
-            # queue plot for multiprocessing
-            if queue and plot._threadsafe:
-                queue.put(plot)
-                nproc += 1
-            # process plot now
-            else:
-                plot.process()
+        # process serial plots
+        if serial:
+            vprint("    Executing %d plots in serial:\n" % len(serial))
+            multiprocess_with_queues(1, lambda p: p.process(), serial,
+                                     raise_exceptions=True)
 
-        # if a single multi-processed figure, just run it in this process
-        if nproc == 1:
-            queue.get().process()
-        # otherwise execute all processes and wait
-        elif nproc > 1:
-            # actually execute all processes
-            procs = []
-            for i in range(min(nproc, multiprocess)):
-                procs.append(Process(target=process_image, args=(queue,)))
-                procs[-1].daemon = True
-                procs[-1].start()
-            vprint("        %d plot processes executed in %d processes.\n"
-                   % (nproc, len(procs)))
-            vprint("        Waiting for plotting to complete... ")
-            queue.close()
-            sleep(2)
-            # wait for children to finish
-            for p in procs:
-                p.join()
-            vprint("Done.\n")
+        # process parallel plots
+        if parallel:
+            multiprocess = min(len(parallel), multiprocess)
+
+            def _plot(plot):
+                try:
+                    return plot.process()
+                except Exception as exc:
+                    if multiprocess == 1:
+                        raise
+                    return exc
+
+            vprint("    Executing %d plots in %d processes:\n"
+                   % (len(parallel), multiprocess))
+            multiprocess_with_queues(multiprocess, _plot, parallel,
+                                     raise_exceptions=True)
+
+        vprint('Done.\n')
 
     # -------------------------------------------------------------------------
     # HTML operations

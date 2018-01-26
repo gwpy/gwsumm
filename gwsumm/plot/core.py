@@ -595,7 +595,7 @@ class DataPlot(SummaryPlot):
         except KeyError:
             labels = defaults
 
-        if list(set(labels)) == labels[0] and labels[0] is not None:
+        if list(set(labels)) == [labels[0]] and labels[0] is not None:
             labels = labels[0].split(',')
 
         # escape underscores

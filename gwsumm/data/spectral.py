@@ -182,8 +182,8 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                 # rayleigh spectrogram has its own instance method
                 if fftparams.get('method', None) == 'rayleigh':
                     spec_kw = fftparams.copy()
-                    for key in ('method', 'scheme',):  # remove ASD keys
-                        spec_kw.pop(key)
+                    for fftkey in ('method', 'scheme',):  # remove ASD keys
+                        spec_kw.pop(fftkey)
                     spec_func = ts.rayleigh_spectrogram
                 else:
                     spec_kw = fftparams

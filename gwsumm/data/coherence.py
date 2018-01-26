@@ -111,8 +111,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 
     # extract FFT params for TimeSeries.spectrogram
     spec_fftparams = fftparams.copy()
-    for key in ('method', 'scheme',):
-        fftparams.pop(key, None)
+    for fftkey in ('method', 'scheme',):
+        fftparams.pop(fftkey, None)
 
     # get processes
     if multiprocess is True:

@@ -162,7 +162,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # parse filters
     if filter:
-        read_kw.setdefault('selection', [])
         read_kw['selection'].extend(parse_column_filters(filter))
 
     # read segments from global memory
@@ -371,7 +370,7 @@ def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
             try:
                 kwargs.update(config.nditems(etg.lower()))
             except NoSectionError:
-                return {}
+                pass
 
     # format kwargs
     for key in list(kwargs.keys()):

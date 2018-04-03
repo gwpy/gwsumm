@@ -127,7 +127,8 @@ class FftParams(object):
         return ';'.join(out)
 
     def dict(self):
-        return dict((x, getattr(self, x)) for x in self.__slots__)
+        return dict((x, getattr(self, x)) for x in self.__slots__ if
+                    getattr(self, x) is not None)
 
 
 def get_fftparams(channel, **defaults):

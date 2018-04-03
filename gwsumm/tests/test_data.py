@@ -29,7 +29,7 @@ from six.moves.urllib.request import urlopen
 
 import pytest
 
-from numpy import testing as nptest
+from numpy import (arange, testing as nptest)
 
 from glue.lal import (Cache, CacheEntry)
 
@@ -173,12 +173,12 @@ class TestData(object):
         # test simple add using 'name'
         data.add_timeseries(a)
         assert 'test name' in  globalv.DATA
-        assert globalv.DATA['test name'] == [a]
+        assert len(globalv.DATA['test name']) == 1
+        assert globalv.DATA['test name'][0] is a
 
         # test add using key kwarg
         data.add_timeseries(a, key='test key')
-        assert 'test key' in globalv.DATA
-        assert globalv.DATA['test key'] == [a]
+        assert globalv.DATA['test key'][0] is a
 
         # test add to existing key with coalesce
         b = TimeSeries([6, 7, 8, 9, 10], name='test name 2', epoch=5,
@@ -186,7 +186,7 @@ class TestData(object):
         data.add_timeseries(b, key='test key', coalesce=True)
         assert len(globalv.DATA['test key']) == 1
         nptest.assert_array_equal(globalv.DATA['test key'][0].value,
-                                  a.append(b, inplace=False).value)
+                                  arange(1, 11))
 
     def test_get_timeseries(self):
         # empty globalv.DATA

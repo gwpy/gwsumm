@@ -127,16 +127,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     new = segments - havesegs
     query &= abs(new) != 0
 
-    # extract spectrogram stride from dict
-    try:
-        stride = float(fftparams.pop('stride'))
-    except TypeError as e:
-        if query:
-            e.args = ('cannot parse a spectrogram stride from the kwargs '
-                      'given, please give some or all of fftlength, overlap, '
-                      'stride',)
-            raise
-
     # get processes
     if multiprocess is True:
         nproc = count_free_cores()
@@ -148,6 +138,18 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     if query:
+        # extract spectrogram stride from dict
+        try:
+            stride = float(fftparams.pop('stride'))
+        except (TypeError, KeyError) as e:
+            msg = ('cannot parse a spectrogram stride from the kwargs '
+                   'given, please give some or all of fftlength, overlap, '
+                   'stride')
+            if isinstance(e, TypeError):
+                e.args = (msg,)
+                raise
+            raise TypeError(msg)
+
         # read channel information
         try:
             filter_ = channel.frequency_response

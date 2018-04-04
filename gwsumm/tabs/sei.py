@@ -523,7 +523,7 @@ class SeiWatchDogPlot(get_plot('data')):
                 data = {}
             else:
                 data = TimeSeriesDict.read(cache, self.chanlist, start=start,
-                                           end=end, nproc=self.nproc)
+                                           end=end, nproc=self.nproc or 1)
 
         # make plot
         plot, axes = subplots(nrows=self.geometry[0], ncols=self.geometry[1],

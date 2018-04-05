@@ -30,6 +30,7 @@ from six import string_types
 
 import numpy
 
+from matplotlib.colors import LogNorm
 from matplotlib.pyplot import subplots
 
 try:
@@ -306,43 +307,11 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     def pid(self):
         del self._pid
 
-    def draw(self):
-        # initialise
-        (plot, axes) = self.init_plot()
-        ax = axes[0]
-        ax.grid(b=True, axis='y', which='major')
-        channel = self.channels[0]
-
-        # parse data arguments
-        sdform = self.pargs.pop('format')
-        clim = self.pargs.pop('clim')
-        clog = self.pargs.pop('logcolor')
-        clabel = self.pargs.pop('colorlabel')
-        rasterized = self.pargs.pop('rasterized', True)
+    def get_ratio(self, specgrams):
         ratio = self.ratio
-
-        # get cmap
-        if ratio in ['median', 'mean'] or (
-                isinstance(ratio, string_types) and os.path.isfile(ratio)):
-            self.pargs.setdefault('cmap', 'Spectral_r')
-        cmap = self.pargs.pop('cmap', None)
-
-        # get data
-        if self.state and not self.all_data:
-            valid = self.state.active
-        else:
-            valid = SegmentList([self.span])
-
-        if self.type == 'coherence-spectrogram':
-            specgrams = get_coherence_spectrogram(self.channels, valid,
-                                                  query=False)
-        else:
-            specgrams = get_spectrogram(channel, valid, query=False,
-                                        format=sdform)
-
         # calculate ratio spectrum
-        if len(specgrams) and (ratio in ['median', 'mean'] or
-                               isinstance(ratio, int)):
+        if len(specgrams) and (
+                ratio in ['median', 'mean'] or isinstance(ratio, int)):
             try:
                 allspec = specgrams.join(gap='ignore')
             except ValueError as e:
@@ -354,26 +323,74 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 else:
                     raise
             if isinstance(ratio, int):
-                ratio = allspec.percentile(ratio)
+                return allspec.percentile(ratio)
             else:
-                ratio = getattr(allspec, ratio)(axis=0)
+                return getattr(allspec, ratio)(axis=0)
         elif isinstance(ratio, string_types) and os.path.isfile(ratio):
             try:
-                ratio = io.read_frequencyseries(ratio)
+                return io.read_frequencyseries(ratio)
             except IOError as e:  # skip if file can't be read
                 warnings.warn('IOError: %s' % str(e))
+        return ratio
+
+    def draw(self):
+        # initialise
+        (plot, axes) = self.init_plot()
+        ax = axes[0]
+        ax.grid(b=True, axis='y', which='major')
+        channel = self.channels[0]
+
+        # parse data arguments
+        sdform = self.pargs.pop('format')
+
+        # parse colorbar arguments
+        clabel = self.pargs.pop('colorlabel', '')
+        clim = self.pargs.pop('clim', None)
+        clog = self.pargs.pop('logcolor', False)
 
         # allow channel data to set parameters
         if getattr(channel, 'frequency_range', None) is not None:
             self.pargs.setdefault('ylim', channel.frequency_range)
             if isinstance(self.pargs['ylim'], Quantity):
                 self.pargs['ylim'] = self.pargs['ylim'].value
-        if (ratio is None and sdform in ['amplitude', 'asd'] and
-                hasattr(channel, 'asd_range') and clim is None):
-            clim = channel.asd_range
-        elif (ratio is None and hasattr(channel, 'psd_range') and
-              clim is None):
-            clim = channel.psd_range
+        if self.ratio is None and clim is None:
+            if (sdform in ('amplitude', 'asd') and
+                    hasattr(channel, 'asd_range')):
+                clim = channel.asd_range
+            elif hasattr(channel, 'psd_range'):
+                clim = channel.psd_range
+
+        # parse plotting arguments
+        if clim:  # clim -> (vmin, vmax)
+            vmin, vmax = clim
+            self.pargs.setdefault('vmin', vmin)
+            self.pargs.setdefault('vmax', vmax)
+        if clog:  # logcolor -> norm
+            self.pargs.setdefault('norm', 'log')
+        plotargs = self.parse_plot_kwargs()[0]  # only one channel
+
+        # rework norm='log' into a LogNorm object
+        # (this is only 'required' in the case of no data, when ax.scatter
+        #  gets called manually below)
+        if plotargs.get('norm', None) == 'log':
+            vmin = self.pargs.get('vmin')
+            vmax = self.pargs.get('vmax')
+            plotargs['norm'] = LogNorm(vmin=vmin, vmax=vmax)
+
+        # get data
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        if self.type == 'coherence-spectrogram':
+            specgrams = get_coherence_spectrogram(self.channels, valid,
+                                                  query=False)
+        else:
+            specgrams = get_spectrogram(channel, valid, query=False,
+                                        format=sdform)
+
+        # get ratio as FrequencySeries
+        ratio = self.get_ratio(specgrams)
 
         # plot data
         for specgram in specgrams:
@@ -393,21 +410,15 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 specgram = specgram.ratio(ratio)
 
             # plot
-            ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
+            ax.plot_spectrogram(specgram, **plotargs)
 
         # add colorbar
         if len(specgrams) == 0:
-            ax.scatter([1], [1], c=[1], visible=False, cmap=cmap)
-        plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel, cmap=cmap)
+            ax.scatter([1], [1], c=[1], visible=False, **plotargs)
+        plot.add_colorbar(ax=ax, label=clabel)
 
         # customise and finalise
-        for key, val in self.pargs.items():
-            if key == 'ratio':
-                continue
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         self.add_state_segments(ax)
         self.add_future_shade()
 

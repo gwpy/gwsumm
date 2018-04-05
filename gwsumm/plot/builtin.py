@@ -65,7 +65,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     """
     type = 'timeseries'
     data = 'timeseries'
-    defaults = {'logy': False,
+    defaults = {'yscale': 'linear',
                 'hline': list()}
 
     def __init__(self, *args, **kwargs):
@@ -203,7 +203,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                         'x0' not in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
                 # double-check log scales
-                if self.pargs.get('logy', False):
+                if self.logy:
                     ts.value[ts.value == 0] = 1e-100
             # set label
             try:
@@ -274,11 +274,11 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     """
     type = 'spectrogram'
     data = 'spectrogram'
-    defaults = {'ratio': None,
-                'format': None,
-                'clim': None,
-                'logcolor': False,
-                'colorlabel': None}
+    defaults = {
+        'ratio': None,
+        'format': None,
+        'rasterized': True,
+    }
 
     def __init__(self, *args, **kwargs):
         super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
@@ -435,10 +435,9 @@ class SpectrumDataPlot(DataPlot):
     """
     type = 'spectrum'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': None,
-                'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': False,
                 'reference-linestyle': '--'}
@@ -515,9 +514,9 @@ class SpectrumDataPlot(DataPlot):
                                          self.pargs.get('xlim', None))
 
             # anticipate log problems
-            if self.pargs['logx']:
+            if self.logx:
                 data = [s[1:] for s in data]
-            if self.pargs['logy']:
+            if self.logy:
                 for sp in data:
                     sp.value[sp.value == 0] = 1e-100
 
@@ -621,8 +620,8 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     """
     type = 'coherence-spectrum'
     data = 'coherence-spectrogram'
-    defaults = {'logx': True,
-                'logy': False,
+    defaults = {'xscale': 'log',
+                'yscale': 'linear',
                 'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
@@ -681,8 +680,9 @@ class TimeSeriesHistogramPlot(DataPlot):
         kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
             **defaults)
         for histargs in kwargs:
-            histargs.setdefault('logbins', self.pargs.get('logx', False))
-            self.pargs.setdefault('logy', histargs.get('log', False))
+            histargs.setdefault('logbins', self.logx)
+            logy = histargs.get('log', False)
+            self.pargs.setdefault('yscale', 'log' if logy else 'linear')
             # set range as xlim
             if 'range' not in histargs and 'xlim' in self.pargs:
                 histargs['range'] = self.pargs.get('xlim')
@@ -737,7 +737,7 @@ class TimeSeriesHistogramPlot(DataPlot):
             except ValueError:  # empty dataset
                 p2 = pargs.copy()
                 p2.pop('weights')  # mpl errors on weights
-                if p2.get('log', False) or self.pargs.get('logx', False):
+                if p2.get('log', False) or self.logx:
                     p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
                 ax.hist([], **p2)
 
@@ -782,7 +782,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
     type = 'histogram2d'
     data = 'timeseries'
     defaults = {
-        'logy': False,
+        'yscale': 'linear',
         'hline': list(),
         'grid': 'both',
         'shading': 'flat',
@@ -882,8 +882,8 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     type = 'variance'
     data = 'spectrogram'
     defaults = {
-        'logx': True,
-        'logy': True,
+        'xscale': 'log',
+        'yscale': 'log',
         'reference-linestyle': '--',
         'log': True,
         'nbins': 100,
@@ -1025,7 +1025,6 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
                 'format': 'rayleigh',
                 'clim': [0.25, 4],
                 'cmap': 'BrBG_r',
-                'logcolor': True,
                 'colorlabel': 'Rayleigh statistic'}
 
 register_plot(RayleighSpectrogramDataPlot)
@@ -1037,8 +1036,8 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
     type = 'rayleigh-spectrum'
     data = 'rayleigh-spectrum'
     defaults = {'format': 'rayleigh',
-                'logx': True,
-                'logy': True,
+                'xscale': 'log',
+                'yscale': 'log',
                 'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': True,

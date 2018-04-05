@@ -254,20 +254,18 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
-        logx = self.pargs.pop('logx', self.pargs.pop('xscale', None) == 'log')
-        logy = self.pargs.pop('logy', self.pargs.pop('yscale', None) == 'log')
         if len(self.channels) == 1:
             self.pargs.setdefault(
                 'title', '%s (%s)' % (self.channels[0].texname, self.etg))
+        for axis in ('x', 'y'):  # prevent zeros on log scale
+            scale = self.pargs.pop('{0}scale'.format(axis),
+                                   getattr(ax, 'get_{0}scale'.format(axis))())
+            lim = getattr(ax, 'get_{0}lim'.format(axis))()
+            if scale == 'log' and lim[0] <= 0 and not ntrigs:
+                getattr(ax, 'set_{0}lim'.format(axis))(1, 10)
+            getattr(ax, 'set_{0}scale'.format(axis))(scale)
+
         self.apply_parameters(ax, **self.pargs)
-        if logx:
-            if ax.get_xlim()[0] <= 0 and not ntrigs:
-                ax.set_xlim(1, 10)
-            ax.set_xscale('log')
-        if logy:
-            if ax.get_ylim()[0] <= 0 and not ntrigs:
-                ax.set_ylim(1, 10)
-            ax.set_yscale('log')
 
         # correct log-scale empty axes
         if any(map(isinf, ax.get_ylim())):
@@ -357,7 +355,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
             color = None
             for ts in data:
                 # double-check log scales
-                if self.pargs['logy']:
+                if self.logy:
                     ts.value[ts.value == 0] = 1e-100
                 if color is None:
                     line = ax.plot_timeseries(ts, label=label)[0]
@@ -483,7 +481,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                 # empty dataset, so fake something
                 p2 = pargs.copy()
                 p2.pop('weights')  # mpl errors on weights
-                if p2.get('log', False) or self.pargs.get('logx', False):
+                if p2.get('log', False) or self.logx:
                     p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
                 ax.hist([], **p2)
 

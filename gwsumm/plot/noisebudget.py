@@ -40,8 +40,8 @@ class NoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': 'asd',
                 'sum-label': 'Sum of noises',
                 'sum-linestyle': '--',
@@ -107,9 +107,9 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                 darmdata = data
 
             # anticipate log problems
-            if self.pargs['logx']:
+            if self.logx:
                 data = data[1:]
-            if self.pargs['logy']:
+            if self.logy:
                 data.value[data.value == 0] = 1e-100
 
             pargs.setdefault('zorder', -i)
@@ -162,8 +162,8 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget-ratio'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': 'asd'}
 
     def _draw(self):

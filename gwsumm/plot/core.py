@@ -364,6 +364,24 @@ class DataPlot(SummaryPlot):
     def href(self, url):
         self._href = url and os.path.normpath(url) or None
 
+    # -- read-only plot properties --------------
+
+    def _is_log(self, axis):
+        scale = '{0}scale'.format(axis)
+        log = 'log{0}'.format(axis)
+        try:
+            return self.pargs[scale] == 'log'
+        except KeyError:
+            return self.pargs.get(log, False)
+
+    @property
+    def logx(self):
+        return self._is_log('x')
+
+    @property
+    def logy(self):
+        return self._is_log('y')
+
     # -- basic methods --------------------------
 
     def add_channel(self, channel):

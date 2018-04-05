@@ -70,7 +70,7 @@ install_requires = [
     'numpy>=1.10',
     'matplotlib>=1.3.0',
     'astropy>=1.2.1',
-    'gwpy>=0.8.1',
+    'gwpy>=0.9.0',
 ]
 requires = [
     'numpy',

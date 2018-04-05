@@ -222,7 +222,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                             label_to_latex(str(flatdata[0].channel)))
             # plot groups or single TimeSeries
             if len(clist) > 1:
-                ax.plot_timeseries_mmm(*data, label=label, **pargs)
+                data[1].name = None  # force no labels for shades
+                data[2].name = None
+                ax.plot_mmm(*data, label=label, **pargs)
             elif len(flatdata) == 0:
                 ax.plot_timeseries(
                     data[0].EntryClass([], epoch=self.start, unit='s',
@@ -535,12 +537,11 @@ class SpectrumDataPlot(DataPlot):
                 use_legend = True
 
             if use_percentiles:
-                try:
-                    ax.plot_frequencyseries_mmm(*data, **pargs)
-                except AttributeError:  # old GWpy
-                    ax.plot_spectrum_mmm(*data, **pargs)
+                _, minline, _, maxline, _ = ax.plot_mmm(*data, **pargs)
+                # make min, max lines lighter:
+                minline.set_alpha(pargs.get('alpha', .1) * 2)
+                maxline.set_alpha(pargs.get('alpha', .1) * 2)
             else:
-                pargs.pop('alpha', None)
                 try:
                     ax.plot_frequencyseries(data[0], **pargs)
                 except AttributeError:  # old GWpy

@@ -38,7 +38,7 @@ from numpy import isclose
 
 from astropy.time import Time
 
-from gwpy.segments import DataQualityFlag
+from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import from_gps
 from gwpy.utils.mp import multiprocess_with_queues
 
@@ -49,6 +49,7 @@ from ..config import *
 from ..mode import (Mode, get_mode)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
+from ..data.utils import get_fftparams
 from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, get_state)
@@ -462,17 +463,28 @@ class DataTab(ProcessedTab, ParentTab):
                                         all_data=all_data, read=True,
                                         unique=False, state=state)
 
+        # pad spectrogram segments to include final time bin
+        specsegs = SegmentList(state.active)
+        specchannels = set.union(sgchannels, raychannels, csgchannels)
+        if specchannels and specsegs[-1][1] == self.end:
+            stride = max(get_fftparams(c, **fftparams).stride for
+                         c in specchannels)
+            specsegs[-1] = Segment(specsegs[-1][0], self.end+stride)
+
+
         if len(sgchannels):
             vprint("    %d channels identified for Spectrogram\n"
                    % len(sgchannels))
-            get_spectrograms(sgchannels, state, config=config, nds=nds,
+
+            get_spectrograms(sgchannels, specsegs, config=config, nds=nds,
                              multiprocess=multiprocess, return_=False,
                              cache=datacache, datafind_error=datafind_error,
                              **fftparams)
+
         if len(raychannels):
             fp2 = fftparams.copy()
             fp2['method'] = fp2['format'] = 'rayleigh'
-            get_spectrograms(raychannels, state, config=config, return_=False,
+            get_spectrograms(raychannels, specsegs, config=config, return_=False,
                              multiprocess=multiprocess, **fp2)
 
         if len(csgchannels):
@@ -485,7 +497,7 @@ class DataTab(ProcessedTab, ParentTab):
             fp2 = fftparams.copy()
             fp2['method'] = 'welch'
             get_coherence_spectrograms(
-                csgchannels, state, config=config, nds=nds,
+                csgchannels, specsegs, config=config, nds=nds,
                 multiprocess=multiprocess, return_=False, cache=datacache,
                 datafind_error=datafind_error, **fp2)
 

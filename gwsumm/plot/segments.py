@@ -76,7 +76,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'legend-loc': 'upper left',
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
-    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + ['known', 'height', 'y']
+    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + [
+        'known', 'height', 'y', 'facecolor', 'edgecolor',
+    ]
 
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         padding = kwargs.pop('padding', None)
@@ -181,9 +183,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         active = safe_eval(
             self.pargs.pop('active', self.pargs.pop('facecolor', None)))
         known = safe_eval(self.pargs.pop('known', 0))
+        onisbad = self.pargs.pop('on-is-bad', False)
         # neither known nor active defined
         if active is None and known == 0:
-            if bool(self.pargs.pop('on-is-bad', False)):
+            if onisbad:
                 self.pargs['facecolor'] = 'red'
                 self.pargs.setdefault('edgecolor', 'darkred')
                 self.pargs['known'] = {'facecolor': GREEN}
@@ -581,14 +584,14 @@ class DutyDataPlot(SegmentDataPlot):
         cumulative = self.pargs.pop('cumulative', False)
         if normalized is None and not cumulative:
             normalized = 'percent'
+        rollingmean = self.pargs.pop('rolling_mean',
+                                     not stacked and not cumulative)
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
         if sep:
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
             legendargs.setdefault('borderaxespad', 0)
-        rollingmean = self.pargs.pop('rolling_mean',
-                                     not stacked and not cumulative)
 
         # work out times and plot mean for legend
         self.get_bins()
@@ -642,7 +645,6 @@ class DutyDataPlot(SegmentDataPlot):
                     x = 1 - pad * 2
                     w = pargs.pop('width', 1.) * x / len(self.flags)
                     offset = pad + x/len(self.flags) * (i + 1/2.)
-                    print(w, offset)
                 elif stacked:
                     offset = .5
                     w = pargs.pop('width', .9)

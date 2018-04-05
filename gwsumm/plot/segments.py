@@ -918,6 +918,7 @@ register_plot(ODCDataPlot)
 
 class SegmentPiePlot(PiePlot, SegmentDataPlot):
     type = 'segment-pie'
+    _single_call = True
     defaults = {
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
@@ -935,6 +936,8 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         self.plot = Plot(figsize=figsize)
         axes = [self.plot.gca()]
         return self.plot, axes
+
+    parse_plot_kwargs = TimeSeriesDataPlot.parse_plot_kwargs
 
     def parse_wedge_kwargs(self, defaults=dict()):
         wedgeargs = defaults.copy()
@@ -983,7 +986,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 plotargs['colors'] = list(plotargs['colors']) + ['white']
 
         # make pie
-        labels = plotargs.pop('labels')
+        labels = plotargs.pop('label')
         patches = ax.pie(data, **plotargs)[0]
         ax.axis('equal')
 
@@ -1137,6 +1140,7 @@ register_plot(NetworkDutyPiePlot)
 
 class SegmentBarPlot(BarPlot, SegmentDataPlot):
     type = 'segment-bar'
+    _single_call = True
     defaults = {
         'edgecolor': 'white',
         'scale': 'percent',
@@ -1195,7 +1199,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
 
         # get segments
         data = []
-        labels = plotargs.pop('labels', self.flags)
+        labels = plotargs.pop('label', self.flags)
         for flag in self.flags:
             if self.state and not self.all_data:
                 valid = self.state.active
@@ -1252,8 +1256,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 'bottom': 0,
                 'rwidth': 1}
 
-    def parse_plot_kwargs(self, *args, **kwargs):
-        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
+    parse_plot_kwargs = TimeSeriesDataPlot.parse_plot_kwargs
 
     def draw(self, outputfile=None):
         # make axes

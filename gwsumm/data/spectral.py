@@ -185,7 +185,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
                 if fftparams.get('method', None) == 'rayleigh':
                     spec_kw = fftparams.copy()
                     for fftkey in ('method', 'scheme',):  # remove ASD keys
-                        spec_kw.pop(fftkey)
+                        spec_kw.pop(fftkey, None)
                     spec_func = ts.rayleigh_spectrogram
                 else:
                     spec_kw = fftparams

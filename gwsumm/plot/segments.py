@@ -684,7 +684,7 @@ class DutyDataPlot(SegmentDataPlot):
         self.apply_parameters(ax, **self.pargs)
         if 'hours' in self.pargs.get('ylabel', ''):
             ax.get_yaxis().get_major_locator().set_params(
-                steps=[1, 2, 4, 8, 12, 24])
+                steps=[1, 2, 4, 8])
         if sep:
             # set text
             ylabel = axes[0].yaxis.get_label()

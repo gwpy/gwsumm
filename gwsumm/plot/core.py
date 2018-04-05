@@ -34,7 +34,7 @@ from matplotlib import (rcParams, rc_context, __version__ as mpl_version)
 
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
-from gwpy.plotter.utils import rUNDERSCORE
+from gwpy.plotter.utils import (rUNDERSCORE, ARTIST_PARAMS)
 
 from .registry import register_plot
 from ..channels import (get_channel, split as split_channels)
@@ -203,14 +203,7 @@ class DataPlot(SummaryPlot):
     #: dict of default plotting kwargs
     defaults = {}
     #: list of parameters parsed for `plot()` calls
-    DRAW_PARAMS = ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
-                   'linewidth', 'marker', 'markeredgecolor',
-                   'markeredgewidth', 'markerfacecolor',
-                   'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
-                   'bins', 'range', 'normed', 'weights', 'cumulative',
-                   'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                   'log', 'stacked', 'logbins', 'linecolor',
-                   'facecolor', 'rasterized']
+    DRAW_PARAMS = list(ARTIST_PARAMS)
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, pid=None, href=None, new=True, all_data=False,

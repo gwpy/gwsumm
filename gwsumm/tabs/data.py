@@ -466,7 +466,7 @@ class DataTab(ProcessedTab, ParentTab):
         # pad spectrogram segments to include final time bin
         specsegs = SegmentList(state.active)
         specchannels = set.union(sgchannels, raychannels, csgchannels)
-        if specchannels and specsegs[-1][1] == self.end:
+        if specchannels and specsegs and specsegs[-1][1] == self.end:
             stride = max(get_fftparams(c, **fftparams).stride for
                          c in specchannels)
             specsegs[-1] = Segment(specsegs[-1][0], self.end+stride)

@@ -273,7 +273,7 @@ class DataTab(ProcessedTab, ParentTab):
                 type_ = None
                 PlotClass = get_plot(pdef)
             # if the plot definition declares multiple states
-            if 'all-states' in mods:
+            if mods.pop('all-states', False):
                 mods.setdefault('all-data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,

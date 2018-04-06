@@ -595,6 +595,19 @@ class DataPlot(SummaryPlot):
             except KeyError:
                 pass
 
+        # normalise log scale parameters
+        # TODO: this can be removed once existing config files have been
+        #       updated to not use logx and logy options
+        for axis in ('x', 'y'):
+            logp = 'log{}'.format(axis)
+            try:
+                log = self.pargs.pop(logp)
+            except KeyError:
+                continue
+            if log is not self._is_log(axis):
+                scale = 'log' if log else 'linear'
+                self.pargs['{}scale'.format(axis)] = scale
+
         # if this plot is a single-call plot (where all objects get plotted
         # in a single call out to a ax.plot()-style method) just return
         # the params as a dict of lists

@@ -1,29 +1,5 @@
 language: python
 
-sudo: false
-dist: trusty
-
-addons:
-  apt:
-    sources:
-      - sourceline: deb http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-      - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-    packages:
-      - pkg-config  # lal
-      - zlib1g-dev  # lal
-      - libgsl0-dev  # lal
-      - swig  # lal
-      - bc  # lal
-      - libfftw3-dev  # lal
-      - libframe-dev  # lalframe
-      - gcc  # nds2
-      - gfortran  # numpy/scipy
-      - libblas-dev  # numpy/scipy
-      - liblapack-dev  # numpy/scipy
-      - libhdf5-serial-dev
-
 python:
   - '2.7'
   - '3.5'
@@ -64,9 +40,4 @@ after_success:
   - coveralls
 
 cache:
-  apt: true
   pip: true
-  directories:
-    - lal-${LAL_VERSION}
-    - lalframe-${LALFRAME_VERSION}
-    - nds2-client-${NDS2_CLIENT_VERSION}

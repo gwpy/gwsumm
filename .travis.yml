@@ -1,65 +1,31 @@
 language: python
 
-sudo: false
-dist: trusty
-
-addons:
-  apt:
-    sources:
-      - sourceline: deb http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-      - sourceline: deb-src http://software.ligo.org/lscsoft/debian wheezy contrib
-        key_url: http://software.ligo.org/keys/deb/lscsoft.key
-    packages:
-      - pkg-config  # lal
-      - zlib1g-dev  # lal
-      - libgsl0-dev  # lal
-      - swig  # lal
-      - bc  # lal
-      - libfftw3-dev  # lal
-      - libframe-dev  # lalframe
-      - gcc  # nds2
-      - gfortran  # numpy/scipy
-      - libblas-dev  # numpy/scipy
-      - liblapack-dev  # numpy/scipy
-      - libhdf5-serial-dev
-
 python:
-  - '2.6'
   - '2.7'
   - '3.5'
 
 env:
-  global:
-    - LAL_VERSION="6.18.0"
-    - LALFRAME_VERSION="1.4.3"
-    - NDS2_CLIENT_VERSION="0.11.2"
-  matrix:
-    - PIP_FLAGS="--quiet"
-    - PIP_FLAGS="--quiet --pre"
+  - PIP_FLAGS=""
+  - PIP_FLAGS="--upgrade --pre"
 
 matrix:
-  exclude:
-    - python: '2.6'
-      env: PIP_FLAGS="--quiet --pre"
   allow_failures:
-    - python: '2.6'
     - python: '3.5'
     - python: '2.7'
-      env: PIP_FLAGS="--quiet --pre"
+      env: PIP_FLAGS="--upgrade --pre"
   fast_finish: true
 
 before_install:
-  - pip install -q --upgrade pip
-  - pip install ${PIP_FLAGS} -r requirements.txt
-  - . .travis/build-src-dependencies.sh
-  - pip install ${PIP_FLAGS} coveralls "pytest>=2.8" pytest-runner unittest2
-  # need to install astropy 1.1 specifically for py26
-  - if [[ ${TRAVIS_PYTHON_VERSION} == '2.6' ]]; then pip install "astropy==1.1"; fi
+  - python -m pip install --upgrade pip
+  - python -m pip install ${PIP_FLAGS} lalsuite
+  - python -m pip install ${PIP_FLAGS} -r requirements.txt
 
 install:
   # note: need --editable for executable coverage with `which ...` to work
-  - pip install --editable .
+  - python -m pip install --editable .
+
+before_script:
+  - python -m pip install ${PIP_FLAGS} coveralls "pytest>=2.8" pytest-runner unittest2
 
 script:
   # run test suite
@@ -74,9 +40,4 @@ after_success:
   - coveralls
 
 cache:
-  apt: true
   pip: true
-  directories:
-    - lal-${LAL_VERSION}
-    - lalframe-${LALFRAME_VERSION}
-    - nds2-client-${NDS2_CLIENT_VERSION}

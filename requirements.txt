@@ -11,5 +11,6 @@ https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
 gwpy>=0.8.1
 libsass
 jsmin
-astropy_helpers
+astropy_helpers < 3.0 ; python_version < '3'
+astropy_helpers ; python_version >= '3'
 ligo_gracedb

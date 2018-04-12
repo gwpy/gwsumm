@@ -287,6 +287,10 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
         self.ratio = self.pargs.pop('ratio')
 
+        # set default colour-map for median ratio
+        if self.ratio in ('median', 'mean'):
+            self.pargs.setdefault('cmap', 'Spectral_r')
+
     @property
     def pid(self):
         try:
@@ -395,21 +399,17 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         ratio = self.get_ratio(specgrams)
 
         # plot data
-        for specgram in specgrams:
-
-            # only plot frequencies of interest
-            if self.pargs.get('ylim') is not None:
-                specgram = specgram.crop_frequencies(*self.pargs['ylim'])
-
-            # undo demodulation
-            specgram = undo_demodulation(specgram, channel,
-                                         self.pargs.get('ylim', None))
+        for i, specgram in enumerate(specgrams):
 
             # calculate ratio
             if ratio is not None:
-                if self.pargs.get('ylim') is not None:
-                    ratio = ratio.crop(*self.pargs['ylim'])
                 specgram = specgram.ratio(ratio)
+
+            # undo demodulation and crop frequencies
+            ylim = self.pargs.get('ylim', None)
+            specgram = undo_demodulation(specgram, channel, ylim)
+            if ylim is not None:
+                specgram = specgram.crop_frequencies(*ylim)
 
             # plot
             ax.plot_spectrogram(specgram, **plotargs)
@@ -522,9 +522,10 @@ class SpectrumDataPlot(DataPlot):
                                     format=sdform, method=method)
 
             # undo demodulation
-            for spec in data:
-                spec = undo_demodulation(spec, channel,
-                                         self.pargs.get('xlim', None))
+            data = list(data)
+            for i, spec in enumerate(data):
+                data[i] = undo_demodulation(spec, channel,
+                                            self.pargs.get('xlim', None))
 
             # anticipate log problems
             if self.logx:
@@ -578,11 +579,6 @@ class SpectrumDataPlot(DataPlot):
 
         # customise
         hlines = list(self.pargs.pop('hline', []))
-        for key, val in self.pargs.items():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
 
         # add horizontal lines to add
         if hlines:
@@ -597,6 +593,8 @@ class SpectrumDataPlot(DataPlot):
                 continue
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
+
+        self.apply_parameters(ax, **self.pargs)
 
         if use_legend or len(self.channels) > 1 or ax.legend_ is not None:
             plot.add_legend(ax=ax, **legendargs)
@@ -1067,6 +1065,7 @@ def undo_demodulation(spec, channel, limits=None):
     except AttributeError:
         return spec
     else:
+        spec = spec[:]  # views data with copied metadata
         del spec.frequencies
         spec.f0 = demod
         # if physical frequency-range is below demod, get negative df

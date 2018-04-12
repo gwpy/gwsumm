@@ -27,6 +27,7 @@ import numpy
 from gwpy.detector import Channel
 from gwpy.segments import SegmentList
 from gwpy.frequencyseries import FrequencySeries
+from gwpy.types import Series
 
 from ..channels import (get_channel, re_channel)
 
@@ -202,6 +203,10 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
                 data = op_(data, val_)
             ts = _join(ts, data, joinop)
         meta.append(ts)
+    if not meta and isinstance(tslist[0], Series):
+        meta.append(type(tslist[0])([], channel=channel))
+    if not meta:
+        return type(tslist[0])()
     return meta
 
 

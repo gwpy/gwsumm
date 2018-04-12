@@ -29,7 +29,7 @@ from six.moves.urllib.request import urlopen
 
 import pytest
 
-from numpy import testing as nptest
+from numpy import (arange, testing as nptest)
 
 from glue.lal import (Cache, CacheEntry)
 
@@ -51,6 +51,8 @@ LOSC_DATA = {
                        'L-L1_LOSC_4_V1-1126259446-32.gwf'],
 }
 LOSC_SEGMENTS = SegmentList([Segment(1126259446, 1126259478)])
+
+FFT_SCHEME_NAME = type(utils.FFT_SCHEME).__name__ if utils.FFT_SCHEME else ''
 
 
 def download(remote, target=None):
@@ -115,16 +117,29 @@ class TestData(object):
     @empty_globalv_CHANNELS
     def test_make_globalv_key(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
-            stride=123.456, window='test-window', method='test-method')
+            stride=123.456, window='test-window', method='scipy-welch')
         key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
-        assert key == 'L1:TEST-CHANNEL;test-method;;;test-window;123.456'
+        assert key == ';'.join([
+            'L1:TEST-CHANNEL',  # channel
+            'scipy-welch',  # method
+            '',  # fftlength
+            '',  # overlap
+            'test-window',  # window
+            '123.456',  # stride
+            FFT_SCHEME_NAME,  # FFT scheme
+        ])
 
     def test_get_fftparams(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL')
         assert isinstance(fftparams, utils.FftParams)
 
         for key in utils.FFT_PARAMS.keys():
-            assert getattr(fftparams, key) is None
+            if key == 'method':
+                assert fftparams.method == '{0}-{1}'.format(
+                    utils.FFT_API.split('.')[0], utils.DEFAULT_FFT_PARAMS[key])
+            else:
+                assert (getattr(fftparams, key) is
+                        utils.DEFAULT_FFT_PARAMS.get(key, None))
 
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
                                         overlap=0)
@@ -162,12 +177,12 @@ class TestData(object):
         # test simple add using 'name'
         data.add_timeseries(a)
         assert 'test name' in  globalv.DATA
-        assert globalv.DATA['test name'] == [a]
+        assert len(globalv.DATA['test name']) == 1
+        assert globalv.DATA['test name'][0] is a
 
         # test add using key kwarg
         data.add_timeseries(a, key='test key')
-        assert 'test key' in globalv.DATA
-        assert globalv.DATA['test key'] == [a]
+        assert globalv.DATA['test key'][0] is a
 
         # test add to existing key with coalesce
         b = TimeSeries([6, 7, 8, 9, 10], name='test name 2', epoch=5,
@@ -175,7 +190,7 @@ class TestData(object):
         data.add_timeseries(b, key='test key', coalesce=True)
         assert len(globalv.DATA['test key']) == 1
         nptest.assert_array_equal(globalv.DATA['test key'][0].value,
-                                  a.append(b, inplace=False).value)
+                                  arange(1, 11))
 
     def test_get_timeseries(self):
         # empty globalv.DATA
@@ -185,41 +200,47 @@ class TestData(object):
         a = TimeSeries([1, 2, 3, 4, 5], name='test name', epoch=0,
                        sample_rate=1)
         data.add_timeseries(a)
-        b, = data.get_timeseries('test name', [(0, 5)])
+        b, = data.get_timeseries('test name', [(0, 5)], multiprocess=False)
         nptest.assert_array_equal(a.value, b.value)
         assert a.sample_rate.value == b.sample_rate.value
 
         # test more complicated add with a cache
         a, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                cache=self.FRAMES['H1:LOSC-STRAIN'])
-        b, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS)
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                 multiprocess=False)
+        b, = data.get_timeseries('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                                 multiprocess=False)
         nptest.assert_array_equal(a.value, b.value)
 
     @empty_globalv_CHANNELS
     def test_get_spectrogram(self):
         with pytest.raises(TypeError):
             data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                 cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                 multiprocess=False)
         a = data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                  cache=self.FRAMES['H1:LOSC-STRAIN'],
-                                 stride=4, fftlength=2, overlap=1)
+                                 stride=4, fftlength=2, overlap=1,
+                                 multiprocess=False)
 
     def test_get_spectrum(self):
         a, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                    multiprocess=False)
         b, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                     format='asd',
-                                    cache=self.FRAMES['H1:LOSC-STRAIN'])
+                                    cache=self.FRAMES['H1:LOSC-STRAIN'],
+                                    multiprocess=False)
         nptest.assert_array_equal(a.value ** (1/2.), b.value)
 
     def test_get_coherence_spectrogram(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
         a = data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1)
+            stride=4, fftlength=2, overlap=1, multiprocess=False)
 
     def test_get_coherence_spectrum(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
         a = data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1)
+            stride=4, fftlength=2, overlap=1, multiprocess=False)

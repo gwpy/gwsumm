@@ -19,16 +19,7 @@
 """Read and store transient event triggers
 """
 
-import operator
-import re
 import warnings
-import token
-from tokenize import generate_tokens
-
-from six.moves import StringIO
-from six import string_types
-
-import numpy
 
 from astropy.table import vstack as vstack_tables
 
@@ -36,60 +27,79 @@ from glue.lal import (Cache, CacheEntry)
 from glue.ligolw import lsctables
 
 from gwpy.io.cache import cache_segments
-from gwpy.table import EventTable
+from gwpy.table import (EventTable, filters as table_filters)
+from gwpy.table.filter import parse_column_filters
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
 from gwpy.segments import (DataQualityFlag, SegmentList)
 
-try:
-    import trigfind
-except ImportError:
-    from gwpy.table.io import trigfind
+import trigfind
 
 from . import globalv
 from .utils import (re_cchar, vprint, count_free_cores, safe_eval)
-from .config import (GWSummConfigParser, NoSectionError, NoOptionError)
+from .config import (GWSummConfigParser, NoSectionError)
 from .channels import get_channel
 
-# build list of format arguments for reading ETGs
-ETG_FORMAT = {
-    'cwb': 'root.cwb',
-    'daily_ihope': 'ligolw.sngl_inspiral',
-    'daily_ahope': 'ligolw.sngl_inspiral',
-    'dmt_omega': 'ligolw.sngl_burst',
-    'dmt_wsearch': 'ligolw.sngl_burst',
-    'kleinewelle': 'ligolw.sngl_burst',
-    'kw': 'ligolw.sngl_burst',
-    'omega': 'ascii',
-    'omegadq': 'ascii',
-    'omicron': 'ligolw.sngl_burst',
-    'pycbc_live': 'hdf5.pycbc_live',
+# build list of default keyword arguments for reading ETGs
+ETG_READ_KW = {
+    'cwb': {
+        'format': 'root',
+        'treename': 'waveburst',
+    },
+    'daily_ihope': {
+        'format': 'ligolw',
+        'tablename': 'sngl_inspiral',
+        'use_numpy_dtypes': True,
+    },
+    'daily_ahope': {
+        'format': 'ligolw',
+        'tablename': 'sngl_inspiral',
+        'use_numpy_dtypes': True,
+    },
+    'dmt_omega': {
+        'format': 'ligolw',
+        'tablename': 'sngl_burst',
+        'use_numpy_dtypes': True,
+    },
+    'dmt_wsearch': {
+        'format': 'ligolw',
+        'tablename': 'sngl_burst',
+        'use_numpy_dtypes': True,
+    },
+    'kleinewelle': {
+        'format': 'ligolw',
+        'tablename': 'sngl_burst',
+        'use_numpy_dtypes': True,
+    },
+    'kw': {
+        'format': 'ligolw',
+        'tablename': 'sngl_burst',
+        'use_numpy_dtypes': True,
+    },
+    'omega': {
+        'format': 'ascii',
+    },
+    'omegadq': {
+        'format': 'ascii',
+    },
+    'omicron': {
+        'format': 'ligolw',
+        'tablename': 'sngl_burst',
+        'use_numpy_dtypes': True,
+    },
+    'pycbc_live': {
+        'format': 'hdf5.pycbc_live',
+        'timecolumn': 'end_time',
+        'extended_metadata': False,
+    },
 }
+
+# set default for all LIGO_LW
 for name in lsctables.TableByName:
-    ETG_FORMAT[name] = 'ligolw.%s' % name
-
-
-MATH_OPERATORS = {
-    '<': operator.lt,
-    '<=': operator.le,
-    '=': operator.eq,
-    '>=': operator.ge,
-    '>': operator.gt,
-    '==': operator.is_,
-    '!=': operator.is_not,
-}
-MATH_OPERATORS_NOT = {
-    '<': operator.ge,
-    '<=': operator.gt,
-    '=': operator.ne,
-    '>=': operator.lt,
-    '>': operator.le,
-    '==': operator.is_not,
-    '!=': operator.is_,
-}
-
-
-def get_etg_format(etg):
-    return ETG_FORMAT[re_cchar.sub('_', etg).lower()]
+    ETG_READ_KW[name] = {
+        'format': 'ligolw',
+        'tablename': name,
+        'use_numpy_dtype': True,
+    }
 
 
 def get_etg_table(etg):
@@ -111,12 +121,14 @@ def get_etg_table(etg):
         if the ETG is not registered
     """
     try:
-        format_ = get_etg_format(etg)
+        kw_ = get_etg_read_kwargs(etg)
+        form = kw_['format']
+        tablename = kw_['tablename']
     except KeyError as e:
         e.args = ('No LIGO_LW table registered to etg %r' % etg,)
         raise
-    if format_.startswith('ligolw.'):
-        return lsctables.TableByName[format_[7:]]
+    if form == 'ligolw':
+        return lsctables.TableByName[tablename]
     raise KeyError("No LIGO_LW table registered to etg %r" % etg)
 
 
@@ -140,20 +152,17 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     else:
         nproc = multiprocess
 
-    # find LIGO_LW table for this ETG
-    try:
-        TableClass = get_etg_table(etg)
-    except KeyError:
-        TableClass = None
+    # get read keywords for this etg
+    read_kw = get_etg_read_kwargs(etg, config=config, exclude=[])
 
-    # work out columns
-    if columns is None:
-        try:
-            columns = config.get(etg.lower(), 'columns').split(',')
-        except (NoSectionError, NoOptionError):
-            columns = None
-        else:
-            columns = [c.strip(' \'\"') for c in columns]
+    # extract columns (using function keyword if given)
+    if columns:
+          read_kw['columns'] = columns
+    columns = read_kw.pop('columns', None)
+
+    # parse filters
+    if filter:
+        read_kw['selection'].extend(parse_column_filters(filter))
 
     # read segments from global memory
     try:
@@ -168,30 +177,46 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         ntrigs = 0
         vprint("    Grabbing %s triggers for %s" % (etg, str(channel)))
 
-        # store read kwargs
-        kwargs = get_etg_read_kwargs(config, etg, exclude=['columns'])
-        trigfindkwargs = dict((k[9:], kwargs.pop(k)) for k in kwargs.keys() if
-                              k.startswith('trigfind-'))
+        # -- setup ----------
 
-        if format is not None:
-            kwargs['format'] = format
-        if timecolumn is not None:
-            kwargs['timecolumn'] = timecolumn
-        if 'format' not in kwargs:
-            try:
-                kwargs['format'] = get_etg_format(etg)
-            except KeyError:
-                kwargs['format'] = etg.lower()
-        if kwargs['format'].startswith('ascii.'):  # customise column selection
-            kwargs['include_names'] = columns
+        # get find/read kwargs
+        trigfindkwargs = dict(
+             (k[9:], read_kw.pop(k)) for k in read_kw.keys() if
+             k.startswith('trigfind-'))
+        trigfindetg = trigfindkwargs.pop('etg', etg)
+
+        # override with user options
+        if format:
+            read_kw['format'] = format
+        elif not read_kw.get('format', None):
+            read_kw['format'] = etg.lower()
+        if timecolumn:
+            read_kw['timecolumn'] = timecolumn
+        elif columns is not None and 'time' in columns:
+            read_kw['timecolumn'] = 'time'
+
+        # replace columns keyword
+        if read_kw['format'].startswith('ascii.'):
+            read_kw['include_names'] = columns
         else:
-            kwargs['columns'] = columns
+            read_kw['columns'] = columns
+
+        # customise kwargs for this ETG
         if etg.lower().replace('-', '_') in ['pycbc_live']:
-            kwargs['ifo'] = get_channel(channel).ifo
+            read_kw['ifo'] = get_channel(channel).ifo
+        if etg.lower() in ['kw', 'kleinewelle']:
+            read_kw['selection'].append('channel == "%s"' % channel)
+
+        # filter on segments
+        if 'timecolumn' in read_kw:
+            read_kw['selection'].append((
+                read_kw['timecolumn'], table_filters.in_segmentlist, new))
+
+        # -- read -----------
 
         # if single file
         if cache is not None and len(cache) == 1:
-            trigs = read_cache(cache, new, etg, nproc=nproc, **kwargs)
+            trigs = read_cache(cache, new, etg, nproc=nproc, **read_kw)
             if trigs is not None:
                 add_triggers(trigs, key)
                 ntrigs += len(trigs)
@@ -199,12 +224,10 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:
             for segment in new:
                 # find trigger files
-                if cache is None and etg.lower() in ['kw', 'kleinewelle']:
-                    kwargs['filt'] = lambda t: t.channel == str(channel)
                 if cache is None and not etg.lower() == 'hacr':
                     try:
                         segcache = trigfind.find_trigger_files(
-                            str(channel), etg, segment[0], segment[1],
+                            str(channel), trigfindetg, segment[0], segment[1],
                             **trigfindkwargs)
                     except ValueError as e:
                         warnings.warn("Caught %s: %s"
@@ -220,7 +243,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                     trigs.meta['segments'] = SegmentList([segment])
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
-                                       nproc=nproc, **kwargs)
+                                       nproc=nproc, **read_kw)
                 if trigs is not None:
                     add_triggers(trigs, key)
                     ntrigs += len(trigs)
@@ -230,26 +253,24 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     # if asked to read triggers, but didn't actually read any,
     # create an empty table so that subsequent calls don't raise KeyErrors
     if query and key not in globalv.TRIGGERS:
-        if columns is None and TableClass is not None:
-            tab = EventTable(lsctables.New(TableClass), get_as_columns=True)
-        else:
+        # find LIGO_LW table for this ETG
+        try:
+            if columns is not None:  # don't need to map to LIGO_LW
+                raise KeyError
+            TableClass = get_etg_table(etg)
+        except KeyError:  # build simple table
             tab = EventTable(names=columns)
+        else:  # map to LIGO_LW table with full column listing
+            tab = EventTable(lsctables.New(TableClass), get_as_columns=True)
         tab.meta['segments'] = SegmentList()
         add_triggers(tab, key)
 
     # work out time function
     if return_:
         try:
-            trigs = keep_in_segments(globalv.TRIGGERS[key], segments, etg)
+            return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
         except KeyError:  # filtering didn't work, don't really care
-            trigs = globalv.TRIGGERS[key]
-        if filter:
-            if isinstance(filter, string_types):
-                filter = filter.split(' ')
-            # if a filter string is provided, return a filtered copy of
-            # the trigger set stored in global memory
-            return filter_triggers(trigs, *filter)
-        return trigs
+            return globalv.TRIGGERS[key]
     else:
         return
 
@@ -271,62 +292,12 @@ def add_triggers(table, key, segments=None):
             globalv.TRIGGERS[key].meta['segments'] = SegmentList()
 
 
-def time_in_segments(times, segmentlist):
-    """Find which times lie inside a segmentlist
-
-    Parameters
-    ----------
-    times : `numpy.ndarray`
-        1-dimensional array of times
-    segmentlist : :class:`~glue.segments.segmentlist`
-        list of time segments to test
-
-    Returns
-    -------
-    insegments : `numpy.ndarray`
-        boolean array indicating which times lie inside the segmentlist
-
-    Notes
-    -----
-    A time `t` lies inside a segment `[a..b]` if `a <= t <= b`
-    """
-    segmentlist = type(segmentlist)(segmentlist).coalesce()
-    keep = numpy.zeros(times.shape[0], dtype=bool)
-    j = 0
-    try:
-        a, b = segmentlist[j]
-    except IndexError:  # no segments, return all False
-        return keep
-    i = 0
-    while i < keep.size:
-        t = times[i]
-        # if before start, move to next trigger now
-        if t < a:
-            i += 1
-            continue
-        # if after end, find the next segment and check this trigger again
-        if t > b:
-            j += 1
-            try:
-                a, b = segmentlist[j]
-                continue
-            except IndexError:
-                break
-        # otherwise it must be in this segment, record and move to next
-        keep[i] = True
-        i += 1
-    return keep
-
-
 def keep_in_segments(table, segmentlist, etg=None):
     """Return a view of the table containing only those rows in the segmentlist
     """
     times = get_times(table, etg)
-    order = times.argsort()
-    t2 = table[order]
-    times = times[order]
-    keep = time_in_segments(times, segmentlist)
-    out = t2[keep]
+    keep = table_filters.in_segmentlist(times, segmentlist)
+    out = table[keep]
     out.meta['segments'] = segmentlist & table.meta['segments']
     return out
 
@@ -358,96 +329,64 @@ def get_times(table, etg):
         raise
 
 
-def get_etg_read_kwargs(config, etg, exclude=['columns']):
+def get_time_column(table, etg):
+    """Get the time column for this table, etg pair
+    """
+    if table.meta.get('timecolumn'):
+        return table.meta['timecolumn']
+    if 'time' in table.colnames:
+        return 'time'
+    if etg == 'pycbc_live':
+        return 'end_time'
+
+    # handle LIGO_LW tables (as best we can)
+    tablename = ETG_READ_KW.get(etg, {}).get('tablename', None)
+    if tablename in ('sngl_burst', 'multi_burst'):
+        return 'peak'
+    if tablename in ('sngl_inspiral', 'coinc_inspiral', 'multi_inspiral'):
+        return 'end'
+    if tablename in ('sngl_ringdown', 'multi_ringdown'):
+        return 'start'
+    raise ValueError("unknown time column for table")
+
+
+def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
     """Read keyword arguments to pass to the trigger reader for a given etg
     """
-    try:
-        kwargs = dict(config.nditems(etg))
-    except NoSectionError:
+    # use global defaults
+    kwargs = {
+        'format': None,
+        'selection': [],
+    }
+
+    # update with ETG defaults
+    kwargs.update(ETG_READ_KW.get(re_cchar.sub('_', etg).lower(), {}))
+
+    # get kwargs from config
+    if config is not None:
         try:
-            kwargs = dict(config.nditems(etg.lower()))
+            kwargs.update(config.nditems(etg))
         except NoSectionError:
-            return {}
-    for key in kwargs.keys():
+            try:
+                kwargs.update(config.nditems(etg.lower()))
+            except NoSectionError:
+                pass
+
+    # format kwargs
+    for key in list(kwargs.keys()):
+        # remove unwanted keys
         if key in exclude:
             kwargs.pop(key)
             continue
+        # eval string to object (safely)
         kwargs[key] = safe_eval(kwargs[key])
         if key.endswith('columns') and isinstance(kwargs[key], str):
             kwargs[key] = kwargs[key].replace(' ', '').split(',')
+
+    if 'selection' in kwargs:
+        kwargs['selection'] = parse_column_filters(kwargs['selection'])
+
     return kwargs
-
-
-def parse_filter(value):
-    """Parse a `str` of the form 'column>50'
-
-    Returns
-    -------
-    column : `str`
-        the name of the column on which to operate
-    math : `list` of (`str`, `callable`) pairs
-        the list of thresholds and their associated math operators
-
-    Examples
-    --------
-    >>> condition("snr>10")
-    ('snr', [(10.0, <built-in function gt>)])
-    >>> condition("50 < peak_frequency < 100")
-    ('peak_frequency', [(50.0, <built-in function ge>),
-                        (100.0, <build-in function lt>)])
-    """
-    # parse condition
-    parts = list(generate_tokens(StringIO(value).readline))
-    # find paramname
-    names = filter(lambda t: t[0] == token.NAME, parts)
-    if len(names) != 1:
-        raise ValueError("Multiple column names parse from condition %r"
-                         % value)
-    name = names[0][1]
-    limits = zip(*filter(lambda t: t[0] == token.NUMBER, parts))[1]
-    operators = zip(*filter(lambda t: t[0] == token.OP, parts))[1]
-    if len(limits) != len(operators):
-        ValueError("Number of limits doesn't match number of operators "
-                   "in condition %r" % value)
-    math = []
-    for lim, op in zip(limits, operators):
-        try:
-            if value.find(lim) < value.find(op):
-                math.append((float(lim), MATH_OPERATORS_NOT[op]))
-            else:
-                math.append((float(lim), MATH_OPERATORS[op]))
-        except KeyError as e:
-            e.args = ('Unrecognised math operator %r' % op,)
-            raise
-    return (name, math)
-
-
-def filter_triggers(table, *conditions):
-    """Filter an `EventTable` by applying conditions
-
-    Parameters
-    ----------
-    *conditions
-        one of more `str` conditions of the form ``column<=threshold``,
-        e.g. ``snr>10``
-
-    Returns
-    -------
-    filteredtable : `EventTable`
-        a view of the input `EventTable` including only those rows that
-        pass all conditions
-    """
-    keep = numpy.ones(len(table), dtype=bool)
-    # convert filterstr into conditions
-    for mathstr in conditions:
-        if isinstance(mathstr, string_types):
-            name, math = parse_filter(mathstr)
-        else:
-            name, math = mathstr
-        column = table[name]
-        for lim, operator_ in math:
-            keep &= operator_(table[name], lim)
-    return table[keep]
 
 
 def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
@@ -494,10 +433,15 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     # get back from cache entry
     if isinstance(cache, CacheEntry):
         cache = Cache([cache])
+
     # append new events to existing table
     try:
-        csegs = cache_segments(cache)
+        csegs = cache_segments(cache) & segments
     except (AttributeError, TypeError):
         csegs = SegmentList()
     table.meta['segments'] = csegs
+
+    if timecolumn:  # already filtered on-the-fly
+        return table
+    # filter now
     return keep_in_segments(table, segments, etg)

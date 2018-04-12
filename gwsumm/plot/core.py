@@ -30,13 +30,12 @@ from math import (floor, ceil)
 from six import string_types
 from six.moves.urllib.parse import urlparse
 
-from matplotlib import (rc_context, __version__ as mpl_version)
+from matplotlib import (rcParams, rc_context, __version__ as mpl_version)
 
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
-from gwpy.plotter.utils import rUNDERSCORE
+from gwpy.plotter import utils as putils
 
-from . import rcParams
 from .registry import register_plot
 from ..channels import (get_channel, split as split_channels)
 from ..config import GWSummConfigParser
@@ -47,13 +46,18 @@ __all__ = ['SummaryPlot', 'DataPlot']
 
 re_cchar = re.compile("[\W\s_]+")
 
+putils.AXES_PARAMS.extend([
+    'insetlabels',  # for segment plotting
+])
+NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
+
 
 # -- utilities ----------------------------------------------------------------
 
 def format_label(l):
     l = str(l).strip('\n ')
     l = re_quote.sub('', l)
-    return rUNDERSCORE.sub(r'\_', l)
+    return putils.rUNDERSCORE.sub(r'\_', l)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -201,17 +205,12 @@ class DataPlot(SummaryPlot):
     """
     #: name for DataPlot subclass
     type = 'data'
+    #: plot() call style
+    _single_call = False
     #: dict of default plotting kwargs
     defaults = {}
     #: list of parameters parsed for `plot()` calls
-    DRAW_PARAMS = ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
-                   'linewidth', 'marker', 'markeredgecolor',
-                   'markeredgewidth', 'markerfacecolor',
-                   'markerfacecoloralt', 'markersize', 'valid', 'edgecolor',
-                   'bins', 'range', 'normed', 'weights', 'cumulative',
-                   'bottom', 'histtype', 'align', 'orientation', 'rwidth',
-                   'log', 'stacked', 'logbins', 'linecolor',
-                   'facecolor', 'rasterized']
+    DRAW_PARAMS = list(putils.ARTIST_PARAMS)
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  tag=None, pid=None, href=None, new=True, all_data=False,
@@ -372,6 +371,24 @@ class DataPlot(SummaryPlot):
     def href(self, url):
         self._href = url and os.path.normpath(url) or None
 
+    # -- read-only plot properties --------------
+
+    def _is_log(self, axis):
+        scale = '{0}scale'.format(axis)
+        log = 'log{0}'.format(axis)
+        try:
+            return self.pargs[scale] == 'log'
+        except KeyError:
+            return self.pargs.get(log, False)
+
+    @property
+    def logx(self):
+        return self._is_log('x')
+
+    @property
+    def logy(self):
+        return self._is_log('y')
+
     # -- basic methods --------------------------
 
     def add_channel(self, channel):
@@ -504,20 +521,20 @@ class DataPlot(SummaryPlot):
         """
         # parse keyword
         try:
-            val = self.pargs.pop(key)
+            val = pdict.pop(key)
         except KeyError as e:
             if not allow_plural:
                 raise
             # check for plural
             try:
-                val = self.pargs.pop('%ss' % key)
+                val = pdict.pop('%ss' % key)
             except KeyError:
                 raise e
 
         # evaluate (safely) allowing references to self as 'plot'
         if isinstance(val, string_types):
             try:
-                val = safe_eval(val, locals_={'plot': self})
+                val = safe_eval(val, locals_={'plot': self, 'self': self})
             except ZeroDivisionError:  # e.g. zero livetime
                 val = 0
 
@@ -525,7 +542,11 @@ class DataPlot(SummaryPlot):
         if isinstance(val, set):
             val = list(val)
 
-        # if not already a list, or the list isn't 1->1 with channels
+        # if a single-call style plot, just return the value as given
+        if self._single_call:
+            return val
+
+        # otherwise convert to a 1<->1 mapping with the channels list
         nchans = len(self.get_channel_groups())
         if not isinstance(val, (list, tuple)) or len(val) != nchans:
             return [val] * nchans
@@ -572,9 +593,28 @@ class DataPlot(SummaryPlot):
                 plotargs[kwarg] = self._parse_param(
                     self.pargs, kwarg, allow_plural=True)
             except KeyError:
-                continue
+                pass
 
-        # map from dict of lists to list of dicts (one per channel)
+        # normalise log scale parameters
+        # TODO: this can be removed once existing config files have been
+        #       updated to not use logx and logy options
+        for axis in ('x', 'y'):
+            logp = 'log{}'.format(axis)
+            try:
+                log = self.pargs.pop(logp)
+            except KeyError:
+                continue
+            if log is not self._is_log(axis):
+                scale = 'log' if log else 'linear'
+                self.pargs['{}scale'.format(axis)] = scale
+
+        # if this plot is a single-call plot (where all objects get plotted
+        # in a single call out to a ax.plot()-style method) just return
+        # the params as a dict of lists
+        if self._single_call:
+            return plotargs
+
+        # otherwise, map to a list of dicts (one per channel)
         out = []
         nchans = len(self.get_channel_groups())
         for i in range(nchans):
@@ -596,7 +636,7 @@ class DataPlot(SummaryPlot):
         except KeyError:
             labels = defaults
 
-        if list(set(labels)) == labels[0] and labels[0] is not None:
+        if list(set(labels)) == [labels[0]] and labels[0] is not None:
             labels = labels[0].split(',')
 
         # escape underscores
@@ -720,33 +760,7 @@ register_plot(DataPlot)
 
 # -- custom plot types --------------------------------------------------------
 
-
-class _SingleCallPlot(object):
-    """Custom plot mixin to parse plot kwargs for a single call
-
-    """
-    DRAW_PARAMS = []
-
-    def parse_plot_kwargs(self, defaults=dict()):
-        """Parse pie() keyword arguments
-        """
-        plotargs = defaults.copy()
-        plotargs.setdefault('labels', self._parse_labels())
-        for kwarg in self.DRAW_PARAMS:
-            try:
-                val = self.pargs.pop(kwarg)
-            except KeyError:
-                try:
-                    val = self.pargs.pop('%ss' % kwarg)
-                except KeyError:
-                    val = None
-            if val is not None:
-                plotargs[kwarg] = safe_eval(val)
-                plotargs[kwarg] = val
-        return plotargs
-
-
-class BarPlot(_SingleCallPlot, DataPlot):
+class BarPlot(DataPlot):
     """`DataPlot` with bars
     """
     type = 'bar'
@@ -755,7 +769,7 @@ class BarPlot(_SingleCallPlot, DataPlot):
                    'align', 'orientation', 'log', 'alpha', 'rasterized']
 
 
-class PiePlot(_SingleCallPlot, DataPlot):
+class PiePlot(DataPlot):
     type = 'pie'
     DRAW_PARAMS = ['explode', 'colors', 'autopct', 'pctdistance', 'shadow',
                    'labeldistance', 'startangle', 'radius', 'counterclock',

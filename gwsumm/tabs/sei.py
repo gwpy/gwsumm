@@ -81,7 +81,7 @@ class SEIWatchDogTab(base):
         chambers = config.get(section, 'chamber-type')
         new = super(SEIWatchDogTab, cls).from_ini(config, section,
                                                   plotdir=plotdir, **kwargs)
-        new.ifo = config.get('DEFAULT', 'ifo')
+        new.ifo = config.get('DEFAULT', 'IFO')
         new.plotdir = plotdir
         chamber = str(chambers).upper()
         if chamber == 'HAM':
@@ -443,7 +443,7 @@ class SeiWatchDogPlot(get_plot('data')):
 
         # get params
         if ifo is None:
-            ifo = config.get('DEFAULT', 'ifo')
+            ifo = config.get('DEFAULT', 'IFO')
         self.ifo = ifo
         self.chamber = chamber
         self.sensor = sensor
@@ -523,7 +523,7 @@ class SeiWatchDogPlot(get_plot('data')):
                 data = {}
             else:
                 data = TimeSeriesDict.read(cache, self.chanlist, start=start,
-                                           end=end, nproc=self.nproc)
+                                           end=end, nproc=self.nproc or 1)
 
         # make plot
         plot, axes = subplots(nrows=self.geometry[0], ncols=self.geometry[1],

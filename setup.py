@@ -70,7 +70,7 @@ install_requires = [
     'numpy>=1.10',
     'matplotlib>=1.3.0',
     'astropy>=1.2.1',
-    'gwpy>=0.5',
+    'gwpy>=0.9.0',
 ]
 requires = [
     'numpy',
@@ -239,6 +239,11 @@ setup(name=DISTNAME,
       classifiers=[
           'Programming Language :: Python',
           'Development Status :: 3 - Alpha',
+          'Programming Language :: Python',
+          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.4',
+          'Programming Language :: Python :: 3.5',
+          'Programming Language :: Python :: 3.6',
           'Intended Audience :: Science/Research',
           'Intended Audience :: End Users/Desktop',
           'Intended Audience :: Developers',

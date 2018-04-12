@@ -30,6 +30,7 @@ from six import string_types
 
 import numpy
 
+from matplotlib.colors import LogNorm
 from matplotlib.pyplot import subplots
 
 try:
@@ -46,7 +47,7 @@ from gwpy.segments import SegmentList
 
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
-from ..utils import re_cchar
+from ..utils import (re_cchar, safe_eval)
 from ..data import (get_channel, get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum,
                     get_coherence_spectrum)
@@ -65,7 +66,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     """
     type = 'timeseries'
     data = 'timeseries'
-    defaults = {'logy': False,
+    defaults = {'yscale': 'linear',
                 'hline': list()}
 
     def __init__(self, *args, **kwargs):
@@ -203,7 +204,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                         'x0' not in ts.metadata) or not ts.x0:
                     ts.epoch = self.start
                 # double-check log scales
-                if self.pargs.get('logy', False):
+                if self.logy:
                     ts.value[ts.value == 0] = 1e-100
             # set label
             try:
@@ -221,7 +222,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                             label_to_latex(str(flatdata[0].channel)))
             # plot groups or single TimeSeries
             if len(clist) > 1:
-                ax.plot_timeseries_mmm(*data, label=label, **pargs)
+                data[1].name = None  # force no labels for shades
+                data[2].name = None
+                ax.plot_mmm(*data, label=label, **pargs)
             elif len(flatdata) == 0:
                 ax.plot_timeseries(
                     data[0].EntryClass([], epoch=self.start, unit='s',
@@ -274,15 +277,19 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     """
     type = 'spectrogram'
     data = 'spectrogram'
-    defaults = {'ratio': None,
-                'format': None,
-                'clim': None,
-                'logcolor': False,
-                'colorlabel': None}
+    defaults = {
+        'ratio': None,
+        'format': None,
+        'rasterized': True,
+    }
 
     def __init__(self, *args, **kwargs):
         super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
         self.ratio = self.pargs.pop('ratio')
+
+        # set default colour-map for median ratio
+        if self.ratio in ('median', 'mean'):
+            self.pargs.setdefault('cmap', 'Spectral_r')
 
     @property
     def pid(self):
@@ -306,43 +313,11 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     def pid(self):
         del self._pid
 
-    def draw(self):
-        # initialise
-        (plot, axes) = self.init_plot()
-        ax = axes[0]
-        ax.grid(b=True, axis='y', which='major')
-        channel = self.channels[0]
-
-        # parse data arguments
-        sdform = self.pargs.pop('format')
-        clim = self.pargs.pop('clim')
-        clog = self.pargs.pop('logcolor')
-        clabel = self.pargs.pop('colorlabel')
-        rasterized = self.pargs.pop('rasterized', True)
+    def get_ratio(self, specgrams):
         ratio = self.ratio
-
-        # get cmap
-        if ratio in ['median', 'mean'] or (
-                isinstance(ratio, string_types) and os.path.isfile(ratio)):
-            self.pargs.setdefault('cmap', 'Spectral_r')
-        cmap = self.pargs.pop('cmap', None)
-
-        # get data
-        if self.state and not self.all_data:
-            valid = self.state.active
-        else:
-            valid = SegmentList([self.span])
-
-        if self.type == 'coherence-spectrogram':
-            specgrams = get_coherence_spectrogram(self.channels, valid,
-                                                  query=False)
-        else:
-            specgrams = get_spectrogram(channel, valid, query=False,
-                                        format=sdform)
-
         # calculate ratio spectrum
-        if len(specgrams) and (ratio in ['median', 'mean'] or
-                               isinstance(ratio, int)):
+        if len(specgrams) and (
+                ratio in ['median', 'mean'] or isinstance(ratio, int)):
             try:
                 allspec = specgrams.join(gap='ignore')
             except ValueError as e:
@@ -354,51 +329,98 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 else:
                     raise
             if isinstance(ratio, int):
-                ratio = allspec.percentile(ratio)
+                return allspec.percentile(ratio)
             else:
-                ratio = getattr(allspec, ratio)(axis=0)
+                return getattr(allspec, ratio)(axis=0)
         elif isinstance(ratio, string_types) and os.path.isfile(ratio):
             try:
-                ratio = io.read_frequencyseries(ratio)
+                return io.read_frequencyseries(ratio)
             except IOError as e:  # skip if file can't be read
                 warnings.warn('IOError: %s' % str(e))
+        return ratio
+
+    def draw(self):
+        # initialise
+        (plot, axes) = self.init_plot()
+        ax = axes[0]
+        ax.grid(b=True, axis='y', which='major')
+        channel = self.channels[0]
+
+        # parse data arguments
+        sdform = self.pargs.pop('format')
+
+        # parse colorbar arguments
+        clabel = self.pargs.pop('colorlabel', '')
+        clim = self.pargs.pop('clim', None)
+        clog = self.pargs.pop('logcolor', False)
 
         # allow channel data to set parameters
         if getattr(channel, 'frequency_range', None) is not None:
             self.pargs.setdefault('ylim', channel.frequency_range)
             if isinstance(self.pargs['ylim'], Quantity):
                 self.pargs['ylim'] = self.pargs['ylim'].value
-        if (ratio is None and sdform in ['amplitude', 'asd'] and
-                hasattr(channel, 'asd_range') and clim is None):
-            clim = channel.asd_range
-        elif (ratio is None and hasattr(channel, 'psd_range') and
-              clim is None):
-            clim = channel.psd_range
+        if self.ratio is None and clim is None:
+            if (sdform in ('amplitude', 'asd') and
+                    hasattr(channel, 'asd_range')):
+                clim = channel.asd_range
+            elif hasattr(channel, 'psd_range'):
+                clim = channel.psd_range
+
+        # parse plotting arguments
+        if clim:  # clim -> (vmin, vmax)
+            vmin, vmax = clim
+            self.pargs.setdefault('vmin', vmin)
+            self.pargs.setdefault('vmax', vmax)
+        if clog:  # logcolor -> norm
+            self.pargs.setdefault('norm', 'log')
+        plotargs = self.parse_plot_kwargs()[0]  # only one channel
+
+        # rework norm='log' into a LogNorm object
+        # (this is only 'required' in the case of no data, when ax.scatter
+        #  gets called manually below)
+        if plotargs.get('norm', None) == 'log':
+            vmin = self.pargs.get('vmin')
+            vmax = self.pargs.get('vmax')
+            plotargs['norm'] = LogNorm(vmin=vmin, vmax=vmax)
+
+        # get data
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+        if self.type == 'coherence-spectrogram':
+            specgrams = get_coherence_spectrogram(self.channels, valid,
+                                                  query=False)
+        else:
+            specgrams = get_spectrogram(channel, valid, query=False,
+                                        format=sdform)
+
+        # get ratio as FrequencySeries
+        ratio = self.get_ratio(specgrams)
 
         # plot data
-        for specgram in specgrams:
-            # undo demodulation
-            specgram = undo_demodulation(specgram, channel,
-                                         self.pargs.get('ylim', None))
+        for i, specgram in enumerate(specgrams):
+
             # calculate ratio
             if ratio is not None:
                 specgram = specgram.ratio(ratio)
+
+            # undo demodulation and crop frequencies
+            ylim = self.pargs.get('ylim', None)
+            specgram = undo_demodulation(specgram, channel, ylim)
+            if ylim is not None:
+                specgram = specgram.crop_frequencies(*ylim)
+
             # plot
-            ax.plot_spectrogram(specgram, cmap=cmap, rasterized=rasterized)
+            ax.plot_spectrogram(specgram, **plotargs)
 
         # add colorbar
         if len(specgrams) == 0:
-            ax.scatter([1], [1], c=[1], visible=False, cmap=cmap)
-        plot.add_colorbar(ax=ax, clim=clim, log=clog, label=clabel, cmap=cmap)
+            ax.scatter([1], [1], c=[1], visible=False, **plotargs)
+        plot.add_colorbar(ax=ax, label=clabel)
 
         # customise and finalise
-        for key, val in self.pargs.items():
-            if key == 'ratio':
-                continue
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
+        self.apply_parameters(ax, **self.pargs)
         self.add_state_segments(ax)
         self.add_future_shade()
 
@@ -426,10 +448,9 @@ class SpectrumDataPlot(DataPlot):
     """
     type = 'spectrum'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': None,
-                'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': False,
                 'reference-linestyle': '--'}
@@ -475,15 +496,7 @@ class SpectrumDataPlot(DataPlot):
         use_legend = False
 
         # get reference arguments
-        refs = []
-        refkey = 'None'
-        for key in sorted(self.pargs.keys()):
-            if key == 'reference' or re.match('reference\d+\Z', key):
-                refs.append(dict())
-                refs[-1]['source'] = self.pargs.pop(key)
-                refkey = key
-            if re.match('%s[-_]' % refkey, key):
-                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
+        refs = self.parse_references()
 
         # add data
         if self.type == 'coherence-spectrum':
@@ -509,14 +522,15 @@ class SpectrumDataPlot(DataPlot):
                                     format=sdform, method=method)
 
             # undo demodulation
-            for spec in data:
-                spec = undo_demodulation(spec, channel,
-                                         self.pargs.get('xlim', None))
+            data = list(data)
+            for i, spec in enumerate(data):
+                data[i] = undo_demodulation(spec, channel,
+                                            self.pargs.get('xlim', None))
 
             # anticipate log problems
-            if self.pargs['logx']:
+            if self.logx:
                 data = [s[1:] for s in data]
-            if self.pargs['logy']:
+            if self.logy:
                 for sp in data:
                     sp.value[sp.value == 0] = 1e-100
 
@@ -524,12 +538,11 @@ class SpectrumDataPlot(DataPlot):
                 use_legend = True
 
             if use_percentiles:
-                try:
-                    ax.plot_frequencyseries_mmm(*data, **pargs)
-                except AttributeError:  # old GWpy
-                    ax.plot_spectrum_mmm(*data, **pargs)
+                _, minline, _, maxline, _ = ax.plot_mmm(*data, **pargs)
+                # make min, max lines lighter:
+                minline.set_alpha(pargs.get('alpha', .1) * 2)
+                maxline.set_alpha(pargs.get('alpha', .1) * 2)
             else:
-                pargs.pop('alpha', None)
                 try:
                     ax.plot_frequencyseries(data[0], **pargs)
                 except AttributeError:  # old GWpy
@@ -566,11 +579,6 @@ class SpectrumDataPlot(DataPlot):
 
         # customise
         hlines = list(self.pargs.pop('hline', []))
-        for key, val in self.pargs.items():
-            try:
-                getattr(ax, 'set_%s' % key)(val)
-            except AttributeError:
-                setattr(ax, key, val)
 
         # add horizontal lines to add
         if hlines:
@@ -586,12 +594,33 @@ class SpectrumDataPlot(DataPlot):
             else:
                 ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
 
+        self.apply_parameters(ax, **self.pargs)
+
         if use_legend or len(self.channels) > 1 or ax.legend_ is not None:
             plot.add_legend(ax=ax, **legendargs)
         if not plot.colorbars:
             plot.add_colorbar(ax=ax, visible=False)
 
         return self.finalize()
+
+    def parse_references(self, prefix='reference(\d+)?\Z'):
+        """Parse parameters for displaying one or more reference traces
+        """
+        # get reference arguments
+        refs = []
+        refkey = 'None'
+        re_prefix = re.compile(prefix)
+        while True:
+            # iterate through keys finding reference entries
+            for key in sorted(self.pargs.keys()):
+                if re_prefix.match(key):
+                    refs.append(self._parse_extra_params(key))
+                    refs[-1]['source'] = self.pargs.pop(key)
+                    break
+            else:  # no more references found
+                break
+
+        return refs
 
 register_plot(SpectrumDataPlot)
 
@@ -601,8 +630,8 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     """
     type = 'coherence-spectrum'
     data = 'coherence-spectrogram'
-    defaults = {'logx': True,
-                'logy': False,
+    defaults = {'xscale': 'log',
+                'yscale': 'linear',
                 'format': None,
                 'alpha': 0.1,
                 'zorder': 1,
@@ -661,8 +690,9 @@ class TimeSeriesHistogramPlot(DataPlot):
         kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
             **defaults)
         for histargs in kwargs:
-            histargs.setdefault('logbins', self.pargs.get('logx', False))
-            self.pargs.setdefault('logy', histargs.get('log', False))
+            histargs.setdefault('logbins', self.logx)
+            logy = histargs.get('log', False)
+            self.pargs.setdefault('yscale', 'log' if logy else 'linear')
             # set range as xlim
             if 'range' not in histargs and 'xlim' in self.pargs:
                 histargs['range'] = self.pargs.get('xlim')
@@ -717,7 +747,7 @@ class TimeSeriesHistogramPlot(DataPlot):
             except ValueError:  # empty dataset
                 p2 = pargs.copy()
                 p2.pop('weights')  # mpl errors on weights
-                if p2.get('log', False) or self.pargs.get('logx', False):
+                if p2.get('log', False) or self.logx:
                     p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
                 ax.hist([], **p2)
 
@@ -762,7 +792,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
     type = 'histogram2d'
     data = 'timeseries'
     defaults = {
-        'logy': False,
+        'yscale': 'linear',
         'hline': list(),
         'grid': 'both',
         'shading': 'flat',
@@ -862,8 +892,8 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     type = 'variance'
     data = 'spectrogram'
     defaults = {
-        'logx': True,
-        'logy': True,
+        'xscale': 'log',
+        'yscale': 'log',
         'reference-linestyle': '--',
         'log': True,
         'nbins': 100,
@@ -906,15 +936,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         legendargs = self.parse_legend_kwargs()
 
         # get reference arguments
-        refs = []
-        refkey = 'None'
-        for key in sorted(self.pargs.keys()):
-            if key == 'reference' or re.match('reference\d+\Z', key):
-                refs.append(dict())
-                refs[-1]['source'] = self.pargs.pop(key)
-                refkey = key
-            if re.match('%s[-_]' % refkey, key):
-                refs[-1][key[len(refkey)+1:]] = self.pargs.pop(key)
+        refs = self.parse_references()
 
         # get channel arguments
         if hasattr(self.channels[0], 'asd_range'):
@@ -1013,7 +1035,6 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
                 'format': 'rayleigh',
                 'clim': [0.25, 4],
                 'cmap': 'BrBG_r',
-                'logcolor': True,
                 'colorlabel': 'Rayleigh statistic'}
 
 register_plot(RayleighSpectrogramDataPlot)
@@ -1025,8 +1046,8 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
     type = 'rayleigh-spectrum'
     data = 'rayleigh-spectrum'
     defaults = {'format': 'rayleigh',
-                'logx': True,
-                'logy': True,
+                'xscale': 'log',
+                'yscale': 'log',
                 'alpha': 0.1,
                 'zorder': 1,
                 'no-percentiles': True,
@@ -1044,6 +1065,7 @@ def undo_demodulation(spec, channel, limits=None):
     except AttributeError:
         return spec
     else:
+        spec = spec[:]  # views data with copied metadata
         del spec.frequencies
         spec.f0 = demod
         # if physical frequency-range is below demod, get negative df

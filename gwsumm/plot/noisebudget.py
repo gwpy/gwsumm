@@ -40,8 +40,8 @@ class NoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': 'asd',
                 'sum-label': 'Sum of noises',
                 'sum-linestyle': '--',
@@ -101,15 +101,15 @@ class NoiseBudgetPlot(get_plot('spectrum')):
 
             data = get_spectrum(str(channel), valid, query=False,
                                 format=sdform, method=None)[0]
-            if i:
+            if i and data.size:
                 sumdata.append(data)
             else:
                 darmdata = data
 
             # anticipate log problems
-            if self.pargs['logx']:
+            if self.logx:
                 data = data[1:]
-            if self.pargs['logy']:
+            if self.logy:
                 data.value[data.value == 0] = 1e-100
 
             pargs.setdefault('zorder', -i)
@@ -137,7 +137,13 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         # plot residual of noises
         if not self.pargs.pop('no-residual', False):
             resargs = self.parse_residual_params()
-            residual = (darmdata ** 2 - sum_) ** (1/2.)
+            try:
+                residual = (darmdata ** 2 - sum_) ** (1/2.)
+            except ValueError:
+                if not darmdata.size:  # if no data, just copy nothing
+                    residual = darmdata
+                else:  # other error
+                    raise
             ax.plot_frequencyseries(residual, zorder=-1000, **resargs)
             ax.lines.insert(1, ax.lines.pop(-1))
 
@@ -156,8 +162,8 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget-ratio'
     data = 'spectrum'
-    defaults = {'logx': True,
-                'logy': True,
+    defaults = {'xscale': 'log',
+                'yscale': 'log',
                 'format': 'asd'}
 
     def _draw(self):
@@ -193,30 +199,35 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
 
             data = get_spectrum(str(channel), valid, query=False,
                                 format=sdform, method=None)[0]
-            if i:
+            if i and data.size:
                 sumdata.append(data)
             else:
                 target = data
 
-        # assert all noise terms have the same resolution
-        if any([x.dx != target.dx for x in sumdata]):
-            raise RuntimeError("Noise components have different resolutions, "
-                               "cannot construct sum of noises")
-        # reshape noises if required
-        n = target.size
-        for i, d in enumerate(sumdata):
-            if d.size < n:
-                sumdata[i] = numpy.require(d, requirements=['O'])
-                sumdata[i].resize((n,))
+        if target.size:
+            # assert all noise terms have the same resolution
+            if any([x.dx != target.dx for x in sumdata]):
+                raise RuntimeError("Noise components have different "
+                                   "resolutions, cannot construct "
+                                   "sum of noises")
+            # reshape noises if required
+            n = target.size
+            for i, d in enumerate(sumdata):
+                if d.size < n:
+                    sumdata[i] = numpy.require(d, requirements=['O'])
+                    sumdata[i].resize((n,))
 
-        # calculate sum of noises
-        sum_ = sumdata[0] ** 2
-        for d in sumdata[1:]:
-            sum_ += d ** 2
-        sum_ **= (1/2.)
+            # calculate sum of noises
+            sum_ = sumdata[0] ** 2
+            for d in sumdata[1:]:
+                sum_ += d ** 2
+            sum_ **= (1/2.)
+
+            relative = sum_ / target
+        else:  # no data, so just use anything as a proxy
+            relative = target
 
         # plot ratio of h(t) to sum of noises
-        relative = sum_ / target
         ax.plot_frequencyseries(relative, **plotargs)
 
         # finalize plot

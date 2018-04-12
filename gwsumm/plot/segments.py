@@ -36,6 +36,7 @@ import numpy
 
 from dateutil.relativedelta import relativedelta
 
+from matplotlib import rcParams
 from matplotlib.patches import Rectangle
 
 from gwpy.plotter import *
@@ -59,7 +60,7 @@ from .mixins import *
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TimeSeriesDataPlot = get_plot('timeseries')
-GREEN = (0.2, 0.8, 0.2)
+GREEN = '#33cc33'
 
 
 class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
@@ -75,7 +76,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 'legend-loc': 'upper left',
                 'legend-borderaxespad': 0,
                 'legend-fontsize': 12}
-    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + ['known', 'height', 'y']
+    DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + [
+        'known', 'height', 'y', 'facecolor', 'edgecolor',
+    ]
 
     def __init__(self, flags, start, end, state=None, outdir='.', **kwargs):
         padding = kwargs.pop('padding', None)
@@ -180,9 +183,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         active = safe_eval(
             self.pargs.pop('active', self.pargs.pop('facecolor', None)))
         known = safe_eval(self.pargs.pop('known', 0))
+        onisbad = self.pargs.pop('on-is-bad', False)
         # neither known nor active defined
         if active is None and known == 0:
-            if bool(self.pargs.pop('on-is-bad', False)):
+            if onisbad:
                 self.pargs['facecolor'] = 'red'
                 self.pargs.setdefault('edgecolor', 'darkred')
                 self.pargs['known'] = {'facecolor': GREEN}
@@ -580,14 +584,14 @@ class DutyDataPlot(SegmentDataPlot):
         cumulative = self.pargs.pop('cumulative', False)
         if normalized is None and not cumulative:
             normalized = 'percent'
+        rollingmean = self.pargs.pop('rolling_mean',
+                                     not stacked and not cumulative)
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
         if sep:
             legendargs.setdefault('loc', 'upper left')
             legendargs.setdefault('bbox_to_anchor', (1.01, 1))
             legendargs.setdefault('borderaxespad', 0)
-        rollingmean = self.pargs.pop('rolling_mean',
-                                     not stacked and not cumulative)
 
         # work out times and plot mean for legend
         self.get_bins()
@@ -641,7 +645,6 @@ class DutyDataPlot(SegmentDataPlot):
                     x = 1 - pad * 2
                     w = pargs.pop('width', 1.) * x / len(self.flags)
                     offset = pad + x/len(self.flags) * (i + 1/2.)
-                    print(w, offset)
                 elif stacked:
                     offset = .5
                     w = pargs.pop('width', .9)
@@ -681,7 +684,7 @@ class DutyDataPlot(SegmentDataPlot):
         self.apply_parameters(ax, **self.pargs)
         if 'hours' in self.pargs.get('ylabel', ''):
             ax.get_yaxis().get_major_locator().set_params(
-                steps=[1, 2, 4, 8, 12, 24])
+                steps=[1, 2, 4, 8])
         if sep:
             # set text
             ylabel = axes[0].yaxis.get_label()
@@ -915,6 +918,7 @@ register_plot(ODCDataPlot)
 
 class SegmentPiePlot(PiePlot, SegmentDataPlot):
     type = 'segment-pie'
+    _single_call = True
     defaults = {
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
@@ -932,6 +936,8 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         self.plot = Plot(figsize=figsize)
         axes = [self.plot.gca()]
         return self.plot, axes
+
+    parse_plot_kwargs = TimeSeriesDataPlot.parse_plot_kwargs
 
     def parse_wedge_kwargs(self, defaults=dict()):
         wedgeargs = defaults.copy()
@@ -980,7 +986,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 plotargs['colors'] = list(plotargs['colors']) + ['white']
 
         # make pie
-        labels = plotargs.pop('labels')
+        labels = plotargs.pop('label')
         patches = ax.pie(data, **plotargs)[0]
         ax.axis('equal')
 
@@ -1134,6 +1140,7 @@ register_plot(NetworkDutyPiePlot)
 
 class SegmentBarPlot(BarPlot, SegmentDataPlot):
     type = 'segment-bar'
+    _single_call = True
     defaults = {
         'edgecolor': 'white',
         'scale': 'percent',
@@ -1192,7 +1199,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
 
         # get segments
         data = []
-        labels = plotargs.pop('labels', self.flags)
+        labels = plotargs.pop('label', self.flags)
         for flag in self.flags:
             if self.state and not self.all_data:
                 valid = self.state.active
@@ -1249,8 +1256,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 'bottom': 0,
                 'rwidth': 1}
 
-    def parse_plot_kwargs(self, *args, **kwargs):
-        return super(SegmentDataPlot, self).parse_plot_kwargs(*args, **kwargs)
+    parse_plot_kwargs = TimeSeriesDataPlot.parse_plot_kwargs
 
     def draw(self, outputfile=None):
         # make axes

@@ -117,11 +117,11 @@ class TestData(object):
     @empty_globalv_CHANNELS
     def test_make_globalv_key(self):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
-            stride=123.456, window='test-window', method='test-method')
+            stride=123.456, window='test-window', method='scipy-welch')
         key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
         assert key == ';'.join([
             'L1:TEST-CHANNEL',  # channel
-            'test-method',  # method
+            'scipy-welch',  # method
             '',  # fftlength
             '',  # overlap
             'test-window',  # window
@@ -134,8 +134,12 @@ class TestData(object):
         assert isinstance(fftparams, utils.FftParams)
 
         for key in utils.FFT_PARAMS.keys():
-            assert (getattr(fftparams, key) is
-                    utils.DEFAULT_FFT_PARAMS.get(key, None))
+            if key == 'method':
+                assert fftparams.method == '{0}-{1}'.format(
+                    utils.FFT_API.split('.')[0], utils.DEFAULT_FFT_PARAMS[key])
+            else:
+                assert (getattr(fftparams, key) is
+                        utils.DEFAULT_FFT_PARAMS.get(key, None))
 
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
                                         overlap=0)

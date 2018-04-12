@@ -29,18 +29,18 @@ python:
   - '3.5'
 
 env:
-  - PIP_FLAGS="--quiet"
-  - PIP_FLAGS="--quiet --upgrade --pre"
+  - PIP_FLAGS=""
+  - PIP_FLAGS="--upgrade --pre"
 
 matrix:
   allow_failures:
     - python: '3.5'
     - python: '2.7'
-      env: PIP_FLAGS="--quiet --upgrade --pre"
+      env: PIP_FLAGS="--upgrade --pre"
   fast_finish: true
 
 before_install:
-  - python -m pip install -q --upgrade pip
+  - python -m pip install --upgrade pip
   - python -m pip install ${PIP_FLAGS} lalsuite
   - python -m pip install ${PIP_FLAGS} -r requirements.txt
 

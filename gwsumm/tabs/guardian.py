@@ -178,18 +178,7 @@ class GuardianTab(DataTab):
         prefix = '%s:GRD-%s_%%s' % (self.ifo, self.node)
         state = sorted(self.states, key=lambda s: abs(s.active))[-1]
 
-        try:
-            version = get_timeseries(
-                prefix % 'VERSION', state, config=config, nds=nds,
-                multiprocess=multiprocess, cache=datacache,
-                datafind_error=datafind_error,
-            ).join(gap='ignore').min().value
-        except ValueError:
-            version = 1201
-
-        prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE']
-        if version >= 1200:
-            prefices.append('OP')
+        prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE', 'OP']
         alldata = get_timeseries_dict(
             [prefix % x for x in prefices],
             state, config=config, nds=nds, multiprocess=multiprocess,
@@ -493,17 +482,12 @@ class GuardianStatePlot(get_plot('segments')):
         grdmode = get_timeseries(
             '%s:GRD-%s_MODE' % (self.ifo, self.node),
             valid, query=False).join(gap='pad', pad=-1)
-        try:
-            grdop = get_timeseries(
-                '%s:GRD-%s_OP' % (self.ifo, self.node),
-                valid, query=False).join(gap='pad', pad=-1)
-        except KeyError:
-            modes = [(grdmode, (None, 'PAUSE', 'EXEC', 'MANAGED'))]
-            colors = ('yellow', (0., .4, 1.), (.5, .0, .75))
-        else:
-            modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
-                     (grdop, (None, 'PAUSE', None))]
-            colors = ((0., .4, 1.), (.5, .0, .75), 'hotpink', 'yellow')
+        grdop = get_timeseries(
+            '%s:GRD-%s_OP' % (self.ifo, self.node),
+            valid, query=False).join(gap='pad', pad=-1)
+        modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
+                 (grdop, (None, 'PAUSE', None))]
+        colors = ((0., .4, 1.), (.5, .0, .75), 'hotpink', 'yellow')
         cidx = 0
         for i, (data, mstate) in enumerate(modes):
             for j, m in enumerate(mstate):

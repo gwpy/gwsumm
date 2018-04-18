@@ -41,7 +41,8 @@ from lal.utils import CacheEntry
 from glue import (datafind, lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
-from gwpy.segments import SegmentList
+from gwpy.io.cache import cache_segments
+from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
 from gwpy.timeseries.io.gwf import get_default_gwf_api
@@ -257,6 +258,32 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     cache, _ = cache.checkfilesexist()
     vprint(' %d found.\n' % len(cache))
     return cache
+
+
+def find_best_frames(ifo, frametype, start, end, **kwargs):
+    """Find frames for the given type, replacing with a better type if needed
+    """
+    # find cache for this frametype
+    cache = find_frames(ifo, frametype, start, end, **kwargs)
+
+    # check for gaps in current cache
+    span = SegmentList([Segment(start, end)])
+    gaps = span - cache_segments(cache)
+
+    # if gaps and using aggregated h(t), check short files
+    if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
+        f2 = '%s_DMT_C00' % ifo
+        vprint("    Gaps discovered in aggregated h(t) type "
+               "%s, checking %s\n" % (frametype, f2))
+        kwargs['gaps'] = 'ignore'
+        c2 = find_frames(ifo, f2, start, end, **kwargs)
+        g2 = span - cache_segments(c2)
+        if abs(g2) < abs(gaps):
+            vprint("    Greater coverage with frametype %s\n" % f2)
+            return c2, f2
+        vprint("    No extra coverage with frametype %s\n" % f2)
+
+    return cache, frametype
 
 
 def find_cache_segments(*caches):
@@ -539,30 +566,12 @@ def _get_timeseries_dict(channels, segments, config=None,
                 fcache = Cache()
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent().protract(8)
-                fcache = find_frames(ifo, frametype, span[0], span[1],
-                                     config=config, gaps='ignore',
-                                     onerror=datafind_error)
-                cachesegments = find_cache_segments(fcache)
-                gaps = SegmentList([span]) - cachesegments
-                if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
-                    f2 = '%s_DMT_C00' % ifo
-                    vprint("    Gaps discovered in aggregated h(t) type "
-                           "%s, checking %s\n" % (frametype, f2))
-                    c2 = find_frames(ifo, f2, span[0], span[1],
-                                     config=config, gaps='ignore',
-                                     onerror=datafind_error)
-                    g2 = SegmentList([span]) - find_cache_segments(c2)
-                    if abs(g2) < abs(gaps):
-                        vprint("    Greater coverage with frametype %s\n" % f2)
-                        fcache = c2
-                        frametype = f2
-                    else:
-                        vprint("    No extra coverage with frametype %s\n"
-                               % f2)
+                fcache, frametype = find_best_frames(
+                    ifo, frametype, span[0], span[1],
+                    config=config, gaps='ignore', onerror=datafind_error)
 
             # parse discontiguous cache blocks and rebuild segment list
-            cachesegments = find_cache_segments(fcache)
-            new &= cachesegments
+            new &= cache_segments(fcache)
             source = 'frames'
 
             if cache is None and GWF_API == 'framecpp':
@@ -602,7 +611,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                       **ioargs)
             else:
                 # pad resampling
-                if segment[1] == cachesegments[-1][1] and qresample:
+                if segment[1] == cache_segments(fcache)[-1][1] and qresample:
                     resamplepad = 8
                     if abs(segment) <= resamplepad:
                         continue

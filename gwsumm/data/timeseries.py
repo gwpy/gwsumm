@@ -381,6 +381,21 @@ def get_channel_type(name):
     return 'adc'
 
 
+def exclude_short_trend_segments(segments, frametype):
+    """Remove segments from a list shorter than 1 trend sample
+    """
+    frametype = frametype or ''
+
+    if frametype.endswith('%s_M' % ifo):  # minute trends
+        mindur = 60.
+    elif frametype.endswith('%s_T' % ifo):  # second trends
+        mindur = 1.
+    else:
+        mindur = 0.
+
+    return type(segments)([s for s in segments if abs(s) >= mindur])
+
+
 # -- data accessors -----------------------------------------------------------
 
 @use_configparser
@@ -555,10 +570,8 @@ def _get_timeseries_dict(channels, segments, config=None,
         else:
             ifo = channels[0].ifo
             frametype = frametype or channels[0].frametype
-            if frametype is not None and frametype.endswith('%s_M' % ifo):
-                new = type(new)([s for s in new if abs(s) >= 60.])
-            elif frametype is not None and frametype.endswith('%s_T' % ifo):
-                new = type(new)([s for s in new if abs(s) >= 1.])
+            new = exclude_short_trend_segments(new, frametype)
+
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=frametype,
                                      exact_match=True)

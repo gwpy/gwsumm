@@ -437,10 +437,6 @@ elif duration > 40000:
 else:
      fft_lal.LAL_FFTPLAN_LEVEL = 1
 
-# set processing options
-if opts.multiprocess == 1:
-    opts.multiprocess = False
-
 # set global html only flag
 if opts.html_only:
     globalv.HTMLONLY = True
@@ -659,13 +655,13 @@ if opts.bulk_read and not opts.html_only:
                % len(allts))
         get_timeseries_dict(allts, allseg,
                             config=config, nds=opts.nds,
-                            multiprocess=opts.multiprocess, return_=False)
+                            nproc=opts.multiprocess, return_=False)
     if len(allsv):
         vprint("%d channels identified for StateVector from all tabs...\n"
                % len(allsv))
         get_timeseries_dict(allsv, allseg,
                             config=config, nds=opts.nds, statevector=True,
-                            multiprocess=opts.multiprocess, return_=False)
+                            nproc=opts.multiprocess, return_=False)
 
 # -----------------------------------------------------------------------------
 # Process all tabs
@@ -681,7 +677,7 @@ for tab in tablist:
     if not opts.html_only and isinstance(tab, get_tab('_processed')):
         vprint("Processing %s\n" % name)
         tab.process(config=config, nds=opts.nds,
-                    multiprocess=opts.multiprocess,
+                    nproc=opts.multiprocess,
                     segdb_error=opts.on_segdb_error,
                     datafind_error=opts.on_datafind_error, **cache)
     if not tab.hidden and not isinstance(tab, get_tab('link')):

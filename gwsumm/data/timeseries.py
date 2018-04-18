@@ -47,7 +47,7 @@ from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
 from gwpy.timeseries.io.gwf import get_default_gwf_api
 
 from .. import globalv
-from ..utils import (vprint, count_free_cores)
+from ..utils import vprint
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination)
@@ -359,7 +359,7 @@ def get_channel_type(name):
 @use_configparser
 @use_segmentlist
 def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
-                        cache=None, query=True, nds=None, multiprocess=True,
+                        cache=None, query=True, nds=None, nproc=1,
                         frametype=None, statevector=False, return_=True,
                         datafind_error='raise', **ioargs):
     """Retrieve the data for a set of channels
@@ -383,8 +383,8 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
         whether to try and use NDS2 for data access, default is to guess
         based on other arguments and the environment
 
-    multiprocess : `bool`, `int`, optional
-        whether to use multiprocessing for file reading
+    nproc : `int`, optional
+        number of parallel cores to use for file reading, default: ``1``
 
     frametype : `str`, optional`
         the frametype of the target channels, if not given, this will be
@@ -436,7 +436,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
         for ftype, channellist in frametypes.items():
             _get_timeseries_dict(channellist, segments, config=config,
                                  cache=cache, query=query, nds=nds,
-                                 multiprocess=multiprocess, frametype=ftype[1],
+                                 nproc=nproc, frametype=ftype[1],
                                  statevector=statevector, return_=False,
                                  datafind_error=datafind_error, **ioargs)
     if not return_:
@@ -454,7 +454,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
 @use_segmentlist
 def _get_timeseries_dict(channels, segments, config=None,
                          cache=None, query=True, nds=None, frametype=None,
-                         multiprocess=True, return_=True, statevector=False,
+                         nproc=1, return_=True, statevector=False,
                          archive=True, datafind_error='raise', **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
@@ -480,14 +480,6 @@ def _get_timeseries_dict(channels, segments, config=None,
                                         ListClass()).segments
                        for channel in channels))
     new = segments - havesegs
-
-    # get processes
-    if multiprocess is True:
-        nproc = count_free_cores()
-    elif multiprocess is False:
-        nproc = 1
-    else:
-        nproc = multiprocess
 
     # read channel information
     filter_ = dict()
@@ -709,7 +701,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                         data.channel.type = 'm-trend'
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
-            if multiprocess:
+            if nproc > 1:
                 vprint('.')
         if len(new):
             vprint("\n")
@@ -739,7 +731,7 @@ def _get_timeseries_dict(channels, segments, config=None,
 
 @use_segmentlist
 def get_timeseries(channel, segments, config=None, cache=None,
-                   query=True, nds=None, multiprocess=True,
+                   query=True, nds=None, nproc=1,
                    frametype=None, statevector=False, return_=True,
                    datafind_error='raise', **ioargs):
     """Retrieve data for channel
@@ -766,8 +758,8 @@ def get_timeseries(channel, segments, config=None, cache=None,
         whether to try and use NDS2 for data access, default is to guess
         based on other arguments and the environment
 
-    multiprocess : `bool`, `int`, optional
-        whether to use multiprocessing for file reading
+    nproc : `int`, optional
+        number of parallel cores to use for file reading, default: ``1``
 
     frametype : `str`, optional`
         the frametype of the target channels, if not given, this will be
@@ -801,7 +793,7 @@ def get_timeseries(channel, segments, config=None, cache=None,
     channel = get_channel(channel)
     out = get_timeseries_dict([channel.ndsname], segments, config=config,
                               cache=cache, query=query, nds=nds,
-                              multiprocess=multiprocess, frametype=frametype,
+                              nproc=nproc, frametype=frametype,
                               statevector=statevector, return_=return_,
                               datafind_error=datafind_error, **ioargs)
     if return_:

@@ -130,7 +130,7 @@ class AccountingTab(ParentTab):
 
         return new
 
-    def process(self, nds=None, multiprocess=True,
+    def process(self, nds=None, nproc=1,
                 config=GWSummConfigParser(), datacache=None,
                 datafind_error='raise', **kwargs):
         """Process time accounting data
@@ -151,7 +151,7 @@ class AccountingTab(ParentTab):
         data = get_timeseries(self.channel, new,
                               config=config, nds=nds, dtype='int16',
                               datafind_error=datafind_error,
-                              multiprocess=multiprocess, cache=datacache)
+                              nproc=nproc, cache=datacache)
         vprint("    All time-series data loaded\n")
 
         # find segments
@@ -173,7 +173,7 @@ class AccountingTab(ParentTab):
 
         kwargs['segdb_error'] = 'ignore'
         super(AccountingTab, self).process(
-            config=config, nds=nds, multiprocess=multiprocess,
+            config=config, nds=nds, nproc=nproc,
             segmentcache=Cache(), datacache=datacache,
             datafind_error=datafind_error, **kwargs)
 

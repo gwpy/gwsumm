@@ -23,7 +23,6 @@ from __future__ import print_function
 
 import os
 import re
-from multiprocessing import cpu_count
 
 from dateutil import tz
 
@@ -96,7 +95,7 @@ class SEIWatchDogTab(base):
             new.plot_duration = 30
         return new
 
-    def process(self, nds=None, multiprocess=True,
+    def process(self, nds=None, nproc=1,
                 config=GWSummConfigParser(), datacache=None,
                 trigcache=None, datafind_error='raise', **kwargs):
         """Process data for the given state.
@@ -134,7 +133,7 @@ class SEIWatchDogTab(base):
 
         vprint("    %d channels identified for TimeSeries\n" % len(tschannels))
         tripdata = get_timeseries_dict(tschannels, state, config=config,
-                                       nds=nds, multiprocess=multiprocess,
+                                       nds=nds, nproc=nproc,
                                        datafind_error=datafind_error,
                                        cache=datacache)
         vprint("    All time-series data loaded\n")
@@ -142,7 +141,7 @@ class SEIWatchDogTab(base):
         vprint("    %d channels identified as StateVectors\n"
                % len(svchannels))
         latchdata = get_timeseries_dict(svchannels, state, config=config,
-                                        nds=nds, multiprocess=multiprocess,
+                                        nds=nds, nproc=nproc,
                                         datafind_error=datafind_error,
                                         statevector=True, cache=datacache)
         vprint("    All state-vector data loaded\n")
@@ -226,7 +225,7 @@ class SEIWatchDogTab(base):
                     self.trips.append((t, chamber, cause, plot))
 
         super(SEIWatchDogTab, self).process(
-            config=config, nds=nds, multiprocess=multiprocess,
+            config=config, nds=nds, nproc=nproc,
             datacache=datacache, trigcache=trigcache, **kwargs)
 
     def write_state_html(self, state):
@@ -434,7 +433,7 @@ class SeiWatchDogPlot(get_plot('data')):
     data = 'watchdog'
 
     def __init__(self, gpstime, chamber, sensor, config, outfile, ifo=None,
-                 duration=30, nds=False, multiprocess=False, datacache=None):
+                 duration=30, nds=False, datacache=None):
         """Configure a new `SeiWatchDogPlot`.
         """
         super(SeiWatchDogPlot, self).__init__([],
@@ -451,12 +450,6 @@ class SeiWatchDogPlot(get_plot('data')):
         self.duration = duration
         self.outputfile = outfile
         self.use_nds = nds
-        if isinstance(multiprocess, int):
-            self.nproc = multiprocess
-        elif multiprocess:
-            self.nproc = cpu_count() - 1
-        else:
-            self.nproc = False
 
         system = (sensor.split(' ')[0] == 'HEPI' and
                   'HPI' or sensor.split(' ')[0])
@@ -523,7 +516,7 @@ class SeiWatchDogPlot(get_plot('data')):
                 data = {}
             else:
                 data = TimeSeriesDict.read(cache, self.chanlist, start=start,
-                                           end=end, nproc=self.nproc or 1)
+                                           end=end)
 
         # make plot
         plot, axes = subplots(nrows=self.geometry[0], ncols=self.geometry[1],

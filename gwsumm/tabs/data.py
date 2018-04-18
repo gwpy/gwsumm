@@ -325,7 +325,7 @@ class DataTab(ProcessedTab, ParentTab):
         for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
-    def process(self, config=ConfigParser(), multiprocess=True, **stateargs):
+    def process(self, config=ConfigParser(), nproc=1, **stateargs):
         """Process data for this tab
 
         Parameters
@@ -343,14 +343,14 @@ class DataTab(ProcessedTab, ParentTab):
         self.finalize_states(
             config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
-            multiprocess=multiprocess)
+            nproc=nproc)
         vprint("States finalised [%d total]\n" % len(self.states))
         vprint("    Default state: %r\n" % str(self.defaultstate))
 
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])
         if all_data:
-            self.process_state(None, config=config, multiprocess=multiprocess,
+            self.process_state(None, config=config, nproc=nproc,
                                **stateargs)
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
@@ -359,10 +359,10 @@ class DataTab(ProcessedTab, ParentTab):
                 vprint("Processing '%s' state\n" % state.name)
             else:
                 vprint("Pre-processing all-data requests\n")
-            self.process_state(state, config=config, multiprocess=multiprocess,
+            self.process_state(state, config=config, nproc=nproc,
                                **stateargs)
 
-    def process_state(self, state, nds=None, multiprocess=True,
+    def process_state(self, state, nds=None, nproc=1,
                       config=GWSummConfigParser(), datacache=None,
                       trigcache=None, segmentcache=None, trigfilter=None,
                       segdb_error='raise', datafind_error='raise'):
@@ -377,10 +377,9 @@ class DataTab(ProcessedTab, ParentTab):
             `True` to use NDS to read data, otherwise read from frames.
             Use `None` to read from frames if possible, otherwise
             using NDS.
-        multiprocess : `bool`, `int`, optional
-            use multiple processes to read data and make plots. If `True`
-            use all cores on host, otherwise give an `int` to manually
-            select the number of cores to use.
+        nproc : `int`, optional
+            number of parallel cores to use when reading data and making
+            plots, default: ``1``
         config : `ConfigParser`, optional
             configuration for this analysis
         datacache : `~glue.lal.Cache`, optional
@@ -419,7 +418,7 @@ class DataTab(ProcessedTab, ParentTab):
             vprint("    %d channels identified for TimeSeries\n"
                    % len(tschannels))
             get_timeseries_dict(tschannels, state, config=config, nds=nds,
-                                multiprocess=multiprocess, cache=datacache,
+                                nproc=nproc, cache=datacache,
                                 datafind_error=datafind_error, return_=False)
             vprint("    All time-series data loaded\n")
 
@@ -433,7 +432,7 @@ class DataTab(ProcessedTab, ParentTab):
             vprint("    %d channels identified as StateVectors\n"
                    % (len(svchannels) - len(odcchannels)))
             get_timeseries_dict(svchannels, state, config=config, nds=nds,
-                                multiprocess=multiprocess, statevector=True,
+                                nproc=nproc, statevector=True,
                                 cache=datacache, return_=False,
                                 datafind_error=datafind_error, dtype='uint32')
             vprint("    All state-vector data loaded\n")
@@ -477,7 +476,7 @@ class DataTab(ProcessedTab, ParentTab):
                    % len(sgchannels))
 
             get_spectrograms(sgchannels, specsegs, config=config, nds=nds,
-                             multiprocess=multiprocess, return_=False,
+                             nproc=nproc, return_=False,
                              cache=datacache, datafind_error=datafind_error,
                              **fftparams)
 
@@ -485,7 +484,7 @@ class DataTab(ProcessedTab, ParentTab):
             fp2 = fftparams.copy()
             fp2['method'] = fp2['format'] = 'rayleigh'
             get_spectrograms(raychannels, specsegs, config=config, return_=False,
-                             multiprocess=multiprocess, **fp2)
+                             nproc=nproc, **fp2)
 
         if len(csgchannels):
             if (len(csgchannels) % 2 != 0):
@@ -498,7 +497,7 @@ class DataTab(ProcessedTab, ParentTab):
             fp2['method'] = 'welch'
             get_coherence_spectrograms(
                 csgchannels, specsegs, config=config, nds=nds,
-                multiprocess=multiprocess, return_=False, cache=datacache,
+                nproc=nproc, return_=False, cache=datacache,
                 datafind_error=datafind_error, **fp2)
 
         # --------------------------------------------------------------------
@@ -539,7 +538,7 @@ class DataTab(ProcessedTab, ParentTab):
                                               'trigger-histogram',
                                               all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
-                         cache=trigcache, multiprocess=multiprocess,
+                         cache=trigcache, nproc=nproc,
                          filter=trigfilter, return_=False)
 
         # --------------------------------------------------------------------
@@ -554,7 +553,7 @@ class DataTab(ProcessedTab, ParentTab):
                      (p.state is None or p.state.name == state.name)]
 
         # separate plots into serial and parallel groups
-        if int(multiprocess) <= 1:
+        if int(nproc) <= 1:
             serial = new_plots
             parallel = []
         else:
@@ -569,19 +568,19 @@ class DataTab(ProcessedTab, ParentTab):
 
         # process parallel plots
         if parallel:
-            multiprocess = min(len(parallel), multiprocess)
+            nproc = min(len(parallel), nproc)
 
             def _plot(plot):
                 try:
                     return plot.process()
                 except Exception as exc:
-                    if multiprocess == 1:
+                    if nproc == 1:
                         raise
                     return exc
 
             vprint("    Executing %d plots in %d processes:\n"
-                   % (len(parallel), multiprocess))
-            multiprocess_with_queues(multiprocess, _plot, parallel,
+                   % (len(parallel), nproc))
+            multiprocess_with_queues(nproc, _plot, parallel,
                                      raise_exceptions=True)
 
         vprint('Done.\n')

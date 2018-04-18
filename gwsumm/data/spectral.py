@@ -45,7 +45,7 @@ from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
 from .. import (globalv, io)
-from ..utils import (vprint, count_free_cores, safe_eval)
+from ..utils import (vprint, safe_eval)
 from ..channels import (get_channel, re_channel,
                         split_combination as split_channel_combination)
 from .utils import (use_segmentlist, make_globalv_key, get_fftparams)
@@ -67,7 +67,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 @use_segmentlist
 def get_spectrogram(channel, segments, config=None, cache=None,
                     query=True, nds=None, format='power', return_=True,
-                    frametype=None, multiprocess=True, datafind_error='raise',
+                    frametype=None, nproc=1, datafind_error='raise',
                     **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
@@ -81,7 +81,7 @@ def get_spectrogram(channel, segments, config=None, cache=None,
         specs.append(_get_spectrogram(c, segments, config=config, cache=cache,
                                       query=query, nds=nds, format=format,
                                       return_=return_, frametype=frametype,
-                                      multiprocess=multiprocess,
+                                      nproc=nproc,
                                       datafind_error=datafind_error,
                                       **fftparams))
     if return_ and len(channels) == 1:
@@ -96,7 +96,7 @@ def get_spectrogram(channel, segments, config=None, cache=None,
 @use_segmentlist
 def _get_spectrogram(channel, segments, config=None, cache=None,
                      query=True, nds=None, format='power', return_=True,
-                     frametype=None, multiprocess=True,
+                     frametype=None, nproc=1,
                      datafind_error='raise', **fftparams):
     channel = get_channel(channel)
 
@@ -127,14 +127,6 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
     new = segments - havesegs
     query &= abs(new) != 0
 
-    # get processes
-    if multiprocess is True:
-        nproc = count_free_cores()
-    elif multiprocess is False:
-        nproc = 1
-    else:
-        nproc = multiprocess
-
     globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
     if query:
@@ -164,7 +156,7 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         # get time-series data
         timeserieslist = get_timeseries(channel, new, config=config,
                                         cache=cache, frametype=frametype,
-                                        multiprocess=nproc, query=query,
+                                        nproc=nproc, query=query,
                                         datafind_error=datafind_error, nds=nds)
         # calculate spectrograms
         if len(timeserieslist):
@@ -263,7 +255,7 @@ def add_spectrogram(specgram, key=None, coalesce=True):
 @use_segmentlist
 def get_spectrograms(channels, segments, config=None, cache=None, query=True,
                      nds=None, format='power', return_=True, frametype=None,
-                     multiprocess=True, datafind_error='raise', **fftparams):
+                     nproc=1, datafind_error='raise', **fftparams):
     """Get spectrograms for multiple channels
     """
     channels = map(get_channel, channels)
@@ -285,7 +277,7 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
             stride = strides.pop()
             new = type(new)([s for s in new if abs(s) >= stride])
         get_timeseries_dict(qchannels, new, config=config, cache=cache,
-                            multiprocess=multiprocess, frametype=frametype,
+                            nproc=nproc, frametype=frametype,
                             datafind_error=datafind_error, nds=nds,
                             return_=False)
     # loop over channels and generate spectrograms
@@ -293,7 +285,7 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
     for channel in channels:
         out[channel] = get_spectrogram(
             channel, segments, config=config, cache=cache, query=query,
-            nds=nds, format=format, multiprocess=multiprocess,
+            nds=nds, format=format, nproc=nproc,
             return_=return_, datafind_error=datafind_error,
             **fftparams)
     return out
@@ -329,7 +321,7 @@ def apply_transfer_function_series(specgram, tfunc):
 @use_segmentlist
 def get_spectrum(channel, segments, config=None, cache=None,
                  query=True, nds=None, format='power', return_=True,
-                 frametype=None, multiprocess=True, datafind_error='raise',
+                 frametype=None, nproc=1, datafind_error='raise',
                  **fftparams):
     """Retrieve the time-series and generate a spectrogram of the given
     channel
@@ -353,7 +345,7 @@ def get_spectrum(channel, segments, config=None, cache=None,
         specs.append(_get_spectrum(c, segments, config=config, cache=cache,
                                    query=query, nds=nds, format=format,
                                    return_=return_, frametype=frametype,
-                                   multiprocess=multiprocess,
+                                   nproc=nproc,
                                    datafind_error=datafind_error,
                                    **fftparams))
     if return_ and len(channels) == 1:

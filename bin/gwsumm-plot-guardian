@@ -8,7 +8,6 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 import argparse
 import os
 import re
-from multiprocessing import cpu_count
 
 from collections import OrderedDict
 
@@ -27,8 +26,6 @@ from gwsumm.tabs import GuardianTab
 
 GWSummConfigParser.OPTCRE = re.compile(
     r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
-
-DEFAULT_NPROC = min(8, cpu_count())
 
 
 def safe_eval(val):
@@ -55,7 +52,7 @@ parser.add_argument('-t', '--epoch', type=to_gps,
                     help='Zero-time for plot, defaults to GPSSTART')
 parser.add_argument('-p', '--plot-params', action='append', default=[],
                     help='extra plotting keyword argument')
-parser.add_argument('-m', '--multi-process', type=int, default=DEFAULT_NPROC,
+parser.add_argument('-m', '--multi-process', type=int, default=1,
                     dest='nproc',
                     help='number of processes to use, default: %(default)s')
 parser.add_argument('-o', '--output-file', default='trigs.png',
@@ -105,7 +102,7 @@ tab.plots[0].pargs['epoch'] = args.epoch
 
 # process
 vprint("Processing:\n")
-tab.process(multiprocess=args.nproc)
+tab.process(nproc=args.nproc)
 plotfile = tab.plots[0].outputfile
 os.rename(plotfile, args.output_file)
 vprint('Plot saved to %s\n' % args.output_file)

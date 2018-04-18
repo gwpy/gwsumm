@@ -22,7 +22,6 @@
 import os
 import sys
 import re
-from multiprocessing import (cpu_count, active_children)
 from socket import getfqdn
 
 from six import string_types
@@ -132,15 +131,6 @@ def which(program):
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 return exe_file
-
-
-def count_free_cores(max=cpu_count()):
-    """Count the number of CPU cores not currently used by this job.
-    """
-    if max is True:
-        max = cpu_count()
-    active = 1
-    return max - (active + 1)
 
 
 _re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')

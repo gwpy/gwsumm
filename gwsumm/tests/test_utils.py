@@ -97,11 +97,6 @@ def test_which():
         os.environ = environ
 
 
-def test_count_free_cores():
-    assert utils.count_free_cores() == cpu_count() - 2
-    assert utils.count_free_cores(2) == 0
-
-
 @pytest.mark.parametrize('chan, mask', [
     ('L1:TEST-ODC_CHANNEL_OUT_DQ', 'L1:TEST-ODC_CHANNEL_BITMASK'),
     ('L1:TEST-ODC_CHANNEL_OUTMON', 'L1:TEST-ODC_CHANNEL_BITMASK'),

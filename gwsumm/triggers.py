@@ -35,7 +35,7 @@ from gwpy.segments import (DataQualityFlag, SegmentList)
 import trigfind
 
 from . import globalv
-from .utils import (re_cchar, vprint, count_free_cores, safe_eval)
+from .utils import (re_cchar, vprint, safe_eval)
 from .config import (GWSummConfigParser, NoSectionError)
 from .channels import get_channel
 
@@ -134,7 +134,7 @@ def get_etg_table(etg):
 
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                  cache=None, columns=None, format=None, query=True,
-                 multiprocess=False, ligolwtable=None, filter=None,
+                 nproc=1, ligolwtable=None, filter=None,
                  timecolumn=None, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
@@ -143,14 +143,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
     if isinstance(segments, DataQualityFlag):
         segments = segments.active
     segments = SegmentList(segments)
-
-    # get processes
-    if multiprocess is True:
-        nproc = count_free_cores()
-    elif multiprocess is False:
-        nproc = 1
-    else:
-        nproc = multiprocess
 
     # get read keywords for this etg
     read_kw = get_etg_read_kwargs(etg, config=config, exclude=[])

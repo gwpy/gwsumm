@@ -53,7 +53,7 @@ def get_range_channel(channel, **rangekwargs):
 
 @use_segmentlist
 def get_range(channel, segments, config=None, cache=None,
-              query=True, nds=None, return_=True, multiprocess=True,
+              query=True, nds=None, return_=True, nproc=1,
               datafind_error='raise', frametype=None,
               stride=None, fftlength=None, overlap=None,
               method=None, **rangekwargs):
@@ -76,7 +76,7 @@ def get_range(channel, segments, config=None, cache=None,
     if query:
         # get spectrograms
         spectrograms = get_spectrogram(channel, new, config=config,
-                                       cache=cache, multiprocess=multiprocess,
+                                       cache=cache, nproc=nproc,
                                        frametype=frametype, format='psd',
                                        datafind_error=datafind_error, nds=nds,
                                        stride=stride, fftlength=fftlength,

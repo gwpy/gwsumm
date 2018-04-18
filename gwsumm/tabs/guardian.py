@@ -155,7 +155,7 @@ class GuardianTab(DataTab):
             ))
         return new
 
-    def process(self, nds=None, multiprocess=True,
+    def process(self, nds=None, nproc=1,
                 config=GWSummConfigParser(), datacache=None,
                 segmentcache=Cache(), datafind_error='raise', **kwargs):
         """Process data for the given state.
@@ -181,7 +181,7 @@ class GuardianTab(DataTab):
         prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE', 'OP']
         alldata = get_timeseries_dict(
             [prefix % x for x in prefices],
-            state, config=config, nds=nds, multiprocess=multiprocess,
+            state, config=config, nds=nds, nproc=nproc,
             cache=datacache, datafind_error=datafind_error,
             dtype='int32').values()
         vprint("    All time-series data loaded\n")
@@ -225,7 +225,7 @@ class GuardianTab(DataTab):
             globalv.SEGMENTS += {self.segmenttag % 'OK': oksegs}
 
         super(GuardianTab, self).process(
-            config=config, nds=nds, multiprocess=multiprocess,
+            config=config, nds=nds, nproc=nproc,
             datacache=datacache, segmentcache=segmentcache, **kwargs)
 
     def write_state_html(self, state):

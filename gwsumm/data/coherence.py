@@ -40,7 +40,7 @@ from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
 from .. import globalv
-from ..utils import (vprint, count_free_cores, safe_eval)
+from ..utils import (vprint, safe_eval)
 from ..channels import get_channel
 from .utils import (use_segmentlist, get_fftparams, make_globalv_key)
 from .timeseries import (get_timeseries, get_timeseries_dict)
@@ -51,7 +51,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 @use_segmentlist
 def get_coherence_spectrogram(channel_pair, segments, config=None,
                               cache=None, query=True, nds=None,
-                              return_=True, frametype=None, multiprocess=True,
+                              return_=True, frametype=None, nproc=1,
                               datafind_error='raise', return_components=False,
                               **fftparams):
     """Retrieve the time-series and generate a coherence spectrogram of
@@ -61,7 +61,7 @@ def get_coherence_spectrogram(channel_pair, segments, config=None,
                                        config=config, cache=cache,
                                        query=query, nds=nds,
                                        return_=return_, frametype=frametype,
-                                       multiprocess=multiprocess,
+                                       nproc=nproc,
                                        datafind_error=datafind_error,
                                        return_components=return_components,
                                        **fftparams)
@@ -72,7 +72,7 @@ def get_coherence_spectrogram(channel_pair, segments, config=None,
 @use_segmentlist
 def _get_coherence_spectrogram(channel_pair, segments, config=None,
                                cache=None, query=True, nds=None,
-                               return_=True, frametype=None, multiprocess=True,
+                               return_=True, frametype=None, nproc=1,
                                datafind_error='raise', return_components=False,
                                **fftparams):
 
@@ -114,14 +114,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     for fftkey in ('method', 'scheme',):
         fftparams.pop(fftkey, None)
 
-    # get processes
-    if multiprocess is True:
-        nproc = count_free_cores()
-    elif multiprocess is False:
-        nproc = 1
-    else:
-        nproc = multiprocess
-
     # if there are no existing spectrogram, initialize as a list
     globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
 
@@ -130,11 +122,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         s = segments[0].start
         dts1 = get_timeseries(channel1, SegmentList([Segment(s, s+1)]),
                               config=config, cache=cache, frametype=frametype,
-                              multiprocess=nproc, query=query,
+                              nproc=nproc, query=query,
                               datafind_error=datafind_error, nds=nds)
         dts2 = get_timeseries(channel2, SegmentList([Segment(s, s+1)]),
                               config=config, cache=cache, frametype=frametype,
-                              multiprocess=nproc, query=query,
+                              nproc=nproc, query=query,
                               datafind_error=datafind_error, nds=nds)
         sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
     else:
@@ -179,13 +171,13 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                     total1 = get_timeseries(
                                  channel1, req, config=config,
                                  cache=cache, frametype=frametype,
-                                 multiprocess=nproc, query=query,
+                                 nproc=nproc, query=query,
                                  datafind_error=datafind_error,
                                  nds=nds)
                     total2 = get_timeseries(
                                  channel2, req, config=config,
                                  cache=cache, frametype=frametype,
-                                 multiprocess=nproc, query=query,
+                                 nproc=nproc, query=query,
                                  datafind_error=datafind_error,
                                  nds=nds)
                     intersection = total1.segments & total2.segments
@@ -196,14 +188,14 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                     tslist1 = get_timeseries(
                                   channel1, intersection, config=config,
                                   cache=cache, frametype=frametype,
-                                  multiprocess=nproc, query=query,
+                                  nproc=nproc, query=query,
                                   datafind_error=datafind_error,
                                   nds=nds)
                 if comp in ('Cxy', 'Cyy'):
                     tslist2 = get_timeseries(
                                   channel2, intersection, config=config,
                                   cache=cache, frametype=frametype,
-                                  multiprocess=nproc, query=query,
+                                  nproc=nproc, query=query,
                                   datafind_error=datafind_error,
                                   nds=nds)
 
@@ -402,7 +394,7 @@ def add_coherence_component_spectrogram(specgram, key=None, coalesce=True):
 @use_segmentlist
 def get_coherence_spectrograms(channel_pairs, segments, config=None,
                                cache=None, query=True, nds=None,
-                               return_=True, frametype=None, multiprocess=True,
+                               return_=True, frametype=None, nproc=1,
                                datafind_error='raise', **fftparams):
     """Get coherence spectrograms for multiple channels
     """
@@ -432,7 +424,7 @@ def get_coherence_spectrograms(channel_pairs, segments, config=None,
             stride = strides.pop()
             new = type(new)([s for s in new if abs(s) >= stride])
         get_timeseries_dict(qchannels, new, config=config, cache=cache,
-                            multiprocess=multiprocess, frametype=frametype,
+                            nproc=nproc, frametype=frametype,
                             datafind_error=datafind_error, nds=nds,
                             return_=False)
     # loop over channels and generate spectrograms
@@ -441,7 +433,7 @@ def get_coherence_spectrograms(channel_pairs, segments, config=None,
     for channel_pair in pairs:
         out[channel_pair] = get_coherence_spectrogram(
             channel_pair, segments, config=config, cache=cache, query=query,
-            nds=nds, multiprocess=multiprocess, return_=return_,
+            nds=nds, nproc=nproc, return_=return_,
             datafind_error=datafind_error, **fftparams)
     return out
 

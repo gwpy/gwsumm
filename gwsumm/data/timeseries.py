@@ -46,6 +46,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
 from gwpy.timeseries.io.gwf import get_default_gwf_api
+from gwpy.utils.mp import multiprocess_with_queues
 
 from .. import globalv
 from ..utils import vprint
@@ -611,17 +612,12 @@ def _get_timeseries_dict(channels, segments, config=None,
 
         # check whether each channel exists for all new times already
         qchannels = []
-        qresample = {}
         qdtype = {}
         for channel in channels:
             name = str(channel)
             oldsegs = globalv.DATA.get(name, ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
-                if name in resample:
-                    qresample[name] = resample[name]
-                qdtype[name] = dtype_.get(name, ioargs.get('dtype'))
-        ioargs['dtype'] = qdtype
 
         # loop through segments, recording data for each
         if len(new):
@@ -632,41 +628,25 @@ def _get_timeseries_dict(channels, segments, config=None,
             segment = type(segment)(int(segment[0]), int(segment[1]))
             if abs(segment) < 1:
                 continue
-            if nds:
+
+            # reset to minute trend sample times
+            if frame_trend_type(ifo, frametype) == 'minute':
+               segment = Segment(*io_nds2.minute_trend_times(*segment))
+               if abs(segment) < 60:
+                   continue
+
+            if nds:  # fetch
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype,
                                       **ioargs)
-            else:
-                # pad resampling
-                if segment[1] == cache_segments(fcache)[-1][1] and qresample:
-                    resamplepad = 8
-                    if abs(segment) <= resamplepad:
-                        continue
-                    segment = type(segment)(segment[0],
-                                            segment[1] - resamplepad)
-                    segcache = fcache.sieve(
-                                   segment=segment.protract(resamplepad))
-                else:
-                    segcache = fcache.sieve(segment=segment)
-                # set minute trend times modulo 60 from GPS 0
-                if (re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)) or
-                        (ifo == 'C1' and frametype == 'M')):
-                    segstart = int(segment[0]) // 60 * 60
-                    segend = int(segment[1]) // 60 * 60
-                    if segend >= segment[1]:
-                        segend -= 60
-                    # and ignore segments shorter than 1 full average
-                    if (segend - segstart) < 60:
-                        continue
-                    segcache = segcache.sieve(
-                        segment=type(segment)(segstart, segend))
-                else:
-                    segstart, segend = map(float, segment)
-                # read data
-                tsd = DictClass.read(segcache, qchannels,
-                                     start=segstart, end=segend,
-                                     nproc=nproc, resample=qresample,
-                                     **ioargs)
+            else:  # read
+                segcache = fcache.sieve(segment=segment)
+                segstart, segend = map(float, segment)
+                tsd = DictClass.read(segcache, qchannels, start=segstart,
+                                     end=segend, nproc=nproc, **ioargs)
+
+            # apply resampling
+            tsd = resample_timeseries_dict(tsd, nproc=nproc, **resample)
 
             # post-process
             for c, data in tsd.items():

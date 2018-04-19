@@ -94,13 +94,13 @@ except ImportError:
     GWF_API = None
 
 # frameCPP I/O optimisations
-ADC_TYPES = [
+ADC_TYPES = {
     'R', 'C',  # old LIGO raw and commissioning types
     'T', 'M',  # old LIGO trend types
     'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
     'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
     'raw',  # Virgo raw type
-]
+}
 
 
 # -- utilities ----------------------------------------------------------------
@@ -409,6 +409,19 @@ def exclude_short_trend_segments(segments, ifo, frametype):
     return type(segments)([s for s in segments if abs(s) >= mindur])
 
 
+def all_adc(cache):
+    """Returns `True` if all cache entries point to GWF file known to
+    contain only ADC channels
+
+    This is useful to set `type='adc'` when reading with frameCPP, which
+    can greatly speed things up.
+    """
+    for e in cache:
+        if not e.path.endswith('.gwf') or e.description not in ADC_TYPES:
+            return False
+    return True
+
+
 # -- data accessors -----------------------------------------------------------
 
 @use_configparser
@@ -602,10 +615,9 @@ def _get_timeseries_dict(channels, segments, config=None,
             new &= cache_segments(fcache)
             source = 'frames'
 
-            if cache is None and GWF_API == 'framecpp':
-                # set ctype if reading with framecpp (using datafind)
-                if frametype in ADC_TYPES:
-                    ioargs['type'] = 'adc'
+            # set channel type if reading with frameCPP
+            if fcache and all_adc(fcache):
+                ioargs['type'] = 'adc'
 
         for channel in channels:
             channel.frametype = frametype

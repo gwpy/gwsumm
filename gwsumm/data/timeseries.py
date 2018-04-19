@@ -718,12 +718,20 @@ def _get_timeseries_dict(channels, segments, config=None,
     if not return_:
         return
 
+    return locate_data(channels, segments)
+
+
+def locate_data(channels, segments, list_class=TimeSeriesList):
+    """Find and return available (already loaded) data
+    """
+    keys = dict((c.ndsname, make_globalv_key(c)) for c in channels)
+
     # return correct data
     out = OrderedDict()
     for channel in channels:
-        data = ListClass()
+        data = list_class()
         if keys[channel.ndsname] not in globalv.DATA:
-            out[channel.ndsname] = ListClass()
+            out[channel.ndsname] = list_class()
         else:
             for ts in globalv.DATA[keys[channel.ndsname]]:
                 for seg in segments:

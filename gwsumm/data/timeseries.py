@@ -624,7 +624,6 @@ def _get_timeseries_dict(channels, segments, config=None,
 
         # check whether each channel exists for all new times already
         qchannels = []
-        qdtype = {}
         for channel in channels:
             name = str(channel)
             oldsegs = globalv.DATA.get(name, ListClass()).segments
@@ -656,6 +655,11 @@ def _get_timeseries_dict(channels, segments, config=None,
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
                                      end=segend, nproc=nproc, **ioargs)
+
+            # apply type casting (copy=False means same type just returns)
+            for chan, ts in tsd.items():
+                tsd[chan] = ts.astype(dtype_.get(chan, ts.dtype),
+                                      casting='unsafe', copy=False)
 
             # apply resampling
             tsd = resample_timeseries_dict(tsd, nproc=nproc, **resample)

@@ -389,8 +389,6 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
             globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
             globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
         else:
-            vprint("    Calculating 5/50/95 percentile spectra for %s"
-                   % name.rsplit(',', 1)[0])
             fftparams.setdefault('fftlength', 1)
             fftparams.setdefault('overlap', 0.5)
             if 'stride' not in fftparams and 'fftlength' in fftparams:
@@ -419,7 +417,6 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
             else:
                 globalv.SPECTRUM[cmin] = specgram.percentile(5)
                 globalv.SPECTRUM[cmax] = specgram.percentile(95)
-            vprint(".\n")
 
     if not return_:
         return

@@ -357,6 +357,18 @@ def find_types(site=None, match=None):
     return conn.find_types(site=site, match=match)
 
 
+def frame_trend_type(ifo, frametype):
+    """Returns the trend type of based on the given frametype
+    """
+    if ifo == 'C1' and frametype == 'M':
+        return 'minute'
+    if re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)):
+        return 'minute'
+    if re.match('(?:(.*)_)?[A-Z]\d_T', str(frametype)):
+        return 'second'
+    return None
+
+
 def get_channel_type(name):
     """Returns the probable type of this channel, based on the name
 
@@ -381,14 +393,14 @@ def get_channel_type(name):
     return 'adc'
 
 
-def exclude_short_trend_segments(segments, frametype):
+def exclude_short_trend_segments(segments, ifo, frametype):
     """Remove segments from a list shorter than 1 trend sample
     """
     frametype = frametype or ''
-
-    if frametype.endswith('%s_M' % ifo):  # minute trends
+    trend = frame_trend_type(ifo, frametype)
+    if trend == 'minute':
         mindur = 60.
-    elif frametype.endswith('%s_T' % ifo):  # second trends
+    elif trend == 'second':
         mindur = 1.
     else:
         mindur = 0.
@@ -566,17 +578,19 @@ def _get_timeseries_dict(channels, segments, config=None,
             ndsconnection = None
             frametype = source = 'nds'
             ndstype = channels[0].type
+
         # or find frame type and check cache
         else:
             ifo = channels[0].ifo
             frametype = frametype or channels[0].frametype
-            new = exclude_short_trend_segments(new, frametype)
+            new = exclude_short_trend_segments(new, ifo, frametype)
 
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=frametype,
                                      exact_match=True)
             else:
                 fcache = Cache()
+
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent().protract(8)
                 fcache, frametype = find_best_frames(

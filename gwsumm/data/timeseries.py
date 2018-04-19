@@ -55,6 +55,8 @@ from ..channels import (get_channel, update_missing_channel_params,
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
 
 # avoid DeprecationWarnings from glue re: CacheEntry
@@ -98,8 +100,6 @@ ADC_TYPES = [
     'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
     'raw',  # Virgo raw type
 ]
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 
 # -- utilities ----------------------------------------------------------------
@@ -668,6 +668,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                      nproc=nproc, resample=qresample,
                                      **ioargs)
 
+            # post-process
             for c, data in tsd.items():
                 channel = get_channel(c)
                 key = keys[channel.ndsname]
@@ -687,47 +688,22 @@ def _get_timeseries_dict(channels, segments, config=None,
                         # the really new stuff
                         data = data.crop(*(data.span - seg))
                         break
+
+                # filter
                 try:
                     filt = filter_[str(channel)]
                 except KeyError:
                     pass
                 else:
-                    # filter with function
-                    if callable(filt):
-                        try:
-                            data = filt(data)
-                        except TypeError as e:
-                            if 'Can only apply' in str(e):
-                                data.value[:] = filt(data.value)
-                            else:
-                                raise
-                    # filter with gain
-                    elif (isinstance(filt, tuple) and len(filt) == 3 and
-                          len(filt[0] + filt[1]) == 0):
-                        try:
-                            data *= filt[2]
-                        except TypeError:
-                            data = data * filt[2]
-                    # filter zpk
-                    elif isinstance(filt, tuple):
-                        data = data.filter(*filt)
-                    # filter fail
-                    else:
-                        raise ValueError("Cannot parse filter for %s: %r"
-                                         % (channel.ndsname,
-                                            filt))
+                    data = filter_timeseries(data, filt)
+
                 if isinstance(data, StateVector) or ':GRD-' in str(channel):
-                    try:
-                        data.unit = units.dimensionless_unscaled
-                    except AttributeError:
-                        data._unit = units.dimensionless_unscaled
+                    data.override_unit(units.dimensionless_unscaled)
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
                 elif data.unit is None:
-                    data._unit = channel.unit
-                # XXX: HACK for failing unit check
-                if len(globalv.DATA[key]):
-                    data._unit = globalv.DATA[key][-1].unit
+                    data.override_unit(channel.unit)
+
                 # update channel type for trends
                 if data.channel.type is None and (
                         data.channel.trend is not None):
@@ -735,6 +711,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                         data.channel.type = 's-trend'
                     elif data.dt.to('s').value == 60:
                         data.channel.type = 'm-trend'
+
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
             if nproc > 1:
@@ -863,3 +840,60 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()
+
+
+def resample_timeseries_dict(tsd, nproc=1, **sampling_dict):
+    """Resample a `TimeSeriesDict`
+
+    Parameters
+    ----------
+    tsd : `~gwpy.timeseries.TimeSeriesDict`
+        the input dict to resample
+
+    nproc : `int`, optional
+        the number of parallel processes to use
+
+    **sampling_dict
+        ``<name>=<sampling frequency>`` pairs defining new
+        sampling frequencies for keys of ``tsd``
+
+    Returns
+    -------
+    resampled : `~gwpy.timeseries.TimeSeriesDict`
+        a new dict with the keys from ``tsd`` and resampled values, if
+        that key was included in ``sampling_dict``, or the original value
+    """
+    # define resample function (must take single argument)
+    def _resample(args):
+        ts, fs = args
+        if fs:
+            return ts.resample(fs, ftype='fir', window='hamming')
+        return ts
+
+    # group timeseries with new sampling frequencies
+    inputs = ((ts, sampling_dict.get(name)) for name, ts in tsd.items())
+
+    # apply resampling
+    resampled = multiprocess_with_queues(nproc, _resample, inputs)
+
+    # map back to original dict keys
+    return dict(zip(tsd.keys(), resampled))
+
+
+def filter_timeseries(ts, filt):
+    """Filter a `TimeSeris` using a function or a ZPK definition.
+    """
+    # filter with function
+    if callable(filt):
+        try:
+            return filt(ts)
+        except TypeError as e:
+            if 'Can only apply' in str(e):  # units error
+                ts.value[:] = filt(ts.value)
+                return ts
+            else:
+                raise
+
+    # filter with gain
+    else:
+        return ts.filter(*filt)

@@ -345,7 +345,12 @@ class DataTab(ProcessedTab, ParentTab):
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc)
         vprint("States finalised [%d total]\n" % len(self.states))
-        vprint("    Default state: %r\n" % str(self.defaultstate))
+        for state in self.states:
+            vprint("    {0.name}: {1} segments | {2} seconds".format(
+                state, len(state.active), abs(state.active)))
+            if state is self.defaultstate:
+                vprint(" [DEFAULT]")
+            vprint('\n')
 
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])

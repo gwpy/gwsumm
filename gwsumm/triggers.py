@@ -160,6 +160,22 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
           read_kw['columns'] = columns
     columns = read_kw.pop('columns', None)
 
+    # override with user options
+    if format:
+        read_kw['format'] = format
+    elif not read_kw.get('format', None):
+        read_kw['format'] = etg.lower()
+    if timecolumn:
+        read_kw['timecolumn'] = timecolumn
+    elif columns is not None and 'time' in columns:
+        read_kw['timecolumn'] = 'time'
+
+    # replace columns keyword
+    if read_kw['format'].startswith('ascii.'):
+        read_kw['include_names'] = columns
+    else:
+        read_kw['columns'] = columns
+
     # parse filters
     if filter:
         read_kw['selection'].extend(parse_column_filters(filter))
@@ -184,22 +200,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
              (k[9:], read_kw.pop(k)) for k in read_kw.keys() if
              k.startswith('trigfind-'))
         trigfindetg = trigfindkwargs.pop('etg', etg)
-
-        # override with user options
-        if format:
-            read_kw['format'] = format
-        elif not read_kw.get('format', None):
-            read_kw['format'] = etg.lower()
-        if timecolumn:
-            read_kw['timecolumn'] = timecolumn
-        elif columns is not None and 'time' in columns:
-            read_kw['timecolumn'] = 'time'
-
-        # replace columns keyword
-        if read_kw['format'].startswith('ascii.'):
-            read_kw['include_names'] = columns
-        else:
-            read_kw['columns'] = columns
 
         # customise kwargs for this ETG
         if etg.lower().replace('-', '_') in ['pycbc_live']:

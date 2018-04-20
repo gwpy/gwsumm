@@ -152,6 +152,22 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
           read_kw['columns'] = columns
     columns = read_kw.pop('columns', None)
 
+    # override with user options
+    if format:
+        read_kw['format'] = format
+    elif not read_kw.get('format', None):
+        read_kw['format'] = etg.lower()
+    if timecolumn:
+        read_kw['timecolumn'] = timecolumn
+    elif columns is not None and 'time' in columns:
+        read_kw['timecolumn'] = 'time'
+
+    # replace columns keyword
+    if read_kw['format'].startswith('ascii.'):
+        read_kw['include_names'] = columns
+    else:
+        read_kw['columns'] = columns
+
     # parse filters
     if filter:
         read_kw['selection'].extend(parse_column_filters(filter))
@@ -176,22 +192,6 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
              (k[9:], read_kw.pop(k)) for k in read_kw.keys() if
              k.startswith('trigfind-'))
         trigfindetg = trigfindkwargs.pop('etg', etg)
-
-        # override with user options
-        if format:
-            read_kw['format'] = format
-        elif not read_kw.get('format', None):
-            read_kw['format'] = etg.lower()
-        if timecolumn:
-            read_kw['timecolumn'] = timecolumn
-        elif columns is not None and 'time' in columns:
-            read_kw['timecolumn'] = 'time'
-
-        # replace columns keyword
-        if read_kw['format'].startswith('ascii.'):
-            read_kw['include_names'] = columns
-        else:
-            read_kw['columns'] = columns
 
         # customise kwargs for this ETG
         if etg.lower().replace('-', '_') in ['pycbc_live']:
@@ -255,6 +255,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:  # map to LIGO_LW table with full column listing
             tab = EventTable(lsctables.New(TableClass), get_as_columns=True)
         tab.meta['segments'] = SegmentList()
+        if read_kw.get('timecolumn'):
+            tab.meta['timecolumn'] = read_kw['timecolumn']
         add_triggers(tab, key)
 
     # work out time function
@@ -351,18 +353,23 @@ def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
         'selection': [],
     }
 
-    # update with ETG defaults
-    kwargs.update(ETG_READ_KW.get(re_cchar.sub('_', etg).lower(), {}))
-
     # get kwargs from config
-    if config is not None:
-        try:
-            kwargs.update(config.nditems(etg))
-        except NoSectionError:
-            try:
-                kwargs.update(config.nditems(etg.lower()))
-            except NoSectionError:
-                pass
+    if config is not None and config.has_section(etg):
+        config_kw = dict(config.nditems(etg))
+    elif config is not None and config.has_section(etg.lower()):
+        config_kw = dict(config.nditems(etg.lower()))
+    else:
+        config_kw = {}
+    usrfmt = config_kw.get('format', None)
+
+    # get ETG defaults : only if user didn't specify the read format,
+    #                    or the format they did specify matches our default
+    etgl = re_cchar.sub('_', etg).lower()
+    if etgl in ETG_READ_KW and usrfmt in (None, ETG_READ_KW[etgl]['format']):
+        kwargs.update(ETG_READ_KW.get(etgl, {}))
+
+    # now add the config kwargs (so they override our defaults)
+    kwargs.update(config_kw)
 
     # format kwargs
     for key in list(kwargs.keys()):
@@ -429,7 +436,7 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     # append new events to existing table
     try:
         csegs = cache_segments(cache) & segments
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, ValueError):
         csegs = SegmentList()
     table.meta['segments'] = csegs
 

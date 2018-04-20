@@ -361,18 +361,23 @@ def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
         'selection': [],
     }
 
-    # update with ETG defaults
-    kwargs.update(ETG_READ_KW.get(re_cchar.sub('_', etg).lower(), {}))
-
     # get kwargs from config
-    if config is not None:
-        try:
-            kwargs.update(config.nditems(etg))
-        except NoSectionError:
-            try:
-                kwargs.update(config.nditems(etg.lower()))
-            except NoSectionError:
-                pass
+    if config is not None and config.has_section(etg):
+        config_kw = dict(config.nditems(etg))
+    elif config is not None and config.has_section(etg.lower()):
+        config_kw = dict(config.nditems(etg.lower()))
+    else:
+        config_kw = {}
+    usrfmt = config_kw.get('format', None)
+
+    # get ETG defaults : only if user didn't specify the read format,
+    #                    or the format they did specify matches our default
+    etgl = re_cchar.sub('_', etg).lower()
+    if etgl in ETG_READ_KW and usrfmt in (None, ETG_READ_KW[etgl]['format']):
+        kwargs.update(ETG_READ_KW.get(etgl, {}))
+
+    # now add the config kwargs (so they override our defaults)
+    kwargs.update(config_kw)
 
     # format kwargs
     for key in list(kwargs.keys()):

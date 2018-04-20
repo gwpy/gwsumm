@@ -439,7 +439,7 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     # append new events to existing table
     try:
         csegs = cache_segments(cache) & segments
-    except (AttributeError, TypeError):
+    except (AttributeError, TypeError, ValueError):
         csegs = SegmentList()
     table.meta['segments'] = csegs
 

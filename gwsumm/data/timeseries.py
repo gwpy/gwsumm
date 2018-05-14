@@ -523,7 +523,8 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
 def _get_timeseries_dict(channels, segments, config=None,
                          cache=None, query=True, nds=None, frametype=None,
                          nproc=1, return_=True, statevector=False,
-                         archive=True, datafind_error='raise', **ioargs):
+                         archive=True, datafind_error='raise', dtype=None,
+                         **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -563,10 +564,8 @@ def _get_timeseries_dict(channels, segments, config=None,
             resample[name] = float(channel.resample)
         except AttributeError:
             pass
-        if channel.dtype is None:
-            dtype_[name] = ioargs.get('dtype')
-        else:
-            dtype_[name] = channel.dtype
+        if channel.dtype or dtype:
+            dtype_[name] = channel.dtype or dtype
 
     # work out whether to use NDS or not
     if nds is None and cache is not None:

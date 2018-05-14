@@ -355,15 +355,13 @@ class DataTab(ProcessedTab, ParentTab):
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])
         if all_data:
+            vprint("Pre-processing all-data requests:\n")
             self.process_state(None, config=config, nproc=nproc,
                                **stateargs)
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
-            if state:
-                vprint("Processing '%s' state\n" % state.name)
-            else:
-                vprint("Pre-processing all-data requests\n")
+            vprint("Processing '%s' state:\n" % state.name)
             self.process_state(state, config=config, nproc=nproc,
                                **stateargs)
 

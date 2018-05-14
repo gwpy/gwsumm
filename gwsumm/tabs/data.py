@@ -568,25 +568,14 @@ class DataTab(ProcessedTab, ParentTab):
         # process serial plots
         if serial:
             vprint("    Executing %d plots in serial:\n" % len(serial))
-            multiprocess_with_queues(1, lambda p: p.process(), serial,
-                                     raise_exceptions=True)
+            multiprocess_with_queues(1, lambda p: p.process(), serial)
 
         # process parallel plots
         if parallel:
             nproc = min(len(parallel), nproc)
-
-            def _plot(plot):
-                try:
-                    return plot.process()
-                except Exception as exc:
-                    if nproc == 1:
-                        raise
-                    return exc
-
             vprint("    Executing %d plots in %d processes:\n"
                    % (len(parallel), nproc))
-            multiprocess_with_queues(nproc, _plot, parallel,
-                                     raise_exceptions=True)
+            multiprocess_with_queues(nproc, lambda p: p.process(), parallel)
 
         vprint('Done.\n')
 

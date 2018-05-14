@@ -720,7 +720,7 @@ def _get_timeseries_dict(channels, segments, config=None,
     if not return_:
         return
 
-    return locate_data(channels, segments)
+    return locate_data(channels, segments, list_class=ListClass)
 
 
 def locate_data(channels, segments, list_class=TimeSeriesList):

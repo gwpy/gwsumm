@@ -345,20 +345,23 @@ class DataTab(ProcessedTab, ParentTab):
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc)
         vprint("States finalised [%d total]\n" % len(self.states))
-        vprint("    Default state: %r\n" % str(self.defaultstate))
+        for state in self.states:
+            vprint("    {0.name}: {1} segments | {2} seconds".format(
+                state, len(state.active), abs(state.active)))
+            if state is self.defaultstate:
+                vprint(" [DEFAULT]")
+            vprint('\n')
 
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])
         if all_data:
+            vprint("Pre-processing all-data requests:\n")
             self.process_state(None, config=config, nproc=nproc,
                                **stateargs)
         # process each state
         for state in sorted(self.states, key=lambda s: abs(s.active),
                             reverse=True):
-            if state:
-                vprint("Processing '%s' state\n" % state.name)
-            else:
-                vprint("Pre-processing all-data requests\n")
+            vprint("Processing '%s' state:\n" % state.name)
             self.process_state(state, config=config, nproc=nproc,
                                **stateargs)
 
@@ -563,25 +566,14 @@ class DataTab(ProcessedTab, ParentTab):
         # process serial plots
         if serial:
             vprint("    Executing %d plots in serial:\n" % len(serial))
-            multiprocess_with_queues(1, lambda p: p.process(), serial,
-                                     raise_exceptions=True)
+            multiprocess_with_queues(1, lambda p: p.process(), serial)
 
         # process parallel plots
         if parallel:
             nproc = min(len(parallel), nproc)
-
-            def _plot(plot):
-                try:
-                    return plot.process()
-                except Exception as exc:
-                    if nproc == 1:
-                        raise
-                    return exc
-
             vprint("    Executing %d plots in %d processes:\n"
                    % (len(parallel), nproc))
-            multiprocess_with_queues(nproc, _plot, parallel,
-                                     raise_exceptions=True)
+            multiprocess_with_queues(nproc, lambda p: p.process(), parallel)
 
         vprint('Done.\n')
 

@@ -248,7 +248,7 @@ class SummaryState(DataQualityFlag):
     def _fetch_segments(self, config=GWSummConfigParser(), **kwargs):
         kwargs.setdefault('url', self.url)
         segs = get_segments([self.definition], self.known, config=config,
-                            **kwargs)[self.definition]
+                            **kwargs)[self.definition].round(contract=True)
         self.known = segs.known
         self.active = segs.active
         return self

@@ -41,10 +41,12 @@ from lal.utils import CacheEntry
 from glue import (datafind, lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
-from gwpy.segments import SegmentList
+from gwpy.io.cache import cache_segments
+from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
 from gwpy.timeseries.io.gwf import get_default_gwf_api
+from gwpy.utils.mp import multiprocess_with_queues
 
 from .. import globalv
 from ..utils import vprint
@@ -53,6 +55,8 @@ from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
+
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
 
@@ -90,15 +94,13 @@ except ImportError:
     GWF_API = None
 
 # frameCPP I/O optimisations
-ADC_TYPES = [
+ADC_TYPES = {
     'R', 'C',  # old LIGO raw and commissioning types
     'T', 'M',  # old LIGO trend types
     'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
     'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
     'raw',  # Virgo raw type
-]
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+}
 
 
 # -- utilities ----------------------------------------------------------------
@@ -259,6 +261,32 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     return cache
 
 
+def find_best_frames(ifo, frametype, start, end, **kwargs):
+    """Find frames for the given type, replacing with a better type if needed
+    """
+    # find cache for this frametype
+    cache = find_frames(ifo, frametype, start, end, **kwargs)
+
+    # check for gaps in current cache
+    span = SegmentList([Segment(start, end)])
+    gaps = span - cache_segments(cache)
+
+    # if gaps and using aggregated h(t), check short files
+    if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
+        f2 = '%s_DMT_C00' % ifo
+        vprint("    Gaps discovered in aggregated h(t) type "
+               "%s, checking %s\n" % (frametype, f2))
+        kwargs['gaps'] = 'ignore'
+        c2 = find_frames(ifo, f2, start, end, **kwargs)
+        g2 = span - cache_segments(c2)
+        if abs(g2) < abs(gaps):
+            vprint("    Greater coverage with frametype %s\n" % f2)
+            return c2, f2
+        vprint("    No extra coverage with frametype %s\n" % f2)
+
+    return cache, frametype
+
+
 def find_cache_segments(*caches):
     """Return the segments covered by one or more data caches
 
@@ -330,6 +358,18 @@ def find_types(site=None, match=None):
     return conn.find_types(site=site, match=match)
 
 
+def frame_trend_type(ifo, frametype):
+    """Returns the trend type of based on the given frametype
+    """
+    if ifo == 'C1' and frametype == 'M':
+        return 'minute'
+    if re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)):
+        return 'minute'
+    if re.match('(?:(.*)_)?[A-Z]\d_T', str(frametype)):
+        return 'second'
+    return None
+
+
 def get_channel_type(name):
     """Returns the probable type of this channel, based on the name
 
@@ -352,6 +392,34 @@ def get_channel_type(name):
         return 'proc'
     # default to ADC
     return 'adc'
+
+
+def exclude_short_trend_segments(segments, ifo, frametype):
+    """Remove segments from a list shorter than 1 trend sample
+    """
+    frametype = frametype or ''
+    trend = frame_trend_type(ifo, frametype)
+    if trend == 'minute':
+        mindur = 60.
+    elif trend == 'second':
+        mindur = 1.
+    else:
+        mindur = 0.
+
+    return type(segments)([s for s in segments if abs(s) >= mindur])
+
+
+def all_adc(cache):
+    """Returns `True` if all cache entries point to GWF file known to
+    contain only ADC channels
+
+    This is useful to set `type='adc'` when reading with frameCPP, which
+    can greatly speed things up.
+    """
+    for e in cache:
+        if not e.path.endswith('.gwf') or e.description not in ADC_TYPES:
+            return False
+    return True
 
 
 # -- data accessors -----------------------------------------------------------
@@ -455,7 +523,8 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
 def _get_timeseries_dict(channels, segments, config=None,
                          cache=None, query=True, nds=None, frametype=None,
                          nproc=1, return_=True, statevector=False,
-                         archive=True, datafind_error='raise', **ioargs):
+                         archive=True, datafind_error='raise', dtype=None,
+                         **ioargs):
     """Internal method to retrieve the data for a set of like-typed
     channels using the :meth:`TimeSeriesDict.read` accessor.
     """
@@ -495,10 +564,8 @@ def _get_timeseries_dict(channels, segments, config=None,
             resample[name] = float(channel.resample)
         except AttributeError:
             pass
-        if channel.dtype is None:
-            dtype_[name] = ioargs.get('dtype')
-        else:
-            dtype_[name] = channel.dtype
+        if channel.dtype or dtype:
+            dtype_[name] = channel.dtype or dtype
 
     # work out whether to use NDS or not
     if nds is None and cache is not None:
@@ -524,114 +591,86 @@ def _get_timeseries_dict(channels, segments, config=None,
             ndsconnection = None
             frametype = source = 'nds'
             ndstype = channels[0].type
+
         # or find frame type and check cache
         else:
             ifo = channels[0].ifo
             frametype = frametype or channels[0].frametype
-            if frametype is not None and frametype.endswith('%s_M' % ifo):
-                new = type(new)([s for s in new if abs(s) >= 60.])
-            elif frametype is not None and frametype.endswith('%s_T' % ifo):
-                new = type(new)([s for s in new if abs(s) >= 1.])
+            new = exclude_short_trend_segments(new, ifo, frametype)
+
             if cache is not None:
                 fcache = cache.sieve(ifos=ifo[0], description=frametype,
                                      exact_match=True)
             else:
                 fcache = Cache()
+
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent().protract(8)
-                fcache = find_frames(ifo, frametype, span[0], span[1],
-                                     config=config, gaps='ignore',
-                                     onerror=datafind_error)
-                cachesegments = find_cache_segments(fcache)
-                gaps = SegmentList([span]) - cachesegments
-                if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
-                    f2 = '%s_DMT_C00' % ifo
-                    vprint("    Gaps discovered in aggregated h(t) type "
-                           "%s, checking %s\n" % (frametype, f2))
-                    c2 = find_frames(ifo, f2, span[0], span[1],
-                                     config=config, gaps='ignore',
-                                     onerror=datafind_error)
-                    g2 = SegmentList([span]) - find_cache_segments(c2)
-                    if abs(g2) < abs(gaps):
-                        vprint("    Greater coverage with frametype %s\n" % f2)
-                        fcache = c2
-                        frametype = f2
-                    else:
-                        vprint("    No extra coverage with frametype %s\n"
-                               % f2)
+                fcache, frametype = find_best_frames(
+                    ifo, frametype, span[0], span[1],
+                    config=config, gaps='ignore', onerror=datafind_error)
 
             # parse discontiguous cache blocks and rebuild segment list
-            cachesegments = find_cache_segments(fcache)
-            new &= cachesegments
-            source = 'frames'
+            new &= cache_segments(fcache)
+            source = 'files'
 
-            if cache is None and GWF_API == 'framecpp':
-                # set ctype if reading with framecpp (using datafind)
-                if frametype in ADC_TYPES:
-                    ioargs['type'] = 'adc'
+            # set channel type if reading with frameCPP
+            if fcache and all_adc(fcache):
+                ioargs['type'] = 'adc'
 
+        # store frametype for display in Channel Information tables
         for channel in channels:
             channel.frametype = frametype
 
         # check whether each channel exists for all new times already
         qchannels = []
-        qresample = {}
-        qdtype = {}
         for channel in channels:
             name = str(channel)
             oldsegs = globalv.DATA.get(name, ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
-                if name in resample:
-                    qresample[name] = resample[name]
-                qdtype[name] = dtype_.get(name, ioargs.get('dtype'))
-        ioargs['dtype'] = qdtype
 
         # loop through segments, recording data for each
         if len(new):
-            vprint("    Fetching data (from %s) for %d channels [%s]"
+            vprint("    Fetching data (from %s) for %d channels [%s]:\n"
                    % (source, len(qchannels), nds and ndstype or frametype))
+        vstr = "        [{0[0]}, {0[1]})"
         for segment in new:
             # force reading integer-precision segments
             segment = type(segment)(int(segment[0]), int(segment[1]))
             if abs(segment) < 1:
                 continue
-            if nds:
+
+            # reset to minute trend sample times
+            if frame_trend_type(ifo, frametype) == 'minute':
+               segment = Segment(*io_nds2.minute_trend_times(*segment))
+               if abs(segment) < 60:
+                   continue
+
+            if nds:  # fetch
+                vprint((vstr + '...').format(segment))
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype,
                                       **ioargs)
-            else:
-                # pad resampling
-                if segment[1] == cachesegments[-1][1] and qresample:
-                    resamplepad = 8
-                    if abs(segment) <= resamplepad:
-                        continue
-                    segment = type(segment)(segment[0],
-                                            segment[1] - resamplepad)
-                    segcache = fcache.sieve(
-                                   segment=segment.protract(resamplepad))
-                else:
-                    segcache = fcache.sieve(segment=segment)
-                # set minute trend times modulo 60 from GPS 0
-                if (re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)) or
-                        (ifo == 'C1' and frametype == 'M')):
-                    segstart = int(segment[0]) // 60 * 60
-                    segend = int(segment[1]) // 60 * 60
-                    if segend >= segment[1]:
-                        segend -= 60
-                    # and ignore segments shorter than 1 full average
-                    if (segend - segstart) < 60:
-                        continue
-                    segcache = segcache.sieve(
-                        segment=type(segment)(segstart, segend))
-                else:
-                    segstart, segend = map(float, segment)
-                # read data
-                tsd = DictClass.read(segcache, qchannels,
-                                     start=segstart, end=segend,
-                                     nproc=nproc, resample=qresample,
-                                     **ioargs)
+                vprint(' [Done]\n')
+            else:  # read
+                segcache = fcache.sieve(segment=segment)
+                segstart, segend = map(float, segment)
+                tsd = DictClass.read(segcache, qchannels, start=segstart,
+                                     end=segend, nproc=nproc,
+                                     verbose=vstr.format(segment), **ioargs)
 
+            vprint("        post-processing...\n")
+
+            # apply type casting (copy=False means same type just returns)
+            for chan, ts in tsd.items():
+                tsd[chan] = ts.astype(dtype_.get(chan, ts.dtype),
+                                      casting='unsafe', copy=False)
+
+            # apply resampling
+            tsd = resample_timeseries_dict(tsd, nproc=nproc, **resample)
+
+            # post-process
             for c, data in tsd.items():
                 channel = get_channel(c)
                 key = keys[channel.ndsname]
@@ -651,47 +690,22 @@ def _get_timeseries_dict(channels, segments, config=None,
                         # the really new stuff
                         data = data.crop(*(data.span - seg))
                         break
+
+                # filter
                 try:
                     filt = filter_[str(channel)]
                 except KeyError:
                     pass
                 else:
-                    # filter with function
-                    if callable(filt):
-                        try:
-                            data = filt(data)
-                        except TypeError as e:
-                            if 'Can only apply' in str(e):
-                                data.value[:] = filt(data.value)
-                            else:
-                                raise
-                    # filter with gain
-                    elif (isinstance(filt, tuple) and len(filt) == 3 and
-                          len(filt[0] + filt[1]) == 0):
-                        try:
-                            data *= filt[2]
-                        except TypeError:
-                            data = data * filt[2]
-                    # filter zpk
-                    elif isinstance(filt, tuple):
-                        data = data.filter(*filt)
-                    # filter fail
-                    else:
-                        raise ValueError("Cannot parse filter for %s: %r"
-                                         % (channel.ndsname,
-                                            filt))
+                    data = filter_timeseries(data, filt)
+
                 if isinstance(data, StateVector) or ':GRD-' in str(channel):
-                    try:
-                        data.unit = units.dimensionless_unscaled
-                    except AttributeError:
-                        data._unit = units.dimensionless_unscaled
+                    data.override_unit(units.dimensionless_unscaled)
                     if hasattr(channel, 'bits'):
                         data.bits = channel.bits
                 elif data.unit is None:
-                    data._unit = channel.unit
-                # XXX: HACK for failing unit check
-                if len(globalv.DATA[key]):
-                    data._unit = globalv.DATA[key][-1].unit
+                    data.override_unit(channel.unit)
+
                 # update channel type for trends
                 if data.channel.type is None and (
                         data.channel.trend is not None):
@@ -699,22 +713,27 @@ def _get_timeseries_dict(channels, segments, config=None,
                         data.channel.type = 's-trend'
                     elif data.dt.to('s').value == 60:
                         data.channel.type = 'm-trend'
+
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
-            if nproc > 1:
-                vprint('.')
-        if len(new):
-            vprint("\n")
 
     if not return_:
         return
 
+    return locate_data(channels, segments, list_class=ListClass)
+
+
+def locate_data(channels, segments, list_class=TimeSeriesList):
+    """Find and return available (already loaded) data
+    """
+    keys = dict((c.ndsname, make_globalv_key(c)) for c in channels)
+
     # return correct data
     out = OrderedDict()
     for channel in channels:
-        data = ListClass()
+        data = list_class()
         if keys[channel.ndsname] not in globalv.DATA:
-            out[channel.ndsname] = ListClass()
+            out[channel.ndsname] = list_class()
         else:
             for ts in globalv.DATA[keys[channel.ndsname]]:
                 for seg in segments:
@@ -827,3 +846,60 @@ def add_timeseries(timeseries, key=None, coalesce=True):
     globalv.DATA[key].append(timeseries)
     if coalesce:
         globalv.DATA[key].coalesce()
+
+
+def resample_timeseries_dict(tsd, nproc=1, **sampling_dict):
+    """Resample a `TimeSeriesDict`
+
+    Parameters
+    ----------
+    tsd : `~gwpy.timeseries.TimeSeriesDict`
+        the input dict to resample
+
+    nproc : `int`, optional
+        the number of parallel processes to use
+
+    **sampling_dict
+        ``<name>=<sampling frequency>`` pairs defining new
+        sampling frequencies for keys of ``tsd``
+
+    Returns
+    -------
+    resampled : `~gwpy.timeseries.TimeSeriesDict`
+        a new dict with the keys from ``tsd`` and resampled values, if
+        that key was included in ``sampling_dict``, or the original value
+    """
+    # define resample function (must take single argument)
+    def _resample(args):
+        ts, fs = args
+        if fs:
+            return ts.resample(fs, ftype='fir', window='hamming')
+        return ts
+
+    # group timeseries with new sampling frequencies
+    inputs = ((ts, sampling_dict.get(name)) for name, ts in tsd.items())
+
+    # apply resampling
+    resampled = multiprocess_with_queues(nproc, _resample, inputs)
+
+    # map back to original dict keys
+    return dict(zip(tsd.keys(), resampled))
+
+
+def filter_timeseries(ts, filt):
+    """Filter a `TimeSeris` using a function or a ZPK definition.
+    """
+    # filter with function
+    if callable(filt):
+        try:
+            return filt(ts)
+        except TypeError as e:
+            if 'Can only apply' in str(e):  # units error
+                ts.value[:] = filt(ts.value)
+                return ts
+            else:
+                raise
+
+    # filter with gain
+    else:
+        return ts.filter(*filt)

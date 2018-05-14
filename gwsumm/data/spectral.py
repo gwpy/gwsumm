@@ -259,23 +259,33 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
     """Get spectrograms for multiple channels
     """
     channels = map(get_channel, channels)
+
     # get timeseries data in bulk
     if query:
+        # get underlying list of data channels to read
         qchannels = map(get_channel,
                         set([c for group in
                              map(split_channel_combination, channels)
                              for c in group]))
+
+        # work out FFT params and storage keys for each data channel
         keys = []
         for channel in qchannels:
             fftparams_ = get_fftparams(channel, **fftparams)
             keys.append(make_globalv_key(channel, fftparams_))
-        havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
-            key, SpectrogramList()).segments for key in keys))
-        new = segments - havesegs
+
+        # restrict segments to those big enough to hold >= 1 stride
         strides = set([getattr(c, 'stride', 0) for c in qchannels])
         if len(strides) == 1:
             stride = strides.pop()
-            new = type(new)([s for s in new if abs(s) >= stride])
+            segments = type(segments)(s for s in segments if abs(s) >= stride)
+
+        # work out new segments for which to read data
+        havesegs = reduce(operator.and_, (globalv.SPECTROGRAMS.get(
+            key, SpectrogramList()).segments for key in keys))
+        new = segments - havesegs
+
+        # read data for new segments
         get_timeseries_dict(qchannels, new, config=config, cache=cache,
                             nproc=nproc, frametype=frametype,
                             datafind_error=datafind_error, nds=nds,
@@ -379,8 +389,6 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
             globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
             globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
         else:
-            vprint("    Calculating 5/50/95 percentile spectra for %s"
-                   % name.rsplit(',', 1)[0])
             fftparams.setdefault('fftlength', 1)
             fftparams.setdefault('overlap', 0.5)
             if 'stride' not in fftparams and 'fftlength' in fftparams:
@@ -409,7 +417,6 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
             else:
                 globalv.SPECTRUM[cmin] = specgram.percentile(5)
                 globalv.SPECTRUM[cmax] = specgram.percentile(95)
-            vprint(".\n")
 
     if not return_:
         return

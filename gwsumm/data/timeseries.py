@@ -612,12 +612,13 @@ def _get_timeseries_dict(channels, segments, config=None,
 
             # parse discontiguous cache blocks and rebuild segment list
             new &= cache_segments(fcache)
-            source = 'frames'
+            source = 'files'
 
             # set channel type if reading with frameCPP
             if fcache and all_adc(fcache):
                 ioargs['type'] = 'adc'
 
+        # store frametype for display in Channel Information tables
         for channel in channels:
             channel.frametype = frametype
 
@@ -631,8 +632,9 @@ def _get_timeseries_dict(channels, segments, config=None,
 
         # loop through segments, recording data for each
         if len(new):
-            vprint("    Fetching data (from %s) for %d channels [%s]"
+            vprint("    Fetching data (from %s) for %d channels [%s]:\n"
                    % (source, len(qchannels), nds and ndstype or frametype))
+        vstr = "        [{0[0]}, {0[1]})"
         for segment in new:
             # force reading integer-precision segments
             segment = type(segment)(int(segment[0]), int(segment[1]))
@@ -646,14 +648,19 @@ def _get_timeseries_dict(channels, segments, config=None,
                    continue
 
             if nds:  # fetch
+                vprint((vstr + '...').format(segment))
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype,
                                       **ioargs)
+                vprint(' [Done]\n')
             else:  # read
                 segcache = fcache.sieve(segment=segment)
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
-                                     end=segend, nproc=nproc, **ioargs)
+                                     end=segend, nproc=nproc,
+                                     verbose=vstr.format(segment), **ioargs)
+
+            vprint("        post-processing...\n")
 
             # apply type casting (copy=False means same type just returns)
             for chan, ts in tsd.items():
@@ -709,10 +716,6 @@ def _get_timeseries_dict(channels, segments, config=None,
 
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
-            if nproc > 1:
-                vprint('.')
-        if len(new):
-            vprint("\n")
 
     if not return_:
         return

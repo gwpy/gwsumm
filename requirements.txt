@@ -5,7 +5,7 @@ jsmin
 
 # core requirements
 enum34 ; python_version < '3'
-dateutil
+python-dateutil
 lxml
 numpy>=1.10
 matplotlib>=2.0

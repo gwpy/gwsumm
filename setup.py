@@ -69,7 +69,7 @@ setup_requires = [
 
 # install requirements (module-level imported packages)
 install_requires = [
-    'dateutil',
+    'python-dateutil',
     'lxml',
     'numpy>=1.10',
     'matplotlib>=2.0',

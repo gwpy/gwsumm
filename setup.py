@@ -61,41 +61,44 @@ else:
 
 # -- dependencies -------------------------------------------------------------
 
+# build requirements
 setup_requires = [
-    'pytest-runner',
     'libsass',
     'jsmin',
 ]
+
+# install requirements (module-level imported packages)
 install_requires = [
-    'numpy>=1.10',
-    'matplotlib>=1.3.0',
-    'astropy>=1.2.1',
-    'gwpy>=0.9.0',
-]
-requires = [
-    'numpy',
-    'astropy',
-    'matplotlib',
-    'lscsoft_glue',
-    'gwpy',
-    'h5py',
-    'dqsegdb',
+    'python-dateutil',
     'lxml',
-    'trigfind',
+    'numpy>=1.10',
+    'matplotlib>=2.0',
+    'astropy>=1.2.1',
+    'lalsuite',
+    'lscsoft-glue>=1.56.0',
+    'gwpy>=0.8.1',
 ]
+if sys.version < '3':
+    install_requires.append('enum34')
+
+# testing requirements
+if {'pytest', 'test'}.intersection(sys.argv):
+    setup_requires.append('pytest_runner')  # python setup.py test
 tests_require = [
     'pytest>=2.8'
 ]
-extras_require = {
-    'doc': ['sphinx', 'numpydoc', 'sphinx-bootstrap-theme', 'astropy_helpers'],
-}
-
-# version-specific packages
 if sys.version < '3':
-    install_requires.append('enum34')
-    requires.append('enum34')
-if sys.version < '2.7':
-    tests_require.append('unittest2')
+    tests_require.append('mock')
+
+# extras
+extras_require = {
+    'docs': [
+        'sphinx',
+        'numpydoc',
+        'sphinx-bootstrap-theme',
+        'astropy_helpers',
+    ],
+}
 
 # -- data files ---------------------------------------------------------------
 
@@ -228,11 +231,11 @@ setup(name=DISTNAME,
       scripts=scripts,
       setup_requires=setup_requires,
       install_requires=install_requires,
-      requires=requires,
+      tests_require=tests_require,
       extras_require=extras_require,
       dependency_links=[
-          'https://github.com/ligovirgo/trigfind/archive/v0.3.tar.gz'
-          '#egg=trigfind-0.3',
+          'https://github.com/gwpy/trigfind/archive/v0.6.1.tar.gz'
+          '#egg=trigfind-0.6.1',
       ],
       data_files=data_files,
       use_2to3=True,

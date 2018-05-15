@@ -16,16 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with GWpy.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Compatibility module to import unittest
+"""Compatibility module
 """
 
 import sys
 from functools import wraps
-
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
 
 from gwsumm import globalv
 

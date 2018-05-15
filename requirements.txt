@@ -1,16 +1,31 @@
-numpy>=1.10
-astropy>=1.2.1
-matplotlib>=2.0
-enum34
-pykerberos
-h5py
-lxml
-lscsoft-glue>=1.56.0
-dqsegdb>=1.4.2
-https://github.com/ligovirgo/trigfind/archive/v0.5.tar.gz
-gwpy>=0.8.1
+# build requirements
+setuptools
 libsass
 jsmin
+
+# core requirements
+enum34 ; python_version < '3'
+dateutil
+lxml
+numpy>=1.10
+matplotlib>=2.0
+astropy>=1.2.1
+lalsuite
+lscsoft-glue>=1.56.0
+gwpy>=0.8.1
+
+# optional extras (not module-level imports)
+pykerberos
+h5py
+dqsegdb>=1.4.2
+https://github.com/gwpy/trigfind/archive/v0.5.tar.gz
+ligo-gracedb
+
+# testing extras
+pytest>=2.8
+mock ; python_version < '3'
+
+# docs extras
+sphinx
 astropy_helpers < 3.0 ; python_version < '3'
 astropy_helpers ; python_version >= '3'
-ligo_gracedb

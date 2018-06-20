@@ -87,6 +87,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 sgroup = h5file.create_group('statevector')
                 # loop over channels
                 for c, tslist in globalv.DATA.items():
+                    c = get_channel(c)
                     # ignore trigger rate TimeSeries
                     if re_rate.search(str(c)):
                         continue
@@ -96,8 +97,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         # for a timeseries:
                         if (not isinstance(ts, StateVector) and
                                 ts.sample_rate.value > 16.01 and
-                                (not hasattr(c, '_timeseries') or
-                                 not c._timeseries)):
+                                not getattr(c, '_timeseries', True)):
                             continue
                         # archive timeseries
                         try:

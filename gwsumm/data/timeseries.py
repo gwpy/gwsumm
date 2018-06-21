@@ -564,8 +564,10 @@ def _get_timeseries_dict(channels, segments, config=None,
             resample[name] = float(channel.resample)
         except AttributeError:
             pass
-        if channel.dtype or dtype:
-            dtype_[name] = channel.dtype or dtype
+        if channel.dtype is not None:
+            dtype_[name] = channel.dtype
+        elif dtype is not None:
+            dtype_[name] = dtype
 
     # work out whether to use NDS or not
     if nds is None and cache is not None:

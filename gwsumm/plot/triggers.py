@@ -35,6 +35,7 @@ from astropy.units import Quantity
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.segments import SegmentList
 from gwpy.plot.gps import GPSTransform
+from gwpy.plot.tex import label_to_latex
 from gwpy.plot.utils import (color_cycle, marker_cycle)
 
 from .. import globalv
@@ -227,26 +228,19 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
         if len(self.channels) == 1:
-            self.pargs.setdefault(
-                'title', '%s (%s)' % (self.channels[0].texname, self.etg))
+            self.pargs.setdefault('title', label_to_latex(
+                '%s (%s)' % (str(self.channels[0]), self.etg)))
         for axis in ('x', 'y'):  # prevent zeros on log scale
-            scale = self.pargs.pop('{0}scale'.format(axis),
-                                   getattr(ax, 'get_{0}scale'.format(axis))())
+            scale = getattr(ax, 'get_{0}scale'.format(axis))()
             lim = getattr(ax, 'get_{0}lim'.format(axis))()
             if scale == 'log' and lim[0] <= 0 and not ntrigs:
                 getattr(ax, 'set_{0}lim'.format(axis))(1, 10)
-            getattr(ax, 'set_{0}scale'.format(axis))(scale)
 
         self.apply_parameters(ax, **self.pargs)
 
         # correct log-scale empty axes
         if any(map(isinf, ax.get_ylim())):
             ax.set_ylim(0.1, 10)
-
-        if 'time' in xcolumn:
-            ax.autoscale_view(tight=True, scalex=False)
-        else:
-            ax.autoscale_view(tight=True)
 
         # add colorbar
         if ccolumn:
@@ -261,7 +255,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             self.add_loudest_event(ax, table, *columns, fontsize='large')
 
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
+            ax.legend(**legendargs)
 
         # add state segments
         if isinstance(ax.xaxis.get_transform(), GPSTransform):

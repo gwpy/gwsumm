@@ -94,25 +94,15 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         # allow user to disable the state segments axes
         if self.pargs.pop('no-state-segments', False):
             visible = False
-        epoch = ax.get_epoch()
-        xlim = ax.get_xlim()
         if visible is None and self.state is not None and (
                 self.state.name.lower() != ALLSTATE):
             visible = True
         if visible:
-            kwargs.setdefault('edgecolor', 'darkgreen')
-            kwargs.setdefault('facecolor', GREEN)
-            kwargs.setdefault('known', {'facecolor': 'red',
-                                        'edgecolor': 'darkred'})
             sax = self.plot.add_segments_bar(self.state, ax, height=.2,
                                              pad=.1,  **kwargs)
-            ax.set_epoch(epoch)
-            sax.set_epoch(epoch)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')
-            sax.set_epoch(epoch)
-            ax.set_xlim(xlim)
-            ax.set_epoch(epoch)
+            sax.set_ylim(-.4, .4)
             return sax
         else:
             self.plot.subplots_adjust(bottom=0.18)
@@ -145,19 +135,12 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         for ax in plot.axes:
             if get_mode() == Mode.month:
                 ax.set_xscale('days')
-            ax.set_epoch(float(self.start))
+            if isinstance(ax.xaxis.get_transform(), GPSTransform):
+                ax.set_epoch(float(self.start))
+                if ax.get_autoscalex_on():
+                    ax.set_xlim(float(self.start), float(self.end))
             ax.grid(True, which='both')
         return plot
-
-    def finalize(self, outputfile=None, close=True, **savekwargs):
-        plot = self.plot
-        ax = plot.axes[0]
-        if 'xlim' not in self.pargs:
-            # add this to pargs to prevent autoscaling in DataPlot.finalize
-            self.pargs['xlim'] = (float(self.start), float(self.end))
-            ax.set_xlim(*self.pargs['xlim'])
-        return super(TimeSeriesDataPlot, self).finalize(
-                   outputfile=outputfile, close=close, **savekwargs)
 
     # -- main draw method -----------------------
 
@@ -460,7 +443,7 @@ class SpectrumDataPlot(DataPlot):
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = Plot(figsize=self.pargs.pop('figsize', [12, 6]))
+        plot = self.init_plot()
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
 

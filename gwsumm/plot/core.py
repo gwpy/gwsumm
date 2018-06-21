@@ -212,7 +212,9 @@ class DataPlot(SummaryPlot):
     #: plot() call style
     _single_call = False
     #: dict of default plotting kwargs
-    defaults = {}
+    defaults = {
+        'figsize': (12, 6),
+    }
     #: list of parameters parsed for `plot()` calls
     DRAW_PARAMS = list(putils.ARTIST_PARAMS)
 

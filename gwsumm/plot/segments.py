@@ -54,7 +54,7 @@ from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
-from .mixins import *
+from .mixins import SegmentLabelSvgMixin
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -247,7 +247,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
-        mask = self.pargs.pop('mask')
         plotargs = self.parse_plot_kwargs()
         legcolors = plotargs[0].copy()
 
@@ -297,7 +296,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             self.pargs['ylim'] = (-.5, len(self.flags) - 0.5)
         self.apply_parameters(ax, **self.pargs)
 
-        # add bit mask axes and finalise
+        # finalise
         self.add_state_segments(ax)
         self.add_future_shade()
 
@@ -390,7 +389,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                              "state-vector plot including multiple channels")
 
         # extract plotting arguments
-        mask = self.pargs.pop('mask')
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         extraargs = self.parse_plot_kwargs()
 

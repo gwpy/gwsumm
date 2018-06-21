@@ -28,7 +28,7 @@ from itertools import cycle
 
 from six import string_types
 
-from numpy import (ones_like, isinf)
+from numpy import isinf
 
 from astropy.units import Quantity
 

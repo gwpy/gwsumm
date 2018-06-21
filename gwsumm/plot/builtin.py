@@ -885,7 +885,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         cmap = self.pargs.pop('cmap', None)
         varargs = self.parse_variance_kwargs()
         plotargs = self.parse_plot_kwargs()[0]
-        legendargs = self.parse_legend_kwargs()
 
         # get reference arguments
         refs = self.parse_references()

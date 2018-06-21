@@ -236,7 +236,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
     def draw(self):
         # get labelsize
-        _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
         if self.pargs.get('insetlabels', True) is False:
             rcParams['ytick.labelsize'] = labelsize
@@ -300,7 +299,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         self.add_state_segments(ax)
         self.add_future_shade()
 
-        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
 
 register_plot(SegmentDataPlot)
@@ -774,7 +772,6 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
 
     def draw(self):
         # make font size smaller
-        _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
         rcParams['ytick.labelsize'] = labelsize
 
@@ -904,7 +901,6 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         self.add_state_segments(ax)
         self.add_future_shade()
         out = self.finalize()
-        rcParams['ytick.labelsize'] = _labelsize
         return out
 
 register_plot(ODCDataPlot)

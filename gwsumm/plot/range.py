@@ -234,8 +234,6 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
             plot.add_legend(ax=ax, **legendargs)
 
         # add extra axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
         self.add_future_shade()
         return self.finalize(outputfile=outputfile)

@@ -19,7 +19,43 @@
 """Utilies for GWSumm plotting
 """
 
+import itertools
+import re
+
+from matplotlib import rcParams
+
+from gwpy.plot.utils import (FIGURE_PARAMS, AXES_PARAMS)
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# -- plotting parameters ------------------------------------------------------
+
+LINE_PARAMS = [
+    'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',
+]
+COLLECTION_PARAMS = [
+    'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',
+]
+IMAGE_PARAMS = [
+    'imshow', 'cmap', 'vmin', 'vmax', 'norm', 'rasterized', 'extent',
+    'origin', 'interpolation', 'aspect',
+]
+HIST_PARAMS = [
+    'bins', 'range', 'normed', 'weights', 'cumulative', 'bottom',
+    'histtype', 'align', 'orientation', 'rwidth', 'log', 'color',
+    'label', 'stacked', 'logbins',
+]
+LEGEND_PARAMS = [
+    'loc', 'borderaxespad', 'ncol',
+]
+ARTIST_PARAMS = set(itertools.chain.from_iterable([
+    LINE_PARAMS,
+    COLLECTION_PARAMS,
+    IMAGE_PARAMS,
+    HIST_PARAMS,
+]))
+
+# -- default labels for table columns -----------------------------------------
 
 COLUMN_LABEL = {
     'peal_frequency': r"Frequency [Hz]",
@@ -38,10 +74,10 @@ def get_column_label(column):
     try:
         return COLUMN_LABEL[column]
     except KeyError:
-        return _get_column_string(column)
+        return get_column_string(column)
 
 
-def _get_column_string(column):
+def get_column_string(column):
     # pylint: disable=anomalous-backslash-in-string
     """
     Format the string columnName (e.g. xml table column) into latex format for
@@ -67,7 +103,7 @@ def _get_column_string(column):
     unit = ['ns']
     sub = ['flow', 'fhigh', 'hrss', 'mtotal', 'mchirp']
 
-    tex = pyplot.rcParams['text.usetex']
+    tex = rcParams['text.usetex']
 
     words = []
     for word in re.split(r'\s', column):

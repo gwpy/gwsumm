@@ -291,7 +291,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             ax.set_xlim(*xlim)
 
         # customise plot
-        if 'ylim' not in self.pargs:
+        if ax.get_autoscaley_on():
             self.pargs['ylim'] = (-.5, len(self.flags) - 0.5)
         self.apply_parameters(ax, **self.pargs)
 

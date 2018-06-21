@@ -40,7 +40,7 @@ from gwpy.plotter.utils import (color_cycle, marker_cycle)
 from .. import globalv
 from ..utils import (re_cchar, safe_eval)
 from ..data import (get_channel, get_timeseries, add_timeseries)
-from ..triggers import get_triggers
+from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -580,13 +580,7 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)
 
         # get time column
-        try:
-            tcol = self.pargs.pop('timecolumn')
-        except KeyError:
-            if self.etg in ['pycbc_live']:
-                tcol = 'end_time'
-            else:
-                tcol = 'time'
+        tcol = self.pargs.pop('timecolumn', None)
 
         # generate data
         keys = []
@@ -601,13 +595,14 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 key = str(channel)
             table_ = get_triggers(key, self.etg, valid,
                                   filter=self.filterstr, query=False)
+            tcol_ = tcol or get_time_column(table_, self.etg)
             if self.column:
                 rates = table_.binned_event_rates(
-                    stride, self.column, bins, operator, self.start,
-                    self.end, timecolumn=tcol).values()
+                    stride, self.column, bins, operator=operator,
+                    start=self.start, end=self.end, timecolumn=tcol_).values()
             else:
-                rates = [table_.event_rate(stride, self.start, self.end,
-                                           timecolumn=tcol)]
+                rates = [table_.event_rate(stride, start=self.start,
+                                           end=self.end, timecolumn=tcol_)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
                 keys.append('%s_%s_EVENT_RATE_%s_%s'

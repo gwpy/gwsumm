@@ -253,20 +253,16 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         except KeyError:  # build simple table
             tab = EventTable(names=columns)
         else:  # map to LIGO_LW table with full column listing
-            tab = EventTable(lsctables.New(TableClass), get_as_columns=True)
+            tab = EventTable(lsctables.New(TableClass))
         tab.meta['segments'] = SegmentList()
-        if read_kw.get('timecolumn'):
-            tab.meta['timecolumn'] = read_kw['timecolumn']
+        for k, v in read_kw.items():
+            if v is not None:
+                tab.meta.setdefault(k, v)
         add_triggers(tab, key)
 
     # work out time function
     if return_:
-        try:
-            return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
-        except KeyError:  # filtering didn't work, don't really care
-            return globalv.TRIGGERS[key]
-    else:
-        return
+        return keep_in_segments(globalv.TRIGGERS[key], segments, etg)
 
 
 def add_triggers(table, key, segments=None):
@@ -297,51 +293,54 @@ def keep_in_segments(table, segmentlist, etg=None):
 
 
 def get_times(table, etg):
-    # allow user to have selected the time column
-    if table.meta.get('timecolumn'):
-        return table[table.meta['timecolumn']]
-    # otherwise search for it
+    """Get the time data for this table
+
+    See Also
+    --------
+    get_time_column
+    """
     try:
-        return table['time']
-    except KeyError:
-        # shortcut pycbc
-        if etg == 'pycbc_live':
-            return table['end_time']
-        # guess from mapped LIGO_LW table
-        try:
-            TableClass = get_etg_table(etg)
-        except KeyError:
-            pass
-        else:
-            tablename = TableClass.TableName(TableClass.tableName)
-            if tablename.endswith('_burst'):
-                return table['peak_time'] + table['peak_time_ns'] * 1e-9
-            if tablename.endswith('_inspiral'):
-                return table['end_time'] + table['end_time_ns'] * 1e-9
-            if tablename.endswith('_ringdown'):
-                return table['start_time'] + table['start_time_ns'] * 1e-9
+        return table[get_time_column(table, etg)]
+    except ValueError:
+        # match well-defined LIGO_LW table types
+        tablename = table.meta.get('tablename') or ''
+        for ttype, tcol in (
+                ('_burst', 'peak'),
+                ('_inspiral', 'end'),
+                ('_ringdown', 'start'),
+        ):
+            if tablename.endswith(ttype):
+                sec = '{0}_time'.format(tcol)
+                nanosec = '{0}_time_ns'.format(tcol)
+                return table[sec] + table[nanosec] * 1e-9
         raise
 
 
 def get_time_column(table, etg):
-    """Get the time column for this table, etg pair
+    """Get the time column name for this table
     """
+    # allow user to have selected the time column
     if table.meta.get('timecolumn'):
         return table.meta['timecolumn']
-    if 'time' in table.colnames:
-        return 'time'
-    if etg == 'pycbc_live':
-        return 'end_time'
+    # otherwise search for it
+    try:
+        return table._get_time_column()
+    except ValueError:
+        # shortcut pycbc
+        if etg == 'pycbc_live':
+            'end_time'
 
-    # handle LIGO_LW tables (as best we can)
-    tablename = ETG_READ_KW.get(etg, {}).get('tablename', None)
-    if tablename in ('sngl_burst', 'multi_burst'):
-        return 'peak'
-    if tablename in ('sngl_inspiral', 'coinc_inspiral', 'multi_inspiral'):
-        return 'end'
-    if tablename in ('sngl_ringdown', 'multi_ringdown'):
-        return 'start'
-    raise ValueError("unknown time column for table")
+        # match well-defined LIGO_LW table types
+        tablename = table.meta.get('tablename') or ''
+        for ttype, tcol in (
+                ('_burst', 'peak'),
+                ('_inspiral', 'end'),
+                ('_ringdown', 'start'),
+        ):
+            if tablename.endswith(ttype) and tcol in table.columns:
+                table.meta['timecolumn'] = tcol
+                return tcol
+        raise
 
 
 def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
@@ -426,8 +425,13 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
 
     # read triggers
     table = EventTable.read(cache, **kwargs)
+
+    # store read keywords in the meta table
     if timecolumn:
         table.meta['timecolumn'] = timecolumn
+    for key, val in kwargs.items():
+        if val is not None:
+            table.meta.setdefault(key, val)
 
     # get back from cache entry
     if isinstance(cache, CacheEntry):

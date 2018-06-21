@@ -614,9 +614,9 @@ class DutyDataPlot(SegmentDataPlot):
             valid = self.state.active
         else:
             valid = SegmentList([self.span])
-        for i, (ax, flag, pargs, color) in enumerate(
+        for i, (ax, flag, pargs, propc) in enumerate(
                 zip(cycle(axes), self.flags, plotargs,
-                    cycle(rcParams['axes.color_cycle']))):
+                    cycle(rcParams['axes.prop_cycle']))):
             # get segments
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding)
@@ -630,7 +630,7 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
-            color = pargs.pop('color', color)
+            color = pargs.pop('color', propc['color'])
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()

@@ -674,7 +674,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                       casting='unsafe', copy=False)
 
             # apply resampling
-            tsd = resample_timeseries_dict(tsd, nproc=nproc, **resample)
+            tsd = resample_timeseries_dict(tsd, nproc=1, **resample)
 
             # post-process
             for c, data in tsd.items():

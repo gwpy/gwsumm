@@ -34,7 +34,7 @@ from matplotlib.colors import LogNorm
 
 from astropy.units import Quantity
 
-from gwpy.plot import Plot
+from gwpy.plot.colors import tint
 from gwpy.plot.gps import GPSTransform
 from gwpy.plot.tex import label_to_latex
 from gwpy.segments import SegmentList
@@ -680,7 +680,13 @@ class TimeSeriesHistogramPlot(DataPlot):
                 )
 
             # plot histogram
-            ax.hist(arr, **pargs)
+            _, _, patches = ax.hist(arr, **pargs)
+
+            # update edge color of histogram to be tinted version of face
+            if pargs.get('histtype', None) == 'stepfilled':
+                for p in patches:
+                    if not p.get_edgecolor()[3]:
+                        p.set_edgecolor(tint(p.get_facecolor(), .7))
 
         # customise plot
         legendargs = self.parse_legend_kwargs()

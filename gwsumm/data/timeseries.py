@@ -102,6 +102,12 @@ ADC_TYPES = {
     'raw',  # Virgo raw type
 }
 
+SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
+    'H1_HOFT_C00': 'H1_DMT_C00',
+    'L1_HOFT_C00': 'L1_DMT_C00',
+    'V1Online': 'V1_llhoft',
+}
+
 
 # -- utilities ----------------------------------------------------------------
 
@@ -272,17 +278,18 @@ def find_best_frames(ifo, frametype, start, end, **kwargs):
     gaps = span - cache_segments(cache)
 
     # if gaps and using aggregated h(t), check short files
-    if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
-        f2 = '%s_DMT_C00' % ifo
+    if abs(gaps) and frametype in SHORT_HOFT_TYPES:
+        f2 = SHORT_HOFT_TYPES[frametype]
         vprint("    Gaps discovered in aggregated h(t) type "
                "%s, checking %s\n" % (frametype, f2))
         kwargs['gaps'] = 'ignore'
-        c2 = find_frames(ifo, f2, start, end, **kwargs)
-        g2 = span - cache_segments(c2)
-        if abs(g2) < abs(gaps):
-            vprint("    Greater coverage with frametype %s\n" % f2)
-            return c2, f2
-        vprint("    No extra coverage with frametype %s\n" % f2)
+        cache.extend(filter(lambda e: e.segment in gaps,
+                            find_frames(ifo, f2, start, end, **kwargs)))
+        new = int(abs(gaps - cache_segments(cache)))
+        if new:
+            vprint("    %ss extra coverage with frametype %s\n" % (new, f2))
+        else:
+            vprint("    No extra coverage with frametype %s\n" % f2)
 
     return cache, frametype
 

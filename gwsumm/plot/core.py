@@ -715,6 +715,10 @@ class DataPlot(SummaryPlot):
                   **kwargs):
         """Initialise the Figure and Axes objects for this `DataPlot`.
         """
+        # update plot defaults using channel data
+        self._update_defaults_from_channels()
+
+        # strip figure and axes params from pargs
         for key in NON_PLOT_PARAMS:
             try:
                 kwargs.setdefault(key, self.pargs.pop(key))
@@ -726,6 +730,14 @@ class DataPlot(SummaryPlot):
                                 projection=projection, sharex=sharex,
                                 sharey=sharey, **kwargs)
         return self.plot
+
+    def _update_defaults_from_channels(self):
+        """Update default plotting params from channel attributes
+
+        This method is called at the start of DataPlot.init_plot(),
+        so should be populated in any subclasses that want it
+        """
+        pass
 
     def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.

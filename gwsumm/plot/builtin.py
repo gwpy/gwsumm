@@ -72,6 +72,12 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             for c in self.channels:
                 c._timeseries = True
 
+    def _update_defaults_from_channels(self):
+        for chan in self.channels:
+            if getattr(chan, 'amplitude_range', None) is not None:
+                self.pargs.setdefault('ylim', chan.amplitude_range)
+                break
+
     # -- utilities ------------------------------
 
     def add_state_segments(self, ax, visible=None, **kwargs):
@@ -204,14 +210,6 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                     label = None
                     pargs['color'] = line.get_color()
 
-            # allow channel data to set parameters
-            if len(flatdata):
-                chan = get_channel(flatdata[0].channel)
-            else:
-                chan = get_channel(clist[0])
-            if getattr(chan, 'amplitude_range', None) is not None:
-                self.pargs.setdefault('ylim', chan.amplitude_range)
-
         # customise plot
         self.add_hvlines()
         self.apply_parameters(ax, **self.pargs)
@@ -256,10 +254,22 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     def __init__(self, *args, **kwargs):
         super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
         self.ratio = self.pargs.pop('ratio')
-
         # set default colour-map for median ratio
         if self.ratio in ('median', 'mean'):
             self.pargs.setdefault('cmap', 'Spectral_r')
+
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            self.pargs.setdefault('ylim', channel.frequency_range)
+            if isinstance(self.pargs['ylim'], Quantity):
+                self.pargs['ylim'] = self.pargs['ylim'].value
+
+            if self.ratio is None and self.pargs.get('clim') is None:
+                if (self.pargs.get('format') in ('amplitude', 'asd') and
+                        hasattr(channel, 'asd_range')):
+                    self.pargs['clim'] = channel.asd_range
+                elif hasattr(channel, 'psd_range'):
+                    self.pargs['clim'] = channel.psd_range
 
     @property
     def pid(self):
@@ -323,18 +333,6 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         clabel = self.pargs.pop('colorlabel', '')
         clim = self.pargs.pop('clim', None)
         clog = self.pargs.pop('logcolor', False)
-
-        # allow channel data to set parameters
-        if getattr(channel, 'frequency_range', None) is not None:
-            self.pargs.setdefault('ylim', channel.frequency_range)
-            if isinstance(self.pargs['ylim'], Quantity):
-                self.pargs['ylim'] = self.pargs['ylim'].value
-        if self.ratio is None and clim is None:
-            if (sdform in ('amplitude', 'asd') and
-                    hasattr(channel, 'asd_range')):
-                clim = channel.asd_range
-            elif hasattr(channel, 'psd_range'):
-                clim = channel.psd_range
 
         # parse plotting arguments
         if clim:  # clim -> (vmin, vmax)
@@ -432,6 +430,18 @@ class SpectrumDataPlot(DataPlot):
         'reference-linestyle': '--',
     })
 
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            if getattr(channel, 'frequency_range', None) is not None:
+                self.pargs.setdefault('xlim', channel.frequency_range)
+                if isinstance(self.pargs['xlim'], Quantity):
+                    self.pargs['xlim'] = self.pargs['xlim'].value
+            if (self.pargs.get('format') in ['amplitude', 'asd'] and
+                    hasattr(channel, 'asd_range')):
+                self.pargs.setdefault('ylim', channel.asd_range)
+            elif hasattr(channel, 'psd_range'):
+                self.pargs.setdefault('ylim', channel.psd_range)
+
     def draw(self):
         pargs = self.pargs.copy()
         try:
@@ -521,17 +531,6 @@ class SpectrumDataPlot(DataPlot):
             else:
                 ax.plot(data[0], **pargs)
 
-            # allow channel data to set parameters
-            if getattr(channel, 'frequency_range', None) is not None:
-                self.pargs.setdefault('xlim', channel.frequency_range)
-                if isinstance(self.pargs['xlim'], Quantity):
-                    self.pargs['xlim'] = self.pargs['xlim'].value
-            if (sdform in ['amplitude', 'asd'] and
-                    hasattr(channel, 'asd_range')):
-                self.pargs.setdefault('ylim', channel.asd_range)
-            elif hasattr(channel, 'psd_range'):
-                self.pargs.setdefault('ylim', channel.psd_range)
-
         # display references
         for source, refparams in refs.items():
             refspec = io.read_frequencyseries(source)
@@ -601,6 +600,12 @@ class TimeSeriesHistogramPlot(DataPlot):
         'rwidth': 1,
     })
 
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            if hasattr(channel, 'amplitude_range'):
+                self.pargs.setdefault('xlim', channel.amplitude_range)
+                break
+
     def init_plot(self, geometry=None, **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
@@ -661,9 +666,6 @@ class TimeSeriesHistogramPlot(DataPlot):
                 valid = SegmentList([self.span])
             data.append(get_timeseries(channel, valid, query=False).join(
                 gap='ignore', pad=numpy.nan))
-            # allow channel data to set parameters
-            if hasattr(data[-1].channel, 'amplitude_range'):
-                self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
@@ -748,6 +750,15 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
             raise ValueError("Cannot generate TimeSeriesHistogram2dDataPlot "
                              " plot with more than 2 channels")
 
+    def _update_defaults_from_channels(self):
+        c1, c2 = self.channels
+        self.pargs.setdefault('xlabel', label_to_latex(str(c1)))
+        self.pargs.setdefault('ylabel', label_to_latex(str(c2)))
+        if hasattr(c1, 'amplitude_range'):
+            self.pargs.setdefault('xlim', c1.amplitude_range)
+        if hasattr(c2, 'amplitude_range'):
+            self.pargs.setdefault('ylim', c2.amplitude_range)
+
     def parse_hist_kwargs(self, **defaults):
         kwargs = {'bins': self.pargs.pop('bins'),
                   'normed': self.pargs.pop('normed')}
@@ -798,13 +809,6 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                 gap='ignore', pad=numpy.nan))
         if len(data) == 1:
             data.append(data[0])
-        # allow channel data to set parameters
-        self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
-        self.pargs.setdefault('ylabel', label_to_latex(data[1].name))
-        if hasattr(data[0].channel, 'amplitude_range'):
-            self.pargs.setdefault('xlim', data[0].channel.amplitude_range)
-        if hasattr(data[1].channel, 'amplitude_range'):
-            self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
         # histogram
         hist_kwargs = self.parse_hist_kwargs()
         h, xedges, yedges = numpy.histogram2d(data[0], data[1], **hist_kwargs)
@@ -843,6 +847,22 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         super(SpectralVarianceDataPlot, self).__init__(
             channels, *args, **kwargs)
 
+    def _update_defaults_from_channels(self):
+        chan = self.channels[0]
+
+        if getattr(chan, 'frequency_range', None) is not None:
+            self.pargs.setdefault('xlim', chan.frequency_range)
+            if isinstance(self.pargs['xlim'], Quantity):
+                self.pargs['xlim'] = self.pargs['xlim'].value
+
+        if hasattr(chan, 'asd_range'):
+            self.pargs.setdefault('ylim', chan.asd_range)
+
+        if hasattr(chan, 'asd_range'):
+            low, high = chan.asd_range
+            self.pargs.setdefault('low', low)
+            self.pargs.setdefault('high', high)
+
     def parse_variance_kwargs(self):
         varargs = dict()
         for key in ['low', 'high', 'log', 'nbins', 'bins', 'density', 'norm']:
@@ -873,12 +893,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         # get reference arguments
         refs = self.parse_references()
 
-        # get channel arguments
-        if hasattr(self.channels[0], 'asd_range'):
-            low, high = self.channels[0].asd_range
-            varargs.setdefault('low', low)
-            varargs.setdefault('high', high)
-
         # calculate spectral variance and plot
         # pad data request to over-fill plots (no gaps at the end)
         if self.state and not self.all_data:
@@ -908,14 +922,6 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
             ax.imshow(variance, cmap=cmap, **plotargs)
-
-        # allow channel data to set parameters
-        if getattr(self.channels[0], 'frequency_range', None) is not None:
-            self.pargs.setdefault('xlim', self.channels[0].frequency_range)
-            if isinstance(self.pargs['xlim'], Quantity):
-                self.pargs['xlim'] = self.pargs['xlim'].value
-        if hasattr(self.channels[0], 'asd_range'):
-            self.pargs.setdefault('ylim', self.channels[0].asd_range)
 
         # display references
         for source, refparams in refs.items():

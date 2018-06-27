@@ -68,8 +68,9 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
 
     def __init__(self, *args, **kwargs):
         super(TimeSeriesDataPlot, self).__init__(*args, **kwargs)
-        for c in self.channels:
-            c._timeseries = True
+        if self.data == 'timeseries':
+            for c in self.channels:
+                c._timeseries = True
 
     # -- utilities ------------------------------
 

@@ -97,7 +97,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         # for a timeseries:
                         if (not isinstance(ts, StateVector) and
                                 ts.sample_rate.value > 16.01 and
-                                not getattr(c, '_timeseries', True)):
+                                not getattr(c, '_timeseries', False)):
                             continue
                         # archive timeseries
                         try:

@@ -614,7 +614,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 fcache = Cache()
 
             if (cache is None or len(fcache) == 0) and len(new):
-                span = new.extent().protract(8)
+                span = new.extent()
                 fcache, frametype = find_best_frames(
                     ifo, frametype, span[0], span[1],
                     config=config, gaps='ignore', onerror=datafind_error)

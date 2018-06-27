@@ -42,7 +42,7 @@ from gwpy.segments import SegmentList
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
-from ..data import (get_channel, get_timeseries, get_spectrogram,
+from ..data import (get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum,
                     get_coherence_spectrum)
 from ..state import ALLSTATE

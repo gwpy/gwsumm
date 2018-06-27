@@ -379,11 +379,17 @@ class DataPlot(SummaryPlot):
 
     def _is_log(self, axis):
         scale = '{0}scale'.format(axis)
-        log = 'log{0}'.format(axis)
         try:
             return self.pargs[scale] == 'log'
         except KeyError:
-            return self.pargs.get(log, False)
+            try:
+                return self.pargs['log{0}'.format(axis)]
+            except KeyError:
+                try:
+                    ax = self.plot.gca()
+                except AttributeError:  # plot not generated yet
+                    return False
+                return getattr(ax, 'get_{0}'.format(scale))() == 'log'
 
     @property
     def logx(self):

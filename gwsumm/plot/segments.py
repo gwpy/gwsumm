@@ -37,8 +37,10 @@ import numpy
 from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
+from matplotlib.artist import setp
 from matplotlib.patches import Rectangle
 
+from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
 from gwpy.plot.tex import label_to_latex
 from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
@@ -461,7 +463,7 @@ class DutyDataPlot(SegmentDataPlot):
     """
     type = 'duty'
     data = 'segments'
-    defaults = SegmentDataPlot.defaults.copy()
+    defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({
         'alpha': 0.8,
         'sep': False,
@@ -470,6 +472,7 @@ class DutyDataPlot(SegmentDataPlot):
         'cumulative': False,
         'stacked': False,
         'ylabel': r'Duty factor [\%]',
+        'ylim': (0, 100),
     })
 
     def __init__(self, flags, start, end, state=None, outdir='.',
@@ -572,7 +575,8 @@ class DutyDataPlot(SegmentDataPlot):
         else:
             geometry = (1, 1)
 
-        plot = self.init_plot(geometry=geometry)
+        plot = self.init_plot(geometry=geometry, projection='rectilinear',
+                              sharex=True)
         axes = plot.axes
 
         # extract plotting arguments
@@ -602,7 +606,7 @@ class DutyDataPlot(SegmentDataPlot):
 
         # get bar parameters
         try:
-            bottom = self.pargs['ylim'][0]
+            bottom = axes[0].get_ylim()[0]
         except KeyError:
             bottom = 0
         bottom = numpy.zeros(times.size) + bottom
@@ -629,6 +633,7 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', propc['color'])
+            pargs.setdefault('edgecolor', tint(color, .7))
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()
@@ -680,10 +685,11 @@ class DutyDataPlot(SegmentDataPlot):
                 bottom += height
 
         # customise plot
-        self.apply_parameters(ax, **self.pargs)
-        if 'hours' in self.pargs.get('ylabel', ''):
-            ax.get_yaxis().get_major_locator().set_params(
-                steps=[1, 2, 4, 8])
+        for ax in axes:
+            self.apply_parameters(ax, **self.pargs)
+            if 'hours' in self.pargs.get('ylabel', ''):
+                ax.get_yaxis().get_major_locator().set_params(
+                    steps=[1, 2, 4, 8])
         if sep:
             # set text
             ylabel = axes[0].yaxis.get_label()
@@ -698,6 +704,7 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_title('')
                 if i < len(axes) - 1:
                     ax.set_xlabel('')
+                    setp(ax.get_xticklabels(), visible=False)
 
         # add custom legend for mean
         if rollingmean:
@@ -715,11 +722,9 @@ class DutyDataPlot(SegmentDataPlot):
             axes[0].add_artist(leg)
             axes[0].lines[0].set_label('_')
 
+        # add legend
         for ax in axes:
-            try:
-                plot.add_legend(ax=ax, **legendargs)
-            except AttributeError:
-                pass
+            ax.legend(**legendargs)
 
         self.add_state_segments(axes[-1])
         self.add_future_shade()
@@ -913,6 +918,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
         'legend-fontsize': 14,
+        'legend-frameon': False,
         'wedge-width': .55,
         'wedge-edgecolor': 'white',
     }
@@ -976,7 +982,8 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 getattr(wedge, 'set_%s' % key)(val)
 
         # make legend
-        legendargs['title'] = self.pargs.pop('title', None)
+        legendargs['title'] = ax.get_title()
+        ax.set_title('')
         legth = legendargs.pop('threshold', 0)
         legsort = legendargs.pop('sorted', False)
         tot = float(sum(data))
@@ -1056,17 +1063,14 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         5: 'quintuple',
         6: 'sextuple',
     }
-    NETWORK_COLOR = {
-        'H1': 'red',
-        'L1': (0.2, 0.8, 0.2),
-        'V1': (0.5, 0., 0.75),
-        'G1': 'gray',
+    NETWORK_COLOR = GW_OBSERVATORY_COLORS.copy()
+    NETWORK_COLOR.update({
         'no': 'black',
         'single': (1.0, 0.7, 0.0),
         'double': (0.0, 0.4, 1.0),
         'triple': 'pink',
         'quadruple': (1.0, 0.4, 0.0),
-    }
+    })
     defaults = SegmentPiePlot.defaults.copy()
     defaults.update({
         'legend-fontsize': 24,
@@ -1098,7 +1102,8 @@ class NetworkDutyPiePlot(SegmentPiePlot):
                 segs = get_segments(compound, validity=valid, query=False,
                                     padding=self.padding).coalesce()
                 networksegs += segs
-            globalv.SEGMENTS[flag] = networksegs - exclude
+            globalv.SEGMENTS[flag] = networksegs.copy()
+            globalv.SEGMENTS[flag].active -= exclude.active
             exclude = networksegs
             networkflags.append(flag)
             labels.append('%s interferometer' % name.title())

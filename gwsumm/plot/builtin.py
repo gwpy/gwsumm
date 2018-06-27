@@ -923,7 +923,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             variance /= livetime / specgram.dt.value
             # undo demodulation
             variance = undo_demodulation(variance, self.channels[0],
-                                         self.pargs.get('xlim', None))
+                                         ax.get_xlim())
 
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)

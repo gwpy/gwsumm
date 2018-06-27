@@ -56,5 +56,6 @@ from .guardian import *
 from .sei import *
 
 rcParams.update({
+    'figure.figsize': (12, 6),
     'svg.fonttype': 'none',
 })

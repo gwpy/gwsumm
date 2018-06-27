@@ -893,7 +893,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         ax.set_xlim(*xlim)
 
         # customise plot
-        if 'ylim' not in self.pargs:
+        if ax.get_autoscaley_on():  # no user-set ylim
             self.pargs['ylim'] = (-nflags+.5, .5)
         self.apply_parameters(ax, **self.pargs)
 

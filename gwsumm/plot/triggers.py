@@ -250,8 +250,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         if len(self.channels) == 1 and len(table) and not no_loudest:
             columns = [x for x in
-                       (loudest_by or ycolumn, xcolumn, ycolumn, ccolumn) if
-                       x is not None]
+                       (loudest_by or ccolumn or ycolumn, xcolumn, ycolumn,
+                        ccolumn) if x is not None]
             self.add_loudest_event(ax, table, *columns, fontsize='large')
 
         if len(self.channels) > 1:

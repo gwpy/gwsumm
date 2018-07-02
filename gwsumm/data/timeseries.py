@@ -635,7 +635,8 @@ def _get_timeseries_dict(channels, segments, config=None,
         qchannels = []
         for channel in channels:
             name = str(channel)
-            oldsegs = globalv.DATA.get(name, ListClass()).segments
+            oldsegs = globalv.DATA.get(keys[channel.ndsname],
+                                       ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
 

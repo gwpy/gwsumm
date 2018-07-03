@@ -38,6 +38,7 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
+from matplotlib.colors import rgb2hex
 from matplotlib.patches import Rectangle
 
 from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
@@ -75,10 +76,11 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         'color': None,
         'on-is-bad': False,
         'insetlabels': 'inset',
-        'legend-bbox_to_anchor': (1.01, 1.),
+        'legend-bbox_to_anchor': (1., 1.),
         'legend-loc': 'upper left',
         'legend-borderaxespad': 0,
         'legend-fontsize': 12,
+        'legend-frameon': False,
     })
     DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + [
         'known', 'height', 'y', 'facecolor', 'edgecolor',
@@ -196,11 +198,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         if active is None and known == 0:
             if onisbad:
                 self.pargs['facecolor'] = 'red'
-                self.pargs.setdefault('edgecolor', 'darkred')
-                self.pargs['known'] = {'facecolor': GREEN}
+                self.pargs['known'] = '#33cc33'
             else:
-                self.pargs['facecolor'] = GREEN
-                self.pargs.setdefault('edgecolor', 'darkred')
+                self.pargs['facecolor'] = '#33cc33'
                 self.pargs['known'] = 'red'
         # only active is defined
         elif known == 0:
@@ -209,19 +209,18 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 active = active.get('facecolor')
             else:
                 self.pargs['facecolor'] = active
-            if isinstance(active, string_types) and active.lower() == 'red':
+            if (isinstance(active, string_types) and
+                    active.lower() in ('red', '#ff0000')):
                 self.pargs['known'] = 'dodgerblue'
             else:
                 self.pargs['known'] = 'red'
         # only known is defined
         elif active is None:
             self.pargs['known'] = known
-            if known in [GREEN, str(GREEN), 'green', 'g']:
+            if known in ['#33cc33', 'green', 'g']:
                 self.pargs['facecolor'] = 'dodgerblue'
-                self.pargs.setdefault('edgecolor', 'blue')
             else:
-                self.pargs['facecolor'] = GREEN
-                self.pargs.setdefault('edgecolor', 'green')
+                self.pargs['facecolor'] = '#33cc33'
         # both are given
         else:
             if isinstance(active, dict):
@@ -229,7 +228,17 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             else:
                 self.pargs['facecolor'] = active
             self.pargs['known'] = known
-        self.pargs.setdefault('edgecolor', 'black')
+
+        # format
+        if isinstance(self.pargs['known'], string_types):
+            self.pargs['known'] = {'facecolor': self.pargs['known']}
+        for dict_ in (self.pargs, self.pargs['known']):
+            if dict_.get('facecolor'):
+                dict_.setdefault('edgecolor',
+                                 rgb2hex(tint(dict_['facecolor'], factor=.5)))
+        self.pargs.setdefault('height', .8)
+        self.pargs['known'].setdefault('height', self.pargs['height'] * .5)
+
         return self.pargs
 
     def parse_plot_kwargs(self, *args, **kwargs):
@@ -271,26 +280,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             ax.plot(segs, label=label, **pargs)
 
         # make custom legend
-        known = legcolors.pop('known', None)
-        if known:
-            active = legcolors.pop('facecolor')
-            edgecolor = legcolors.pop('edgecolor')
-            epoch = ax.get_epoch()
-            xlim = ax.get_xlim()
-            seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            if isinstance(known, dict):
-                known = known['facecolor']
-            v = ax.plot(seg, facecolor=known, collection=False)[0][0]
-            a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
-                        collection=False)[0][0]
-            if edgecolor not in [None, 'none']:
-                t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]
-                ax.legend([v, a, t], ['Known', 'Active', 'Transition'],
-                          **legendargs)
-            else:
-                ax.legend([v, a], ['Known', 'Active'], **legendargs)
-            ax.set_epoch(epoch)
-            ax.set_xlim(*xlim)
+        if legcolors.get('known', None):
+            self.add_legend(ax, legcolors, **legendargs)
 
         # customise plot
         if ax.get_autoscaley_on():
@@ -302,6 +293,26 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         self.add_future_shade()
 
         return self.finalize()
+
+    def add_legend(self, ax, colors, **kwargs):
+        aface = colors['facecolor']
+        aedge = colors['edgecolor']
+        kface = colors['known']
+        kedge = None
+        if isinstance(kface, dict):
+            kedge = kface['edgecolor']
+            kface = kface['facecolor']
+
+        # draw dummy segments for known, active and edges, and create legend
+        seg = Segment(0, 1)
+        k = SegmentRectangle(seg, 0, facecolor=kface, edgecolor=kedge)
+        a = SegmentRectangle(seg, 0, facecolor=aface, edgecolor=aedge)
+        if aedge not in (None, 'none', aface):
+            t = SegmentRectangle(seg, 0, facecolor=aedge, edgecolor=aedge)
+            return ax.legend([k, a, t], ['Known', 'Active', 'Transition'],
+                             **kwargs)
+        return ax.legend([k, a], ['Known', 'Active'], **kwargs)
+
 
 register_plot(SegmentDataPlot)
 
@@ -632,7 +643,7 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', propc['color'])
-            pargs.setdefault('edgecolor', tint(color, .7))
+            pargs.setdefault('edgecolor', rgb2hex(tint(color, .7)))
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()
@@ -686,7 +697,7 @@ class DutyDataPlot(SegmentDataPlot):
         # customise plot
         for ax in axes:
             self.apply_parameters(ax, **self.pargs)
-            if 'hours' in self.pargs.get('ylabel', ''):
+            if 'hours' in self.pargs.get('ylabel', ax.get_ylabel()):
                 ax.get_yaxis().get_major_locator().set_params(
                     steps=[1, 2, 4, 8])
         if sep:

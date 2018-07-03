@@ -24,6 +24,7 @@ from collections import OrderedDict
 from six import string_types
 
 from gwpy.segments import (Segment, SegmentList)
+from gwpy.plot.colors import tint
 from gwpy.plot.segments import SegmentRectangle
 
 from ..data import get_timeseries
@@ -39,15 +40,14 @@ class GuardianStatePlot(get_plot('segments')):
     defaults = get_plot('segments').defaults.copy()
     defaults.update({
         'color': None,
-        'edgecolor': 'black',
         'linewidth': 0.5,
-        'requestcolor': (0., .4, 1.),
-        'nominalcolor': (1.0, 0.7, 0.0),
+        'requestcolor': '#0066ff',
+        'nominalcolor': '#ffb200',
         'legend_loc': 'upper left',
-        'legend_bbox_to_anchor': (1.01, 1),
+        'legend_bbox_to_anchor': (1., 1.),
         'legend_borderaxespad': 0.,
+        'legend_frameon': False,
         'legend_fontsize': 12,
-        'legend_title': 'Node state',
         'ytick.labelsize': 10,
     })
 
@@ -82,6 +82,7 @@ class GuardianStatePlot(get_plot('segments')):
         legendargs = self.parse_legend_kwargs()
         plotargs = self.parse_plot_kwargs()[0]
         plotargs.pop('label')
+        height = plotargs.pop('height', .8)
         activecolor = plotargs.pop('facecolor')
         nominalcolor = self.pargs.pop('nominalcolor')
         requestcolor = self.pargs.pop('requestcolor')
@@ -95,6 +96,7 @@ class GuardianStatePlot(get_plot('segments')):
         reqargs.update({
             'facecolor': requestcolor,
             'known': None,
+            'height': height,
             })
         actargs.update({
             'facecolor': activecolor,
@@ -133,19 +135,19 @@ class GuardianStatePlot(get_plot('segments')):
         seg = Segment(self.start - 10, self.start - 9)
         v = plotargs.pop('known', None)
         n = SegmentRectangle(seg, 0, facecolor=nominalcolor,
-                             edgecolor=plotargs['edgecolor'])
+                             edgecolor=nominalcolor)
         a = SegmentRectangle(seg, 0, facecolor=requestcolor,
-                             edgecolor=plotargs['edgecolor'])
+                             edgecolor=requestcolor)
         b = SegmentRectangle(seg, 0, facecolor=activecolor,
                              edgecolor=actargs['edgecolor'])
+        handles = [n, a, b]
+        labels = ['Nominal', 'Request', 'Active']
         if v:
             v.pop('collection', None)
-            v = SegmentRectangle(seg, 0, **v)
-            ax.legend([v, n, a, b], ['Alive', 'Nominal', 'Request', 'Active'],
-                      **legendargs)
-        else:
-            ax.legend([n, a, b], ['Nominal', 'Request', 'Active'],
-                      **legendargs)
+            v['edgecolor'] = v.get('edgecolor') or tint(v['facecolor'], .5)
+            handles.insert(0, SegmentRectangle(seg, 0, **v))
+            labels.insert(0, 'Alive')
+        ax.legend(handles, labels, title='Node state', **legendargs)
 
         # customise plot
         for key, val in self.pargs.items():
@@ -158,68 +160,51 @@ class GuardianStatePlot(get_plot('segments')):
 
         # add node MODE along the bottom
         sax = None
+        seg_kw = {'y': 0, 'edgecolor': 'none', 'label': 'Mode'}
         legentry = OrderedDict()
-        grdmode = get_timeseries(
-            '%s:GRD-%s_MODE' % (self.ifo, self.node),
-            valid, query=False).join(gap='pad', pad=-1)
-        grdop = get_timeseries(
-            '%s:GRD-%s_OP' % (self.ifo, self.node),
-            valid, query=False).join(gap='pad', pad=-1)
-        modes = [(grdmode, ('EXEC', 'MANAGAED', 'MANUAL')),
-                 (grdop, (None, 'PAUSE', None))]
-        colors = ((0., .4, 1.), (.5, .0, .75), 'hotpink', 'yellow')
-        cidx = 0
-        for i, (data, mstate) in enumerate(modes):
-            for j, m in enumerate(mstate):
-                if m is None:
-                    continue
-                try:
-                    x = (data == j).to_dqflag()
-                except KeyError:
-                    pass
+        colors = iter(('#0066ff', '#8000bf', 'hotpink', 'yellow'))
+        for ctag, mstate in [
+            # bit listing for channels (Nones are ignored)
+            ('MODE', ('EXEC', 'MANAGED', 'MANUAL')),
+            ('OP', (None, 'PAUSE', None)),
+        ]:
+            # get data
+            data = get_timeseries(
+                '{0.ifo}:GRD-{0.node}_{1}'.format(self, ctag), valid,
+                query=False).join(gap='pad', pad=-1)
+            for i, m in filter(lambda x: x[1] is not None, enumerate(mstate)):
+                x = (data == i).to_dqflag()
+                fc = next(colors)
+                if sax is None:
+                    sax = plot.add_segments_bar(
+                        x.active, facecolor=fc, **seg_kw)
                 else:
-                    seg_kw = {'y': 0, 'facecolor': colors[cidx],
-                              'edgecolor': 'none', 'collection': 'ignore'}
-                    if sax is None:
-                        sax = plot.add_segments_bar(x.active, **seg_kw)
-                    else:
-                        sax.plot_segmentlist(x.active, **seg_kw)
-                legentry[m.title()] = SegmentRectangle(
-                    seg, 0, facecolor=colors[cidx], edgecolor='none')
-                cidx += 1
+                    sax.plot_segmentlist(
+                        x.active, facecolor=fc, **seg_kw)
+                legentry[m.title()] = SegmentRectangle(seg, 0, facecolor=fc,
+                                                       edgecolor=fc)
+                seg_kw.update({'collection': 'ignore', 'label': None})
 
         # add OK segments along the bottom
-        try:
-            ok = get_segments(flag.split(' ', 1)[0] + ' OK', validity=valid,
-                              query=False)
-        except NameError:
-            pass
-        else:
-            seg_kw = {'y': 0, 'facecolor': activecolor, 'label': 'Node `OK\''}
-            # just plot OK
-            if sax is not None:
-                sax.plot_segmentlist(ok.active, edgecolor=actargs['edgecolor'],
-                                     collection='ignore', **seg_kw)
-                # add gap in legend
-                legentry['$--$'] = SegmentRectangle(
-                    seg, 0, facecolor='w', fill=False, edgecolor='none',
-                    linewidth=0)
-                # add OK to legend
-                legentry['Node `OK\''] = SegmentRectangle(
-                    seg, 0, facecolor=activecolor,
-                    edgecolor=actargs['edgecolor'])
-            else:
-                sax = plot.add_segments_bar(ok, ax, known='red', **seg_kw)
+        ok = get_segments(flag.split(' ', 1)[0] + ' OK', validity=valid,
+                          query=False)
+        seg_kw.pop('edgecolor', None)
+        sax.plot_segmentlist(ok.active, facecolor=activecolor,
+                             edgecolor=actargs['edgecolor'],
+                             **seg_kw)
+        legentry['`OK\''] = SegmentRectangle(seg, 0, facecolor=activecolor,
+                                             edgecolor=actargs['edgecolor'])
 
         # make custom legend
-        if sax is not None:
-            if legentry:
-                sax.legend(legentry.values(), legentry.keys(),
-                           loc='lower left', bbox_to_anchor=(1.01, 0.),
-                           borderaxespad=0, fontsize=12, title='Node mode')
-            sax.tick_params(axis='y', which='major', labelsize=12)
-            sax.set_epoch(float(self.pargs.get('epoch', self.start)))
-            ax.set_epoch(sax.get_epoch())
+        legendargs.update({
+            'bbox_to_anchor': (1., 0.),
+            'loc': 'lower left',
+        })
+        sax.legend(legentry.values(), legentry.keys(), title='Node mode',
+                   **legendargs)
+        sax.tick_params(axis='y', which='major', labelsize=12)
+        sax.set_epoch(float(self.pargs.get('epoch', self.start)))
+        ax.set_epoch(sax.get_epoch())
 
         return self.finalize()
 

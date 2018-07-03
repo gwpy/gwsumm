@@ -55,7 +55,8 @@ from gwpy.time import tconvert
 
 from .html import (get_css, get_js)
 from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
-from .channels import (get_channels, split as split_channels)
+from .channels import (get_channels, split as split_channels,
+                       update_channel_params)
 
 __all__ = _cp__all__ + [
     'InterpolationMissingOptionError',
@@ -310,6 +311,10 @@ class GWSummConfigParser(ConfigParser):
                     else:
                         setattr(channel, key, safe_eval(val.rstrip()))
                 channels.append(channel)
+
+        # rebuild channel list with new parameters
+        update_channel_params()
+
         return channels
 
     def load_states(self, section='states'):

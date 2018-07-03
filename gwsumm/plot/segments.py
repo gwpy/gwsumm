@@ -389,7 +389,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                              "state-vector plot including multiple channels")
 
         # extract plotting arguments
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         extraargs = self.parse_plot_kwargs()
 
         # plot segments
@@ -786,7 +785,6 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         ax.grid(False, which='both', axis='y')
 
         # extract plotting arguments
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         nosummary = self.pargs.pop('no_summary_bit', False)
         activecolor = self.pargs.pop('active', GREEN)
         edgecolor = self.pargs.pop('edgecolor', 'black')

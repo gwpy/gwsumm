@@ -52,7 +52,8 @@ from .. import globalv
 from ..utils import vprint
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from ..channels import (get_channel, update_missing_channel_params,
-                        split_combination as split_channel_combination)
+                        split_combination as split_channel_combination,
+                        update_channel_params)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
@@ -336,6 +337,12 @@ def find_frame_type(channel):
     otherwise the frametype will be guessed based on the channel name and
     any trend options given
     """
+    if (channel.frametype is None and
+            channel.type is None and
+            channel.trend is not None):
+        raise ValueError("Cannot automatically determine frametype for {0}, "
+                         "please manually select frametype or give NDS-style "
+                         "channel suffix".format(channel.name))
     if channel.frametype is None:
         try:
             ndstype = io_nds2.Nds2ChannelType.find(channel.type)
@@ -635,7 +642,8 @@ def _get_timeseries_dict(channels, segments, config=None,
         qchannels = []
         for channel in channels:
             name = str(channel)
-            oldsegs = globalv.DATA.get(name, ListClass()).segments
+            oldsegs = globalv.DATA.get(keys[channel.ndsname],
+                                       ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
 
@@ -729,6 +737,9 @@ def _get_timeseries_dict(channels, segments, config=None,
 
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
+
+    # rebuilt global channel list with new parameters
+    update_channel_params()
 
     if not return_:
         return

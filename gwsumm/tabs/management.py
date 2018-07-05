@@ -115,14 +115,16 @@ class AccountingTab(ParentTab):
                 colors=piecolors, explode=explode,
                 title='%s operating mode %s' % (new.ifo, ptag)))
 
+            shortlabels = ['\n'.join('{0:.9}.'.format(w) if len(w) > 9 else w
+                                     for w in l.split()) for
+                           l in groups.values()]
             new.plots.append(get_plot('duty')(
                 [new.segmenttag % idx for idx in groups],
-                new.span[0], new.span[1], state=state,
-                labels=[f.replace(' ', '\n') for f in groups.values()],
+                new.span[0], new.span[1], state=state, labels=shortlabels,
                 outdir=plotdir, pid='%s_SEGMENT_BAR_%s' % (tag, ptag.upper()),
                 colors=piecolors, stacked=True, ylim=[0, 100],
                 ylabel=r'Percentage [\%] of available time',
-                legend_loc='upper left', legend_bbox_to_anchor=(1.01, 1),
+                legend_loc='upper left', legend_bbox_to_anchor=(1., 1),
                 legend_fontsize=12, legend_borderaxespad=0,
                 legend_frameon=False,
                 legend_handlelength=1.0, legend_handletextpad=.5,

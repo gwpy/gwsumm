@@ -135,7 +135,7 @@ def get_etg_table(etg):
 def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                  cache=None, columns=None, format=None, query=True,
                  nproc=1, ligolwtable=None, filter=None,
-                 timecolumn=None, return_=True):
+                 timecolumn=None, verbose=False, return_=True):
     """Read a table of transient event triggers for a given channel.
     """
     key = '%s,%s' % (str(channel), etg.lower())
@@ -146,6 +146,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # get read keywords for this etg
     read_kw = get_etg_read_kwargs(etg, config=config, exclude=[])
+    read_kw['verbose'] = verbose
 
     # extract columns (using function keyword if given)
     if columns:

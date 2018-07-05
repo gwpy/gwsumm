@@ -24,6 +24,7 @@ from __future__ import division
 import hashlib
 import bisect
 from itertools import (cycle, combinations)
+from numbers import Number
 
 try:
     from collections import OrderedDict
@@ -234,23 +235,38 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 self.pargs['facecolor'] = active
             self.pargs['known'] = known
 
-        # format
+        # format defaults
+        self.pargs.setdefault('height', .8)
         if isinstance(self.pargs['known'], string_types):
             self.pargs['known'] = {'facecolor': self.pargs['known']}
-        for dict_ in (self.pargs, self.pargs['known']):
-            fc = dict_.get('facecolor')
-            ec = dict_.get('edgecolor')
-            # if list of colors, map list of edgecolors
-            if (not ec and isinstance(fc, (list, tuple)) and
-                    not is_color_like(fc)):
-                dict_['edgecolor'] = map(lambda x: tint_hex(x, factor=.5), fc)
-            # otherwise map single color
-            elif fc and not ec:
-                dict_['edgecolor'] = tint_hex(fc, factor=.5)
-        self.pargs.setdefault('height', .8)
-        self.pargs['known'].setdefault('height', self.pargs['height'] * .5)
+
+        for dtup in (self.pargs, self.pargs['known']):
+            # allow user to give tuple of dicts for 'known'
+            if not isinstance(dtup, (list, tuple)):
+                dtup = [dtup]
+            [SegmentDataPlot._set_default_edgecolor(d) for d in dtup if
+             d is not None]
+
+        # set default height for known
+        if (isinstance(self.pargs['known'], dict) and
+                isinstance(self.pargs['height'], Number)):
+            self.pargs['known'].setdefault('height', self.pargs['height'] * .5)
 
         return self.pargs
+
+    @staticmethod
+    def _set_default_edgecolor(pargs):
+        """Set the default edgecolor based on the given facecolor
+        """
+        fc = pargs.get('facecolor')
+        ec = pargs.get('edgecolor')
+        # if list of colors, map list of edgecolors
+        if (not ec and isinstance(fc, (list, tuple)) and
+                not is_color_like(fc)):
+            pargs['edgecolor'] = map(lambda x: tint_hex(x, factor=.5), fc)
+        # otherwise map single color
+        elif fc and not ec:
+            pargs['edgecolor'] = tint_hex(fc, factor=.5)
 
     def parse_plot_kwargs(self, *args, **kwargs):
         self.get_segment_color()

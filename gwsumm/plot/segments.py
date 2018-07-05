@@ -38,7 +38,7 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
-from matplotlib.colors import rgb2hex
+from matplotlib.colors import (rgb2hex, is_color_like)
 from matplotlib.patches import Rectangle
 
 from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
@@ -63,6 +63,10 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 TimeSeriesDataPlot = get_plot('timeseries')
 GREEN = '#33cc33'
+
+
+def tint_hex(*args, **kwargs):
+    return rgb2hex(tint(*args, **kwargs))
 
 
 class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
@@ -233,9 +237,15 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         if isinstance(self.pargs['known'], string_types):
             self.pargs['known'] = {'facecolor': self.pargs['known']}
         for dict_ in (self.pargs, self.pargs['known']):
-            if dict_.get('facecolor'):
-                dict_.setdefault('edgecolor',
-                                 rgb2hex(tint(dict_['facecolor'], factor=.5)))
+            fc = dict_.get('facecolor')
+            ec = dict_.get('edgecolor')
+            # if list of colors, map list of edgecolors
+            if (not ec and isinstance(fc, (list, tuple)) and
+                    not is_color_like(fc)):
+                dict_['edgecolor'] = map(lambda x: tint_hex(x, factor=.5), fc)
+            # otherwise map single color
+            elif fc and not ec:
+                dict_['edgecolor'] = tint_hex(fc, factor=.5)
         self.pargs.setdefault('height', .8)
         self.pargs['known'].setdefault('height', self.pargs['height'] * .5)
 
@@ -643,7 +653,7 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', propc['color'])
-            pargs.setdefault('edgecolor', rgb2hex(tint(color, .7)))
+            pargs.setdefault('edgecolor', tint_hex(color, .7))
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()

@@ -81,7 +81,7 @@ class GWSummConfigParser(ConfigParser):
     def read_file(self, *args, **kwargs):
         try:
             return ConfigParser.read_file(self, *args, **kwargs)
-        except AttributeError:
+        except AttributeError:  # python < 3
             return self.readfp(*args, **kwargs)
 
     def ndoptions(self, section, **kwargs):

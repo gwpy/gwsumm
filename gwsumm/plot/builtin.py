@@ -105,14 +105,14 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 self.state.name.lower() != ALLSTATE):
             visible = True
         if visible:
-            sax = self.plot.add_segments_bar(self.state, ax, height=.2,
+            sax = self.plot.add_segments_bar(self.state, ax, height=.14,
                                              pad=.1,  **kwargs)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')
             sax.set_ylim(-.4, .4)
             return sax
         else:
-            self.plot.subplots_adjust(bottom=0.18)
+            self.plot.subplots_adjust(bottom=0.17)
             return None
 
     def add_future_shade(self, gps=None, facecolor='gray', alpha=.1,

@@ -3,13 +3,16 @@
 """Script to plot h(t) triggers for some epoch
 """
 
+from __future__ import unicode_literals
+
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 import argparse
 import os
 import re
-
 from collections import OrderedDict
+
+from six import text_type
 
 from matplotlib import use
 use('agg')
@@ -17,7 +20,6 @@ use('agg')
 from gwpy.time import to_gps
 
 from gwsumm import globalv
-from gwsumm.utils import vprint
 from gwsumm.archive import (write_data_archive, read_data_archive)
 from gwsumm.config import (DEFAULTSECT, GWSummConfigParser)
 from gwsumm.data import get_timeseries
@@ -47,7 +49,7 @@ parser.add_argument('node')
 parser.add_argument('gpsstart', type=to_gps)
 parser.add_argument('gpsend', type=to_gps)
 parser.add_argument('config', help='config-file defining guardian node')
-parser.add_argument('-i', '--ifo', default='L1')
+parser.add_argument('-i', '--ifo', type=text_type, default='L1')
 parser.add_argument('-t', '--epoch', type=to_gps,
                     help='Zero-time for plot, defaults to GPSSTART')
 parser.add_argument('-p', '--plot-params', action='append', default=[],
@@ -82,17 +84,18 @@ for input_ in args.plot_params:
 
 # read config
 config = GWSummConfigParser(dict_type=OrderedDict)
-config.read(args.config)
-config.set(DEFAULTSECT, 'gps-start-time', str(int(args.gpsstart)))
-config.set(DEFAULTSECT, 'gps-end-time', str(int(args.gpsend)))
+config.read([args.config])
+config.set(DEFAULTSECT, 'gps-start-time', text_type(int(args.gpsstart)))
+config.set(DEFAULTSECT, 'gps-end-time', text_type(int(args.gpsend)))
 config.set(DEFAULTSECT, 'IFO', args.ifo)
 sec = 'tab-%s' % args.node
 
 # read archive
-if args.archive or args.read_only_archive:
-    read_data_archive(args.archive or args.read_only_archive)
-    vprint("Read data archive from %s\n"
-           % args.archive or args.rad_only_archive)
+if args.archive and not args.read_only_archive:
+    args.read_only_archive = args.archive
+if args.read_only_archive and os.path.isfile(args.read_only_archive):
+    read_data_archive(args.read_only_archive)
+    print("Read data archive from {0.read_only_archive}".format(args))
 
 # make tab
 tab = GuardianTab.from_ini(config, sec, mode='gps', path='.', plotdir='.')
@@ -101,15 +104,15 @@ tab.plots[0].pargs.update(params)
 tab.plots[0].pargs['epoch'] = args.epoch
 
 # process
-vprint("Processing:\n")
+print("Processing:")
 tab.process(nproc=args.nproc)
 plotfile = tab.plots[0].outputfile
 os.rename(plotfile, args.output_file)
-vprint('Plot saved to %s\n' % args.output_file)
+print('Plot saved to {0.output_file}'.format(args))
 
 # crop and save archive
 if args.archive:
     for channel in globalv.DATA:
         globalv.DATA[channel] = get_timeseries(channel, state, query=False)
     write_data_archive(args.archive)
-    vprint("Archive recorded as %s\n" % args.archive)
+    print("Archive recorded as {0.archive}".format(args))

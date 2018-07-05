@@ -85,6 +85,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         'legend-borderaxespad': 0,
         'legend-fontsize': 12,
         'legend-frameon': False,
+        'legend-handletextpad': .5,
     })
     DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + [
         'known', 'height', 'y', 'facecolor', 'edgecolor',
@@ -1063,8 +1064,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
 
         # add bit mask axes and finalise
         self.pargs['xlim'] = None
-        return self.finalize(outputfile=outputfile, transparent="True",
-                             pad_inches=0)
+        return self.finalize(outputfile=outputfile, pad_inches=0)
 
 register_plot(SegmentPiePlot)
 

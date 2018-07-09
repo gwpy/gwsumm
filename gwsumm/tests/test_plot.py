@@ -293,10 +293,10 @@ class TestDataPlot(TestSummaryPlot):
 
     def test_finalize(self, plot):
         plot.pargs = {'ylim': (0, 10)}
-        fig = plot.plot = gwpy_plotter.figure()
+        fig = plot.init_plot()
         ax = fig.gca()
-        ax.set_autoscale_on(False)
         ax.set_title('TEST', y=1.0)
+        assert ax.get_ylim() == (0, 10)
 
         # check fileformat PDF creates png as well
         plot.fileformat = 'pdf'
@@ -315,7 +315,7 @@ class TestDataPlot(TestSummaryPlot):
         # now check normal things
         try:
             plot.finalize(close=False)
-            assert ax.title.get_position()[1] == 1.005
+            assert ax.title.get_position()[1] == 1.
             assert ax.get_autoscalex_on()
             assert not ax.get_autoscaley_on()
             assert os.path.isfile(plot.outputfile)
@@ -332,6 +332,6 @@ class TestDataPlot(TestSummaryPlot):
         plot.apply_parameters(ax, **{
             'xlim': (10, 20),
             'no-blah': 'anything',
-            'grid': 'off',
+            'grid': False,
         })
         assert ax.get_xlim() == (10, 20)

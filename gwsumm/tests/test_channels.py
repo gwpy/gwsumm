@@ -87,12 +87,8 @@ def test_get_channel_trend():
     assert raw.name == TREND_NAME.split('.')[0]
 
     # test default trend type
-    set_mode('DAY')
     chan = channels.get_channel(TREND_NAME3)
-    assert chan.type == 'm-trend'
-    set_mode('GPS')
-    chan = channels.get_channel(TREND_NAME4)
-    assert chan.type == 's-trend'
+    assert chan.type is None
 
 
 @empty_globalv_CHANNELS
@@ -100,7 +96,8 @@ def test_get_channels():
     names = [TEST_NAME, TREND_NAME, TREND_NAME2]
     nchan = len(globalv.CHANNELS)
     chans = channels.get_channels(names)
-    assert len(globalv.CHANNELS) == nchan + 3
+    # trend channels automatically create an entry for the upstream channel so '+ 1'
+    assert len(globalv.CHANNELS) == nchan + 3 + 1
     for name, chan in zip(names, chans):
         assert name == chan.ndsname
 

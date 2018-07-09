@@ -886,6 +886,139 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
 register_plot(TimeSeriesHistogram2dDataPlot)
 
 
+class TimeSeriesScatterDataPlot(TimeSeriesHistogramPlot):
+    """DataPlot of two `TimeSeries` with x & y corresponding to different
+     channels and color to time. If requested, joins points with line.
+    """
+    type = 'scatter'
+    data = 'timeseries'
+    defaults = {
+        'logy': False,
+        'hline': list(),
+        'grid': 'both',
+        'marker': 'o',
+        'cmap': 'inferno_r',
+        'edgecolors': 'none',
+        'alpha': None,
+        'linewidths': None,
+        'line': False,
+        'line_color': 'black',
+        'line_alpha': '0.2'
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(TimeSeriesScatterDataPlot, self).__init__(*args, **kwargs)
+        channels = self.channels
+        if isinstance(channels, (list, tuple)) and len(channels) > 2:
+            raise ValueError("Cannot generate TimeSeriesScatterDataPlot "
+                             " plot with more than 2 channels")
+
+    def parse_scatter_kwargs(self, **defaults):
+        kwargs = {
+                  'marker': self.pargs.pop('marker'),
+                  'cmap': self.pargs.pop('cmap'),
+                  'edgecolors': self.pargs.pop('edgecolors'),
+                  'alpha': self.pargs.pop('alpha'),
+                  'linewidths': self.pargs.pop('linewidths')
+                 }
+        if self.pargs['line'] == 'False':
+            self.pargs['line'] = False
+        return kwargs
+
+    def parse_line_kwargs(self, **defaults):
+        """Pop keyword arguments for `Axes.plot` from the `pargs` for this Plot
+        """
+        plotargs = defaults.copy()
+        plotargs.setdefault('label', self._parse_labels())
+        kwargs = ['alpha', 'color', 'drawstyle', 'fillstyle', 'linestyle',
+                  'linewidth', 'marker', 'markeredgecolor',
+                  'markeredgewidth', 'markerfacecolor',
+                  'markerfacecoloralt', 'markersize']
+        for kwarg in kwargs:
+            try:
+                val = self.pargs.pop('line_%s' % kwarg)
+            except KeyError:
+                try:
+                    val = self.pargs.pop('line_%ss' % kwarg)
+                except KeyError:
+                    val = None
+            if val is not None:
+                try:
+                    val = eval(val)
+                except Exception:
+                    pass
+                plotargs[kwarg] = val
+        return plotargs
+
+    def process(self, outputfile=None):
+        """Get data and generate the figure.
+        """
+        plot, axes = self.init_plot()
+        ax = axes[0]
+
+        if self.state:
+            self.pargs.setdefault(
+                'suptitle',
+                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
+                                        label_to_latex(str(self.state))))
+        suptitle = self.pargs.pop('suptitle', None)
+        if suptitle:
+            plot.suptitle(suptitle, y=0.993, va='top')
+        # get data
+        data = []
+        for channel in self.channels:
+            if self.state and not self.all_data:
+                valid = self.state.active
+            else:
+                valid = SegmentList([self.span])
+            data.append(get_timeseries(channel, valid, query=False).join(
+                gap='ignore', pad=numpy.nan))
+        if len(data) == 1:
+            data.append(data[0])
+        # allow channel data to set parameters
+        self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
+        self.pargs.setdefault('ylabel', label_to_latex(data[1].name))
+        if hasattr(data[0].channel, 'amplitude_range'):
+            self.pargs.setdefault('xlim', data[0].channel.amplitude_range)
+        else:
+            self.pargs.setdefault('xlim', [min(data[0].value),
+                                           max(data[0].value)])
+        if hasattr(data[1].channel, 'amplitude_range'):
+            self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
+        else:
+            self.pargs.setdefault('ylim', [min(data[1].value),
+                                           max(data[1].value)])
+        # plot
+        if self.pargs['line']:
+            line_kwargs = self.parse_line_kwargs()
+            ax.plot(data[0], data[1], zorder=1, **line_kwargs)
+        scatter_kwargs = self.parse_scatter_kwargs()
+        ax.scatter(data[0], data[1], c=data[0].times, zorder=2,
+                   **scatter_kwargs)
+        # customise plot
+        for key, val in self.pargs.iteritems():
+            try:
+                getattr(ax, 'set_%s' % key)(val)
+            except AttributeError:
+                if key == 'grid':
+                    if val == 'off':
+                        ax.grid('off')
+                    elif val in ['both', 'major', 'minor']:
+                        ax.grid('on', which=val)
+                    else:
+                        raise ValueError("Invalid ax.grid argument; "
+                                         "valid options are: 'off', "
+                                         "'both', 'major' or 'minor'")
+                else:
+                    setattr(ax, key, val)
+        # add extra axes and finalise
+        if not plot.colorbars:
+            plot.add_colorbar(ax=ax, visible=False)
+        return self.finalize(outputfile=outputfile)
+
+register_plot(TimeSeriesScatterDataPlot)
+
+
 class SpectralVarianceDataPlot(SpectrumDataPlot):
     """SpectralVariance histogram plot for a `DataTab`
     """

@@ -792,14 +792,10 @@ class DataPlot(SummaryPlot):
                     setattr(ax, key, val)
 
     def _apply_grid_params(self, ax, val):
-        if val == 'off':
-            ax.grid('off')
-        elif val in ['both', 'major', 'minor']:
-            ax.grid('on', which=val)
+        if val in ('major', 'minor'):
+            ax.grid(True, which=val)
         else:
-            raise ValueError("Invalid ax.grid argument; "
-                             "valid options are: 'off', "
-                             "'both', 'major' or 'minor'")
+            ax.grid(val)
 
     def add_hvlines(self):
         """Add horizontal and vertical lines to this `DataPlot`

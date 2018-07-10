@@ -510,9 +510,10 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     defaults = TimeSeriesDataPlot.defaults.copy()
     defaults.update({
         'column': None,
-        'legend-bbox_to_anchor': (1.01, 1.0),
+        'legend-bbox_to_anchor': (1., 1.),
         'legend-loc': 'upper left',
         'legend-markerscale': 3,
+        'legend-frameon': False,
         'ylabel': 'Rate [Hz]',
     })
 

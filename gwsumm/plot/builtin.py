@@ -215,9 +215,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         self.apply_parameters(ax, **self.pargs)
 
         # add legend
-        if (len(channels) > 1 or plotargs[0].get('label', None) in
-                [re.sub(r'(_|\\_)', r'\_', channels[0]), None]):
-            plot.gca().legend(**legendargs)
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend(**legendargs)
 
         self.add_state_segments(ax)
         self.add_future_shade()

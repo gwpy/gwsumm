@@ -38,7 +38,7 @@ from astropy import units
 
 from lal.utils import CacheEntry
 
-from glue import (datafind, lal as glue_lal, segments as glue_segments)
+from glue import (datafind, lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
 from gwpy.io.cache import cache_segments
@@ -674,8 +674,11 @@ def _get_timeseries_dict(channels, segments, config=None,
                 # NOTE: this sieve explicitly casts our segment to
                 #       glue.segments.segment to prevent `TypeError` from
                 #       a mismatch with ligo.segments.segment
-                segcache = fcache.sieve(
-                    segment=glue_segments.segment(*segment))
+                try:
+                    segcache = fcache.sieve(
+                        segment=type(fcache[0].segment)(*segment))
+                except IndexError:  # empty cache
+                    segcache = type(fcache)()
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
                                      end=segend, nproc=nproc,

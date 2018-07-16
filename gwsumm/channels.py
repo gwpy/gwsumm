@@ -219,10 +219,10 @@ def _match(channel):
     # if no matches, try again without matching type
     found = globalv.CHANNELS.sieve(name=name, exact_match=True)
     if len(found) == 1:
-         # found single match that is less specific, so we make it more
-         # specific. If someone else wants another type for the sme channel
-         # this is fine, and it will create another channel.
-         found[0].type = type_
+        # found single match that is less specific, so we make it more
+        # specific. If someone else wants another type for the sme channel
+        # this is fine, and it will create another channel.
+        found[0].type = type_
     return found
 
 

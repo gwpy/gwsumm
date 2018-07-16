@@ -27,7 +27,7 @@ from six.moves import StringIO
 
 from lxml import etree
 
-from gwpy.plotter.tex import label_to_latex
+from gwpy.plot.tex import label_to_latex
 
 re_bit_label = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
 re_source_label = re.compile('(?P<label>.*) \[(?P<flag>.*)\]')

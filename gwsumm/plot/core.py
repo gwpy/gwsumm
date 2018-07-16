@@ -25,22 +25,26 @@ import hashlib
 import os.path
 import re
 import warnings
+from collections import OrderedDict
 from math import (floor, ceil)
+from numbers import Number
 
 from six import string_types
 from six.moves.urllib.parse import urlparse
 
-from matplotlib import (rcParams, rc_context, __version__ as mpl_version)
+from matplotlib import (rcParams, rc_context)
 
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
-from gwpy.plotter import utils as putils
+from gwpy.plot import Plot
+from gwpy.plot.tex import label_to_latex
 
-from .registry import register_plot
 from ..channels import (get_channel, split as split_channels)
 from ..config import GWSummConfigParser
 from ..state import get_state
 from ..utils import (vprint, safe_eval, re_quote)
+from . import utils as putils
+from .registry import register_plot
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
@@ -57,7 +61,7 @@ NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
 def format_label(l):
     l = str(l).strip('\n ')
     l = re_quote.sub('', l)
-    return putils.rUNDERSCORE.sub(r'\_', l)
+    return label_to_latex(l)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -375,11 +379,17 @@ class DataPlot(SummaryPlot):
 
     def _is_log(self, axis):
         scale = '{0}scale'.format(axis)
-        log = 'log{0}'.format(axis)
         try:
             return self.pargs[scale] == 'log'
         except KeyError:
-            return self.pargs.get(log, False)
+            try:
+                return self.pargs['log{0}'.format(axis)]
+            except KeyError:
+                try:
+                    ax = self.plot.gca()
+                except AttributeError:  # plot not generated yet
+                    return False
+                return getattr(ax, 'get_{0}'.format(scale))() == 'log'
 
     @property
     def logx(self):
@@ -469,7 +479,6 @@ class DataPlot(SummaryPlot):
                 params[key] = re.sub(r'(?<!\\)_(?!.*{)', '\_', params[key])
         # format and return
         return cls(channels, start, end, **params)
-
 
     # -- plot parameter parsing -----------------
 
@@ -657,6 +666,40 @@ class DataPlot(SummaryPlot):
                 self.rcParams[key] = safe_eval(params.pop(key))
         return self.rcParams
 
+    def parse_list(self, prefix, **defaults):
+        """Parse a list of something from parameters
+
+        This enables listing `hline`s (for example) in the config as
+
+        [plot-blah]
+        hline = 100
+        hline-linestyle = '--'
+        hline-color = 'red'
+        hline2 = 200
+        hline2-linestyle = '--'
+        hline2-color = 'blue'
+
+        Returns an `OrderedDict` with keys matching the primary parsed
+        value, and values as everything else, e.g.
+
+        {100: {'linestyle': '--', 'color': 'red'},
+         200: {'linestyle': '--', 'color': 'blue'},}
+        """
+        items = OrderedDict()
+        re_prefix = re.compile('{0}(\d+)?\Z'.format(prefix))
+        keys = sorted(self.pargs.keys())
+        while True:
+            for i, key in enumerate(keys):
+                if re_prefix.match(key):
+                    primary = safe_eval(self.pargs.pop(key))
+                    items[primary] = self._parse_extra_params(key, **defaults)
+                    break  # go to next iteration
+            else:  # no references matched, so stop
+                break
+            keys = sorted(self.pargs.keys()[i:])
+
+        return items
+
     # -- figure processing ----------------------
 
     def process(self, outputfile=None, close=True):
@@ -673,34 +716,38 @@ class DataPlot(SummaryPlot):
         raise NotImplementedError("This method should be provided by a "
                                   "sub-class")
 
+    def init_plot(self, data=[], FigureClass=Plot, geometry=(1, 1),
+                  projection='rectilinear', sharex=True, sharey=True,
+                  **kwargs):
+        """Initialise the Figure and Axes objects for this `DataPlot`.
+        """
+        # update plot defaults using channel data
+        self._update_defaults_from_channels()
+
+        # strip figure and axes params from pargs
+        for key in NON_PLOT_PARAMS:
+            try:
+                kwargs.setdefault(key, self.pargs.pop(key))
+            except KeyError:
+                pass
+
+        # create figure
+        self.plot = FigureClass(*data, geometry=geometry,
+                                projection=projection, sharex=sharex,
+                                sharey=sharey, **kwargs)
+        return self.plot
+
+    def _update_defaults_from_channels(self):
+        """Update default plotting params from channel attributes
+
+        This method is called at the start of DataPlot.init_plot(),
+        so should be populated in any subclasses that want it
+        """
+        pass
+
     def finalize(self, outputfile=None, close=True, **savekwargs):
         """Save the plot to disk and close.
         """
-        # customise axes for all mpl versions
-        for ax in self.plot.axes:
-            # move title up to create gap between axes
-            if ax.get_title() and ax.title.get_position()[1] == 1.0:
-                ax.title.set_y(1.005)
-            # set tight limits around data
-            if 'xlim' not in self.pargs and 'xbound' not in self.pargs:
-                ax.autoscale(enable=True, axis='x', tight=True)
-            if 'ylim' not in self.pargs and 'ybound' not in self.pargs:
-                ax.autoscale(enable=True, axis='y', tight=True)
-
-        # customise axes for mpl 1.x only
-        if mpl_version < '2.0':
-            for ax in self.plot.axes:
-                # lighten color of axes and legend borders
-                color = rcParams['grid.color']
-                for edge in ax.spines:
-                    ax.spines[edge].set_edgecolor(color)
-                if (ax.legend_ and
-                        ax.legend_.get_frame().get_edgecolor() != 'none'):
-                    ax.legend_.get_frame().set_edgecolor(color)
-            # customise colorbars
-            for cb in self.plot.colorbars:
-                cb.outline.set_edgecolor(color)
-
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
@@ -718,7 +765,7 @@ class DataPlot(SummaryPlot):
                 fp = outputfile
             try:
                 self.plot.save(fp, **savekwargs)
-            except (IOError, RuntimeError) as e:
+            except (IOError, RuntimeError, IndexError) as e:
                 warnings.warn("Caught %s: %s [retrying...]"
                               % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
@@ -745,15 +792,26 @@ class DataPlot(SummaryPlot):
                     setattr(ax, key, val)
 
     def _apply_grid_params(self, ax, val):
-        if val == 'off':
-            ax.grid('off')
-        elif val in ['both', 'major', 'minor']:
-            ax.grid('on', which=val)
+        if val in ('major', 'minor'):
+            ax.grid(True, which=val)
         else:
-            raise ValueError("Invalid ax.grid argument; "
-                             "valid options are: 'off', "
-                             "'both', 'major' or 'minor'")
+            ax.grid(val)
 
+    def add_hvlines(self):
+        """Add horizontal and vertical lines to this `DataPlot`
+
+        These should be defined in the configuration via the `hline` and
+        `vline` keys.
+        """
+        for key in ('hline', 'vline'):
+            lines = self.parse_list(key, linestyle='--', color='red')
+            for ax in self.plot.axes:
+                axline = getattr(ax, 'ax{0}'.format(key))
+                for val, params in lines.items():
+                    if isinstance(val, Number):
+                        val = [val]
+                    for x in val:
+                        axline(x, **params)
 
 register_plot(DataPlot)
 

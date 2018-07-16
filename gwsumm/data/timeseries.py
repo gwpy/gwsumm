@@ -38,7 +38,7 @@ from astropy import units
 
 from lal.utils import CacheEntry
 
-from glue import (datafind, lal as glue_lal, segments as glue_segments)
+from glue import (datafind, lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
 from gwpy.io.cache import cache_segments
@@ -52,7 +52,8 @@ from .. import globalv
 from ..utils import vprint
 from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
 from ..channels import (get_channel, update_missing_channel_params,
-                        split_combination as split_channel_combination)
+                        split_combination as split_channel_combination,
+                        update_channel_params)
 from .utils import (use_configparser, use_segmentlist, make_globalv_key)
 from .mathutils import get_with_math
 
@@ -100,6 +101,12 @@ ADC_TYPES = {
     'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
     'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
     'raw',  # Virgo raw type
+}
+
+SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
+    'H1_HOFT_C00': 'H1_DMT_C00',
+    'L1_HOFT_C00': 'L1_DMT_C00',
+    'V1Online': 'V1_llhoft',
 }
 
 
@@ -272,17 +279,18 @@ def find_best_frames(ifo, frametype, start, end, **kwargs):
     gaps = span - cache_segments(cache)
 
     # if gaps and using aggregated h(t), check short files
-    if abs(gaps) and frametype == '%s_HOFT_C00' % ifo:
-        f2 = '%s_DMT_C00' % ifo
+    if abs(gaps) and frametype in SHORT_HOFT_TYPES:
+        f2 = SHORT_HOFT_TYPES[frametype]
         vprint("    Gaps discovered in aggregated h(t) type "
                "%s, checking %s\n" % (frametype, f2))
         kwargs['gaps'] = 'ignore'
-        c2 = find_frames(ifo, f2, start, end, **kwargs)
-        g2 = span - cache_segments(c2)
-        if abs(g2) < abs(gaps):
-            vprint("    Greater coverage with frametype %s\n" % f2)
-            return c2, f2
-        vprint("    No extra coverage with frametype %s\n" % f2)
+        cache.extend(filter(lambda e: e.segment in gaps,
+                            find_frames(ifo, f2, start, end, **kwargs)))
+        new = int(abs(gaps - cache_segments(cache)))
+        if new:
+            vprint("    %ss extra coverage with frametype %s\n" % (new, f2))
+        else:
+            vprint("    No extra coverage with frametype %s\n" % f2)
 
     return cache, frametype
 
@@ -329,6 +337,12 @@ def find_frame_type(channel):
     otherwise the frametype will be guessed based on the channel name and
     any trend options given
     """
+    if (channel.frametype is None and
+            channel.type is None and
+            channel.trend is not None):
+        raise ValueError("Cannot automatically determine frametype for {0}, "
+                         "please manually select frametype or give NDS-style "
+                         "channel suffix".format(channel.name))
     if channel.frametype is None:
         try:
             ndstype = io_nds2.Nds2ChannelType.find(channel.type)
@@ -564,8 +578,10 @@ def _get_timeseries_dict(channels, segments, config=None,
             resample[name] = float(channel.resample)
         except AttributeError:
             pass
-        if channel.dtype or dtype:
-            dtype_[name] = channel.dtype or dtype
+        if channel.dtype is not None:
+            dtype_[name] = channel.dtype
+        elif dtype is not None:
+            dtype_[name] = dtype
 
     # work out whether to use NDS or not
     if nds is None and cache is not None:
@@ -605,7 +621,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 fcache = Cache()
 
             if (cache is None or len(fcache) == 0) and len(new):
-                span = new.extent().protract(8)
+                span = new.extent()
                 fcache, frametype = find_best_frames(
                     ifo, frametype, span[0], span[1],
                     config=config, gaps='ignore', onerror=datafind_error)
@@ -626,7 +642,8 @@ def _get_timeseries_dict(channels, segments, config=None,
         qchannels = []
         for channel in channels:
             name = str(channel)
-            oldsegs = globalv.DATA.get(name, ListClass()).segments
+            oldsegs = globalv.DATA.get(keys[channel.ndsname],
+                                       ListClass()).segments
             if abs(new - oldsegs) != 0:
                 qchannels.append(name)
 
@@ -657,8 +674,11 @@ def _get_timeseries_dict(channels, segments, config=None,
                 # NOTE: this sieve explicitly casts our segment to
                 #       glue.segments.segment to prevent `TypeError` from
                 #       a mismatch with ligo.segments.segment
-                segcache = fcache.sieve(
-                    segment=glue_segments.segment(*segment))
+                try:
+                    segcache = fcache.sieve(
+                        segment=type(fcache[0].segment)(*segment))
+                except IndexError:  # empty cache
+                    segcache = type(fcache)()
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
                                      end=segend, nproc=nproc,
@@ -672,7 +692,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                       casting='unsafe', copy=False)
 
             # apply resampling
-            tsd = resample_timeseries_dict(tsd, nproc=nproc, **resample)
+            tsd = resample_timeseries_dict(tsd, nproc=1, **resample)
 
             # post-process
             for c, data in tsd.items():
@@ -720,6 +740,9 @@ def _get_timeseries_dict(channels, segments, config=None,
 
                 # append and coalesce
                 add_timeseries(data, key=key, coalesce=True)
+
+    # rebuilt global channel list with new parameters
+    update_channel_params()
 
     if not return_:
         return

@@ -24,6 +24,7 @@ from __future__ import division
 import hashlib
 import bisect
 from itertools import (cycle, combinations)
+from numbers import Number
 
 try:
     from collections import OrderedDict
@@ -37,11 +38,13 @@ import numpy
 from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
+from matplotlib.artist import setp
+from matplotlib.colors import (rgb2hex, is_color_like)
 from matplotlib.patches import Rectangle
 
-from gwpy.plotter import *
-from gwpy.plotter.tex import label_to_latex
-from gwpy.plotter.utils import rUNDERSCORE
+from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
+from gwpy.plot.tex import label_to_latex
+from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
 
@@ -53,9 +56,9 @@ from ..channels import (get_channel, re_channel)
 from ..data import get_timeseries
 from ..segments import (get_segments, format_padding)
 from ..state import ALLSTATE
-from .core import (BarPlot, PiePlot)
+from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
-from .mixins import *
+from .mixins import SegmentLabelSvgMixin
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -63,19 +66,28 @@ TimeSeriesDataPlot = get_plot('timeseries')
 GREEN = '#33cc33'
 
 
+def tint_hex(*args, **kwargs):
+    return rgb2hex(tint(*args, **kwargs))
+
+
 class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
     """Segment plot of one or more `DataQualityFlags <DataQualityFlag>`.
     """
     type = 'segments'
     data = 'segments'
-    defaults = {'mask': None,
-                'color': None,
-                'on-is-bad': False,
-                'insetlabels': 'inset',
-                'legend-bbox_to_anchor': (1.01, 1.),
-                'legend-loc': 'upper left',
-                'legend-borderaxespad': 0,
-                'legend-fontsize': 12}
+    defaults = TimeSeriesDataPlot.defaults.copy()
+    defaults.update({
+        'mask': None,
+        'color': None,
+        'on-is-bad': False,
+        'insetlabels': 'inset',
+        'legend-bbox_to_anchor': (1., 1.),
+        'legend-loc': 'upper left',
+        'legend-borderaxespad': 0,
+        'legend-fontsize': 12,
+        'legend-frameon': False,
+        'legend-handletextpad': .5,
+    })
     DRAW_PARAMS = TimeSeriesDataPlot.DRAW_PARAMS + [
         'known', 'height', 'y', 'facecolor', 'edgecolor',
     ]
@@ -176,6 +188,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         new.flags = flags
         return new
 
+    def init_plot(self, projection='segments', **kwargs):
+        return super(SegmentDataPlot, self).init_plot(
+            projection=projection, **kwargs)
+
     def get_segment_color(self):
         """Parse the configured ``pargs`` and determine the colors for
         active and valid segments.
@@ -188,11 +204,9 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         if active is None and known == 0:
             if onisbad:
                 self.pargs['facecolor'] = 'red'
-                self.pargs.setdefault('edgecolor', 'darkred')
-                self.pargs['known'] = {'facecolor': GREEN}
+                self.pargs['known'] = '#33cc33'
             else:
-                self.pargs['facecolor'] = GREEN
-                self.pargs.setdefault('edgecolor', 'darkred')
+                self.pargs['facecolor'] = '#33cc33'
                 self.pargs['known'] = 'red'
         # only active is defined
         elif known == 0:
@@ -201,19 +215,18 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 active = active.get('facecolor')
             else:
                 self.pargs['facecolor'] = active
-            if isinstance(active, string_types) and active.lower() == 'red':
+            if (isinstance(active, string_types) and
+                    active.lower() in ('red', '#ff0000')):
                 self.pargs['known'] = 'dodgerblue'
             else:
                 self.pargs['known'] = 'red'
         # only known is defined
         elif active is None:
             self.pargs['known'] = known
-            if known in [GREEN, str(GREEN), 'green', 'g']:
+            if known in ['#33cc33', 'green', 'g']:
                 self.pargs['facecolor'] = 'dodgerblue'
-                self.pargs.setdefault('edgecolor', 'blue')
             else:
-                self.pargs['facecolor'] = GREEN
-                self.pargs.setdefault('edgecolor', 'green')
+                self.pargs['facecolor'] = '#33cc33'
         # both are given
         else:
             if isinstance(active, dict):
@@ -221,8 +234,39 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             else:
                 self.pargs['facecolor'] = active
             self.pargs['known'] = known
-        self.pargs.setdefault('edgecolor', 'black')
+
+        # format defaults
+        self.pargs.setdefault('height', .8)
+        if isinstance(self.pargs['known'], string_types):
+            self.pargs['known'] = {'facecolor': self.pargs['known']}
+
+        for dtup in (self.pargs, self.pargs['known']):
+            # allow user to give tuple of dicts for 'known'
+            if not isinstance(dtup, (list, tuple)):
+                dtup = [dtup]
+            [SegmentDataPlot._set_default_edgecolor(d) for d in dtup if
+             d is not None]
+
+        # set default height for known
+        if (isinstance(self.pargs['known'], dict) and
+                isinstance(self.pargs['height'], Number)):
+            self.pargs['known'].setdefault('height', self.pargs['height'] * .5)
+
         return self.pargs
+
+    @staticmethod
+    def _set_default_edgecolor(pargs):
+        """Set the default edgecolor based on the given facecolor
+        """
+        fc = pargs.get('facecolor')
+        ec = pargs.get('edgecolor')
+        # if list of colors, map list of edgecolors
+        if (not ec and isinstance(fc, (list, tuple)) and
+                not is_color_like(fc)):
+            pargs['edgecolor'] = map(lambda x: tint_hex(x, factor=.5), fc)
+        # otherwise map single color
+        elif fc and not ec:
+            pargs['edgecolor'] = tint_hex(fc, factor=.5)
 
     def parse_plot_kwargs(self, *args, **kwargs):
         self.get_segment_color()
@@ -230,18 +274,16 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
     def draw(self):
         # get labelsize
-        _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
         if self.pargs.get('insetlabels', True) is False:
             rcParams['ytick.labelsize'] = labelsize
 
         # create figure
-        (plot, axes) = self.init_plot(plot=SegmentPlot)
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
 
         # extract plotting arguments
         legendargs = self.parse_legend_kwargs()
-        mask = self.pargs.pop('mask')
         plotargs = self.parse_plot_kwargs()
         legcolors = plotargs[0].copy()
 
@@ -265,43 +307,39 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
             ax.plot(segs, label=label, **pargs)
 
         # make custom legend
-        known = legcolors.pop('known', None)
-        if known:
-            active = legcolors.pop('facecolor')
-            edgecolor = legcolors.pop('edgecolor')
-            epoch = ax.get_epoch()
-            xlim = ax.get_xlim()
-            seg = SegmentList([Segment(self.start - 10, self.start - 9)])
-            if isinstance(known, dict):
-                known = known['facecolor']
-            v = ax.plot(seg, facecolor=known, collection=False)[0][0]
-            a = ax.plot(seg, facecolor=active, edgecolor=edgecolor,
-                        collection=False)[0][0]
-            if edgecolor not in [None, 'none']:
-                t = ax.plot(seg, facecolor=edgecolor, collection=False)[0][0]
-                ax.legend([v, a, t], ['Known', 'Active', 'Transition'],
-                          **legendargs)
-            else:
-                ax.legend([v, a], ['Known', 'Active'], **legendargs)
-            ax.set_epoch(epoch)
-            ax.set_xlim(*xlim)
+        if legcolors.get('known', None):
+            self.add_legend(ax, legcolors, **legendargs)
 
         # customise plot
-        if 'ylim' not in self.pargs:
+        if ax.get_autoscaley_on():
             self.pargs['ylim'] = (-.5, len(self.flags) - 0.5)
         self.apply_parameters(ax, **self.pargs)
 
-        # add bit mask axes and finalise
-        if mask is None and not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
-        elif mask is not None:
-            plot.add_bitmask(mask, topdown=True)
-
+        # finalise
         self.add_state_segments(ax)
         self.add_future_shade()
 
-        rcParams['ytick.labelsize'] = _labelsize
         return self.finalize()
+
+    def add_legend(self, ax, colors, **kwargs):
+        aface = colors['facecolor']
+        aedge = colors['edgecolor']
+        kface = colors['known']
+        kedge = None
+        if isinstance(kface, dict):
+            kedge = kface['edgecolor']
+            kface = kface['facecolor']
+
+        # draw dummy segments for known, active and edges, and create legend
+        seg = Segment(0, 1)
+        k = SegmentRectangle(seg, 0, facecolor=kface, edgecolor=kedge)
+        a = SegmentRectangle(seg, 0, facecolor=aface, edgecolor=aedge)
+        if aedge not in (None, 'none', aface):
+            t = SegmentRectangle(seg, 0, facecolor=aedge, edgecolor=aedge)
+            return ax.legend([k, a, t], ['Known', 'Active', 'Transition'],
+                             **kwargs)
+        return ax.legend([k, a], ['Known', 'Active'], **kwargs)
+
 
 register_plot(SegmentDataPlot)
 
@@ -357,9 +395,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             if isinstance(l, (list, tuple)):
                 labels[i] = list(labels[i])
                 for j, l2 in enumerate(l):
-                    labels[i][j] = rUNDERSCORE.sub(r'\_', str(l2).strip('\n '))
+                    labels[i][j] = format_label(str(l2))
             elif isinstance(l, str):
-                labels[i] = rUNDERSCORE.sub(r'\_', str(l).strip('\n '))
+                labels[i] = format_label(str(l))
         while len(labels) < len(chans):
             labels.append(None)
         return labels
@@ -369,14 +407,18 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         return super(StateVectorDataPlot, self).parse_plot_kwargs(
             *args, **kwargs)
 
+    def init_plot(self, *args, **kwargs):
+        kwargs.setdefault('projection', 'segments')
+        return super(StateVectorDataPlot, self).init_plot(*args, **kwargs)
+
     def draw(self):
         # make font size smaller
         labelsize = self.rcParams.get('ytick.labelsize', 12)
         if self.pargs.get('insetlabels', True) is False:
             rcParams['ytick.labelsize'] = labelsize
 
-        (plot, axes) = self.init_plot(plot=SegmentPlot)
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
 
         # get bit setting
         bits = self.pargs.pop('bits', None)
@@ -385,8 +427,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                              "state-vector plot including multiple channels")
 
         # extract plotting arguments
-        mask = self.pargs.pop('mask')
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         extraargs = self.parse_plot_kwargs()
 
         # plot segments
@@ -447,12 +487,6 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
             self.pargs['ylim'] = (-.5, nflags-.5)
         self.apply_parameters(ax, **self.pargs)
 
-        # add bit mask axes and finalise
-        if mask is None and not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
-        elif mask is not None:
-            plot.add_bitmask(mask, topdown=True)
-
         self.add_state_segments(ax)
         self.add_future_shade()
 
@@ -466,13 +500,17 @@ class DutyDataPlot(SegmentDataPlot):
     """
     type = 'duty'
     data = 'segments'
-    defaults = {'alpha': 0.8,
-                'sep': False,
-                'side_by_side': False,
-                'normalized': None,
-                'cumulative': False,
-                'stacked': False,
-                'ylabel': r'Duty factor [\%]'}
+    defaults = TimeSeriesDataPlot.defaults.copy()
+    defaults.update({
+        'alpha': 0.8,
+        'sep': False,
+        'side_by_side': False,
+        'normalized': None,
+        'cumulative': False,
+        'stacked': False,
+        'ylabel': r'Duty factor [\%]',
+        'ylim': (0, 100),
+    })
 
     def __init__(self, flags, start, end, state=None, outdir='.',
                  bins=None, **kwargs):
@@ -574,7 +612,9 @@ class DutyDataPlot(SegmentDataPlot):
         else:
             geometry = (1, 1)
 
-        (plot, axes) = self.init_plot(plot=TimeSeriesPlot, geometry=geometry)
+        plot = self.init_plot(geometry=geometry, projection='rectilinear',
+                              sharex=True)
+        axes = plot.axes
 
         # extract plotting arguments
         style = self.pargs.pop('style', 'bar')
@@ -603,7 +643,7 @@ class DutyDataPlot(SegmentDataPlot):
 
         # get bar parameters
         try:
-            bottom = self.pargs['ylim'][0]
+            bottom = axes[0].get_ylim()[0]
         except KeyError:
             bottom = 0
         bottom = numpy.zeros(times.size) + bottom
@@ -613,9 +653,9 @@ class DutyDataPlot(SegmentDataPlot):
             valid = self.state.active
         else:
             valid = SegmentList([self.span])
-        for i, (ax, flag, pargs, color) in enumerate(
+        for i, (ax, flag, pargs, propc) in enumerate(
                 zip(cycle(axes), self.flags, plotargs,
-                    cycle(rcParams['axes.color_cycle']))):
+                    cycle(rcParams['axes.prop_cycle']))):
             # get segments
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding)
@@ -629,7 +669,8 @@ class DutyDataPlot(SegmentDataPlot):
                     pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
-            color = pargs.pop('color', color)
+            color = pargs.pop('color', propc['color'])
+            pargs.setdefault('edgecolor', tint_hex(color, .7))
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()
@@ -681,10 +722,11 @@ class DutyDataPlot(SegmentDataPlot):
                 bottom += height
 
         # customise plot
-        self.apply_parameters(ax, **self.pargs)
-        if 'hours' in self.pargs.get('ylabel', ''):
-            ax.get_yaxis().get_major_locator().set_params(
-                steps=[1, 2, 4, 8])
+        for ax in axes:
+            self.apply_parameters(ax, **self.pargs)
+            if 'hours' in self.pargs.get('ylabel', ax.get_ylabel()):
+                ax.get_yaxis().get_major_locator().set_params(
+                    steps=[1, 2, 4, 8])
         if sep:
             # set text
             ylabel = axes[0].yaxis.get_label()
@@ -699,6 +741,7 @@ class DutyDataPlot(SegmentDataPlot):
                     ax.set_title('')
                 if i < len(axes) - 1:
                     ax.set_xlabel('')
+                    setp(ax.get_xticklabels(), visible=False)
 
         # add custom legend for mean
         if rollingmean:
@@ -716,16 +759,9 @@ class DutyDataPlot(SegmentDataPlot):
             axes[0].add_artist(leg)
             axes[0].lines[0].set_label('_')
 
+        # add legend
         for ax in axes:
-            try:
-                plot.add_legend(ax=ax, **legendargs)
-            except AttributeError:
-                pass
-
-        # add extra axes and finalise
-        if not plot.colorbars:
-            for ax in axes:
-                plot.add_colorbar(ax=ax, visible=False)
+            ax.legend(**legendargs)
 
         self.add_state_segments(axes[-1])
         self.add_future_shade()
@@ -778,17 +814,15 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
 
     def draw(self):
         # make font size smaller
-        _labelsize = rcParams['ytick.labelsize']
         labelsize = self.pargs.pop('labelsize', 12)
         rcParams['ytick.labelsize'] = labelsize
 
         # make figure
-        (plot, axes) = self.init_plot(plot=SegmentPlot)
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
         ax.grid(False, which='both', axis='y')
 
         # extract plotting arguments
-        ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         nosummary = self.pargs.pop('no_summary_bit', False)
         activecolor = self.pargs.pop('active', GREEN)
         edgecolor = self.pargs.pop('edgecolor', 'black')
@@ -878,15 +912,15 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         epoch = ax.get_epoch()
         xlim = ax.get_xlim()
         seg = Segment(self.start - 10, self.start - 9)
-        m = ax.build_segment(seg, y=0, facecolor=inmaskcolor, edgecolor='none')
-        v = ax.build_segment(seg, y=0, facecolor=maskoncolor,
+        m = SegmentRectangle(seg, y=0, facecolor=inmaskcolor, edgecolor='none')
+        v = SegmentRectangle(seg, y=0, facecolor=maskoncolor,
                              edgecolor=edgecolor)
-        x = ax.build_segment(seg, y=0, facecolor=maskoffcolor,
+        x = SegmentRectangle(seg, y=0, facecolor=maskoffcolor,
                              edgecolor=edgecolor)
-        a = ax.build_segment(seg, y=0, facecolor=activecolor,
+        a = SegmentRectangle(seg, y=0, facecolor=activecolor,
                              edgecolor=edgecolor)
         if edgecolor not in [None, 'none']:
-            t = ax.build_segment(seg, y=0, facecolor=edgecolor)
+            t = SegmentRectangle(seg, y=0, facecolor=edgecolor)
             ax.legend([m, v, x, a, t],
                       ['In bitmask', 'Bit masked\nand OFF',
                        'Bit unmasked\nand OFF',  'Bit ON',
@@ -900,17 +934,14 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         ax.set_xlim(*xlim)
 
         # customise plot
-        if 'ylim' not in self.pargs:
+        if ax.get_autoscaley_on():  # no user-set ylim
             self.pargs['ylim'] = (-nflags+.5, .5)
         self.apply_parameters(ax, **self.pargs)
 
         # add bit mask axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
         self.add_state_segments(ax)
         self.add_future_shade()
         out = self.finalize()
-        rcParams['ytick.labelsize'] = _labelsize
         return out
 
 register_plot(ODCDataPlot)
@@ -922,20 +953,11 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
     defaults = {
         'legend-loc': 'center left',
         'legend-bbox_to_anchor': (.8, .5),
-        'legend-frameon': False,
         'legend-fontsize': 14,
+        'legend-frameon': False,
         'wedge-width': .55,
         'wedge-edgecolor': 'white',
     }
-
-    def init_plot(self, plot=Plot, geometry=(1, 1)):
-        """Initialise the Figure and Axes objects for this
-        `TimeSeriesDataPlot`.
-        """
-        figsize = self.pargs.pop('figsize', [12, 6])
-        self.plot = Plot(figsize=figsize)
-        axes = [self.plot.gca()]
-        return self.plot, axes
 
     parse_plot_kwargs = TimeSeriesDataPlot.parse_plot_kwargs
 
@@ -947,8 +969,8 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         return wedgeargs
 
     def draw(self, outputfile=None):
-        (plot, axes) = self.init_plot(plot=Plot)
-        ax = axes[0]
+        plot = self.init_plot(projection='rectilinear')
+        ax = plot.gca()
 
         # extract plotting arguments
         future = self.pargs.pop('include_future', False)
@@ -996,7 +1018,8 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 getattr(wedge, 'set_%s' % key)(val)
 
         # make legend
-        legendargs['title'] = self.pargs.pop('title', None)
+        legendargs['title'] = ax.get_title()
+        ax.set_title('')
         legth = legendargs.pop('threshold', 0)
         legsort = legendargs.pop('sorted', False)
         tot = float(sum(data))
@@ -1057,8 +1080,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
 
         # add bit mask axes and finalise
         self.pargs['xlim'] = None
-        return self.finalize(outputfile=outputfile, transparent="True",
-                             pad_inches=0)
+        return self.finalize(outputfile=outputfile, pad_inches=0)
 
 register_plot(SegmentPiePlot)
 
@@ -1076,17 +1098,14 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         5: 'quintuple',
         6: 'sextuple',
     }
-    NETWORK_COLOR = {
-        'H1': 'red',
-        'L1': (0.2, 0.8, 0.2),
-        'V1': (0.5, 0., 0.75),
-        'G1': 'gray',
+    NETWORK_COLOR = GW_OBSERVATORY_COLORS.copy()
+    NETWORK_COLOR.update({
         'no': 'black',
         'single': (1.0, 0.7, 0.0),
         'double': (0.0, 0.4, 1.0),
         'triple': 'pink',
         'quadruple': (1.0, 0.4, 0.0),
-    }
+    })
     defaults = SegmentPiePlot.defaults.copy()
     defaults.update({
         'legend-fontsize': 24,
@@ -1118,7 +1137,8 @@ class NetworkDutyPiePlot(SegmentPiePlot):
                 segs = get_segments(compound, validity=valid, query=False,
                                     padding=self.padding).coalesce()
                 networksegs += segs
-            globalv.SEGMENTS[flag] = networksegs - exclude
+            globalv.SEGMENTS[flag] = networksegs.copy()
+            globalv.SEGMENTS[flag].active -= exclude.active
             exclude = networksegs
             networkflags.append(flag)
             labels.append('%s interferometer' % name.title())
@@ -1157,18 +1177,9 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         3600: 'hours',
     }
 
-    def init_plot(self, plot=Plot, geometry=(1, 1)):
-        """Initialise the Figure and Axes objects for this
-        `TimeSeriesDataPlot`.
-        """
-        figsize = self.pargs.pop('figsize', [12, 6])
-        self.plot = Plot(figsize=figsize)
-        axes = [self.plot.gca()]
-        return self.plot, axes
-
     def draw(self, outputfile=None):
-        (plot, axes) = self.init_plot(plot=Plot)
-        ax = axes[0]
+        plot = self.init_plot(projection='rectilinear')
+        ax = plot.gca()
 
         if self.state:
             self.pargs.setdefault(
@@ -1260,7 +1271,8 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
 
     def draw(self, outputfile=None):
         # make axes
-        (plot, axes) = self.init_plot()
+        plot = self.init_plot(projection='rectilinear')
+        axes = plot.axes
 
         # use state to generate suptitle with GPS span
         if self.state:

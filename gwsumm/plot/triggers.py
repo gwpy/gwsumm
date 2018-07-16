@@ -23,25 +23,27 @@ from __future__ import division
 
 import hashlib
 import re
+from collections import OrderedDict
 from itertools import cycle
 
 from six import string_types
 
-from numpy import (ones_like, isinf)
+from numpy import isinf
 
 from astropy.units import Quantity
 
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.segments import SegmentList
-from gwpy.plotter import *
-from gwpy.plotter.table import get_column_string
-from gwpy.plotter.utils import (color_cycle, marker_cycle)
+from gwpy.plot.gps import GPSTransform
+from gwpy.plot.tex import label_to_latex
+from gwpy.plot.utils import (color_cycle, marker_cycle)
 
 from .. import globalv
-from ..utils import (re_cchar, safe_eval)
+from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, add_timeseries)
-from ..triggers import get_triggers
+from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
+from .utils import get_column_string
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -89,22 +91,22 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     """
     type = 'triggers'
     data = 'triggers'
-    defaults = {'x': 'time',
-                'y': 'snr',
-                'color': None,
-                'edgecolor': 'face',
-                'facecolor': None,
-                'marker': 'o',
-                's': 20,
-                'vmin': None,
-                'vmax': None,
-                'clim': None,
-                'cmap': 'YlGnBu',
-                'logcolor': False,
-                'colorlabel': None,
-                'size_by': None,
-                'size_by_log': None,
-                'size_range': None}
+    defaults = TimeSeriesDataPlot.defaults.copy()
+    defaults.update({
+        'x': 'time',
+        'y': 'snr',
+        'color': None,
+        'edgecolor': 'face',
+        'facecolor': None,
+        'marker': 'o',
+        's': 20,
+        'vmin': None,
+        'vmax': None,
+        'clim': None,
+        'cmap': 'YlGnBu',
+        'logcolor': False,
+        'colorlabel': None,
+    })
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  etg=None, **kwargs):
@@ -136,35 +138,14 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     def pid(self, id_):
         self._pid = str(id_)
 
-    def finalize(self, outputfile=None, close=True, **savekwargs):
-        if isinstance(self.plot, TimeSeriesPlot):
-            return super(TriggerDataPlot, self).finalize(
-                       outputfile=outputfile, close=close, **savekwargs)
-        else:
-            return super(TimeSeriesDataPlot, self).finalize(
-                       outputfile=outputfile, close=close, **savekwargs)
-
     def draw(self):
         # get columns
         xcolumn, ycolumn, ccolumn = self.columns
 
         # initialise figure
-        try:
-            base = safe_eval(self.pargs.pop('base'), globals_=globals())
-        except KeyError:
-            if 'time' in xcolumn:
-                base = TimeSeriesPlot
-            elif 'freq' in xcolumn:
-                base = FrequencySeriesPlot
-            else:
-                base = Plot
-        plot = self.plot = EventTablePlot(
-            figsize=self.pargs.pop('figsize', [12, 6]), base=base)
+        plot = self.init_plot()
         ax = plot.gca()
         ax.grid(True, which='both')
-        if isinstance(plot, TimeSeriesPlot):
-            ax.set_epoch(float(self.start))
-            ax.set_xlim(float(self.start), float(self.end))
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
@@ -175,7 +156,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # get colouring params
         cmap = self.pargs.pop('cmap')
         clim = self.pargs.pop('clim', self.pargs.pop('colorlim', None))
-        clog = self.pargs.pop('logcolor', False)
+        cnorm = 'log' if self.pargs.pop('logcolor', False) else None
         clabel = self.pargs.pop('colorlabel', None)
         no_loudest = self.pargs.pop('no-loudest', False) is not False
         loudest_by = self.pargs.pop('loudest-by', None)
@@ -185,9 +166,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         for i in range(len(self.channels)):
             plotargs.append(dict())
         # get plot arguments
-        for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'size_by',
-                    'size_by_log', 'size_range', 'cmap', 's', 'marker',
-                    'rasterized']:
+        for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'cmap', 's',
+                    'marker', 'rasterized']:
             try:
                 val = self.pargs.pop(key)
             except KeyError:
@@ -196,18 +176,12 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 val = color_cycle()
             if key == 'marker' and len(self.channels) > 1 and val is None:
                 val = marker_cycle()
-            elif (isinstance(val, (list, tuple, cycle)) and
-                  key not in ['size_range']):
+            elif isinstance(val, (list, tuple, cycle)):
                 val = cycle(val)
             else:
                 val = cycle([val] * len(self.channels))
             for i in range(len(self.channels)):
                 plotargs[i][key] = val.next()
-        # fix size_range
-        if (len(self.channels) == 1 and plotargs[0]['size_range'] is None and
-                (plotargs[0]['size_by'] or plotargs[0]['size_by_log']) and
-                clim is not None):
-            plotargs[0]['size_range'] = clim
 
         # add data
         valid = SegmentList([self.span])
@@ -246,24 +220,21 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 elif hasattr(channel, param):
                     if not clim:
                         clim = getattr(channel, param)
-                    if not pargs['size_range']:
-                        pargs['size_range'] = getattr(channel, param)
 
-            ax.plot_table(table, xcolumn, ycolumn, color=ccolumn,
-                          label=label, **pargs)
+            ax.scatter(table[xcolumn], table[ycolumn],
+                       c=table[ccolumn] if ccolumn else None,
+                       label=label, **pargs)
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
         if len(self.channels) == 1:
-            self.pargs.setdefault(
-                'title', '%s (%s)' % (self.channels[0].texname, self.etg))
+            self.pargs.setdefault('title', label_to_latex(
+                '%s (%s)' % (str(self.channels[0]), self.etg)))
         for axis in ('x', 'y'):  # prevent zeros on log scale
-            scale = self.pargs.pop('{0}scale'.format(axis),
-                                   getattr(ax, 'get_{0}scale'.format(axis))())
+            scale = getattr(ax, 'get_{0}scale'.format(axis))()
             lim = getattr(ax, 'get_{0}lim'.format(axis))()
             if scale == 'log' and lim[0] <= 0 and not ntrigs:
                 getattr(ax, 'set_{0}lim'.format(axis))(1, 10)
-            getattr(ax, 'set_{0}scale'.format(axis))(scale)
 
         self.apply_parameters(ax, **self.pargs)
 
@@ -271,52 +242,92 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         if any(map(isinf, ax.get_ylim())):
             ax.set_ylim(0.1, 10)
 
-        if 'time' in xcolumn:
-            ax.autoscale_view(tight=True, scalex=False)
-        else:
-            ax.autoscale_view(tight=True)
-
         # add colorbar
         if ccolumn:
             if not ntrigs:
                 ax.scatter([1], [1], c=[1], visible=False)
-            plot.add_colorbar(ax=ax, cmap=cmap, clim=clim,
-                              log=clog, label=clabel)
-        else:
-            plot.add_colorbar(ax=ax, visible=False)
+            ax.colorbar(cmap=cmap, clim=clim, norm=cnorm, label=clabel)
 
         if len(self.channels) == 1 and len(table) and not no_loudest:
-            if loudest_by is None and ccolumn is None:
-                columns = [ycolumn, xcolumn, ycolumn]
-            elif loudest_by is None:
-                columns = [ccolumn, xcolumn, ycolumn]
-            elif ccolumn is None:
-                columns = [loudest_by, xcolumn, ycolumn]
-            else:
-                columns = [loudest_by, xcolumn, ycolumn, ccolumn]
-            ax.add_loudest(table, *columns, fontsize='large')
-            # pin loudest to edge of axes if outside
-            loudest = ax.collections[-1]
-            x, y = loudest.get_offsets()[0]
-            xlim = ax.get_xlim()
-            ylim = ax.get_ylim()
-            x1 = max(min(x, xlim[1]), xlim[0])
-            y1 = max(min(y, ylim[1]), ylim[0])
-            if x1 != x or y1 != y:
-                loudest.set_offsets(([x1, y1]))
-                loudest.set_clip_on(False)
-                loudest.set_facecolor('pink')
+            columns = [x for x in
+                       (loudest_by or ccolumn or ycolumn, xcolumn, ycolumn,
+                        ccolumn) if x is not None]
+            self.add_loudest_event(ax, table, *columns, fontsize='large')
 
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
+            ax.legend(**legendargs)
 
         # add state segments
-        if isinstance(plot, TimeSeriesPlot):
+        if isinstance(ax.xaxis.get_transform(), GPSTransform):
             self.add_state_segments(ax)
             self.add_future_shade()
 
         # finalise
         return self.finalize()
+
+    def add_loudest_event(self, ax, table, rank, *columns, **kwargs):
+        # get loudest row
+        idx = table[rank].argmax()
+        row = table[idx]
+        x = float(row[columns[0]])
+        y = float(row[columns[1]])
+
+        # clip loudest event to axes limits
+        xlim = ax.get_xlim()
+        ylim = ax.get_ylim()
+        x1 = max(min(x, xlim[1]), xlim[0])
+        y1 = max(min(y, ylim[1]), ylim[0])
+        if x1 != x or y1 != y:  # loudest event is out of view
+            facecolor = 'pink'
+            clipon = False
+        else:
+            facecolor = 'gold'
+            clipon = True
+
+        # mark loudest row with star
+        coll = ax.scatter([x1], [y1], marker='*', zorder=1000,
+                          facecolor=facecolor, edgecolor='black',
+                          s=200, clip_on=clipon)
+
+        # get text
+        txt = []
+        for col in OrderedDict.fromkeys((rank,) + columns):  # unique ordered
+            # format column name
+            colstr = get_column_string(col)
+            # format row value
+            try:
+                valstr = '{0:.2f}'.format(row[col]).rstrip('.0')
+            except ValueError:  # not float()able
+                valstr = str(row[col])
+            txt.append('{col} = {val}'.format(col=colstr, val=valstr))
+
+        # get position for new text
+        try:
+            pos = kwargs.pop('position')
+        except KeyError:  # user didn't specify, set default and shunt title
+            pos = [0.5, 1.00]
+            tpos = ax.title.get_position()
+            ax.title.set_position((tpos[0], tpos[1] + 0.05))
+
+        # parse text kwargs
+        text_kw = {  # defaults
+            'transform': ax.transAxes,
+            'verticalalignment': 'bottom',
+            'horizontalalignment': 'center',
+        }
+        text_kw.update(kwargs)
+        if 'ha' in text_kw:  # handle short versions or alignment params
+            text_kw['horizontalalignment'] = text_kw.pop('ha')
+        if 'va' in text_kw:
+            text_kw['verticalalignment'] = text_kw.pop('va')
+
+        # add text
+        text = ax.text(pos[0], pos[1],
+                       'Loudest event: {0}'.format(', '.join(txt)),
+                       **text_kw)
+
+        return coll, text
+
 
 register_plot(TriggerDataPlot)
 
@@ -330,8 +341,8 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
     def draw(self):
         """Read in all necessary data, and generate the figure.
         """
-        (plot, axes) = self.init_plot()
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
@@ -358,10 +369,10 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
                 if self.logy:
                     ts.value[ts.value == 0] = 1e-100
                 if color is None:
-                    line = ax.plot_timeseries(ts, label=label)[0]
+                    line = ax.plot(ts, label=label)[0]
                     color = line.get_color()
                 else:
-                    ax.plot_timeseries(ts, color=color, label=None)
+                    ax.plot(ts, color=color, label=None)
 
             # allow channel data to set parameters
             if hasattr(data[0].channel, 'amplitude_range'):
@@ -384,9 +395,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
 
-        # add extra axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+        # finalise
         self.add_state_segments(ax)
         return self.finalize()
 
@@ -419,20 +428,12 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
     def pid(self, id_):
         self._pid = str(id_)
 
-    def init_plot(self, plot=HistogramPlot):
-        """Initialise the Figure and Axes objects for this
-        `TimeSeriesDataPlot`.
-        """
-        self.plot = plot(figsize=self.pargs.pop('figsize', [12, 6]))
-        ax = self.plot.gca()
-        ax.grid(True, which='both')
-        return self.plot, ax
-
     def draw(self):
         """Get data and generate the figure.
         """
         # get histogram parameters
-        (plot, ax) = self.init_plot()
+        plot = self.init_plot()
+        ax = plot.gca()
 
         # extract histogram arguments
         histargs = self.parse_plot_kwargs()
@@ -463,27 +464,21 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
             if hasattr(channel, 'amplitude_range'):
                 self.pargs.setdefault('xlim', channel.amplitude_range)
 
-        # get range
-        if 'range' not in histargs[0]:
-            for kwset in histargs:
-                kwset['range'] = ax.common_limits(data)
-
         # plot
         for arr, d, pargs in zip(data, livetime, histargs):
+            # set range if not given
+            if pargs.get('range') is None:
+                pargs['range'] = self._get_range(
+                    d,
+                    # use range from first dataset if already calculated
+                    range=histargs[0].get('range'),
+                    # use xlim if manually set (user or INI)
+                    xlim=None if ax.get_autoscalex_on() else ax.get_xlim(),
+                )
             pargs.setdefault('label', None)
-            if isinstance(pargs.get('weights', None), (float, int)):
-                pargs['weights'] = ones_like(arr) * pargs['weights']
-            try:
-                ax.hist(arr, **pargs)
-            except ValueError:
-                if arr.size:  # if not empty, real problem
-                    raise
-                # empty dataset, so fake something
-                p2 = pargs.copy()
-                p2.pop('weights')  # mpl errors on weights
-                if p2.get('log', False) or self.logx:
-                    p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
-                ax.hist([], **p2)
+            if pargs.get('log', True):
+                pargs.setdefault('bottom', 1e-200)
+            ax.hist(arr, **pargs)
 
         # tight scale the axes
         try:
@@ -501,9 +496,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
         if len(self.channels) > 1:
             plot.add_legend(ax=ax, **legendargs)
 
-        # add extra axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+        # finalise
         return self.finalize()
 
 register_plot(TriggerHistogramPlot)
@@ -515,10 +508,14 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     type = 'trigger-rate'
     data = 'triggers'
     defaults = TimeSeriesDataPlot.defaults.copy()
-    defaults.update({'column': None,
-                     'legend-bbox_to_anchor': (1.15, 1.1),
-                     'legend-markerscale': 3,
-                     'ylabel': 'Rate [Hz]'})
+    defaults.update({
+        'column': None,
+        'legend-bbox_to_anchor': (1., 1.),
+        'legend-loc': 'upper left',
+        'legend-markerscale': 3,
+        'legend-frameon': False,
+        'ylabel': 'Rate [Hz]',
+    })
 
     def __init__(self, *args, **kwargs):
         if 'stride' not in kwargs:
@@ -580,13 +577,7 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)
 
         # get time column
-        try:
-            tcol = self.pargs.pop('timecolumn')
-        except KeyError:
-            if self.etg in ['pycbc_live']:
-                tcol = 'end_time'
-            else:
-                tcol = 'time'
+        tcol = self.pargs.pop('timecolumn', None)
 
         # generate data
         keys = []
@@ -596,18 +587,20 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             else:
                 valid = SegmentList([self.span])
             if '#' in str(channel) or '@' in str(channel):
-                key = '%s,%s' % (str(channel), state and str(state) or 'All')
+                key = '%s,%s' % (str(channel),
+                                 str(self.state) if self.state else 'All')
             else:
                 key = str(channel)
             table_ = get_triggers(key, self.etg, valid,
                                   filter=self.filterstr, query=False)
+            tcol_ = tcol or get_time_column(table_, self.etg)
             if self.column:
                 rates = table_.binned_event_rates(
-                    stride, self.column, bins, operator, self.start,
-                    self.end, timecolumn=tcol).values()
+                    stride, self.column, bins, operator=operator,
+                    start=self.start, end=self.end, timecolumn=tcol_).values()
             else:
-                rates = [table_.event_rate(stride, self.start, self.end,
-                                           timecolumn=tcol)]
+                rates = [table_.event_rate(stride, start=self.start,
+                                           end=self.end, timecolumn=tcol_)]
             for bin, rate in zip(bins, rates):
                 rate.channel = channel
                 keys.append('%s_%s_EVENT_RATE_%s_%s'

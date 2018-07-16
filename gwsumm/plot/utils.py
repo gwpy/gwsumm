@@ -19,9 +19,43 @@
 """Utilies for GWSumm plotting
 """
 
-from gwpy.plotter.table import get_column_string
+import itertools
+import re
+
+from matplotlib import rcParams
+
+from gwpy.plot.utils import (FIGURE_PARAMS, AXES_PARAMS)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+# -- plotting parameters ------------------------------------------------------
+
+LINE_PARAMS = [
+    'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',
+]
+COLLECTION_PARAMS = [
+    'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',
+]
+IMAGE_PARAMS = [
+    'imshow', 'cmap', 'vmin', 'vmax', 'norm', 'rasterized', 'extent',
+    'origin', 'interpolation', 'aspect',
+]
+HIST_PARAMS = [
+    'bins', 'range', 'normed', 'weights', 'cumulative', 'bottom',
+    'histtype', 'align', 'orientation', 'rwidth', 'log', 'color',
+    'label', 'stacked', 'logbins',
+]
+LEGEND_PARAMS = [
+    'loc', 'borderaxespad', 'ncol',
+]
+ARTIST_PARAMS = set(itertools.chain.from_iterable([
+    LINE_PARAMS,
+    COLLECTION_PARAMS,
+    IMAGE_PARAMS,
+    HIST_PARAMS,
+]))
+
+# -- default labels for table columns -----------------------------------------
 
 COLUMN_LABEL = {
     'peal_frequency': r"Frequency [Hz]",
@@ -41,3 +75,70 @@ def get_column_label(column):
         return COLUMN_LABEL[column]
     except KeyError:
         return get_column_string(column)
+
+
+def get_column_string(column):
+    # pylint: disable=anomalous-backslash-in-string
+    """
+    Format the string columnName (e.g. xml table column) into latex format for
+    an axis label.
+
+    Parameters
+    ----------
+    column : `str`
+        string to format
+
+    Examples
+    --------
+    >>> get_column_string('snr')
+    'SNR'
+    >>> get_column_string('bank_chisq_dof')
+    r'Bank $\chi^2$ DOF'
+    """
+    acro = ['snr', 'ra', 'dof', 'id', 'ms', 'far']
+    greek = ['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'zeta', 'eta',
+             'theta', 'iota', 'kappa', 'lamda', 'mu', 'nu', 'xi', 'omicron',
+             'pi', 'rho', 'sigma', 'tau', 'upsilon', 'phi', 'chi', 'psi',
+             'omega']
+    unit = ['ns']
+    sub = ['flow', 'fhigh', 'hrss', 'mtotal', 'mchirp']
+
+    tex = rcParams['text.usetex']
+
+    words = []
+    for word in re.split(r'\s', column):
+        if word.isupper():
+            words.append(word)
+        else:
+            words.extend(re.split('_', word))
+
+    # parse words
+    for i, word in enumerate(words):
+        # get acronym in lower case
+        if word in acro:
+            words[i] = word.upper()
+        # get numerical unit
+        elif word in unit:
+            words[i] = '$(%s)$' % word
+        # get character with subscript text
+        elif word in sub and tex:
+            words[i] = r'%s$_{\mbox{\small %s}}$' % (word[0], word[1:])
+        # get greek word
+        elif word in greek and tex:
+            words[i] = r'$\%s$' % word
+        # get starting with greek word
+        elif re.match('(%s)' % '|'.join(greek), word) and tex:
+            if word[-1].isdigit():
+                words[i] = r'$\%s_{%s}$''' % tuple(
+                    re.findall(r"[a-zA-Z]+|\d+", word))
+            elif word.endswith('sq'):
+                words[i] = r'$\%s^2$' % word.rstrip('sq')
+        # get everything else
+        else:
+            if word.isupper():
+                words[i] = word
+            else:
+                words[i] = word.title()
+            # escape underscore
+            words[i] = re.sub(r'(?<!\\)_', r'\_', words[i])
+    return ' '.join(words)

@@ -76,10 +76,10 @@ def test_write_archive(delete=True):
     data.add_spectrogram(create([[1, 2, 3], [3, 2, 1], [1, 2, 3]],
                                 series_class=Spectrogram,
                                 channel='X1:TEST-SPECTROGRAM'))
-    t = EventTable(random.random((100, 5)), names=['a', 'b', 'c', 'd', 'e'])
+    t = EventTable(random.random((100, 5)), names=['time', 'a', 'b', 'c', 'd'])
     t.meta['segments'] = SegmentList([Segment(0, 100)])
     triggers.add_triggers(t, 'X1:TEST-TABLE,testing')
-    fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
+    fname = tempfile.mktemp(suffix='.h5', prefix='gwsumm-tests-')
     try:
         archive.write_data_archive(fname)
         archive.write_data_archive(fname)  # test again to validate backups
@@ -117,7 +117,7 @@ def test_archive_load_table():
                    names=['a', 'b', 'c', 'd', 'e'])
     empty = EventTable(names=['a', 'b'])
     try:
-        fname = tempfile.mktemp(suffix='.hdf', prefix='gwsumm-tests-')
+        fname = tempfile.mktemp(suffix='.h5', prefix='gwsumm-tests-')
         h5file = h5py.File(fname)
         # check table gets archived and read transparently
         archive.archive_table(t, 'test-table', h5file)

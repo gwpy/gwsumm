@@ -40,7 +40,9 @@ The available classes are:
    TriggerRateDataPlot
 """
 
-from matplotlib import (__version__ as mpl_version, rcParams)
+__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
+from matplotlib import rcParams
 
 from .registry import *
 from .utils import *
@@ -50,17 +52,10 @@ from .segments import *
 from .triggers import *
 from .range import *
 from .noisebudget import *
-
-__author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+from .guardian import *
+from .sei import *
 
 rcParams.update({
+    'figure.figsize': (12, 6),
     'svg.fonttype': 'none',
 })
-
-# use new viridis colormap by default
-if '1.5' <= mpl_version < '2.0':
-    rcParams['image.cmap'] = 'viridis'
-
-# use gray grid lines (that's the default in mpl 2)
-if mpl_version < '2.0':
-    rcParams['grid.color'] = 'gray'

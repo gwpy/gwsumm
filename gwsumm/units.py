@@ -16,17 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Gravitational-wave interferometer summary information system
-
+"""Extra units for GW data processing
 """
 
-from . import (
-    globalv,  # creates global variables
-    units,  # registers custom units
-)
-from ._version import get_versions
-
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__version__ = get_versions()['version']
 
-del get_versions
+from astropy import units
+import gwpy.detector.units  # register gwpy units
+
+_ns = {}  # collector for new units
+
+# Virgo units
+units.def_unit('state', namespace=_ns)
+
+# -- register new units -----
+units.add_enabled_units(_ns)

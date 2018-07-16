@@ -34,7 +34,7 @@ from .. import html
 from ..config import NoOptionError
 from ..data import get_channel
 from ..state import (get_state, ALLSTATE, generate_all_state)
-from ..triggers import get_triggers
+from ..triggers import (get_triggers, get_time_column)
 from ..utils import re_quote
 from ..mode import (Mode, get_mode)
 from .registry import (get_tab, register_tab)
@@ -304,16 +304,15 @@ class EventTriggerTab(get_tab('default')):
                 # get triggers
                 table = get_triggers(self.channel, self.plots[0].etg, state,
                                      filter=self.filterstr, query=False)
+                tcol = get_time_column(table, self.etg)
                 # set table headers
                 headers = list(self.loudest['labels'])
                 columns = list(self.loudest['columns'])
-                if columns[0].endswith('time') or headers[0].endswith('time'):
+                if tcol in columns:
                     headers.insert(1, 'UTC time')
                     date = True
-                    tcol = columns[0]
                 else:
                     date = False
-                    tcol = 'time'
                 # loop over rank columns
                 for rank in self.loudest['rank']:
                     try:

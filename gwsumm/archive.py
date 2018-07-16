@@ -87,6 +87,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                 sgroup = h5file.create_group('statevector')
                 # loop over channels
                 for c, tslist in globalv.DATA.items():
+                    c = get_channel(c)
                     # ignore trigger rate TimeSeries
                     if re_rate.search(str(c)):
                         continue
@@ -96,8 +97,7 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
                         # for a timeseries:
                         if (not isinstance(ts, StateVector) and
                                 ts.sample_rate.value > 16.01 and
-                                (not hasattr(c, '_timeseries') or
-                                 not c._timeseries)):
+                                not getattr(c, '_timeseries', False)):
                             continue
                         # archive timeseries
                         try:
@@ -221,7 +221,7 @@ def read_data_archive(sourcefile):
             load_table(dataset)
 
 
-def backup_existing_archive(filename, suffix='.hdf',
+def backup_existing_archive(filename, suffix='.h5',
                             prefix='gw_summary_archive_', dir=None):
     """Create a copy of an existing archive.
     """
@@ -252,7 +252,7 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
         s += datetime.timedelta(days=1)
         de = to_gps(s)
         archivedir = os.path.join(basedir, daybase, 'archive')
-        arch = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+        arch = os.path.join(archivedir, '%s-%s-%d-%d.h5'
                             % (ifo, tag, ds, de-ds))
         if os.path.isfile(arch):
             archives.append(arch)

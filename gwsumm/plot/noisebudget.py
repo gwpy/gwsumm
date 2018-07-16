@@ -25,8 +25,7 @@ import re
 
 import numpy
 
-from gwpy.plotter import FrequencySeriesPlot
-from gwpy.plotter.tex import label_to_latex
+from gwpy.plot.tex import label_to_latex
 from gwpy.segments import SegmentList
 
 from ..data import get_spectrum
@@ -40,15 +39,18 @@ class NoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget'
     data = 'spectrum'
-    defaults = {'xscale': 'log',
-                'yscale': 'log',
-                'format': 'asd',
-                'sum-label': 'Sum of noises',
-                'sum-linestyle': '--',
-                'sum-color': 'black',
-                'residual-label': 'Residual',
-                'residual-linestyle': ':',
-                'residual-color': 'Grey'}
+    defaults = get_plot('spectrum').defaults.copy()
+    defaults.update({
+        'xscale': 'log',
+        'yscale': 'log',
+        'format': 'asd',
+        'sum-label': 'Sum of noises',
+        'sum-linestyle': '--',
+        'sum-color': 'black',
+        'residual-label': 'Residual',
+        'residual-linestyle': ':',
+        'residual-color': 'grey',
+    })
 
     def _parse_extra_params(self, prefix, **defaults):
         """Parse parameters for an extra plot element
@@ -70,8 +72,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = FrequencySeriesPlot(
-            figsize=self.pargs.pop('figsize', [12, 6]))
+        plot = self.init_plot()
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
 
@@ -113,7 +114,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                 data.value[data.value == 0] = 1e-100
 
             pargs.setdefault('zorder', -i)
-            ax.plot_frequencyseries(data, **pargs)
+            ax.plot(data, **pargs)
 
         # assert all noise terms have the same resolution
         if any([x.dx != sumdata[0].dx for x in sumdata]):
@@ -131,7 +132,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         sum_ = sumdata[0] ** 2
         for d in sumdata[1:]:
             sum_ += d ** 2
-        ax.plot_frequencyseries(sum_ ** (1/2.), zorder=1, **sumargs)
+        ax.plot(sum_ ** (1/2.), zorder=1, **sumargs)
         ax.lines.insert(1, ax.lines.pop(-1))
 
         # plot residual of noises
@@ -144,13 +145,12 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                     residual = darmdata
                 else:  # other error
                     raise
-            ax.plot_frequencyseries(residual, zorder=-1000, **resargs)
+            ax.plot(residual, zorder=-1000, **resargs)
             ax.lines.insert(1, ax.lines.pop(-1))
 
         # finalize
         self.apply_parameters(ax, **self.pargs)
-        plot.add_legend(ax=ax, **legendargs)
-        plot.add_colorbar(ax=ax, visible=False)
+        ax.legend(ax=ax, **legendargs)
 
         return self.finalize()
 
@@ -162,15 +162,17 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
     """
     type = 'noise-budget-ratio'
     data = 'spectrum'
-    defaults = {'xscale': 'log',
-                'yscale': 'log',
-                'format': 'asd'}
+    defaults = get_plot('spectrum').defaults.copy()
+    defaults.update({
+        'xscale': 'log',
+        'yscale': 'log',
+        'format': 'asd',
+    })
 
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = FrequencySeriesPlot(
-            figsize=self.pargs.pop('figsize', [12, 6]))
+        plot = self.init_plot()
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
 
@@ -228,11 +230,10 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
             relative = target
 
         # plot ratio of h(t) to sum of noises
-        ax.plot_frequencyseries(relative, **plotargs)
+        ax.plot(relative, **plotargs)
 
         # finalize plot
         self.apply_parameters(ax, **self.pargs)
-        plot.add_colorbar(ax=ax, visible=False)
 
         return self.finalize()
 

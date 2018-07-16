@@ -31,24 +31,18 @@ from six import string_types
 import numpy
 
 from matplotlib.colors import LogNorm
-from matplotlib.pyplot import subplots
-
-try:
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-except ImportError:
-    from mpl_toolkits.axes_grid import make_axes_locatable
 
 from astropy.units import Quantity
-from astropy.io.registry import IORegistryError
 
-from gwpy.plotter import *
-from gwpy.plotter.tex import label_to_latex
+from gwpy.plot.colors import tint
+from gwpy.plot.gps import GPSTransform
+from gwpy.plot.tex import label_to_latex
 from gwpy.segments import SegmentList
 
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
-from ..utils import (re_cchar, safe_eval)
-from ..data import (get_channel, get_timeseries, get_spectrogram,
+from ..utils import re_cchar
+from ..data import (get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_spectrum,
                     get_coherence_spectrum)
 from ..state import ALLSTATE
@@ -66,13 +60,23 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
     """
     type = 'timeseries'
     data = 'timeseries'
-    defaults = {'yscale': 'linear',
-                'hline': list()}
+    defaults = DataPlot.defaults.copy()
+    defaults.update({
+        'xscale': 'auto-gps',
+        'yscale': 'linear',
+    })
 
     def __init__(self, *args, **kwargs):
         super(TimeSeriesDataPlot, self).__init__(*args, **kwargs)
-        for c in self.channels:
-            c._timeseries = True
+        if self.data == 'timeseries':
+            for c in self.channels:
+                c._timeseries = True
+
+    def _update_defaults_from_channels(self):
+        for chan in self.channels:
+            if getattr(chan, 'amplitude_range', None) is not None:
+                self.pargs.setdefault('ylim', chan.amplitude_range)
+                break
 
     # -- utilities ------------------------------
 
@@ -91,91 +95,67 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
 
         **kwargs
             other keyword arguments will be passed to the
-            :meth:`~gwpy.plotter.timeseries.TimeSeriesPlot.add_state_segments`
+            :meth:`~gwpy.plot.Plot.add_segments_bar`
             method.
         """
         # allow user to disable the state segments axes
         if self.pargs.pop('no-state-segments', False):
             visible = False
-        epoch = ax.get_epoch()
-        xlim = ax.get_xlim()
         if visible is None and self.state is not None and (
                 self.state.name.lower() != ALLSTATE):
             visible = True
         if visible:
-            kwargs.setdefault('edgecolor', 'darkgreen')
-            kwargs.setdefault('facecolor', GREEN)
-            kwargs.setdefault('known', {'facecolor': 'red',
-                                        'edgecolor': 'darkred'})
-            sax = self.plot.add_state_segments(self.state, ax, height=.2,
-                                               pad=.1,  plotargs=kwargs)
-            ax.set_epoch(epoch)
-            sax.set_epoch(epoch)
+            sax = self.plot.add_segments_bar(self.state, ax, height=.14,
+                                             pad=.1,  **kwargs)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')
-            sax.set_epoch(epoch)
-            ax.set_xlim(xlim)
-            ax.set_epoch(epoch)
+            sax.set_ylim(-.4, .4)
             return sax
         else:
-            self.plot.subplots_adjust(bottom=0.18)
+            self.plot.subplots_adjust(bottom=0.17)
             return None
 
     def add_future_shade(self, gps=None, facecolor='gray', alpha=.1,
                          **kwargs):
         """Shade those parts of the figure that display times in the future
         """
-        # allow user to override
-        if self.pargs.pop('no-future-shade', False):
-            return
+        end = float(self.end)
         # get time 'now'
         if gps is None:
             gps = globalv.NOW
-        end = float(self.end)
-        for ax in self.plot.axes:
-            # only shade time axes that include future times
-            if not isinstance(ax, TimeSeriesAxes) or end <= gps:
-                continue
+        # allow user to override
+        if self.pargs.pop('no-future-shade', False) or end <= gps:
+            return
+        # shade time axes
+        for ax in filter(
+                lambda ax: isinstance(ax.xaxis.get_transform(), GPSTransform),
+                self.plot.axes):
             ax.axvspan(gps, end, facecolor=facecolor, alpha=alpha, **kwargs)
 
     # -- init/finalize --------------------------
 
-    def init_plot(self, plot=TimeSeriesPlot, geometry=(1, 1), **kwargs):
+    def init_plot(self, *args, **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
-        figsize = self.pargs.pop('figsize', kwargs.pop('figsize', [12, 6]))
-        self.plot, axes = subplots(
-            nrows=geometry[0], ncols=geometry[1], sharex=True,
-            subplot_kw={'projection': plot._DefaultAxesClass.name},
-            FigureClass=plot, figsize=figsize, squeeze=True, **kwargs)
-        if geometry[0] * geometry[1] == 1:
-            axes = [axes]
-        for ax in axes:
+        plot = super(TimeSeriesDataPlot, self).init_plot(*args, **kwargs)
+        for ax in plot.axes:
             if get_mode() == Mode.month:
                 ax.set_xscale('days')
-                ax.set_xlabel('_auto')
-            ax.set_epoch(float(self.start))
+            if isinstance(ax.xaxis.get_transform(), GPSTransform):
+                ax.set_epoch(float(self.start))
+                if ax.get_autoscalex_on():
+                    ax.set_xlim(float(self.start), float(self.end))
             ax.grid(True, which='both')
-        return self.plot, axes
-
-    def finalize(self, outputfile=None, close=True, **savekwargs):
-        plot = self.plot
-        ax = plot.axes[0]
-        if 'xlim' not in self.pargs:
-            # add this to pargs to prevent autoscaling in DataPlot.finalize
-            self.pargs['xlim'] = (float(self.start), float(self.end))
-            ax.set_xlim(*self.pargs['xlim'])
-        return super(TimeSeriesDataPlot, self).finalize(
-                   outputfile=outputfile, close=close, **savekwargs)
+        return plot
 
     # -- main draw method -----------------------
 
     def draw(self, outputfile=None):
         """Read in all necessary data, and generate the figure.
         """
-        (plot, axes) = self.init_plot()
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
 
         plotargs = self.parse_plot_kwargs()
         legendargs = self.parse_legend_kwargs()
@@ -183,17 +163,11 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         # add data
         channels, groups = zip(*self.get_channel_groups())
         for clist, pargs in zip(groups, plotargs):
-            # pad data request to over-fill plots (no gaps at the end)
-            if self.state and not self.all_data:
-                valid = self.state.active
-            elif clist[0].sample_rate:
-                valid = SegmentList([self.span.protract(
-                    1/clist[0].sample_rate.value)])
-            else:
-                valid = SegmentList([self.span])
             # get data
+            valid = self._get_data_segments(clist[0])
             data = [get_timeseries(c, valid, query=False)
                     for c in clist]
+
             if len(clist) > 1:
                 data = [tsl.join(gap='pad', pad=numpy.nan) for tsl in data]
             flatdata = [ts for tsl in data for ts in tsl]
@@ -220,54 +194,44 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                             str(flatdata[0].channel)).split('.')[0]):
                         label += ' [%s]' % (
                             label_to_latex(str(flatdata[0].channel)))
+
             # plot groups or single TimeSeries
             if len(clist) > 1:
                 data[1].name = None  # force no labels for shades
                 data[2].name = None
                 ax.plot_mmm(*data, label=label, **pargs)
             elif len(flatdata) == 0:
-                ax.plot_timeseries(
-                    data[0].EntryClass([], epoch=self.start, unit='s',
-                                       name=label), label=label, **pargs)
+                ax.plot(data[0].EntryClass([], epoch=self.start, unit='s',
+                                           name=label),
+                        label=label, **pargs)
             else:
                 for ts in data[0]:
-                    line = ax.plot_timeseries(ts, label=label, **pargs)[0]
+                    line, = ax.plot(ts, label=label, **pargs)
                     label = None
                     pargs['color'] = line.get_color()
 
-            # allow channel data to set parameters
-            if len(flatdata):
-                chan = get_channel(flatdata[0].channel)
-            else:
-                chan = get_channel(clist[0])
-            if getattr(chan, 'amplitude_range', None) is not None:
-                self.pargs.setdefault('ylim', chan.amplitude_range)
-
-        # add horizontal lines to add
-        for yval in self.pargs.get('hline', []):
-            try:
-                yval = float(yval)
-            except ValueError:
-                continue
-            else:
-                ax.plot([self.start, self.end], [yval, yval],
-                        linestyle='--', color='red')
-
         # customise plot
+        self.add_hvlines()
         self.apply_parameters(ax, **self.pargs)
 
-        if (len(channels) > 1 or plotargs[0].get('label', None) in
-                [re.sub(r'(_|\\_)', r'\_', channels[0]), None]):
-            plot.add_legend(ax=ax, **legendargs)
-
-        # add extra axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+        # add legend
+        if ax.get_legend_handles_labels()[0]:
+            ax.legend(**legendargs)
 
         self.add_state_segments(ax)
         self.add_future_shade()
 
         return self.finalize(outputfile=outputfile)
+
+    def _get_data_segments(self, channel):
+        """Get data segments for this plot
+        """
+        if self.state and not self.all_data:
+            return self.state.active
+        if channel.sample_rate:
+            return SegmentList([self.span.protract(
+                1/channel.sample_rate.value)])
+        return SegmentList([self.span])
 
 register_plot(TimeSeriesDataPlot)
 
@@ -277,19 +241,34 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
     """
     type = 'spectrogram'
     data = 'spectrogram'
-    defaults = {
+    defaults = TimeSeriesDataPlot.defaults.copy()
+    defaults.update({
+        'yscale': 'log',
+        'ylabel': 'Frequency [Hz]',
         'ratio': None,
         'format': None,
         'rasterized': True,
-    }
+    })
 
     def __init__(self, *args, **kwargs):
         super(SpectrogramDataPlot, self).__init__(*args, **kwargs)
         self.ratio = self.pargs.pop('ratio')
-
         # set default colour-map for median ratio
         if self.ratio in ('median', 'mean'):
             self.pargs.setdefault('cmap', 'Spectral_r')
+
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            self.pargs.setdefault('ylim', channel.frequency_range)
+            if isinstance(self.pargs['ylim'], Quantity):
+                self.pargs['ylim'] = self.pargs['ylim'].value
+
+            if self.ratio is None and self.pargs.get('clim') is None:
+                if (self.pargs.get('format') in ('amplitude', 'asd') and
+                        hasattr(channel, 'asd_range')):
+                    self.pargs['clim'] = channel.asd_range
+                elif hasattr(channel, 'psd_range'):
+                    self.pargs['clim'] = channel.psd_range
 
     @property
     def pid(self):
@@ -341,8 +320,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
     def draw(self):
         # initialise
-        (plot, axes) = self.init_plot()
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
         ax.grid(b=True, axis='y', which='major')
         channel = self.channels[0]
 
@@ -353,18 +332,6 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         clabel = self.pargs.pop('colorlabel', '')
         clim = self.pargs.pop('clim', None)
         clog = self.pargs.pop('logcolor', False)
-
-        # allow channel data to set parameters
-        if getattr(channel, 'frequency_range', None) is not None:
-            self.pargs.setdefault('ylim', channel.frequency_range)
-            if isinstance(self.pargs['ylim'], Quantity):
-                self.pargs['ylim'] = self.pargs['ylim'].value
-        if self.ratio is None and clim is None:
-            if (sdform in ('amplitude', 'asd') and
-                    hasattr(channel, 'asd_range')):
-                clim = channel.asd_range
-            elif hasattr(channel, 'psd_range'):
-                clim = channel.psd_range
 
         # parse plotting arguments
         if clim:  # clim -> (vmin, vmax)
@@ -412,12 +379,13 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 specgram = specgram.crop_frequencies(*ylim)
 
             # plot
-            ax.plot_spectrogram(specgram, **plotargs)
+            ax.imshow(specgram, **plotargs)
 
         # add colorbar
         if len(specgrams) == 0:
-            ax.scatter([1], [1], c=[1], visible=False, **plotargs)
-        plot.add_colorbar(ax=ax, label=clabel)
+            ax.pcolormesh([1, 10], [1, 10], [[1, 10]], visible=False,
+                          **plotargs)
+        ax.colorbar(label=clabel)
 
         # customise and finalise
         self.apply_parameters(ax, **self.pargs)
@@ -434,11 +402,14 @@ class CoherenceSpectrogramDataPlot(SpectrogramDataPlot):
     """
     type = 'coherence-spectrogram'
     data = 'coherence-spectrogram'
-    defaults = {'ratio': None,
-                'format': None,
-                'clim': None,
-                'logcolor': False,
-                'colorlabel': None}
+    defaults = SpectrogramDataPlot.defaults.copy()
+    defaults.update({
+        'ratio': None,
+        'format': None,
+        'clim': None,
+        'logcolor': False,
+        'colorlabel': None,
+    })
 
 register_plot(CoherenceSpectrogramDataPlot)
 
@@ -448,12 +419,27 @@ class SpectrumDataPlot(DataPlot):
     """
     type = 'spectrum'
     data = 'spectrum'
-    defaults = {'xscale': 'log',
-                'yscale': 'log',
-                'format': None,
-                'zorder': 1,
-                'no-percentiles': False,
-                'reference-linestyle': '--'}
+    defaults = DataPlot.defaults.copy()
+    defaults.update({
+        'xscale': 'log',
+        'yscale': 'log',
+        'format': None,
+        'zorder': 1,
+        'no-percentiles': False,
+        'reference-linestyle': '--',
+    })
+
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            if getattr(channel, 'frequency_range', None) is not None:
+                self.pargs.setdefault('xlim', channel.frequency_range)
+                if isinstance(self.pargs['xlim'], Quantity):
+                    self.pargs['xlim'] = self.pargs['xlim'].value
+            if (self.pargs.get('format') in ['amplitude', 'asd'] and
+                    hasattr(channel, 'asd_range')):
+                self.pargs.setdefault('ylim', channel.asd_range)
+            elif hasattr(channel, 'psd_range'):
+                self.pargs.setdefault('ylim', channel.psd_range)
 
     def draw(self):
         pargs = self.pargs.copy()
@@ -467,8 +453,7 @@ class SpectrumDataPlot(DataPlot):
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = FrequencySeriesPlot(
-            figsize=self.pargs.pop('figsize', [12, 6]))
+        plot = self.init_plot()
         ax = plot.gca()
         ax.grid(b=True, axis='both', which='both')
 
@@ -538,89 +523,37 @@ class SpectrumDataPlot(DataPlot):
                 use_legend = True
 
             if use_percentiles:
-                _, minline, _, maxline, _ = ax.plot_mmm(*data, **pargs)
+                _, minline, maxline, _ = ax.plot_mmm(*data, **pargs)
                 # make min, max lines lighter:
                 minline.set_alpha(pargs.get('alpha', .1) * 2)
                 maxline.set_alpha(pargs.get('alpha', .1) * 2)
             else:
-                try:
-                    ax.plot_frequencyseries(data[0], **pargs)
-                except AttributeError:  # old GWpy
-                    ax.plot_spectrum(data[0], **pargs)
-
-            # allow channel data to set parameters
-            if getattr(channel, 'frequency_range', None) is not None:
-                self.pargs.setdefault('xlim', channel.frequency_range)
-                if isinstance(self.pargs['xlim'], Quantity):
-                    self.pargs['xlim'] = self.pargs['xlim'].value
-            if (sdform in ['amplitude', 'asd'] and
-                    hasattr(channel, 'asd_range')):
-                self.pargs.setdefault('ylim', channel.asd_range)
-            elif hasattr(channel, 'psd_range'):
-                self.pargs.setdefault('ylim', channel.psd_range)
+                ax.plot(data[0], **pargs)
 
         # display references
-        for i, ref in enumerate(refs):
-            if 'source' in ref:
-                source = ref.pop('source')
-                try:
-                    refspec = io.read_frequencyseries(source)
-                except IOError as e:  # skip if file can't be read
-                    warnings.warn('IOError: %s' % str(e))
-                else:
-                    ref.setdefault('zorder', -len(refs) + 1)
-                    if 'filter' in ref:
-                        refspec = refspec.filter(*ref.pop('filter'))
-                    if 'scale' in ref:
-                        refspec *= ref.pop('scale', 1)
-                    if 'label' in ref:
-                        use_legend = True
-                    ax.plot(refspec, **ref)
+        for source, refparams in refs.items():
+            refspec = io.read_frequencyseries(source)
+            refparams.setdefault('zorder', -len(refs) + 1)
+            if 'filter' in refparams:
+                refspec = refspec.filter(*refparams.pop('filter'))
+            if 'scale' in refparams:
+                refspec *= refparams.pop('scale', 1)
+            if 'label' in refparams:
+                use_legend = True
+            ax.plot(refspec, **refparams)
 
         # customise
-        hlines = list(self.pargs.pop('hline', []))
-
-        # add horizontal lines to add
-        if hlines:
-            if not isinstance(hlines[-1], float):
-                lineparams = hlines.pop(-1)
-            else:
-                lineparams = {'color': 'r', 'linestyle': '--'}
-        for yval in hlines:
-            try:
-                yval = float(yval)
-            except ValueError:
-                continue
-            else:
-                ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
-
+        self.add_hvlines()
         self.apply_parameters(ax, **self.pargs)
-
         if use_legend or len(self.channels) > 1 or ax.legend_ is not None:
-            plot.add_legend(ax=ax, **legendargs)
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+            ax.legend(**legendargs)
 
         return self.finalize()
 
     def parse_references(self, prefix='reference(\d+)?\Z'):
         """Parse parameters for displaying one or more reference traces
         """
-        # get reference arguments
-        refs = []
-        refkey = 'None'
-        re_prefix = re.compile(prefix)
-        while True:
-            # iterate through keys finding reference entries
-            for key in sorted(self.pargs.keys()):
-                if re_prefix.match(key):
-                    refs.append(self._parse_extra_params(key))
-                    refs[-1]['source'] = self.pargs.pop(key)
-                    break
-            else:  # no more references found
-                break
-
-        return refs
+        return self.parse_list('reference')
 
 register_plot(SpectrumDataPlot)
 
@@ -630,13 +563,11 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
     """
     type = 'coherence-spectrum'
     data = 'coherence-spectrogram'
-    defaults = {'xscale': 'log',
-                'yscale': 'linear',
-                'format': None,
-                'alpha': 0.1,
-                'zorder': 1,
-                'no-percentiles': False,
-                'reference-linestyle': '--'}
+    defaults = SpectrumDataPlot.defaults.copy()
+    defaults.update({
+        'yscale': 'linear',
+        'alpha': 0.1,
+    })
 
     # override this to allow us to set the legend manually
     def _parse_labels(self, defaults=None):
@@ -660,12 +591,21 @@ class TimeSeriesHistogramPlot(DataPlot):
     """
     type = 'histogram'
     data = 'timeseries'
-    defaults = {'ylabel': 'Rate [Hz]',
-                'log': True,
-                'histtype': 'stepfilled',
-                'rwidth': 1}
+    defaults = DataPlot.defaults.copy()
+    defaults.update({
+        'ylabel': 'Rate [Hz]',
+        'log': True,
+        'histtype': 'stepfilled',
+        'rwidth': 1,
+    })
 
-    def init_plot(self, plot=HistogramPlot, geometry=None, figsize=[12, 6]):
+    def _update_defaults_from_channels(self):
+        for channel in self.channels:
+            if hasattr(channel, 'amplitude_range'):
+                self.pargs.setdefault('xlim', channel.amplitude_range)
+                break
+
+    def init_plot(self, geometry=None, **kwargs):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
@@ -676,15 +616,11 @@ class TimeSeriesHistogramPlot(DataPlot):
                 geometry = (len(self.channels), 1)
         elif geometry is None:
             geometry = (1, 1)
-        self.plot, axes = subplots(
-            nrows=geometry[0], ncols=geometry[1], sharex=True,
-            subplot_kw={'projection': plot._DefaultAxesClass.name},
-            FigureClass=plot, figsize=figsize, squeeze=True)
-        if isinstance(axes, plot._DefaultAxesClass):
-            axes = [axes]
-        for ax in axes:
+        plot = super(TimeSeriesHistogramPlot, self).init_plot(
+            geometry=geometry, **kwargs)
+        for ax in plot.axes:
             ax.grid(True, which='both')
-        return self.plot, axes
+        return plot
 
     def parse_plot_kwargs(self, **defaults):
         kwargs = super(TimeSeriesHistogramPlot, self).parse_plot_kwargs(
@@ -705,7 +641,8 @@ class TimeSeriesHistogramPlot(DataPlot):
         """Get data and generate the figure.
         """
         # get plot and axes
-        (plot, axes) = self.init_plot()
+        plot = self.init_plot()
+        axes = plot.axes
 
         if self.state:
             self.pargs.setdefault(
@@ -728,28 +665,27 @@ class TimeSeriesHistogramPlot(DataPlot):
                 valid = SegmentList([self.span])
             data.append(get_timeseries(channel, valid, query=False).join(
                 gap='ignore', pad=numpy.nan))
-            # allow channel data to set parameters
-            if hasattr(data[-1].channel, 'amplitude_range'):
-                self.pargs.setdefault('xlim', data[-1].channel.amplitude_range)
-
-        # get range
-        if 'range' not in histargs[0]:
-            l = axes[0].common_limits(data)
-            for d in histargs:
-                d['range'] = l
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
-            if isinstance(pargs.get('weights', None), (float, int)):
-                pargs['weights'] = numpy.ones_like(arr) * pargs['weights']
-            try:
-                ax.hist(arr, **pargs)
-            except ValueError:  # empty dataset
-                p2 = pargs.copy()
-                p2.pop('weights')  # mpl errors on weights
-                if p2.get('log', False) or self.logx:
-                    p2['bottom'] = 1e-100  # default log 'bottom' is 1e-2
-                ax.hist([], **p2)
+            # set range if not given
+            if pargs.get('range') is None:
+                pargs['range'] = self._get_range(
+                    data,
+                    # use range from first dataset if already calculated
+                    range=histargs[0].get('range'),
+                    # use xlim if manually set (user or INI)
+                    xlim=None if ax.get_autoscalex_on() else ax.get_xlim(),
+                )
+
+            # plot histogram
+            _, _, patches = ax.hist(arr, **pargs)
+
+            # update edge color of histogram to be tinted version of face
+            if pargs.get('histtype', None) == 'stepfilled':
+                for p in patches:
+                    if not p.get_edgecolor()[3]:
+                        p.set_edgecolor(tint(p.get_facecolor(), .7))
 
         # customise plot
         legendargs = self.parse_legend_kwargs()
@@ -768,7 +704,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                 except AttributeError:
                     setattr(ax, key, val)
             if len(self.channels) > 1:
-                    plot.add_legend(ax=ax, **legendargs)
+                ax.legend(**legendargs)
         if len(axes) % 2 == 0 and axes[0].get_ylabel():
             label = axes[0].yaxis.label
             ax = axes[int(len(axes) // 2)-1]
@@ -778,10 +714,19 @@ class TimeSeriesHistogramPlot(DataPlot):
                 label.set_text('')
 
         # add extra axes and finalise
-        if not plot.colorbars:
-            for ax in axes:
-                plot.add_colorbar(ax=ax, visible=False)
         return self.finalize(outputfile=outputfile)
+
+    def _get_range(self, data, range=None, xlim=None):
+        if range is not None or xlim is not None:
+            return range or xlim
+        try:
+            return numpy.min(data), numpy.max(data)
+        except ValueError as exc:
+            if not str(exc).startswith('zero-size array'):
+                raise
+        return None
+
+
 
 register_plot(TimeSeriesHistogramPlot)
 
@@ -791,9 +736,9 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
     """
     type = 'histogram2d'
     data = 'timeseries'
-    defaults = {
+    defaults = TimeSeriesHistogramPlot.defaults.copy()
+    defaults.update({
         'yscale': 'linear',
-        'hline': list(),
         'grid': 'both',
         'shading': 'flat',
         'cmap': 'inferno_r',
@@ -801,7 +746,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         'edgecolors': 'None',
         'bins': 100,
         'normed': True
-    }
+    })
 
     def __init__(self, *args, **kwargs):
         super(TimeSeriesHistogram2dDataPlot, self).__init__(*args, **kwargs)
@@ -809,6 +754,15 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         if isinstance(channels, (list, tuple)) and len(channels) > 2:
             raise ValueError("Cannot generate TimeSeriesHistogram2dDataPlot "
                              " plot with more than 2 channels")
+
+    def _update_defaults_from_channels(self):
+        c1, c2 = self.channels
+        self.pargs.setdefault('xlabel', label_to_latex(str(c1)))
+        self.pargs.setdefault('ylabel', label_to_latex(str(c2)))
+        if hasattr(c1, 'amplitude_range'):
+            self.pargs.setdefault('xlim', c1.amplitude_range)
+        if hasattr(c2, 'amplitude_range'):
+            self.pargs.setdefault('ylim', c2.amplitude_range)
 
     def parse_hist_kwargs(self, **defaults):
         kwargs = {'bins': self.pargs.pop('bins'),
@@ -838,8 +792,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         """Get data and generate the figure.
         """
         # get histogram parameters
-        plot, axes = self.init_plot()
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.gca()
 
         if self.state:
             self.pargs.setdefault(
@@ -860,13 +814,6 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
                 gap='ignore', pad=numpy.nan))
         if len(data) == 1:
             data.append(data[0])
-        # allow channel data to set parameters
-        self.pargs.setdefault('xlabel', label_to_latex(data[0].name))
-        self.pargs.setdefault('ylabel', label_to_latex(data[1].name))
-        if hasattr(data[0].channel, 'amplitude_range'):
-            self.pargs.setdefault('xlim', data[0].channel.amplitude_range)
-        if hasattr(data[1].channel, 'amplitude_range'):
-            self.pargs.setdefault('ylim', data[1].channel.amplitude_range)
         # histogram
         hist_kwargs = self.parse_hist_kwargs()
         h, xedges, yedges = numpy.histogram2d(data[0], data[1], **hist_kwargs)
@@ -878,9 +825,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
 
         # customise plot
         self.apply_parameters(ax, **self.pargs)
-        # add extra axes and finalise
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
+
         return self.finalize(outputfile=outputfile)
 
 register_plot(TimeSeriesHistogram2dDataPlot)
@@ -891,13 +836,14 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     """
     type = 'variance'
     data = 'spectrogram'
-    defaults = {
+    defaults = SpectrumDataPlot.defaults.copy()
+    defaults.update({
         'xscale': 'log',
         'yscale': 'log',
         'reference-linestyle': '--',
         'log': True,
         'nbins': 100,
-    }
+    })
 
     def __init__(self, channels, *args, **kwargs):
         if isinstance(channels, (list, tuple)) and len(channels) > 1:
@@ -905,6 +851,22 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
                              "more than 1 channel")
         super(SpectralVarianceDataPlot, self).__init__(
             channels, *args, **kwargs)
+
+    def _update_defaults_from_channels(self):
+        chan = self.channels[0]
+
+        if getattr(chan, 'frequency_range', None) is not None:
+            self.pargs.setdefault('xlim', chan.frequency_range)
+            if isinstance(self.pargs['xlim'], Quantity):
+                self.pargs['xlim'] = self.pargs['xlim'].value
+
+        if hasattr(chan, 'asd_range'):
+            self.pargs.setdefault('ylim', chan.asd_range)
+
+        if hasattr(chan, 'asd_range'):
+            low, high = chan.asd_range
+            self.pargs.setdefault('low', low)
+            self.pargs.setdefault('high', high)
 
     def parse_variance_kwargs(self):
         varargs = dict()
@@ -916,8 +878,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
     def _draw(self):
         """Load all data, and generate this `SpectrumDataPlot`
         """
-        plot = self.plot = FrequencySeriesPlot(
-            figsize=self.pargs.pop('figsize', [12, 6]))
+        plot = self.init_plot()
         ax = plot.gca()
 
         if self.state:
@@ -933,16 +894,9 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         cmap = self.pargs.pop('cmap', None)
         varargs = self.parse_variance_kwargs()
         plotargs = self.parse_plot_kwargs()[0]
-        legendargs = self.parse_legend_kwargs()
 
         # get reference arguments
         refs = self.parse_references()
-
-        # get channel arguments
-        if hasattr(self.channels[0], 'asd_range'):
-            low, high = self.channels[0].asd_range
-            varargs.setdefault('low', low)
-            varargs.setdefault('high', high)
 
         # calculate spectral variance and plot
         # pad data request to over-fill plots (no gaps at the end)
@@ -968,58 +922,25 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             variance /= livetime / specgram.dt.value
             # undo demodulation
             variance = undo_demodulation(variance, self.channels[0],
-                                         self.pargs.get('xlim', None))
+                                         ax.get_xlim())
 
             # plot
             ax.plot(asd, color='grey', linewidth=0.3)
-            ax.plot_variance(variance, cmap=cmap, **plotargs)
-
-        # allow channel data to set parameters
-        if getattr(self.channels[0], 'frequency_range', None) is not None:
-            self.pargs.setdefault('xlim', self.channels[0].frequency_range)
-            if isinstance(self.pargs['xlim'], Quantity):
-                self.pargs['xlim'] = self.pargs['xlim'].value
-        if hasattr(self.channels[0], 'asd_range'):
-            self.pargs.setdefault('ylim', self.channels[0].asd_range)
+            ax.imshow(variance, cmap=cmap, **plotargs)
 
         # display references
-        for i, ref in enumerate(refs):
-            if 'source' in ref:
-                source = ref.pop('source')
-                try:
-                    refspec = io.read_frequencyseries(source)
-                except IOError as e:  # skip if file can't be read
-                    warnings.warn('IOError: %s' % str(e))
-                else:
-                    if 'filter' in ref:
-                        refspec = refspec.filter(*ref.pop('filter'))
-                    if 'scale' in ref:
-                        refspec *= ref.pop('scale', 1)
-                    ax.plot(refspec, **ref)
+        for source, refparams in refs.items():
+            refspec = io.read_frequencyseries(source)
+            if 'filter' in refparams:
+                refspec = refspec.filter(*refparams.pop('filter'))
+            if 'scale' in refparams:
+                refspec *= refparams.pop('scale', 1)
+            ax.plot(refspec, **refparams)
 
         # customise
-        hlines = list(self.pargs.pop('hline', []))
+        self.add_hvlines()
         self.apply_parameters(ax, **self.pargs)
-
-        # add horizontal lines to add
-        if hlines:
-            if not isinstance(hlines[-1], float):
-                lineparams = hlines.pop(-1)
-            else:
-                lineparams = {'color': 'r', 'linestyle': '--'}
-        for yval in hlines:
-            try:
-                yval = float(yval)
-            except ValueError:
-                continue
-            else:
-                ax.plot(ax.get_xlim(), [yval, yval], **lineparams)
-
-        # set grid
         ax.grid(b=True, axis='both', which='both')
-
-        if not plot.colorbars:
-            plot.add_colorbar(ax=ax, visible=False)
 
         return self.finalize()
 
@@ -1031,11 +952,14 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
     """
     type = 'rayleigh-spectrogram'
     data = 'rayleigh-spectrogram'
-    defaults = {'ratio': None,
-                'format': 'rayleigh',
-                'clim': [0.25, 4],
-                'cmap': 'BrBG_r',
-                'colorlabel': 'Rayleigh statistic'}
+    defaults = SpectrogramDataPlot.defaults.copy()
+    defaults.update({
+        'ratio': None,
+        'format': 'rayleigh',
+        'clim': [0.25, 4],
+        'cmap': 'BrBG_r',
+        'colorlabel': 'Rayleigh statistic',
+    })
 
 register_plot(RayleighSpectrogramDataPlot)
 

@@ -21,6 +21,7 @@
 
 import threading
 import re
+from functools import wraps
 
 from six.moves.queue import Queue
 
@@ -74,6 +75,18 @@ class ThreadChannelQuery(threading.Thread):
         self.out.task_done()
 
 
+def _with_update_trend(func):
+    @wraps(func)
+    def wrapped_func(*args, **kwargs):
+        _update = kwargs.pop('find_trend_source', True)
+        out = func(*args, **kwargs)
+        if _update and out.trend:
+            out = _update_trend(out)
+        return out
+    return wrapped_func
+
+
+@_with_update_trend
 def get_channel(channel, find_trend_source=True, timeout=5):
     """Define a new :class:`~gwpy.detector.channel.Channel`
 
@@ -93,6 +106,8 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     """
     chans = re_channel.findall(str(channel))
     nchans = len(chans)
+
+    # match compound channel name
     if nchans > 1 or (nchans == 1 and chans[0] != str(channel)):
         name = str(channel)
         try:
@@ -104,92 +119,108 @@ def get_channel(channel, find_trend_source=True, timeout=5):
         for cchar in ['+', '*', '^', '|']:
             rename = rename.replace(cchar, '\%s' % cchar)
         found = globalv.CHANNELS.sieve(name=rename, exact_match=True)
-    elif ',' in str(channel):
-        name, type_ = str(channel).rsplit(',', 1)
-        found = globalv.CHANNELS.sieve(name=name, type=type_, exact_match=True)
+    # match normal channel
     else:
-        name = str(channel)
-        # if given Channel object, try and search for specific parameters
-        if isinstance(channel, Channel):
-            type_ = channel.type
-            found = globalv.CHANNELS.sieve(
-                name=name, type=type_, exact_match=True)
-            if len(found) == 0:
-                found = globalv.CHANNELS.sieve(name=name, exact_match=True)
-        # otherwise just check for the name
-        else:
-            type_ = None
-            found = globalv.CHANNELS.sieve(name=name, exact_match=True)
+        found = _match(channel)
+
+    # if single match, return it
     if len(found) == 1:
         return found[0]
+
+    # if multiple matches raise error (unless weird circumstances)
     elif len(found) > 1:
         cstrings = set(['%s [%s, %s]' % (c.ndsname, c.sample_rate, c.unit)
                         for c in found])
-        if len(cstrings) == 1:
+        if len(cstrings) == 1:  # somehow all channels are the same
             return found[0]
-        else:
-            raise ValueError("Ambiguous channel request '%s', multiple "
-                             "existing channels recovered:\n    %s"
-                             % (str(channel), '\n    '.join(cstrings)))
+        raise ValueError("Ambiguous channel request '%s', multiple "
+                         "existing channels recovered:\n    %s"
+                         % (str(channel), '\n    '.join(cstrings)))
+
+    # otherwise there were no matches, so we create a new channel
+    return _new(channel, find_trend_source=find_trend_source)
+
+
+def _new(channel, find_trend_source=True):
+    # convert to Channel
+    if isinstance(channel, Channel):
+        new = channel
     else:
-        matches = list(Channel.MATCH.finditer(name))
-        if isinstance(channel, Channel):
-            new = channel
-        else:
-            new = Channel(name)
-        # match single raw channel
-        if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-            new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
-        # match single trend
-        elif len(matches) == 1:
-            # set default trend type based on mode
-            if type_ is None and ':DMT-' in name:  # DMT is always m-trend
-                type_ = 'm-trend'
-            elif type_ is None and get_mode() == Mode.gps:
-                type_ = 's-trend'
-            elif type_ is None:
-                type_ = 'm-trend'
-            new.type = type_
-            if find_trend_source:
-                try:
-                    source = get_channel(new.name.rsplit('.')[0])
-                except ValueError:
-                    pass
-                else:
-                    new.url = source.url
-                    new.unit = source.unit
-                    try:
-                        new.bits = source.bits
-                    except AttributeError:
-                        pass
-                    try:
-                        new.filter = source.filter
-                    except AttributeError:
-                        pass
-                    for param in filter(
-                            lambda x: x.endswith('_range') and not
-                            hasattr(new, x), vars(source)):
-                        setattr(new, param, getattr(source, param))
-            # determine sample rate for trends
-            if type_ == 'm-trend':
-                new.sample_rate = 1/60.
-            elif type_ == 's-trend':
-                new.sample_rate = 1
-        # match composite channel
-        else:
-            parts = get_channels([m.group() for m in matches])
-            new = Channel(name)
-            new.subchannels = parts
-            new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
-        globalv.CHANNELS.append(new)
+        new = Channel(channel)
+    name = str(channel)
+    type_ = new.type
+
+    # work out what kind of channel it is
+    matches = list(Channel.MATCH.finditer(name))
+
+    # match single raw channel
+    if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
+        new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
+
+    # match single trend
+    elif len(matches) == 1:
+        # set default trend type based on mode
+        if type_ is None and ':DMT-' in name:  # DMT is always m-trend
+            new.type = 'm-trend'
+        # match parameters from 'raw' version of this channel
+        if find_trend_source:
+            _update_trend(new)
+
+    # match composite channel
+    else:
+        parts = get_channels([m.group() for m in matches])
+        new.subchannels = parts
+        new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
+
+    # store new channel and return
+    globalv.CHANNELS.append(new)
+    try:
+        return get_channel(new)
+    except RuntimeError as e:
+        if 'maximum recursion depth' in str(e):
+            raise RuntimeError("Recursion error while accessing channel "
+                               "information for %s" % str(channel))
+        raise
+
+
+def _update_trend(channel):
+    try:
+        source = get_channel(str(channel).rsplit('.')[0])
+    except ValueError:
+        return channel
+    channel.url = source.url
+    channel.unit = source.unit
+    # copy custom named params
+    #     this works because the upstream Channel stores all
+    #     attributes in private variable names
+    for param in filter(lambda x: not x.startswith('_') and
+                        not hasattr(channel, x), vars(source)):
         try:
-            return get_channel(new)
-        except RuntimeError as e:
-            if 'maximum recursion depth' in str(e):
-                raise RuntimeError("Recursion error while accessing channel "
-                                   "information for %s" % str(channel))
-            else:
-                raise
+            setattr(channel, param, getattr(source, param))
+        except AttributeError:
+            pass
+    return channel
+
+
+def _match(channel):
+    channel = Channel(channel)
+    name = str(channel)
+    type_ = channel.type
+    found = globalv.CHANNELS.sieve(
+        name=name, type=type_, exact_match=True)
+
+    # if match, return now
+    if found:
+        return found
+
+    # if no matches, try again without matching type
+    found = globalv.CHANNELS.sieve(name=name, exact_match=True)
+    if len(found) == 1:
+         # found single match that is less specific, so we make it more
+         # specific. If someone else wants another type for the sme channel
+         # this is fine, and it will create another channel.
+         found[0].type = type_
+    return found
 
 
 def get_channels(channels, **kwargs):
@@ -296,3 +327,24 @@ def split_combination(channelstring):
     channel = Channel(channelstring)
     return [c for c in channel.ndsname.split(' ') if
             re_channel.match(c)]
+
+
+def update_channel_params():
+    """Update the `globalv.CHANNELS` list based on internal parameter changes
+
+    This is required to update `Channel.type` based on `Channel.frametype`,
+    and similar.
+    """
+    for c in globalv.CHANNELS:
+        # update type based on frametype
+        if c.type is None and c.frametype == '{0.ifo}_M'.format(c):
+            c.type = 'm-trend'
+        elif c.type is None and c.frametype == '{0.ifo}_T'.format(c):
+            c.type = 's-trend'
+
+        # update sample_rate based on trend type
+        if c.type is 'm-trend' and c.sample_rate is None:
+            c.sample_rate = 1/60.
+        elif c.type is 's-trend' and c.sample_rate is None:
+            c.sample_rate = 1.
+    return

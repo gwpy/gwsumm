@@ -520,7 +520,7 @@ if opts.archive:
     from gwsumm import archive
     archivedir = os.path.join(path, 'archive')
     mkdir(archivedir)
-    opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.hdf'
+    opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.h5'
                                 % (ifo, opts.archive, opts.gpsstart,
                                         opts.gpsend - opts.gpsstart))
     if os.path.isfile(opts.archive):

@@ -9,6 +9,8 @@ from collections import OrderedDict
 from numpy import ndarray
 
 from matplotlib import use
+use('agg')  # nopep8
+
 from matplotlib.artist import setp
 from matplotlib.colors import LogNorm
 
@@ -21,9 +23,6 @@ from gwsumm.plot import get_plot
 from gwsumm.segments import get_segments
 from gwsumm.triggers import (get_triggers, keep_in_segments)
 from gwsumm.utils import safe_eval
-
-# use non-interactive plotting from matplotlib
-use('agg')
 
 # default columns for plot
 DEFAULT_COLUMNS = ['time', 'frequency', 'snr']

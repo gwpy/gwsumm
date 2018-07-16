@@ -193,8 +193,11 @@ def _update_trend(channel):
     # copy custom named params
     #     this works because the upstream Channel stores all
     #     attributes in private variable names
-    for param in filter(lambda x: not x.startswith('_') and
-                        not hasattr(channel, x), vars(source)):
+    # NOTE: we need to exclude 'resample' to not attempt to upsample trends
+    for param in filter(
+            lambda x: not x.startswith('_') and
+            not hasattr(channel, x) and x not in ('resample',),
+            vars(source)):
         try:
             setattr(channel, param, getattr(source, param))
         except AttributeError:

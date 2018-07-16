@@ -158,6 +158,8 @@ class GuardianStatePlot(get_plot('segments')):
         if 'ylim' not in self.pargs:
             ax.set_ylim(-0.5, len(self.flags) - 0.5)
 
+        epoch = ax.get_epoch()
+
         # add node MODE along the bottom
         sax = None
         seg_kw = {'y': 0, 'edgecolor': 'none', 'label': 'Mode'}
@@ -203,8 +205,8 @@ class GuardianStatePlot(get_plot('segments')):
         sax.legend(legentry.values(), legentry.keys(), title='Node mode',
                    **legendargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
-        sax.set_epoch(float(self.pargs.get('epoch', self.start)))
-        ax.set_epoch(sax.get_epoch())
+        for ax_ in (ax, sax):
+            ax_.set_epoch(epoch)
 
         return self.finalize()
 

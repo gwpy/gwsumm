@@ -138,12 +138,13 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         """Initialise the Figure and Axes objects for this
         `TimeSeriesDataPlot`.
         """
+        epoch = kwargs.pop('epoch', self.pargs.pop('epoch', None))
         plot = super(TimeSeriesDataPlot, self).init_plot(*args, **kwargs)
         for ax in plot.axes:
             if get_mode() == Mode.month:
                 ax.set_xscale('days')
             if isinstance(ax.xaxis.get_transform(), GPSTransform):
-                ax.set_epoch(float(self.start))
+                ax.set_epoch(float(epoch if epoch is not None else self.start))
                 if ax.get_autoscalex_on():
                     ax.set_xlim(float(self.start), float(self.end))
             ax.grid(True, which='both')

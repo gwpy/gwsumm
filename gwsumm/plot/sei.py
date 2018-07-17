@@ -31,13 +31,13 @@ from gwpy.timeseries import TimeSeriesDict
 
 from ..channels import get_channel
 from ..utils import re_quote
-from .registry import get_plot
+from .registry import (get_plot, register_plot)
 
 
 class SeiWatchDogPlot(get_plot('data')):
     """Plot a specific SEI WatchDog trip
     """
-    name = 'watchdog'
+    type = 'watchdog'
     data = 'watchdog'
 
     def __init__(self, gpstime, chamber, sensor, config, outfile, ifo=None,
@@ -162,3 +162,6 @@ class SeiWatchDogPlot(get_plot('data')):
         plot.save(self.outputfile)
         plot.close()
         return self.outputfile
+
+
+register_plot(SeiWatchDogPlot)

@@ -150,7 +150,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
 
         # finalize
         self.apply_parameters(ax, **self.pargs)
-        ax.legend(ax=ax, **legendargs)
+        ax.legend(**legendargs)
 
         return self.finalize()
 

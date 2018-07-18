@@ -24,6 +24,7 @@ import os.path
 import operator
 import tempfile
 import shutil
+from collections import OrderedDict
 
 from six.moves.urllib.request import urlopen
 
@@ -151,21 +152,19 @@ class TestData(object):
 
     @pytest.mark.parametrize('definition, math', [
         ('L1:TEST + L1:TEST2', (
-            [('L1:TEST', []),
-             ('L1:TEST2', [])],
+            [('L1:TEST', 'L1:TEST2'), ([], [])],
             [operator.add])),
         ('L1:TEST + L1:TEST2 * 2', (
-            [('L1:TEST', []),
-             ('L1:TEST2', [(operator.mul, 2)])],
+            [('L1:TEST', 'L1:TEST2'), ([], [(operator.mul, 2)])],
             [operator.add])),
        ('L1:TEST * 2 + L1:TEST2 ^ 5', (
-            [('L1:TEST', [(operator.mul, 2)]),
-             ('L1:TEST2', [(operator.pow, 5)])],
+            [('L1:TEST', 'L1:TEST2'),
+             ([(operator.mul, 2)], [(operator.pow, 5)])],
             [operator.add])),
     ])
     def test_parse_math_definition(self, definition, math):
         chans, operators = mathutils.parse_math_definition(definition)
-        assert chans == math[0]
+        assert chans == OrderedDict(zip(*math[0]))
         assert operators == math[1]
 
     # -- test add/get methods -------------------

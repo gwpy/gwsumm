@@ -863,6 +863,7 @@ def add_timeseries(timeseries, key=None, coalesce=True):
         coalesce contiguous series after adding, defaults to `True`
     """
     if timeseries.channel is not None:
+        # transfer parameters from timeseries.channel to the globalv channel
         update_missing_channel_params(timeseries.channel)
     if key is None:
         key = timeseries.name or timeseries.channel.ndsname

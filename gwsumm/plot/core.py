@@ -39,8 +39,10 @@ from gwpy.detector import (Channel, ChannelList)
 from gwpy.plot import Plot
 from gwpy.plot.tex import label_to_latex
 
-from ..channels import (get_channel, split as split_channels)
+from ..channels import (get_channel, split as split_channels,
+                        split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
+from ..data import parse_math_definition
 from ..state import get_state
 from ..utils import (vprint, safe_eval, re_quote)
 from . import utils as putils
@@ -292,13 +294,10 @@ class DataPlot(SummaryPlot):
     def allchannels(self):
         """List of all unique channels for this plot
         """
-        out = type(self.channels)()
-        for c in self.channels:
-            for m in Channel.MATCH.finditer(c.ndsname):
-                c2 = get_channel(c.ndsname[m.start():m.end()])
-                if c2 not in out:
-                    out.append(c2)
-        return out
+        return type(self.channels)(OrderedDict.fromkeys(
+            c2 for c in self.channels for
+            c2 in split_channel_combination(c.ndsname)
+        ).keys())
 
     @property
     def ifos(self):

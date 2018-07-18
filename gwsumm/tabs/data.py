@@ -575,6 +575,9 @@ class DataTab(ProcessedTab, ParentTab):
                    % (len(parallel), nproc))
             multiprocess_with_queues(nproc, lambda p: p.process(), parallel)
 
+        # record that we have written all of these plots
+        globalv.WRITTEN_PLOTS.extend(p.outputfile for p in serial + parallel)
+
         vprint('Done.\n')
 
     # -------------------------------------------------------------------------
@@ -674,18 +677,17 @@ class DataTab(ProcessedTab, ParentTab):
         page.hr(class_='row-divider')
         page.div(class_='row')
         page.div(class_='col-md-12')
-        channels = self.get_channels('timeseries', 'statevector', 'spectrum',
-                                     'spectrogram', 'odc', new=False)
+        channels = sorted(
+            (c2 for c in self.get_channels(
+                 'timeseries', 'statevector', 'spectrum', 'spectrogram', 'odc',
+                 new=False) for c2 in split_channel_combination(c)),
+            key=str,
+        )
         if len(channels):
             page.h1('Channel information')
             headers = ['Channel', 'Type', 'Frametype', 'Sample rate', 'Units']
             data = []
-            for channel in sorted(channels, key=lambda x: str(x)):
-                channel = get_channel(channel)
-                # don't write combination meta-channels
-                parts = split_channel_combination(channel.ndsname)
-                if len(parts) != 1 or len(parts[0]) != len(channel.ndsname):
-                    continue
+            for channel in channels:
                 # format CIS url and type
                 if channel.frametype:
                     ftype = '<samp>%s</samp>' % channel.frametype
@@ -720,7 +722,10 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     rate = str(channel.sample_rate)
                 # format unit
-                unit = channel.unit and str(channel.unit) or 'Unknown'
+                if hasattr(channel, 'bits'):
+                    unit = '-'
+                else:
+                    unit = str(channel.unit) if channel.unit else 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
             page.add(str(html.table(
                 headers, data, id='channel-information',

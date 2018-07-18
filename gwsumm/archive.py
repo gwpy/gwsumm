@@ -92,7 +92,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                         chan.ndsname,
                         chan.sample_rate.to('Hz').value if
                             chan.sample_rate else 0,
-                        getattr(chan, 'frametype', None) or '',
+                        str(getattr(chan, 'frametype', None)) or '',
                         str(chan.unit) if chan.unit else '',
                     ))
                 Table(names=cols, rows=rows).write(h5file, 'channels')

@@ -598,6 +598,7 @@ class TimeSeriesHistogramPlot(DataPlot):
         'log': True,
         'histtype': 'stepfilled',
         'rwidth': 1,
+        'bottom': 1e-300,
     })
 
     def _update_defaults_from_channels(self):

@@ -21,6 +21,7 @@
 
 import operator
 import re
+from collections import OrderedDict
 
 import numpy
 
@@ -73,13 +74,13 @@ def parse_math_definition(definition):
     ([('H1:TEST', None), ('L1:TEST', (<built-in function pow>, 2.0))],
      [<built-in function mul>])
     """
-    channels = []
+    channels = OrderedDict()
     operators = []
     ops = re_operator.finditer(definition)
     try:
         match = next(ops)
     except StopIteration:
-        return [(definition, None)], []
+        return OrderedDict([(definition, None)]), []
     x = 0
     while True:
         # parse operator position and method
@@ -91,7 +92,8 @@ def parse_math_definition(definition):
 
         # record first channel
         if not x:
-            channels.append((before, []))
+            key = before
+            channels[key] = []
 
         # find next operator
         try:
@@ -112,12 +114,13 @@ def parse_math_definition(definition):
             # record joining operator
             operators.append(op)
             # record new channel
-            channels.append((definition[b:c], []))
+            key = definition[b:c]
+            channels[key] = []
         else:
             # parse value as a float and pair with operator
             value = float(after[a2:b2])
             math = (op, value)
-            channels[-1][1].append(math)
+            channels[key].append(math)
 
         # no more operators, so we're done
         if c is None:
@@ -158,7 +161,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     # parse definition
     singleops, joinoperators = parse_math_definition(str(channel))
     channel = get_channel(channel)
-    names = list(zip(*singleops))[0]
+    names = list(singleops.keys())
     chans = map(get_channel, names)
     # get raw data
     if load_func is get_func:  # if load_func returns a single channel
@@ -167,7 +170,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     else:
         tsdict = load_func(chans, segments, **ioargs)
     # shortcut single channel with no math
-    if len(names) == 1 and not singleops[0][1]:
+    if len(names) == 1 and not singleops[names[0]]:
         vals = list(tsdict.values())
         if isinstance(vals[0], list):
             return vals[0]
@@ -189,12 +192,12 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
             ts, = get_func(names[0], SegmentList([seg]), **ioargs)
         ts.name = str(channel)
         # apply math to this channel
-        cmath = singleops[0][1]
+        cmath = singleops[names[0]]
         for op_, val_ in cmath:
             ts = op_(ts, val_)
         # for each other channel do the same
-        for joinop, ch in zip(joinoperators, singleops[1:]):
-            name, cmath = ch
+        for joinop, name in zip(joinoperators, names[1:]):
+            cmath = singleops[name]
             if isinstance(tslist[0], FrequencySeries):
                 data = get_func(name, SegmentList([seg]), **ioargs)
             else:

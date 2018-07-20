@@ -36,6 +36,8 @@ import os
 
 from numpy import (unicode_, ndarray)
 
+from astropy.table import Table
+
 from gwpy.time import (from_gps, to_gps)
 from gwpy.timeseries import (StateVector, TimeSeries)
 from gwpy.spectrogram import Spectrogram
@@ -51,8 +53,8 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 re_rate = re.compile('_EVENT_RATE_')
 
 
-def write_data_archive(outfile, timeseries=True, spectrogram=True,
-                       segments=True, triggers=True):
+def write_data_archive(outfile, channels=True, timeseries=True,
+                       spectrogram=True, segments=True, triggers=True):
     """Build and save an HDF archive of data processed in this job.
 
     Parameters
@@ -79,6 +81,21 @@ def write_data_archive(outfile, timeseries=True, spectrogram=True,
 
     try:
         with File(outfile, 'w') as h5file:
+
+            # -- channels -----------------------
+
+            if channels:
+                cols = ('name', 'sample_rate', 'frametype', 'unit')
+                rows = []
+                for chan in globalv.CHANNELS:
+                    rows.append((
+                        chan.ndsname,
+                        chan.sample_rate.to('Hz').value if
+                            chan.sample_rate else 0,
+                        str(getattr(chan, 'frametype', None)) or '',
+                        str(chan.unit) if chan.unit else '',
+                    ))
+                Table(names=cols, rows=rows).write(h5file, 'channels')
 
             # -- timeseries ---------------------
 
@@ -164,6 +181,19 @@ def read_data_archive(sourcefile):
     from h5py import File
 
     with File(sourcefile, 'r') as h5file:
+
+        # -- channels ---------------------------
+
+        try:
+            ctable = Table.read(h5file['channels'])
+        except KeyError:
+            pass
+        else:
+            for row in ctable:
+                chan = get_channel(row['name'])
+                for p in ctable.colnames[1:]:
+                    if row[p]:
+                        setattr(chan, p, row[p])
 
         # -- timeseries -------------------------
 

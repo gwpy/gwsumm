@@ -19,89 +19,176 @@
 """Utilities for channel access
 """
 
-import threading
 import re
 from functools import wraps
 
-from six.moves.queue import Queue
-
 from astropy.units import Unit
 
-try:
-    from gwpy.io.nds import NDS2_CHANNEL_TYPE
-except ImportError:
-    NDS2_TYPES = [
-        'm-trend', 'online', 'raw', 'rds', 'reduced',
-        's-trend', 'static', 'test-pt',
-    ]
-else:
-    NDS2_TYPES = NDS2_CHANNEL_TYPE.keys()
-
-from gwpy.detector import Channel
+from gwpy.detector import (Channel, ChannelList)
+from gwpy.io.nds2 import Nds2ChannelType
 
 from . import globalv
-from .mode import (get_mode, Mode)
 from .utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+NDS2_TYPES = Nds2ChannelType.names()
 CIS_URL = 'https://cis.ligo.org'
-
 re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
-                        '(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimiter parts
-                        '(?:\.[a-z]+)?'  # trend type
-                        '(?:,[a-z-]+)?')  # NDS channel type
+                        r'(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimited parts
+                        r'(?:\.[a-z]+)?'  # trend type
+                        r'(?:,[a-z-]+)?')  # NDS channel type
 
 
-class ThreadChannelQuery(threading.Thread):
-    """Threaded CIS `Channel` query.
+# -- channel creation ---------------------------------------------------------
+
+def _match(channel):
+    channel = Channel(channel)
+    name = str(channel)
+    type_ = channel.type
+    found = globalv.CHANNELS.sieve(
+        name=name, type=type_, exact_match=True)
+
+    # if match, return now
+    if found:
+        return found
+
+    # if no matches, try again without matching type
+    found = globalv.CHANNELS.sieve(name=name, exact_match=True)
+    if len(found) == 1:
+        # found single match that is less specific, so we make it more
+        # specific. If someone else wants another type for the sme channel
+        # this is fine, and it will create another channel.
+        found[0].type = type_
+    return found
+
+
+def _find_parent(channel):
+    """Find the parent for a given channel
+
+    This is either the raw channel from which a trend was generated, or the
+    real channel for a mathematically-manipulated channel.
+
+    Raises
+    ------
+    ValueError
+        if the parent cannot be parsed
     """
-    def __init__(self, inqueue, outqueue, find_trend_source=False, timeout=5):
-        threading.Thread.__init__(self)
-        self.in_ = inqueue
-        self.out = outqueue
-        self.find_trends = find_trend_source
-        self.timeout = timeout
+    if channel.trend:
+        parent = str(channel).rsplit('.')[0]
+    else:
+        parent, = re_channel.findall(str(channel))
+    if parent == str(channel):
+        raise ValueError("Cannot find parent for '{0!s}'".format(channel))
+    return get_channel(parent)
 
-    def run(self):
-        i, channel = self.in_.get()
-        self.in_.task_done()
+
+def _update_dependent(channel):
+    """Update a trend channel from its parent
+    """
+    try:
+        source = _find_parent(channel)
+    except (ValueError, IndexError):
+        return channel
+    if source is channel:
+        return channel
+
+    channel.url = source.url
+    channel.unit = source.unit
+
+    # copy custom named params
+    #     this works because the upstream Channel stores all
+    #     attributes in private variable names
+    # NOTE: we need to exclude 'resample' to not attempt to upsample trends
+    for param in filter(
+            lambda x: not x.startswith('_') and
+            not hasattr(channel, x) and x not in ('resample',),
+            vars(source)):
         try:
-            self.out.put((i, get_channel(
-                channel, find_trend_source=self.find_trends,
-                timeout=self.timeout)))
-        except Exception as e:
-            self.out.put(e)
-        self.out.task_done()
+            setattr(channel, param, getattr(source, param))
+        except AttributeError:
+            pass
+    return channel
 
 
-def _with_update_trend(func):
+def _with_update_dependent(func):
+    """Decorate ``func`` to call `_update_dependent()` upon exit
+    """
     @wraps(func)
     def wrapped_func(*args, **kwargs):
-        _update = kwargs.pop('find_trend_source', True)
+        _update = kwargs.pop('find_parent', True)
         out = func(*args, **kwargs)
         if _update and out.trend:
-            out = _update_trend(out)
+            out = _update_dependent(out)
         return out
     return wrapped_func
 
 
-@_with_update_trend
-def get_channel(channel, find_trend_source=True, timeout=5):
-    """Define a new :class:`~gwpy.detector.channel.Channel`
+def _new(channel, find_parent=True):
+    """Create a new `~gwpy.detector.Channel` in the globalv cache.
+    """
+    # convert to Channel
+    if isinstance(channel, Channel):
+        new = channel
+    else:
+        new = Channel(channel)
+    name = str(channel)
+    type_ = new.type
+
+    # work out what kind of channel it is
+    parts = re_channel.findall(name)
+
+    # match single raw channel
+    if len(parts) == 1 and not re.search('\.[a-z]+\Z', name):
+        new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
+
+    # match single trend
+    elif len(parts) == 1:
+        # set default trend type based on mode
+        if type_ is None and ':DMT-' in name:  # DMT is always m-trend
+            new.type = 'm-trend'
+        # match parameters from 'raw' version of this channel
+
+    # match composite channel
+    else:
+        new.subchannels = parts
+        new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
+
+    if find_parent:
+        _update_dependent(new)
+
+    # store new channel and return
+    globalv.CHANNELS.append(new)
+    try:
+        return get_channel(new)
+    except RuntimeError as e:
+        if 'maximum recursion depth' in str(e):
+            raise RuntimeError("Recursion error while accessing channel "
+                               "information for %s" % str(channel))
+        raise
+
+
+@_with_update_dependent
+def get_channel(channel, find_parent=True, timeout=5):
+    """Find (or create) a :class:`~gwpy.detector.Channel`.
+
+    If ``channel`` has already been created, the cached copy will be
+    returned, otherwise a new `~gwpy.detector.Channel` object will be created.
 
     Parameters
     ----------
     channel : `str`
         name of new channel
-    find_trend_source : `bool`, optional, default: `True`
+
+    find_parent : `bool`, optional, default: `True`
         query for raw version of trend channel (trends not in CIS)
+
     timeout : `float`, optional, default: `5`
         number of seconds to wait before connection times out
 
     Returns
     -------
-    Channel : :class:`~gwpy.detector.channel.Channel`
+    Channel : :class:`~gwpy.detector.Channel`
         new channel.
     """
     chans = re_channel.findall(str(channel))
@@ -110,10 +197,6 @@ def get_channel(channel, find_trend_source=True, timeout=5):
     # match compound channel name
     if nchans > 1 or (nchans == 1 and chans[0] != str(channel)):
         name = str(channel)
-        try:
-            type_ = Channel.MATCH.match(name).groupdict()['type']
-        except AttributeError:
-            type_ = None
         # handle special characters in channel name
         rename = name
         for cchar in ['+', '*', '^', '|']:
@@ -138,126 +221,20 @@ def get_channel(channel, find_trend_source=True, timeout=5):
                          % (str(channel), '\n    '.join(cstrings)))
 
     # otherwise there were no matches, so we create a new channel
-    return _new(channel, find_trend_source=find_trend_source)
-
-
-def _new(channel, find_trend_source=True):
-    # convert to Channel
-    if isinstance(channel, Channel):
-        new = channel
-    else:
-        new = Channel(channel)
-    name = str(channel)
-    type_ = new.type
-
-    # work out what kind of channel it is
-    matches = list(Channel.MATCH.finditer(name))
-
-    # match single raw channel
-    if len(matches) == 1 and not re.search('\.[a-z]+\Z', name):
-        new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
-
-    # match single trend
-    elif len(matches) == 1:
-        # set default trend type based on mode
-        if type_ is None and ':DMT-' in name:  # DMT is always m-trend
-            new.type = 'm-trend'
-        # match parameters from 'raw' version of this channel
-        if find_trend_source:
-            _update_trend(new)
-
-    # match composite channel
-    else:
-        parts = get_channels([m.group() for m in matches])
-        new.subchannels = parts
-        new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
-
-    # store new channel and return
-    globalv.CHANNELS.append(new)
-    try:
-        return get_channel(new)
-    except RuntimeError as e:
-        if 'maximum recursion depth' in str(e):
-            raise RuntimeError("Recursion error while accessing channel "
-                               "information for %s" % str(channel))
-        raise
-
-
-def _update_trend(channel):
-    try:
-        source = get_channel(str(channel).rsplit('.')[0])
-    except ValueError:
-        return channel
-    channel.url = source.url
-    channel.unit = source.unit
-    # copy custom named params
-    #     this works because the upstream Channel stores all
-    #     attributes in private variable names
-    # NOTE: we need to exclude 'resample' to not attempt to upsample trends
-    for param in filter(
-            lambda x: not x.startswith('_') and
-            not hasattr(channel, x) and x not in ('resample',),
-            vars(source)):
-        try:
-            setattr(channel, param, getattr(source, param))
-        except AttributeError:
-            pass
-    return channel
-
-
-def _match(channel):
-    channel = Channel(channel)
-    name = str(channel)
-    type_ = channel.type
-    found = globalv.CHANNELS.sieve(
-        name=name, type=type_, exact_match=True)
-
-    # if match, return now
-    if found:
-        return found
-
-    # if no matches, try again without matching type
-    found = globalv.CHANNELS.sieve(name=name, exact_match=True)
-    if len(found) == 1:
-        # found single match that is less specific, so we make it more
-        # specific. If someone else wants another type for the sme channel
-        # this is fine, and it will create another channel.
-        found[0].type = type_
-    return found
+    return _new(channel, find_parent=find_parent)
 
 
 def get_channels(channels, **kwargs):
-    """Multi-threaded channel query
+    """Find (or create) multiple channels.
+
+    See Also
+    --------
+    get_channel
     """
-    if len(channels) == 0:
-        return []
+    return ChannelList(get_channel(c, **kwargs) for c in channels)
 
-    # set up Queues
-    inqueue = Queue()
-    outqueue = Queue()
 
-    # open threads
-    for i in range(len(channels)):
-        t = ThreadChannelQuery(inqueue, outqueue, **kwargs)
-        t.setDaemon(True)
-        t.start()
-
-    # populate input queue
-    for i, c in enumerate(channels):
-        inqueue.put((i, c))
-
-    # block
-    inqueue.join()
-    outqueue.join()
-    result = []
-    for i in range(len(channels)):
-        c = outqueue.get()
-        if isinstance(c, Exception):
-            raise c
-        else:
-            result.append(c)
-    return list(zip(*sorted(result, key=lambda x: x[0])))[1]
-
+# -- channel manipulation -----------------------------------------------------
 
 def update_missing_channel_params(channel, **kwargs):
     """Update empty channel parameters using the given input
@@ -284,6 +261,29 @@ def update_missing_channel_params(channel, **kwargs):
             setattr(target, param, kwargs[param])
     return target
 
+
+def update_channel_params():
+    """Update the `globalv.CHANNELS` list based on internal parameter changes
+
+    This is required to update `Channel.type` based on `Channel.frametype`,
+    and similar.
+    """
+    for c in globalv.CHANNELS:
+        # update type based on frametype
+        if c.type is None and c.frametype == '{0.ifo}_M'.format(c):
+            c.type = 'm-trend'
+        elif c.type is None and c.frametype == '{0.ifo}_T'.format(c):
+            c.type = 's-trend'
+
+        # update sample_rate based on trend type
+        if c.type is 'm-trend' and c.sample_rate is None:
+            c.sample_rate = 1/60.
+        elif c.type is 's-trend' and c.sample_rate is None:
+            c.sample_rate = 1.
+    return
+
+
+# -- string parsing -----------------------------------------------------------
 
 def split(channelstring):
     """Split a comma-separated list of channels that may, or may not
@@ -326,28 +326,10 @@ def split(channelstring):
 
 def split_combination(channelstring):
     """Split a math-combination of channels
+
+    Returns
+    -------
+    channels : `~gwpy.detector.ChannelList`
     """
-    channel = Channel(channelstring)
-    return [c for c in channel.ndsname.split(' ') if
-            re_channel.match(c)]
-
-
-def update_channel_params():
-    """Update the `globalv.CHANNELS` list based on internal parameter changes
-
-    This is required to update `Channel.type` based on `Channel.frametype`,
-    and similar.
-    """
-    for c in globalv.CHANNELS:
-        # update type based on frametype
-        if c.type is None and c.frametype == '{0.ifo}_M'.format(c):
-            c.type = 'm-trend'
-        elif c.type is None and c.frametype == '{0.ifo}_T'.format(c):
-            c.type = 's-trend'
-
-        # update sample_rate based on trend type
-        if c.type is 'm-trend' and c.sample_rate is None:
-            c.sample_rate = 1/60.
-        elif c.type is 's-trend' and c.sample_rate is None:
-            c.sample_rate = 1.
-    return
+    return get_channels(re_channel.findall(str(channelstring)),
+                        find_parent=False)

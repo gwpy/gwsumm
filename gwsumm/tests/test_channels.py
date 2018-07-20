@@ -24,6 +24,8 @@ import pytest
 
 from astropy import units
 
+from gwpy.detector import ChannelList
+
 from gwsumm import (globalv, channels)
 from gwsumm.mode import (get_mode, set_mode)
 
@@ -135,4 +137,6 @@ def test_split(cstr, clist):
      ['G1:DER_DATA_H-rms', 'G1:DER_DATA_BLAH']),
 ])
 def test_split_combination(cstr, clist):
-    assert channels.split_combination(cstr) == clist
+    split = channels.split_combination(cstr)
+    assert isinstance(split, ChannelList)
+    assert map(str, split), clist

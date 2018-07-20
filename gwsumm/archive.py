@@ -84,7 +84,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
 
             # -- channels -----------------------
 
-            if channels:
+            if channels and globalv.CHANNELS:
                 cols = ('name', 'sample_rate', 'frametype', 'unit')
                 rows = []
                 for chan in globalv.CHANNELS:
@@ -186,7 +186,7 @@ def read_data_archive(sourcefile):
 
         try:
             ctable = Table.read(h5file['channels'])
-        except KeyError:
+        except KeyError:  # no channels table written
             pass
         else:
             for row in ctable:

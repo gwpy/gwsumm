@@ -152,7 +152,7 @@ def _new(channel, find_parent=True):
     # match composite channel
     else:
         new.subchannels = parts
-        new._ifo = "".join(set(p.ifo for p in parts if p.ifo))
+        new._ifo = "".join(set(p.ifo for p in map(Channel, parts) if p.ifo))
 
     if find_parent:
         _update_dependent(new)

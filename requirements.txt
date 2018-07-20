@@ -12,7 +12,8 @@ matplotlib>=2.0
 astropy>=1.2.1
 lalsuite
 lscsoft-glue>=1.56.0
-gwpy>=0.8.1
+# need development release of gwpy
+git+https://github.com/gwpy/gwpy.git
 
 # optional extras (not module-level imports)
 pykerberos

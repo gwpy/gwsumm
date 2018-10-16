@@ -643,7 +643,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                                       verbose=vstr.format(segment), **ioargs)
             else:  # read
                 # NOTE: this sieve explicitly casts our segment to
-                #       glue.segments.segment to prevent `TypeError` from
+                #       ligo.segments.segment to prevent `TypeError` from
                 #       a mismatch with ligo.segments.segment
                 segcache = sieve_cache(fcache, segment=segment)
                 segstart, segend = map(float, segment)

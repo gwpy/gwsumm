@@ -12,6 +12,7 @@ matplotlib>=2.0
 astropy>=1.2.1
 lalsuite
 lscsoft-glue>=1.56.0
+gwtrigfind
 # need development release of gwpy
 git+https://github.com/gwpy/gwpy.git
 
@@ -19,7 +20,6 @@ git+https://github.com/gwpy/gwpy.git
 pykerberos
 h5py
 dqsegdb>=1.4.2
-https://github.com/gwpy/trigfind/archive/v0.5.tar.gz
 ligo-gracedb
 
 # testing extras

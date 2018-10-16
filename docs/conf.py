@@ -294,4 +294,5 @@ intersphinx_mapping = {
     'astropy': ('http://docs.astropy.org/en/stable/', None),
     'gwpy': ('https://gwpy.github.io/docs/stable/',
              None),
+    'gwtrigfind': ('https://gwtrigfind.readthedocs.io/en/stable/', None),
 }

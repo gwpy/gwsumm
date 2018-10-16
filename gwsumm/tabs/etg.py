@@ -72,7 +72,7 @@ class EventTriggerTab(get_tab('default')):
     cache : `~glue.lal.Cache`, `str`, optional
         `Cache` object, or path to a LAL-format cache file on disk,
         from which to read the event triggers. If no cache is given,
-        the ~gwpy.table.io.trigfind` module will be used to automatically
+        the `gwtrigfind` module will be used to automatically
         locate the trigger files.
     url : `str`, optional
         URL for linking to more details results for this tab.

@@ -37,8 +37,9 @@ from glue import pipeline
 
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.table.lsctables import SnglBurstTable
-from gwpy.table.io import trigfind
 from gwpy.time import to_gps
+
+import gwtrigfind
 
 from gwsumm import __version__
 
@@ -245,8 +246,8 @@ print('%d segments found, %ds livetime' % (len(segments.active),
 # -----------------------------------------------------------------------------
 # Read triggers
 
-cache = trigfind.find_trigger_urls(args.channel, args.trigger_generator,
-                                   args.gpsstart, args.gpsend, verbose=True)
+cache = gwtrigfind.find_trigger_files(args.channel, args.trigger_generator,
+                                      args.gpsstart, args.gpsend, verbose=True)
 
 # check files
 if len(cache) == 0:

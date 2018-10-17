@@ -349,9 +349,8 @@ class GWSummConfigParser(ConfigParser):
         end = self.getint(section, 'gps-end-time')
         try:
             all_ = generate_all_state(start, end)
-        except ValueError:
+        except ValueError:  # user defined an all state themselves
             all_ = get_state(ALLSTATE)
-            pass
         else:
             states.insert(0, all_)
 

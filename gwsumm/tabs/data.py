@@ -343,7 +343,7 @@ class DataTab(ProcessedTab, ParentTab):
         self.finalize_states(
             config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
-            nproc=nproc)
+            nproc=nproc, nds=stateargs.get('nds', None))
         vprint("States finalised [%d total]\n" % len(self.states))
         for state in self.states:
             vprint("    {0.name}: {1} segments | {2} seconds".format(

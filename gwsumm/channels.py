@@ -138,8 +138,11 @@ def _new(channel, find_parent=True):
     # work out what kind of channel it is
     parts = re_channel.findall(name)
 
-    # match single raw channel
-    if len(parts) == 1 and not re.search('\.[a-z]+\Z', name):
+    # match single raw channel for LIGO
+    if (len(parts) == 1 and
+            new.ifo in ('H1', 'L1') and
+            not re.search('\.[a-z]+\Z', name)
+    ):
         new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
 
     # match single trend

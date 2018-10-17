@@ -77,6 +77,7 @@ install_requires = [
     'lalsuite',
     'lscsoft-glue>=1.56.0',
     'gwpy>=0.8.1',
+    'gwtrigfind',
 ]
 if sys.version < '3':
     install_requires.append('enum34')
@@ -233,10 +234,6 @@ setup(name=DISTNAME,
       install_requires=install_requires,
       tests_require=tests_require,
       extras_require=extras_require,
-      dependency_links=[
-          'https://github.com/gwpy/trigfind/archive/v0.6.1.tar.gz'
-          '#egg=trigfind-0.6.1',
-      ],
       data_files=data_files,
       use_2to3=True,
       classifiers=[

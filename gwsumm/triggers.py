@@ -32,7 +32,7 @@ from gwpy.table.filter import parse_column_filters
 from gwpy.table.io.pycbc import filter_empty_files as filter_pycbc_live_files
 from gwpy.segments import (DataQualityFlag, SegmentList)
 
-import trigfind
+import gwtrigfind
 
 from . import globalv
 from .utils import (re_cchar, vprint, safe_eval)
@@ -219,7 +219,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 # find trigger files
                 if cache is None and not etg.lower() == 'hacr':
                     try:
-                        segcache = trigfind.find_trigger_files(
+                        segcache = gwtrigfind.find_trigger_files(
                             str(channel), trigfindetg, segment[0], segment[1],
                             **trigfindkwargs)
                     except ValueError as e:

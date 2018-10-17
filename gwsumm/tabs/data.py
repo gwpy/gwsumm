@@ -321,7 +321,7 @@ class DataTab(ProcessedTab, ParentTab):
             allstate = get_state(ALLSTATE)
         except ValueError:
             allstate = generate_all_state(self.start, self.end)
-        allstate.fetch(config=config)
+        allstate.fetch(config=config, segdb_error=segdb_error, **kwargs)
         for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 

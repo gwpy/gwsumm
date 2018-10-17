@@ -196,7 +196,6 @@ class SummaryState(DataQualityFlag):
             a new state, with attributes set from the options in the
             configuration
         """
-        from .all import ALLSTATE, generate_all_state
         config = GWSummConfigParser.from_configparser(config)
         # get span times
         start = config.getint(section, 'gps-start-time')
@@ -240,10 +239,7 @@ class SummaryState(DataQualityFlag):
             for i, (h0, h1) in enumerate(hours):
                 hours[i] = (h0 - offset / 3600., h1 - offset / 3600.)
         # generate state
-        if name.lower() == ALLSTATE:
-            return generate_all_state(start, end, register=False, **params)
-        else:
-            return cls(name, known=[(start, end)], hours=hours, **params)
+        return cls(name, known=[(start, end)], hours=hours, **params)
 
     def _fetch_segments(self, config=GWSummConfigParser(), **kwargs):
         kwargs.setdefault('url', self.url)

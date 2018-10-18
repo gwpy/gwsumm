@@ -347,7 +347,7 @@ def find_frame_type(channel):
         try:
             ndstype = io_nds2.Nds2ChannelType.find(channel.type)
         except (AttributeError, KeyError, ValueError):
-            ndstype = channel.type = 'raw'
+            ndstype = None
         if ndstype == io_nds2.Nds2ChannelType.MTREND:
             ftype = 'M'
         elif ndstype == io_nds2.Nds2ChannelType.STREND:
@@ -596,21 +596,30 @@ def _get_timeseries_dict(channels, segments, config=None,
     if query:
         for channel in channels:
             globalv.DATA.setdefault(keys[channel.ndsname], ListClass())
+
+        ifo = channels[0].ifo
+
         # open NDS connection
-        if nds and config.has_option('nds', 'host'):
-            host = config.get('nds', 'host')
-            port = config.getint('nds', 'port')
-            ndsconnection = io_nds2.connect(host, port)
-            frametype = source = 'nds'
-            ndstype = channels[0].type
-        elif nds:
-            ndsconnection = None
+        if nds:
+            if config.has_option('nds', 'host'):
+                host = config.get('nds', 'host')
+                port = config.getint('nds', 'port')
+                ndsconnection = io_nds2.connect(host, port)
+            else:
+                ndsconnection = None
             frametype = source = 'nds'
             ndstype = channels[0].type
 
+            # get NDS channel segments
+            if ndsconnection is not None and ndsconnection.get_protocol() > 1:
+                span = map(int, new.extent())
+                avail = io_nds2.get_availability(
+                    channels, *span, connection=ndsconnection
+                )
+                new &= avail.intersection(avail.keys())
+
         # or find frame type and check cache
         else:
-            ifo = channels[0].ifo
             frametype = frametype or channels[0].frametype
             new = exclude_short_trend_segments(new, ifo, frametype)
 
@@ -641,11 +650,12 @@ def _get_timeseries_dict(channels, segments, config=None,
         # check whether each channel exists for all new times already
         qchannels = []
         for channel in channels:
-            name = str(channel)
             oldsegs = globalv.DATA.get(keys[channel.ndsname],
                                        ListClass()).segments
-            if abs(new - oldsegs) != 0:
-                qchannels.append(name)
+            if abs(new - oldsegs) != 0 and nds:
+                qchannels.append(channel.ndsname)
+            elif abs(new - oldsegs) != 0:
+                qchannels.append(str(channel))
 
         # loop through segments, recording data for each
         if len(new):

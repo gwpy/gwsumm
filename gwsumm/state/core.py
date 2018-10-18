@@ -276,7 +276,7 @@ class SummaryState(DataQualityFlag):
         return self
 
     def fetch(self, config=GWSummConfigParser(), segdb_error='raise',
-              datafind_error='raise', nproc=1, **kwargs):
+              datafind_error='raise', nproc=1, nds=None, **kwargs):
         """Finalise this state by fetching its defining segments,
         either from global memory, or from the segment database
         """
@@ -293,7 +293,7 @@ class SummaryState(DataQualityFlag):
             thresh = float(thresh.strip())
             self._fetch_data(channel, thresh, match.groups()[0], config=config,
                              datafind_error=datafind_error,
-                             nproc=nproc, **kwargs)
+                             nproc=nproc, nds=nds, **kwargs)
         # fetch segments
         elif self.definition:
             self._fetch_segments(config=config, segdb_error=segdb_error,

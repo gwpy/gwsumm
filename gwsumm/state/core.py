@@ -251,6 +251,16 @@ class SummaryState(DataQualityFlag):
 
     def _fetch_data(self, channel, thresh, op, config=GWSummConfigParser(),
                     **kwargs):
+        # if 0 is out-of-state, allowing padding gaps with 0.
+        if (
+                (op == '<' and thresh <= 0.) or
+                (op == '<=' and thresh < 0.) or
+                (op == '>' and thresh >= 0.) or
+                (op == '>=' and thresh > 0.) or
+                (op in ('=', '==') and thresh != 0.) or
+                (op == '!=' and thresh == 0.)
+        ):
+            kwargs.setdefault('pad', 0.)
         data = get_timeseries(channel, self.known, config=config, **kwargs)
         for ts in data:
             if isinstance(thresh, (float, int)) and ts.unit is not None:

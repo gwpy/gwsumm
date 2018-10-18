@@ -198,10 +198,9 @@ class GuardianTab(DataTab):
                 tag = self.segmenttag % name
                 instate = sdata == v
                 ssegs[tag] = instate.to_dqflag(name=name)
-                transin = (numpy.diff(
-                    instate.astype(int)) == 1).nonzero()[0] + 1
-                transout = (numpy.diff(
-                    instate.astype(int)) == -1).nonzero()[0] + 1
+                diff_ = numpy.diff(instate.value.astype(int))
+                transin = (diff_ == 1).nonzero()[0] + 1
+                transout = (diff_ == -1).nonzero()[0] + 1
                 for i, j in zip(transin, transout):
                     t = sdata.times[i].value
                     from_ = sdata[i-1].value

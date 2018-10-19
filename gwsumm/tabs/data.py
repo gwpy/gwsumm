@@ -341,7 +341,8 @@ class DataTab(ProcessedTab, ParentTab):
         config = GWSummConfigParser.from_configparser(config)
         # load state segments
         self.finalize_states(
-            config=config, segdb_error=stateargs.get('segdb_error', 'raise'),
+            config=config, datacache=stateargs.get('datacache', None),
+            segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
         vprint("States finalised [%d total]\n" % len(self.states))

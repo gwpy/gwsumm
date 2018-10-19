@@ -286,7 +286,7 @@ class SummaryState(DataQualityFlag):
         return self
 
     def fetch(self, config=GWSummConfigParser(),
-              segmentdcache=None, segdb_error='raise',
+              segmentcache=None, segdb_error='raise',
               datacache=None, datafind_error='raise', nproc=1, nds=None,
               **kwargs):
         """Finalise this state by fetching its defining segments,

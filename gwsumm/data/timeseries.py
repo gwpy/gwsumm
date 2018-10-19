@@ -33,17 +33,14 @@ except ImportError:
     from ordereddict import OrderedDict
 
 from six.moves import reduce
+from six.moves.urllib.parse import urlparse
 
 from astropy import units
 
 import gwdatafind
 
-from lal.utils import CacheEntry
-
-from glue import (lal as glue_lal)
-
 from gwpy.io import nds2 as io_nds2
-from gwpy.io.cache import cache_segments
+from gwpy.io.cache import (file_segment, cache_segments)
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
@@ -62,10 +59,6 @@ from .mathutils import get_with_math
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 warnings.filterwarnings("ignore", "LAL has no unit corresponding")
-
-# avoid DeprecationWarnings from glue re: CacheEntry
-Cache = glue_lal.Cache
-glue_lal.CacheEntry = Cache.entry_class = CacheEntry
 
 OPERATOR = {
     '*': operator.mul,
@@ -117,6 +110,28 @@ SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
 re_gwf_gps_epoch = re.compile('[-\/](?P<gpsepoch>\d+)$')
 
 
+def _urlpath(url):
+    return urlparse(url).path
+
+
+def sieve_cache(cache, ifo=None, tag=None, segment=None):
+    def _sieve(url):
+        try:
+            uifo, utag, useg = gwdatafind.utils.filename_metadata(url)
+        except AttributeError:  # CacheEntry
+            uifo = url.observatory
+            utag = url.description
+            useg = url.segment
+        if segment is not None:  # cast type to prevent TypeErrors
+            useg = type(segment)(*useg)
+        return (
+            (ifo is None or uifo == ifo) and
+            (tag is None or utag == tag) and
+            (segment is None or useg.intersects(segment))
+        )
+    return type(cache)(filter(_sieve, cache))
+
+
 @use_configparser
 def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
                 urltype='file', gaps='warn', onerror='raise'):
@@ -156,9 +171,8 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
 
     Returns
     -------
-    cache : `~glue.lal.Cache`
-        a list of structured frame file descriptions matching the ifo and
-        frametype requested
+    cache : `list` of `str`
+        a list of file paths pointing at GWF files matching the request
     """
     vprint('    Finding %s-%s frames for [%d, %d)...'
            % (ifo[0], frametype, int(gpsstart), int(gpsend)))
@@ -181,7 +195,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     gpsstart = int(floor(gpsstart))
     gpsend = int(ceil(min(globalv.NOW, gpsend)))
     if gpsend <= gpsstart:
-        return Cache()
+        return []
 
     # parse match
     try:
@@ -209,7 +223,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
                               % (type(e).__name__, str(e)))
             else:
                 raise
-            cache = Cache()
+            cache = []
 
     # XXX: if querying for day of LLO frame type change, do both
     if (ifo[0].upper() == 'L' and frametype in ['C', 'R', 'M', 'T'] and
@@ -224,26 +238,25 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     try:
         latest = cache[-1]
         ngps = len(re_gwf_gps_epoch.search(
-            os.path.dirname(latest.path)).groupdict()['gpsepoch'])
+            os.path.dirname(latest)).groupdict()['gpsepoch'])
     except (IndexError, AttributeError):
         pass
     else:
         while True:
-            s, e = latest.segment
+            s, e = file_segment(latest)
             if s >= gpsend:
                 break
             # replace GPS time of file basename
-            new = latest.path.replace('-%d-' % s, '-%d-' % e)
+            new = latest.replace('-%d-' % s, '-%d-' % e)
             # replace GPS epoch in dirname
             new = new.replace('%s/' % str(s)[:ngps], '%s/' % str(e)[:ngps])
             if os.path.isfile(new):
-                latest = CacheEntry.from_T050017(new)
-                cache.append(latest)
+                cache.append(new)
             else:
                 break
 
     # validate files existing and return
-    cache, _ = cache.checkfilesexist()
+    cache = list(filter(os.path.exists, map(_urlpath, cache)))
     vprint(' %d found.\n' % len(cache))
     return cache
 
@@ -264,7 +277,7 @@ def find_best_frames(ifo, frametype, start, end, **kwargs):
         vprint("    Gaps discovered in aggregated h(t) type "
                "%s, checking %s\n" % (frametype, f2))
         kwargs['gaps'] = 'ignore'
-        cache.extend(filter(lambda e: e.segment in gaps,
+        cache.extend(filter(lambda e: file_segment(e) in gaps,
                             find_frames(ifo, f2, start, end, **kwargs)))
         new = int(abs(gaps - cache_segments(cache)))
         if new:
@@ -273,41 +286,6 @@ def find_best_frames(ifo, frametype, start, end, **kwargs):
             vprint("    No extra coverage with frametype %s\n" % f2)
 
     return cache, frametype
-
-
-def find_cache_segments(*caches):
-    """Return the segments covered by one or more data caches
-
-    Parameters
-    ----------
-    *cache : `~glue.lal.Cache`
-        one or more file caches
-
-    Returns
-    -------
-    segments : `~gwpy.segments.SegmentList`
-        list of segments containing in cache
-    """
-    out = SegmentList()
-    nframes = sum(len(c) for c in caches)
-    if nframes == 0:
-        return out
-    for cache in caches:
-        # build segment for this cache
-        if not len(cache):
-            continue
-        seg = cache[0].segment
-        for e in cache:
-            # if new segment doesn't overlap, append and start again
-            if e.segment.disjoint(seg):
-                out.append(seg)
-                seg = e.segment
-            # otherwise, append to current segment
-            else:
-                seg |= e.segment
-    # append final segment and return
-    out.append(seg)
-    return out
 
 
 def find_frame_type(channel):
@@ -410,8 +388,13 @@ def all_adc(cache):
     This is useful to set `type='adc'` when reading with frameCPP, which
     can greatly speed things up.
     """
-    for e in cache:
-        if not e.path.endswith('.gwf') or e.description not in ADC_TYPES:
+    for path in cache:
+        try:
+            tag = os.path.basename(path).split('-')[1]
+        except AttributeError:  # CacheEntry
+            tag = path.description
+            path = path.path
+        if not path.endswith('.gwf') or tag not in ADC_TYPES:
             return False
     return True
 
@@ -604,10 +587,10 @@ def _get_timeseries_dict(channels, segments, config=None,
             new = exclude_short_trend_segments(new, ifo, frametype)
 
             if cache is not None:
-                fcache = cache.sieve(ifos=ifo[0], description=frametype,
-                                     exact_match=True)
+                fcache = sieve_cache(cache, ifo=ifo[0], tag=frametype)
+                frametype = 'cache'
             else:
-                fcache = Cache()
+                fcache = []
 
             if (cache is None or len(fcache) == 0) and len(new):
                 span = new.extent()
@@ -664,11 +647,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 # NOTE: this sieve explicitly casts our segment to
                 #       glue.segments.segment to prevent `TypeError` from
                 #       a mismatch with ligo.segments.segment
-                try:
-                    segcache = fcache.sieve(
-                        segment=type(fcache[0].segment)(*segment))
-                except IndexError:  # empty cache
-                    segcache = type(fcache)()
+                segcache = sieve_cache(fcache, segment=segment)
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
                                      end=segend, nproc=nproc,
@@ -783,7 +762,7 @@ def get_timeseries(channel, segments, config=None, cache=None,
     config : `~gwsumm.config.GWSummConfigParser`
         the configuration for this analysis
 
-    cache : `~glue.lal.Cache`
+    cache : `~glue.lal.Cache` or `list` of `str`
         a cache of data files from which to read
 
     query : `bool`, optional

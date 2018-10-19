@@ -78,6 +78,7 @@ install_requires = [
     'lscsoft-glue>=1.56.0',
     'gwpy>=0.8.1',
     'gwtrigfind',
+    'gwdatafind',
 ]
 if sys.version < '3':
     install_requires.append('enum34')

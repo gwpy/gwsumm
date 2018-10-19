@@ -13,6 +13,7 @@ astropy>=1.2.1
 lalsuite
 lscsoft-glue>=1.56.0
 gwtrigfind
+gwdatafind
 # need development release of gwpy
 git+https://github.com/gwpy/gwpy.git
 

@@ -588,7 +588,6 @@ def _get_timeseries_dict(channels, segments, config=None,
 
             if cache is not None:
                 fcache = sieve_cache(cache, ifo=ifo[0], tag=frametype)
-                frametype = 'cache'
             else:
                 fcache = []
 
@@ -623,7 +622,8 @@ def _get_timeseries_dict(channels, segments, config=None,
         # loop through segments, recording data for each
         if len(new):
             vprint("    Fetching data (from %s) for %d channels [%s]:\n"
-                   % (source, len(qchannels), nds and ndstype or frametype))
+                   % (source, len(qchannels),
+                      nds and ndstype or frametype or ''))
         vstr = "        [{0[0]}, {0[1]})"
         for segment in new:
             # force reading integer-precision segments

@@ -36,9 +36,11 @@ from six.moves import reduce
 
 from astropy import units
 
+import gwdatafind
+
 from lal.utils import CacheEntry
 
-from glue import (datafind, lal as glue_lal)
+from glue import (lal as glue_lal)
 
 from gwpy.io import nds2 as io_nds2
 from gwpy.io.cache import cache_segments
@@ -149,7 +151,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
         - `raise` : raise an exception
 
     onerror : `str`, optional
-        what to do when the `~glue.datafind` query itself fails, same
+        what to do when the `gwdatafind` query itself fails, same
         options as for ``gaps``
 
     Returns
@@ -164,26 +166,10 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     try:
         host = config.get('datafind', 'server')
     except (NoOptionError, NoSectionError):
-        try:
-            host = os.environ['LIGO_DATAFIND_SERVER']
-        except KeyError:
-            host = None
-            port = None
-        else:
-            try:
-                host, port = host.rsplit(':', 1)
-            except ValueError:
-                port = None
-            else:
-                port = int(port)
+        host = None
+        port = None
     else:
         port = config.getint('datafind', 'port')
-    # get credentials
-    if port == 80:
-        cert = None
-        key = None
-    else:
-        cert, key = datafind.find_credential()
 
     # XXX HACK: LLO changed frame types on Dec 6 2013:
     LLOCHANGE = 1070291904
@@ -204,14 +190,9 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
         match = None
 
     def _query():
-        if cert is not None:
-            dfconn = datafind.GWDataFindHTTPSConnection(
-                host=host, port=port, cert_file=cert, key_file=key)
-        else:
-            dfconn = datafind.GWDataFindHTTPConnection(host=host, port=port)
-        return dfconn.find_frame_urls(ifo[0].upper(), frametype, gpsstart,
-                                      gpsend, urltype=urltype, on_gaps=gaps,
-                                      match=match)
+        return gwdatafind.find_urls(ifo[0].upper(), frametype, gpsstart,
+                                    gpsend, urltype=urltype, on_gaps=gaps,
+                                    match=match, host=host, port=port)
     try:
         cache = _query()
     except RuntimeError as e:
@@ -235,10 +216,9 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
             gpsstart < LLOCHANGE < gpsend):
         start = len(cache) and cache[-1].segment[1] or gpsstart
         if start < gpsend:
-            cache.extend(dfconn.find_frame_urls(ifo[0].upper(),
-                                                'L1_%s' % frametype, start,
-                                                gpsend, urltype=urltype,
-                                                on_gaps=gaps)[1:])
+            cache.extend(gwdatafind.find_urls(
+                ifo[0].upper(), 'L1_%s' % frametype, start, gpsend,
+                urltype=urltype, on_gaps=gaps, host=host, port=port)[1:])
 
     # extend cache beyond datafind's knowledge to reduce latency
     try:

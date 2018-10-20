@@ -675,11 +675,9 @@ def _get_timeseries_dict(channels, segments, config=None,
                    continue
 
             if nds:  # fetch
-                vprint((vstr + '...').format(segment))
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],
                                       connection=ndsconnection, type=ndstype,
-                                      **ioargs)
-                vprint(' [Done]\n')
+                                      verbose=vstr.format(segment), **ioargs)
             else:  # read
                 # NOTE: this sieve explicitly casts our segment to
                 #       glue.segments.segment to prevent `TypeError` from

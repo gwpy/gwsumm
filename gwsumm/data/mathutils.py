@@ -220,7 +220,9 @@ def _join(a, b, op):
     outside
     """
     # crop time-axis to select overlapping data
-    if a.xunit.physical_type == 'time':
+    if a.xunit.physical_type == 'time' and (
+            abs(a.xspan) != abs(b.xspan) or a.shape[0] != b.shape[0]
+    ):
         overlap = a.xspan & b.xspan
         a = a.crop(*overlap)
         b = b.crop(*overlap)

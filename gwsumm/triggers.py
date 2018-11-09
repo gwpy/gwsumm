@@ -21,6 +21,8 @@
 
 import warnings
 
+from six.moves.urllib.parse import urlparse
+
 from astropy.table import vstack as vstack_tables
 
 from glue.lal import (Cache, CacheEntry)
@@ -418,6 +420,8 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
         cache = cache.checkfilesexist()[0]
         cache.sort(key=lambda x: x.segment[0])
         cache = cache.pfnlist()  # some readers only like filenames
+    else:
+        cache = [urlparse(url).path for url in cache]
     if etg == 'pycbc_live':  # remove empty HDF5 files
         cache = filter_pycbc_live_files(cache, ifo=kwargs['ifo'])
 

@@ -198,8 +198,9 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table = get_triggers(key, self.etg, valid,
-                                 filter=self.filterstr, query=False)
+            table = get_triggers(key, self.etg, valid, query=False)
+            if self.filterstr is not None:
+                table = table.filter(self.filterstr)
             ntrigs += len(table)
             # access channel parameters for limits
             for c, column in zip(('x', 'y', 'c'), (xcolumn, ycolumn, ccolumn)):
@@ -456,8 +457,9 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
                                  self.state and str(self.state) or 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid,
-                                  filter=self.filterstr, query=False)
+            table_ = get_triggers(key, self.etg, valid, query=False)
+            if self.filterstr is not None:
+                table_ = table_.filter(self.filterstr)
             livetime.append(float(abs(table_.meta['segments'])))
             data.append(table_[self.column])
             # allow channel data to set parameters
@@ -591,8 +593,9 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                                  str(self.state) if self.state else 'All')
             else:
                 key = str(channel)
-            table_ = get_triggers(key, self.etg, valid,
-                                  filter=self.filterstr, query=False)
+            table_ = get_triggers(key, self.etg, valid, query=False)
+            if self.filterstr is not None:
+                table_ = table_.filter(self.filterstr)
             tcol_ = tcol or get_time_column(table_, self.etg)
             if self.column:
                 rates = table_.binned_event_rates(

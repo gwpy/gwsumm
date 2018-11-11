@@ -265,7 +265,6 @@ class EventTriggerTab(get_tab('default')):
     def process_state(self, state, *args, **kwargs):
         if self.error.get(state, None):
             return
-        kwargs['trigfilter'] = self.filterstr
         super(EventTriggerTab, self).process_state(state, *args, **kwargs)
 
     def write_state_html(self, state, pre=None):

@@ -303,7 +303,9 @@ class EventTriggerTab(get_tab('default')):
             if self.loudest:
                 # get triggers
                 table = get_triggers(self.channel, self.plots[0].etg, state,
-                                     filter=self.filterstr, query=False)
+                                     query=False)
+                if self.filterstr is not None:
+                    table = table.filter(self.filterstr)
                 tcol = get_time_column(table, self.etg)
                 # set table headers
                 headers = list(self.loudest['labels'])

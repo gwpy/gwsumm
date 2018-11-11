@@ -368,8 +368,8 @@ class DataTab(ProcessedTab, ParentTab):
 
     def process_state(self, state, nds=None, nproc=1,
                       config=GWSummConfigParser(), datacache=None,
-                      trigcache=None, segmentcache=None, trigfilter=None,
-                      segdb_error='raise', datafind_error='raise'):
+                      trigcache=None, segmentcache=None, segdb_error='raise',
+                      datafind_error='raise'):
         """Process data for this tab in a given state
 
         Parameters
@@ -392,10 +392,6 @@ class DataTab(ProcessedTab, ParentTab):
             `Cache` of files from which to read event triggers
         segmentcache : `~glue.lal.Cache`, optional
             `Cache` of files from which to read segments
-        trigfilter : `str`, optional
-            event table filter, either as space-separated `str` or `list`
-            of `str` components of the form ``column>threshold``, e.g.
-            ``snr>10``
         segdb_error : `str`, optional
             if ``'raise'``: raise exceptions when the segment database
             reports exceptions, if ``'warn''`, print warnings but continue,
@@ -542,8 +538,7 @@ class DataTab(ProcessedTab, ParentTab):
                                               'trigger-histogram',
                                               all_data=all_data):
             get_triggers(channel, etg, state.active, config=config,
-                         cache=trigcache, nproc=nproc,
-                         filter=trigfilter, return_=False)
+                         cache=trigcache, nproc=nproc, return_=False)
 
         # --------------------------------------------------------------------
         # make plots

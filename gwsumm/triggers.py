@@ -260,7 +260,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:  # map to LIGO_LW table with full column listing
             tab = EventTable(lsctables.New(TableClass))
         tab.meta['segments'] = SegmentList()
-        tab.meta['timecolumn'] = read_kw.get('timecolumn')
+        for metakey in ('timecolumn', 'tablename',):
+            if metakey in read_kw:
+                tab.meta[metakey] = read_kw[metakey]
         add_triggers(tab, key)
 
     # work out time function

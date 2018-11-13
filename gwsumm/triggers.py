@@ -239,7 +239,9 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
                                        nproc=nproc, **read_kw)
+                # record triggers
                 if trigs is not None:
+                    # add metadata
                     add_triggers(trigs, key)
                     ntrigs += len(trigs)
                 vprint(".")
@@ -258,9 +260,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
         else:  # map to LIGO_LW table with full column listing
             tab = EventTable(lsctables.New(TableClass))
         tab.meta['segments'] = SegmentList()
-        for k, v in read_kw.items():
-            if v is not None:
-                tab.meta.setdefault(k, v)
+        tab.meta['timecolumn'] = read_kw.get('timecolumn')
         add_triggers(tab, key)
 
     # work out time function
@@ -276,13 +276,14 @@ def add_triggers(table, key, segments=None):
     try:
         old = globalv.TRIGGERS[key]
     except KeyError:
-        globalv.TRIGGERS[key] = table
+        new = globalv.TRIGGERS[key] = table
+        new.meta.setdefault('segments', SegmentList())
     else:
-        globalv.TRIGGERS[key] = vstack_tables((old, table))
-        try:
-            globalv.TRIGGERS[key].meta['segments'].coalesce()
-        except KeyError:
-            globalv.TRIGGERS[key].meta['segments'] = SegmentList()
+        new = globalv.TRIGGERS[key] = vstack_tables((old, table))
+        new.meta = old.meta
+        new.meta['segments'] |= table.meta.get('segments', SegmentList())
+    new.meta['segments'].coalesce()
+    return new
 
 
 def keep_in_segments(table, segmentlist, etg=None):
@@ -434,9 +435,6 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     # store read keywords in the meta table
     if timecolumn:
         table.meta['timecolumn'] = timecolumn
-    for key, val in kwargs.items():
-        if val is not None:
-            table.meta.setdefault(key, val)
 
     # get back from cache entry
     if isinstance(cache, CacheEntry):

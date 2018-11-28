@@ -521,7 +521,7 @@ class BaseTab(object):
         user : `bool`, default: `True`
             print details of user running this job
 
-        issues : `bool`, default: `True`
+        issues : `bool` or `str`, default: `True`
             print link to github.com issue tracker for this package
 
         about : `str`
@@ -713,7 +713,8 @@ class BaseTab(object):
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
                    ifo=None, ifomap=dict(), brand=None, base=None,
-                   css=None, js=None, about=None, footer=None, **inargs):
+                   css=None, js=None, about=None, footer=None, issues=True,
+                   **inargs):
         """Write the HTML page for this `Tab`.
 
         Parameters
@@ -755,6 +756,9 @@ class BaseTab(object):
         footer : `str`, `~gwsumm.html.markup.page`
             user-defined content for the footer (placed below everything else)
 
+        issues : `bool` or `str`, default: `True`
+            print link to github.com issue tracker for this package
+
         **inargs
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
@@ -786,7 +790,7 @@ class BaseTab(object):
 
         self.page.div.close()  # container
         # close page and write
-        self.html_finalize(about=about, content=footer)
+        self.html_finalize(about=about, content=footer, issues=issues)
         with open(self.index, 'w') as fobj:
             fobj.write(str(self.page))
         return

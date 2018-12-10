@@ -585,6 +585,12 @@ else:
     urlbase = None
     base = None
 
+# get link to issues report page
+try:
+    issues = config.get('html', 'issues')
+except:
+    issues = True
+
 # write 404 error page
 if not opts.no_htaccess and not opts.no_html and urlbase:
     top = os.path.join(urlbase, path)
@@ -593,7 +599,8 @@ if not opts.no_htaccess and not opts.no_html and urlbase:
     four0four.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
                          ifomap=ifobases, top=top, base=base,
                          writedata=not opts.html_only,
-                         writehtml=not opts.no_html)
+                         writehtml=not opts.no_html,
+                         issues=issues)
     url404 = os.path.join(urlbase, four0four.index)
     with open(os.path.join(path, '.htaccess'), 'w') as htaccess:
         print('Options -Indexes', file=htaccess)
@@ -606,7 +613,7 @@ if not opts.no_html:
     mkdir(about.path)
     about.write_html(css=css, js=javascript, tabs=tabs, config=config.files,
                      ifo=ifo, ifomap=ifobases, about=about.index, base=base,
-                     writedata=not opts.html_only,
+                     issues=issues, writedata=not opts.html_only,
                      writehtml=not opts.no_html)
 
 # -----------------------------------------------------------------------------
@@ -684,7 +691,7 @@ for tab in tablist:
         mkdir(tab.href)
         page = tab.write_html(css=css, js=javascript, tabs=tabs, ifo=ifo,
                               ifomap=ifobases, about=about.index, base=base,
-                              writedata=not opts.html_only,
+                              issues=issues, writedata=not opts.html_only,
                               writehtml=not opts.no_html)
     vprint("%s complete!\n" % (name))
 

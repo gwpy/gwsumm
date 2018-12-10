@@ -314,6 +314,8 @@ def footer(user=True, about=None, issues=True, content=None, span=12,
     ----------
     user : `bool`, optional, default: `True`
         print details of user running this job
+    issues : `str`, optional, default: 'https://github.com/gwpy/gwsumm/issues'
+        external link to a webpage where issues can be posted
     span : `int`
         column span of content, default: 'full' (``12``)
 
@@ -341,6 +343,8 @@ def footer(user=True, about=None, issues=True, content=None, span=12,
         page.p('This page was created by %s at %s.'
                % (getpass.getuser(),
                   datetime.datetime.now().strftime('%H:%m on %B %d %Y')))
+    if issues is True:
+        issues = 'https://github.com/gwpy/gwsumm/issues'
     if issues:
         version = get_versions()['version']
         commit = get_versions()['full-revisionid']
@@ -348,8 +352,7 @@ def footer(user=True, about=None, issues=True, content=None, span=12,
         page.p()
         page.a('View GWSumm %s on GitHub' % version, href=url, target='_blank')
         page.add('|')
-        page.a('Report an issue', href='https://github.com/gwpy/gwsumm/issues',
-               target='_blank')
+        page.a('Report an issue', href=issues, target='_blank')
         page.p.close()
     if about is not None:
         page.p(markup.oneliner.a('How was this page generated?', href=about))

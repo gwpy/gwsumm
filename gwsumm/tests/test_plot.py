@@ -30,8 +30,8 @@ from matplotlib import rcParams
 import pytest
 
 from gwpy.detector import ChannelList
+from gwpy.plot import Plot
 from gwpy.segments import Segment
-from gwpy import plotter as gwpy_plotter
 
 from gwsumm import plot as gwsumm_plot
 from gwsumm.config import ConfigParser
@@ -327,7 +327,7 @@ class TestDataPlot(TestSummaryPlot):
                 os.remove(plot.outputfile)
 
     def test_apply_parameters(self, plot):
-        fig = gwpy_plotter.figure()
+        fig = Plot()
         ax = fig.gca()
         plot.apply_parameters(ax, **{
             'xlim': (10, 20),

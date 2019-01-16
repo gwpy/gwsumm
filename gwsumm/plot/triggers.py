@@ -35,7 +35,6 @@ from astropy.units import Quantity
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.segments import SegmentList
 from gwpy.plot.gps import GPSTransform
-from gwpy.plot.tex import label_to_latex
 from gwpy.plot.utils import (color_cycle, marker_cycle)
 
 from .. import globalv
@@ -43,7 +42,7 @@ from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, add_timeseries)
 from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
-from .utils import get_column_string
+from .utils import (get_column_string, usetex_tex)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -229,7 +228,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
         if len(self.channels) == 1:
-            self.pargs.setdefault('title', label_to_latex(
+            self.pargs.setdefault('title', usetex_tex(
                 '%s (%s)' % (str(self.channels[0]), self.etg)))
         for axis in ('x', 'y'):  # prevent zeros on log scale
             scale = getattr(ax, 'get_{0}scale'.format(axis))()

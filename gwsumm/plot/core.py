@@ -37,7 +37,6 @@ from matplotlib import (rcParams, rc_context)
 from gwpy.segments import Segment
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.plot import Plot
-from gwpy.plot.tex import label_to_latex
 
 from ..channels import (get_channel, split as split_channels,
                         split_combination as split_channel_combination)
@@ -63,7 +62,7 @@ NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
 def format_label(l):
     l = str(l).strip('\n ')
     l = re_quote.sub('', l)
-    return label_to_latex(l)
+    return putils.usetex_tex(l)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -472,10 +471,7 @@ class DataPlot(SummaryPlot):
         for key, val in params.items():
             params[key] = safe_eval(val)
         params.update(kwargs)
-        # escape text
-        for key, val in params.items():
-            if key in ['title', 'ylabel', 'xlabel']:
-                params[key] = re.sub(r'(?<!\\)_(?!.*{)', '\_', params[key])
+
         # format and return
         return cls(channels, start, end, **params)
 

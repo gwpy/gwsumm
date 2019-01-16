@@ -504,8 +504,18 @@ class SpectrumDataPlot(DataPlot):
                 data = get_coherence_spectrum([str(channel), str(channel2)],
                                               valid, query=False)
             else:
-                data = get_spectrum(str(channel), valid, query=False,
-                                    format=sdform, method=method)
+                try:
+                    data = get_spectrum(str(channel), valid, query=False,
+                                        format=sdform, method=method)
+                except ValueError as exc:
+                    # math operation failed beacuse one of the datasets is empty
+                    if (
+                            'could not be broadcast' in str(exc) and
+                            '(0,)' in str(exc)
+                    ):
+                        data = []
+                    else:
+                        raise
 
             # undo demodulation
             data = list(data)
@@ -523,12 +533,12 @@ class SpectrumDataPlot(DataPlot):
             if 'label' in pargs:
                 use_legend = True
 
-            if use_percentiles:
+            if data and use_percentiles:
                 _, minline, maxline, _ = ax.plot_mmm(*data, **pargs)
                 # make min, max lines lighter:
                 minline.set_alpha(pargs.get('alpha', .1) * 2)
                 maxline.set_alpha(pargs.get('alpha', .1) * 2)
-            else:
+            elif data:
                 ax.plot(data[0], **pargs)
 
         # display references

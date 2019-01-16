@@ -43,7 +43,6 @@ from matplotlib.colors import (rgb2hex, is_color_like)
 from matplotlib.patches import Rectangle
 
 from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
-from gwpy.plot.tex import label_to_latex
 from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
@@ -59,6 +58,7 @@ from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
 from .mixins import SegmentLabelSvgMixin
+from .utils import usetex_tex
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -983,7 +983,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        label_to_latex(str(self.state))))
+                                        usetex_tex(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
@@ -1032,7 +1032,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                     pc = d/tot * 100
                 except ZeroDivisionError:
                     pc = 0.0
-                pclabels.append(label_to_latex(
+                pclabels.append(usetex_tex(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
 
         # add time to top
@@ -1185,7 +1185,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        label_to_latex(str(self.state))))
+                                        usetex_tex(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
@@ -1279,7 +1279,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        label_to_latex(str(self.state))))
+                                        usetex_tex(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))

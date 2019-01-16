@@ -27,7 +27,7 @@ from six.moves import StringIO
 
 from lxml import etree
 
-from gwpy.plot.tex import label_to_latex
+from .utils import usetex_tex
 
 re_bit_label = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
 re_source_label = re.compile('(?P<label>.*) \[(?P<flag>.*)\]')
@@ -131,7 +131,7 @@ class DataLabelSvgMixin(SvgMixin):
                         text.get_text()).groups()
                 except (AttributeError, ValueError):
                     continue
-                channel = label_to_latex(str(source))
+                channel = usetex_tex(str(source))
                 text.set_text(label)
                 t2 = ax.text(
                     0.994, 1.02, channel, ha='right', va='bottom',

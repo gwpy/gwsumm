@@ -775,8 +775,10 @@ class DataPlot(SummaryPlot):
         return outputfile
 
     def apply_parameters(self, *axes, **pargs):
+        keys = sorted(pargs.keys(),
+                      key=lambda x: 1 if x in ('xscale', 'yscale') else 2)
         for ax in axes:
-            for key in pargs:
+            for key in keys:
                 if key.startswith('no-'):  # skip no-xxx keys
                     continue
                 val = pargs[key]

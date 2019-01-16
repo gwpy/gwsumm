@@ -25,12 +25,13 @@ import os
 from matplotlib import use
 use('agg')  # nopep8
 
-from matplotlib import rcParams
+from matplotlib import (rcParams, rc_context)
 
 import pytest
 
 from gwpy.detector import ChannelList
 from gwpy.plot import Plot
+from gwpy.plot.tex import HAS_TEX
 from gwpy.segments import Segment
 
 from gwsumm import plot as gwsumm_plot
@@ -274,11 +275,20 @@ class TestDataPlot(TestSummaryPlot):
             {'alpha': .8, 'color': 'green', 'linestyle': '--', 'label': 'Y1'},
         ]
 
-        plot.pargs = {'labels': ['TEST_WITH_UNDERSCORE', '"TEST_QUOTED"']}
-        assert plot.parse_plot_kwargs() == [
-            {'label': r'TEST\_WITH\_UNDERSCORE'},
-            {'label': r'TEST\_QUOTED'},
-        ]
+    @pytest.mark.parametrize('usetex, result', [
+        (False,
+         [{'label': r'TEST_WITH_UNDERSCORE'},
+          {'label': r'TEST_QUOTED'}]),
+        pytest.param(True,
+                     [{'label': r'TEST\_WITH\_UNDERSCORE'},
+                      {'label': r'TEST\_QUOTED'}],
+                     marks=pytest.mark.skipif(
+             not HAS_TEX, reason='TeX is not available')),
+    ])
+    def test_parse_plot_kwargs_labels(self, plot, usetex, result):
+        with rc_context(rc={'text.usetex': usetex}):
+            plot.pargs = {'labels': ['TEST_WITH_UNDERSCORE', '"TEST_QUOTED"']}
+            assert plot.parse_plot_kwargs() == result
 
     def test_parse_rcParams(self, plot):
         pargs = {

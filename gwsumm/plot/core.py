@@ -724,7 +724,10 @@ class DataPlot(SummaryPlot):
             try:
                 kwargs.setdefault(key, self.pargs.pop(key))
             except KeyError:
-                pass
+                continue
+            # escape text for TeX
+            if key in ('title', 'xlabel','ylabel'):
+                kwargs[key] = putils.usetex_tex(kwargs[key])
 
         # create figure
         self.plot = FigureClass(*data, geometry=geometry,

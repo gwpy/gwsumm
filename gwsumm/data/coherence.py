@@ -100,13 +100,13 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     # work out what new segments are needed
     # need to truncate to segments of integer numbers of strides
     stride = float(fftparams.pop('stride'))
+    overlap = float(fftparams['overlap'])
     new = type(segments)()
     for seg in segments - globalv.SPECTROGRAMS.get(
             key, SpectrogramList()).segments:
-        dur = float(abs(seg))
-        if dur < stride:
+        dur = float(abs(seg)) // stride * stride
+        if dur < stride + overlap:
             continue
-        dur = dur // stride * stride
         new.append(type(seg)(seg[0], seg[0]+dur))
 
     # extract FFT params for TimeSeries.spectrogram

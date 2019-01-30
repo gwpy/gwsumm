@@ -360,8 +360,14 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             specgrams = get_coherence_spectrogram(self.channels, valid,
                                                   query=False)
         else:
-            specgrams = get_spectrogram(channel, valid, query=False,
-                                        format=sdform)
+            try:
+                specgrams = get_spectrogram(channel, valid, query=False,
+                                            format=sdform)
+            except ValueError as exc:
+                if not 'need more than 0 values' in str(exc):
+                    raise
+                # attempted to do math but one input has zero size
+                specgrams = []
 
         # get ratio as FrequencySeries
         ratio = self.get_ratio(specgrams)

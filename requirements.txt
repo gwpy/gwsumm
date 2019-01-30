@@ -11,9 +11,10 @@ numpy>=1.10
 matplotlib>=2.0
 astropy>=1.2.1
 lalsuite
-lscsoft-glue>=1.56.0
 gwtrigfind
 gwdatafind
+lscsoft-glue>=1.60.0
+ligo-segments
 # need development release of gwpy
 git+https://github.com/gwpy/gwpy.git
 

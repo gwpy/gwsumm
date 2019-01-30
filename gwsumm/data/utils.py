@@ -26,7 +26,7 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-from glue.segments import segmentlist as GlueSegmentList
+from ligo.segments import segmentlist as LigoSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 from gwpy.signal.fft import (get_default_fft_api, lal as fft_lal)
@@ -63,7 +63,7 @@ def use_segmentlist(f):
     def decorated_func(arg1, segments, *args, **kwargs):
         if isinstance(segments, DataQualityFlag):
             segments = segments.active
-        elif not isinstance(segments, GlueSegmentList):
+        elif not isinstance(segments, LigoSegmentList):
             segments = SegmentList([Segment(*x) for x in segments])
         return f(arg1, segments, *args, **kwargs)
     return decorated_func

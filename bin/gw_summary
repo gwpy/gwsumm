@@ -572,8 +572,9 @@ try:
 except NoSectionError:
     pass
 else:
+    base_reg = re.compile(r'-base\Z')
     for key, val in config.nditems('html'):
-        if re.search('-base\Z', key):
+        if base_reg.search(key):
             ifobases[key.rsplit('-', 1)[0]] = val
 ifobases = OrderedDict(sorted(ifobases.items(), key=lambda x: x[0]))
 

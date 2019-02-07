@@ -56,6 +56,14 @@ from .guardian import *
 from .sei import *
 
 rcParams.update({
+    'text.usetex': True,
+    'font.size': 10,
+    'font.family': ['serif'],
+    'xtick.labelsize': 18,
+    'ytick.labelsize': 18,
+    'axes.labelsize': 20,
+    'axes.titlesize': 24,
+    'grid.alpha': 0.5,
     'figure.figsize': (12, 6),
     'svg.fonttype': 'none',
 })

@@ -544,7 +544,7 @@ if opts.archive:
 if hasattr(opts, 'daily_archive') and opts.daily_archive:
     # find daily archive files
     archives.extend(archive.find_daily_archives(
-        opts.gpsstart, opts.gpsend, ifo, args.daily_archive, archivedir))
+        opts.gpsstart, opts.gpsend, ifo, opts.daily_archive, archivedir))
     # then don't read any actual data
     cache['datacache'] = Cache()
 

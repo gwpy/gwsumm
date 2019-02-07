@@ -662,7 +662,7 @@ class BaseTab(object):
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
                     # sort group by name
-                    re_group = re.compile('(\A{0}\s|\s{0}\Z)'.format(
+                    re_group = re.compile(r'(\A{0}\s|\s{0}\Z)'.format(
                                               group.strip('_')), re.I)
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]

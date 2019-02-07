@@ -78,7 +78,7 @@ class StampPEMTab(base):
         if isinstance(self.directory, string_types):
             plots = sorted(
                 glob.glob(os.path.join(self.directory, 'DAY_*.png')),
-                key=lambda p: float(re.split('[-_]', os.path.basename(p))[1]))
+                key=lambda p: float(re.split(r'[-_]', os.path.basename(p))[1]))
             for p in plots:
                 pname = os.path.split(p)[1]
                 self.plots.append(SummaryPlot(

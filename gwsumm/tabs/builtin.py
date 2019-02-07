@@ -736,7 +736,7 @@ class StateTab(PlotTab):
 
     @staticmethod
     def html_content(frame):
-        """Build the #main div for this tab.
+        r"""Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.

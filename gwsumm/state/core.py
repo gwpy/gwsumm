@@ -66,7 +66,7 @@ class SummaryState(DataQualityFlag):
     key : `str`, optional
         registry key for this state, defaults to :attr:`~SummaryState.name`
     """
-    MATH_DEFINITION = re.compile('(%s)' % '|'.join(MATHOPS.keys()))
+    MATH_DEFINITION = re.compile(r'(%s)' % '|'.join(MATHOPS.keys()))
 
     def __init__(self, name, known=SegmentList(), active=SegmentList(),
                  description=None, definition=None, hours=None, key=None,
@@ -82,7 +82,7 @@ class SummaryState(DataQualityFlag):
                                            active=active)
         self.description = description
         if definition:
-            self.definition = re.sub('(\s|\n)', '', definition)
+            self.definition = re.sub(r'(\s|\n)', '', definition)
         else:
             self.definition = None
         self.key = key
@@ -204,12 +204,12 @@ class SummaryState(DataQualityFlag):
         params = dict(config.nditems(section))
         # parse name
         name = params.pop('name', section)
-        if re.match('state[-\s]', name):
+        if re.match(r'state[-\s]', name):
             name = section[6:]
         # get hours
         hours = params.pop('hours', None)
         if hours is not None:
-            segs = re.split('(,|, )', hours)[::2]
+            segs = re.split(r'(,|, )', hours)[::2]
             hours = []
             offset = 0
             for seg in segs:

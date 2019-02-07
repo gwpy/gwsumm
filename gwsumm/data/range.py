@@ -43,7 +43,7 @@ def get_range_channel(channel, **rangekwargs):
     if not rangekwargs:
         rangekwargs = {'mass1': 1.4, 'mass2': 1.4}
     rangetype = 'energy' in rangekwargs and 'burst' or 'inspiral'
-    re_float = re.compile('[.-]')
+    re_float = re.compile(r'[.-]')
     rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
                                 re_float.sub('_', str(val))) for key, val in
                     rangekwargs.items()])

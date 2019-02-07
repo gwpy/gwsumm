@@ -258,7 +258,7 @@ class GWSummConfigParser(ConfigParser):
         Channels are loaded from sections named [channels-...] or
         those sections whose name is a channel name in itself
         """
-        channels_re = re.compile('channels[-\s]')
+        channels_re = re.compile(r'channels[-\s]')
         # parse channel grouns into individual sections
         for section in filter(channels_re.match, self.sections()):
             names = split_channels(self.get(section, 'channels'))
@@ -340,7 +340,7 @@ class GWSummConfigParser(ConfigParser):
         # parse each state section into a new state
         states = []
         for section in self.sections():
-            if re.match('state[-\s]', section):
+            if re.match(r'state[-\s]', section):
                 states.append(register_state(
                     SummaryState.from_ini(self, section)))
 

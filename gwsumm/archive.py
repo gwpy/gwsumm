@@ -199,10 +199,10 @@ def read_data_archive(sourcefile):
 
         for dataset in h5file.get('timeseries', {}).values():
             ts = TimeSeries.read(dataset, format='hdf5')
-            if (re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name) and
+            if (re.search(r'\.(rms|min|mean|max|n)\Z', ts.channel.name) and
                     ts.sample_rate.value == 1.0):
                 ts.channel.type = 's-trend'
-            elif re.search('\.(rms|min|mean|max|n)\Z', ts.channel.name):
+            elif re.search(r'\.(rms|min|mean|max|n)\Z', ts.channel.name):
                 ts.channel.type = 'm-trend'
             ts.channel = get_channel(ts.channel)
             try:

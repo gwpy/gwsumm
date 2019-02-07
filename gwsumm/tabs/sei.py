@@ -59,7 +59,7 @@ BSC_ST1_LATCH_CHANNEL = '%s:ISI-%s_ST1_WD_MON_FIRSTTRIG_LATCH'
 BSC_ST2_GPS_CHANNEL = '%s:ISI-%s_ST2_WD_MON_GPS_TIME'
 BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
-re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
+re_no_count = re.compile(r'(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 
 
 class SEIWatchDogTab(base):
@@ -181,7 +181,7 @@ class SEIWatchDogTab(base):
                     bits = None
                 # associate cause
                 if not bits:
-                    if re.match('ST\d', latch.signal):
+                    if re.match(r'ST\d', latch.signal):
                         stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
@@ -196,7 +196,7 @@ class SEIWatchDogTab(base):
                     # configure plot
                     mapsec = 'sei-wd-map-%s' % cause
                     if (not config.has_section(mapsec) and
-                            re.match('ISI ST\d ', cause)):
+                            re.match(r'ISI ST\d ', cause)):
                         mapsec = ('sei-wd-map-%s'
                                   % (' '.join(cause.split(' ', 2)[::2])))
                     if config.has_section(mapsec):

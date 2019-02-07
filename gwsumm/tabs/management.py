@@ -76,7 +76,7 @@ class AccountingTab(ParentTab):
         # parse colors
         colors = dict(
             (int(key[6:]), eval(color)) for (key, color) in
-            config.nditems(section) if re.match('color-\d+', key))
+            config.nditems(section) if re.match(r'color-\d+', key))
         for flag in pstates:
             group = int(flag // 10 * 10)
             if flag not in colors:

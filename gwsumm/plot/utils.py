@@ -111,7 +111,7 @@ def get_column_string(column):
         if word.isupper():
             words.append(word)
         else:
-            words.extend(re.split('_', word))
+            words.extend(re.split(r'_', word))
 
     # parse words
     for i, word in enumerate(words):
@@ -128,7 +128,7 @@ def get_column_string(column):
         elif word in greek and tex:
             words[i] = r'$\%s$' % word
         # get starting with greek word
-        elif re.match('(%s)' % '|'.join(greek), word) and tex:
+        elif re.match(r'(%s)' % '|'.join(greek), word) and tex:
             if word[-1].isdigit():
                 words[i] = r'$\%s_{%s}$''' % tuple(
                     re.findall(r"[a-zA-Z]+|\d+", word))

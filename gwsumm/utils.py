@@ -32,7 +32,7 @@ import numpy
 
 from . import globalv
 
-re_cchar = re.compile("[\W_]+")
+re_cchar = re.compile(r"[\W_]+")
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
 re_flagdiv = re.compile("(&|!=|!|\|)")
 

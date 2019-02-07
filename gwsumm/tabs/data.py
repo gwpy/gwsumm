@@ -242,7 +242,7 @@ class DataTab(ProcessedTab, ParentTab):
             # parse definition for section references
             try:
                 pdef, sources = [s[::-1] for s in
-                                 re.split('[\s,]', definition[::-1], 1)]
+                                 re.split(r'[\s,]', definition[::-1], 1)]
             except ValueError:
                 pdef = definition
                 sources = []
@@ -264,7 +264,7 @@ class DataTab(ProcessedTab, ParentTab):
                 mods.setdefault('etg', etg)
                 mods.setdefault('column', column)
                 PlotClass = get_plot('trigger-histogram')
-            elif re.search('-rate', pdef):
+            elif re.search(r'-rate', pdef):
                 type_ = None
                 etg = pdef.rsplit('-', 1)[0]
                 mods.setdefault('etg', etg)
@@ -580,7 +580,7 @@ class DataTab(ProcessedTab, ParentTab):
     # HTML operations
 
     def html_content(self, frame):
-        """Build the #main div for this tab.
+        r"""Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
@@ -693,7 +693,7 @@ class DataTab(ProcessedTab, ParentTab):
                     if regex.match(str(channel.frametype)):
                         ftype += ' <small>[%s]</small>' % desc
                         break
-                if re.search('\.[a-z]+\Z', channel.name):
+                if re.search(r'\.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
                     ctype = ctype in ['rms'] and ctype.upper() or ctype.title()
@@ -733,7 +733,7 @@ class DataTab(ProcessedTab, ParentTab):
                 self.plots)
             for (f, p) in plot.padding.items()]), key=lambda x: x[0])
         if len(allflags):
-            re_int_decimal = re.compile('\.00(?=(\s|\%))')
+            re_int_decimal = re.compile(r'\.00(?=(\s|\%))')
             page.h1('Segment information')
             # make summary table
             headers = ['Name', 'Defined duration [s]', 'Active duration [s]',

@@ -57,7 +57,7 @@ REQUESTSTUB = '+request'
 NOMINALSTUB = '+nominal'
 MODE_COLORS = ['grey', 'magenta', 'red', 'saddlebrown']
 
-re_guardian_index = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
+re_guardian_index = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
 
 
 class GuardianTab(DataTab):
@@ -119,7 +119,7 @@ class GuardianTab(DataTab):
 
         for state in new.states:
             # get common plot tag prefix
-            tagprefix = 'GRD_%s' % re.sub('[-\s]', '_', new.node.upper())
+            tagprefix = 'GRD_%s' % re.sub(r'[-\s]', '_', new.node.upper())
             if state.name.lower() != ALLSTATE:  # include state name if not All
                 tagprefix = '%s_%s' % (state.name, tagprefix)
             # segment plot

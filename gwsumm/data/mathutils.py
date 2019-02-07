@@ -47,8 +47,8 @@ OPERATOR = {
     '**': operator.pow,
 }
 
-re_operator = re.compile('\s+[+/^\*-]+\s+')
-re_value = re.compile('[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
+re_operator = re.compile(r'\s+[+/^\*-]+\s+')
+re_value = re.compile(r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
 
 
 def parse_math_definition(definition):

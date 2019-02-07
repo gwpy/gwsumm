@@ -141,7 +141,7 @@ def _new(channel, find_parent=True):
     # match single raw channel for LIGO
     if (len(parts) == 1 and
             new.ifo in ('H1', 'L1') and
-            not re.search('\.[a-z]+\Z', name)
+            not re.search(r'\.[a-z]+\Z', name)
     ):
         new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
 

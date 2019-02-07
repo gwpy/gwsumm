@@ -67,7 +67,7 @@ class TriggerPlotMixin(object):
     def allchannels(self):
         """List of all unique channels for this plot
         """
-        chans = set([re.split('[#@]', str(c), 1)[0] for c in self._channels])
+        chans = set([re.split(r'[#@]', str(c), 1)[0] for c in self._channels])
         return ChannelList(map(Channel, chans))
 
     @property

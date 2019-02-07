@@ -49,7 +49,7 @@ from .registry import register_plot
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
-re_cchar = re.compile("[\W\s_]+")
+re_cchar = re.compile(r"[\W\s_]+")
 
 putils.AXES_PARAMS.extend([
     'insetlabels',  # for segment plotting
@@ -421,7 +421,7 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = []
         for c in all_:
-            if c.ifo == 'G1' and re.search('-(av|min|max)\Z', c.texname):
+            if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.texname):
                 name = c.texname.rsplit('-', 1)[0]
             else:
                 name = c.texname.rsplit('.', 1)[0]
@@ -453,7 +453,7 @@ class DataPlot(SummaryPlot):
             params = dict(config.items(section))
 
         # get and check type
-        ptype = re.sub('[\'\"]', '', params.pop('type'))
+        ptype = re.sub(r'[\'\"]', '', params.pop('type'))
         if ptype != cls.type:
             warnings.warn("'%s' plot definition from configuration being "
                           "parsed by different plotting class '%s'"
@@ -572,7 +572,7 @@ class DataPlot(SummaryPlot):
         -------
         params : `dict`
         """
-        re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
+        re_prefix = re.compile(r'\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
         for key in list(self.pargs.keys()):
             m = re_prefix.match(key)
@@ -681,7 +681,7 @@ class DataPlot(SummaryPlot):
          200: {'linestyle': '--', 'color': 'blue'},}
         """
         items = OrderedDict()
-        re_prefix = re.compile('{0}(\d+)?\Z'.format(prefix))
+        re_prefix = re.compile(r'{0}(\d+)?\Z'.format(prefix))
         keys = sorted(self.pargs.keys())
         while True:
             for i, key in enumerate(keys):

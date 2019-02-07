@@ -69,18 +69,18 @@ OPERATOR = {
 }
 
 FRAMETYPE_REGEX = {
-    'commissioning': re.compile('[A-Z][0-9]_C\Z'),
-    'raw data': re.compile('([A-Z][0-9]_R\Z|raw)'),
-    'second-trend': re.compile('[A-Z][0-9]_T\Z'),
-    'minute-trend': re.compile('[A-Z][0-9]_M\Z'),
-    'low-latency h(t)': re.compile('([A-Z][0-9]_DMT_C00\Z|[A-Z][0-9]_llhoft)'),
-    'calibrated h(t) version 0': re.compile('[A-Z][0-9]_HOFT_C00\Z'),
+    'commissioning': re.compile(r'[A-Z][0-9]_C\Z'),
+    'raw data': re.compile(r'([A-Z][0-9]_R\Z|raw)'),
+    'second-trend': re.compile(r'[A-Z][0-9]_T\Z'),
+    'minute-trend': re.compile(r'[A-Z][0-9]_M\Z'),
+    'low-latency h(t)': re.compile(r'([A-Z][0-9]_DMT_C00\Z|[A-Z][0-9]_llhoft)'),
+    'calibrated h(t) version 0': re.compile(r'[A-Z][0-9]_HOFT_C00\Z'),
     'calibrated h(t) version 1': re.compile(
-        '([A-Z][0-9]_HOFT_C01|G1_RDS_C01_L3)\Z'),
-    'calibrated h(t) version 2': re.compile('[A-Z][0-9]_HOFT_C02\Z'),
-    'DMT SenseMon on GDS h(t)': re.compile('SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
+        r'([A-Z][0-9]_HOFT_C01|G1_RDS_C01_L3)\Z'),
+    'calibrated h(t) version 2': re.compile(r'[A-Z][0-9]_HOFT_C02\Z'),
+    'DMT SenseMon on GDS h(t)': re.compile(r'SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
     'DMT SenseMon on front-end h(t)': re.compile(
-        'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
+        r'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
 
 # list of GWF frametypes that contain only ADC channels
@@ -113,7 +113,7 @@ VIRGO_HOFT_CHANNELS = {
 
 # -- utilities ----------------------------------------------------------------
 
-re_gwf_gps_epoch = re.compile('[-\/](?P<gpsepoch>\d+)$')
+re_gwf_gps_epoch = re.compile(r'[-\/](?P<gpsepoch>\d+)$')
 
 
 def _urlpath(url):
@@ -193,7 +193,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
 
     # XXX HACK: LLO changed frame types on Dec 6 2013:
     LLOCHANGE = 1070291904
-    if re.match('L1_{CRMT}', frametype) and gpsstart < LLOCHANGE:
+    if re.match(r'L1_{CRMT}', frametype) and gpsstart < LLOCHANGE:
         frametype = frametype[-1]
 
     # query frames
@@ -341,9 +341,9 @@ def frame_trend_type(ifo, frametype):
     """
     if ifo == 'C1' and frametype == 'M':
         return 'minute'
-    if re.match('(?:(.*)_)?[A-Z]\d_M', str(frametype)):
+    if re.match(r'(?:(.*)_)?[A-Z]\d_M', str(frametype)):
         return 'minute'
-    if re.match('(?:(.*)_)?[A-Z]\d_T', str(frametype)):
+    if re.match(r'(?:(.*)_)?[A-Z]\d_T', str(frametype)):
         return 'second'
     return None
 

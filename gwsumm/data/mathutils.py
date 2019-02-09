@@ -19,6 +19,7 @@
 """Handle arbitrary mathematical operations applied to data series
 """
 
+import numbers
 import operator
 import re
 from collections import OrderedDict
@@ -194,6 +195,9 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         # apply math to this channel
         cmath = singleops[names[0]]
         for op_, val_ in cmath:
+            if op_ in {operator.add, operator.sub} and \
+                    isinstance(val_, numbers.Number):
+                val_ *= ts.unit
             ts = op_(ts, val_)
         # for each other channel do the same
         for joinop, name in zip(joinoperators, names[1:]):

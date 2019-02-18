@@ -43,6 +43,7 @@ The available classes are:
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from matplotlib import rcParams
+from gwpy.plot.tex import MACROS as GWPY_TEX_MACROS
 
 from .registry import *
 from .utils import *
@@ -56,9 +57,14 @@ from .guardian import *
 from .sei import *
 
 rcParams.update({
+    # reproduce GWPY_TEX_PARAMS
     'text.usetex': True,
-    'font.size': 10,
+    'text.latex.preamble': (
+        rcParams.get('text.latex.preamble', []) + GWPY_TEX_MACROS),
     'font.family': ['serif'],
+    'axes.formatter.use_mathtext': False,
+    # custom GWSumm formatting
+    'font.size': 10,
     'xtick.labelsize': 18,
     'ytick.labelsize': 18,
     'axes.labelsize': 20,

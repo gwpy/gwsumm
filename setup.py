@@ -72,6 +72,7 @@ install_requires = [
     'python-dateutil',
     'lxml',
     'numpy>=1.10',
+    'scipy>=1.2.0',
     'matplotlib>=2.2.0',
     'astropy>=1.2.1',
     'lalsuite',

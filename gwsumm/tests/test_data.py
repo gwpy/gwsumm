@@ -135,12 +135,8 @@ class TestData(object):
         assert isinstance(fftparams, utils.FftParams)
 
         for key in utils.FFT_PARAMS.keys():
-            if key == 'method':
-                assert fftparams.method == '{0}-{1}'.format(
-                    utils.FFT_API.split('.')[0], utils.DEFAULT_FFT_PARAMS[key])
-            else:
-                assert (getattr(fftparams, key) is
-                        utils.DEFAULT_FFT_PARAMS.get(key, None))
+            assert (getattr(fftparams, key) is
+                    utils.DEFAULT_FFT_PARAMS.get(key, None))
 
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL', window='hanning',
                                         overlap=0)

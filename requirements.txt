@@ -8,6 +8,7 @@ enum34 ; python_version < '3'
 python-dateutil
 lxml
 numpy>=1.10
+scipy>=1.2.0
 matplotlib>=2.0
 astropy>=1.2.1
 lalsuite

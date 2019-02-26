@@ -29,8 +29,8 @@ except ImportError:
 from ligo.segments import segmentlist as LigoSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
-from gwpy.signal.fft import (get_default_fft_api, lal as fft_lal)
-from gwpy.signal.fft.registry import get_method as get_fft_method
+from gwpy.signal.spectral import (get_default_fft_api, _lal as fft_lal)
+from gwpy.signal.spectral._registry import get_method as get_fft_method
 
 from ..channels import get_channel
 from ..config import GWSummConfigParser

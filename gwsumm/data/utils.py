@@ -29,27 +29,11 @@ except ImportError:
 from ligo.segments import segmentlist as LigoSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
-from gwpy.signal.fft import (get_default_fft_api, lal as fft_lal)
-from gwpy.signal.fft.registry import get_method as get_fft_method
 
 from ..channels import get_channel
 from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-FFT_API = get_default_fft_api()
-
-# get FFT scheme
-FFT_SCHEME = None
-if FFT_API.startswith('pycbc'):
-    from pycbc.scheme import (DefaultScheme, MKLScheme)
-    try:
-        FFT_SCHEME = MKLScheme()
-    except RuntimeError:
-        FFT_SCHEME = DefaultScheme()
-elif FFT_API == 'lal':
-    fft_lal.LAL_FFTPLAN_LEVEL = 2
-
 
 # -- method decorators --------------------------------------------------------
 
@@ -97,7 +81,6 @@ FFT_PARAMS = OrderedDict([
 
 DEFAULT_FFT_PARAMS = {
     'method': 'median',
-    'scheme': FFT_SCHEME,
 }
 
 
@@ -163,12 +146,6 @@ def get_fftparams(channel, **defaults):
     if fftparams.stride == 0:
         raise ZeroDivisionError("Cannot generate spectrogram with stride "
                                 "length of 0")
-
-    # unwrap method
-    method_func = get_fft_method(fftparams.method)
-    if method_func.__module__.rsplit('.', 1)[-1] == 'basic':
-        fftmod = FFT_API.split('.', 1)[0]
-        fftparams.method = '{0}-{1}'.format(fftmod, fftparams.method)
 
     return fftparams
 

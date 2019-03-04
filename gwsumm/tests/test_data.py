@@ -53,8 +53,6 @@ LOSC_DATA = {
 }
 LOSC_SEGMENTS = SegmentList([Segment(1126259446, 1126259478)])
 
-FFT_SCHEME_NAME = type(utils.FFT_SCHEME).__name__ if utils.FFT_SCHEME else ''
-
 
 def download(remote, target=None):
     """Download a file
@@ -127,7 +125,7 @@ class TestData(object):
             '',  # overlap
             'test-window',  # window
             '123.456',  # stride
-            FFT_SCHEME_NAME,  # FFT scheme
+            '',  # FFT scheme
         ])
 
     def test_get_fftparams(self):

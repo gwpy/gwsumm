@@ -867,7 +867,13 @@ def resample_timeseries_dict(tsd, nproc=1, **sampling_dict):
     # define resample function (must take single argument)
     def _resample(args):
         ts, fs = args
-        if fs:
+        if fs and units.Quantity(fs, "Hz") == ts.sample_rate:
+            warnings.warn(
+                "requested resample rate for {0} matches native rate ({1}), "
+                "please update configuration".format(ts.name, ts.sample_rate),
+                UserWarning,
+            )
+        elif fs:
             return ts.resample(fs, ftype='fir', window='hamming')
         return ts
 

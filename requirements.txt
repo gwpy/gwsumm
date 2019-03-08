@@ -16,6 +16,7 @@ gwtrigfind
 gwdatafind
 lscsoft-glue>=1.60.0
 ligo-segments
+pygments
 # need development release of gwpy
 git+https://github.com/gwpy/gwpy.git
 

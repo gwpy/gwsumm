@@ -81,6 +81,7 @@ install_requires = [
     'gwpy>=0.8.1',
     'gwtrigfind',
     'gwdatafind',
+    'pygments',
 ]
 if sys.version < '3':
     install_requires.append('enum34')

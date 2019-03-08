@@ -19,26 +19,23 @@
 """Utilties for HTML generation
 """
 
-import subprocess
+from pygments import highlight
+from pygments.lexers import get_lexer_by_name
+from pygments.formatters import HtmlFormatter
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+
+
+# configure syntax highlighting
+FORMATTER = HtmlFormatter(noclasses=True)
 
 
 def highlight_syntax(filepath, format_):
     """Return an HTML-formatted copy of the file with syntax highlighting
     """
-    highlight = ['highlight', '--out-format', 'html', '--syntax', format_,
-                 '--inline-css', '--fragment', '--input', filepath]
-    try:
-        process = subprocess.Popen(highlight, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-    except OSError:
-        with open(filepath, 'r') as fobj:
-            return fobj.read()
-    else:
-        out, err = process.communicate()
-        if process.returncode != 0:
-            with open(filepath, 'r') as fobj:
-                return fobj.read()
-        else:
-            return out
+    lexer = get_lexer_by_name(format_, stripall=True)
+    with open(filepath, 'r') as fobj:
+        contents = fobj.read()
+    out = highlight(contents, lexer, FORMATTER)
+    return out

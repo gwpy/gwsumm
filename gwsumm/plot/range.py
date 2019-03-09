@@ -166,6 +166,9 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
                             x0=range.x0, dx=range.dx)
         dx = range.dx.value
 
+        # override range units
+        range.override_unit('Mpc')
+
         # use float, not LIGOTimeGPS for speed
         segments = type(segments)([type(s)(float(s[0]), float(s[1])) for
                                   s in segments])
@@ -180,8 +183,8 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     def draw(self, outputfile=None):
         """Generate the figure for this plot
         """
-        plot, axes = self.init_plot()
-        ax = axes[0]
+        plot = self.init_plot()
+        ax = plot.axes[0]
 
         # get plotting arguments
         cumulative = self.pargs.pop('cumulative', False)
@@ -231,7 +234,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         self.apply_parameters(ax, **self.pargs)
         if (len(self.channels) > 1 or plotargs[0].get('label', None) in
                 [re.sub(r'(_|\\_)', r'\_', str(self.channels[0])), None]):
-            plot.add_legend(ax=ax, **legendargs)
+            ax.legend(**legendargs)
 
         # add extra axes and finalise
         self.add_state_segments(ax)

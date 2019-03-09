@@ -29,6 +29,8 @@ from six import string_types
 
 import numpy
 
+from matplotlib.ticker import MaxNLocator
+
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
@@ -239,6 +241,9 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # add extra axes and finalise
         self.add_state_segments(ax)
         self.add_future_shade()
+        ax.yaxis.set_major_locator(MaxNLocator(8))
+        ticks = ax.get_yticks()
+        ax.yaxis.set_ticklabels(ticks)
         return self.finalize(outputfile=outputfile)
 
 register_plot(SimpleTimeVolumeDataPlot)

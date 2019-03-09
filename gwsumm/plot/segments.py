@@ -1376,6 +1376,8 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             ax.yaxis.label.set_position((0, -.2 / len(axes)))
             if len(axes) != 2:
                 label.set_text('')
+            axes[-1].yaxis.label.set_text('')
+            axes[-1].title.set_text('')
 
         # set common ylim
         if 'ylim' not in self.pargs:

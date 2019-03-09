@@ -124,8 +124,8 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         n = max(x.size for x in sumdata)
         for i, d in enumerate(sumdata):
             if d.size < n:
-                sumdata[i] = numpy.require(d, requirements=['O'])
-                sumdata[i].resize((n,))
+                sumdata[i] = numpy.resize(
+                    numpy.require(d, requirements=['O']), (n,))
 
         # plot sum of noises
         sumargs = self.parse_sum_params()
@@ -216,8 +216,8 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
             n = target.size
             for i, d in enumerate(sumdata):
                 if d.size < n:
-                    sumdata[i] = numpy.require(d, requirements=['O'])
-                    sumdata[i].resize((n,))
+                    sumdata[i] = numpy.resize(
+                        numpy.require(d, requirements=['O']), (n,))
 
             # calculate sum of noises
             sum_ = sumdata[0] ** 2

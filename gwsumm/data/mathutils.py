@@ -245,11 +245,11 @@ def _join(a, b, op):
         if a.ndim == 1:  # frequencyseries
             nf = a.size - b.size
             if nf > 0:
-                b = numpy.require(b, requirements=['O'])
-                b.resize((b.size + nf,))
+                c = numpy.require(b, requirements=['O'])
+                b = numpy.resize(b, (c.size - nf,))
             elif nf < 0:
-                a = numpy.require(a, requirements=['O'])
-                a.resize((a.size - nf,))
+                c = numpy.require(a, requirements=['O'])
+                a = numpy.resize(a, (c.size - nf,))
         else:  # spectrogram
             nf = a.shape[1] - b.shape[1]
             new = numpy.zeros((a.shape[0], abs(nf)))

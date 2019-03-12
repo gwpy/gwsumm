@@ -39,8 +39,11 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
+from matplotlib.cbook import iterable
 from matplotlib.colors import (rgb2hex, is_color_like)
 from matplotlib.patches import Rectangle
+
+from glue import iterutils
 
 from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
 from gwpy.plot.segments import SegmentRectangle
@@ -68,6 +71,36 @@ GREEN = '#33cc33'
 
 def tint_hex(*args, **kwargs):
     return rgb2hex(tint(*args, **kwargs))
+
+
+def common_limits(datasets, default_min=0, default_max=0):
+    """Find the global maxima and minima of a list of datasets.
+
+    Parameters
+    ----------
+    datasets : `iterable`
+        list (or any other iterable) of data arrays to analyse.
+
+    default_min : `float`, optional
+        fall-back minimum value if datasets are all empty.
+
+    default_max : `float`, optional
+        fall-back maximum value if datasets are all empty.
+
+    Returns
+    -------
+    (min, max) : `float`
+        2-tuple of common minimum and maximum over all datasets.
+    """
+    if isinstance(datasets, numpy.ndarray) or not iterable(datasets[0]):
+        datasets = [datasets]
+    max_stat = max(list(iterutils.flatten(datasets)) + [-numpy.inf])
+    min_stat = min(list(iterutils.flatten(datasets)) + [numpy.inf])
+    if numpy.isinf(-max_stat):
+        max_stat = default_max
+    if numpy.isinf(min_stat):
+        min_stat = default_min
+    return min_stat, max_stat
 
 
 class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
@@ -670,7 +703,6 @@ class DutyDataPlot(SegmentDataPlot):
                 else:
                     pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
             color = pargs.pop('color', propc['color'])
-            pargs.setdefault('edgecolor', tint_hex(color, .7))
             # plot in relevant style
             if style == 'line':
                 lineargs = pargs.copy()
@@ -1303,7 +1335,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
 
         # get range
         if 'range' not in histargs[0]:
-            l = axes[0].common_limits(data)
+            l = common_limits(data)
             for d in histargs:
                 d['range'] = l
 
@@ -1336,7 +1368,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 except AttributeError:
                     setattr(ax, key, val)
             if len(self.flags) > 1:
-                plot.add_legend(ax=ax, **legendargs)
+                ax.legend(**legendargs)
         if len(axes) % 2 == 0 and axes[0].get_ylabel():
             label = axes[0].yaxis.label
             ax = axes[int(len(axes) // 2)-1]
@@ -1344,6 +1376,8 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             ax.yaxis.label.set_position((0, -.2 / len(axes)))
             if len(axes) != 2:
                 label.set_text('')
+            axes[-1].yaxis.label.set_text('')
+            axes[-1].title.set_text('')
 
         # set common ylim
         if 'ylim' not in self.pargs:

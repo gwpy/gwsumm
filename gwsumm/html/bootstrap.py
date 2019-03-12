@@ -445,7 +445,7 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
             page.a.close()
             page.div(id_='file%d' % i, class_='panel-collapse collapse')
             page.div(class_='panel-body')
-            page.pre(highlight_syntax(cpfile, 'ini'))
+            page.add(highlight_syntax(cpfile, 'ini'))
             page.div.close()
             page.div.close()
             page.div.close()

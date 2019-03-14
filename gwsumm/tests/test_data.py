@@ -32,7 +32,9 @@ import pytest
 
 from numpy import (arange, testing as nptest)
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 
 from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel

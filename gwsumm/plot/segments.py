@@ -1370,8 +1370,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             if len(self.flags) > 1:
                 ax.legend(**legendargs)
 
-        if len(axes) > 1:
-            print('we are in')
+        if len(axes) > 1 and axes[0].get_ylabel():
             # set text
             ylabel = axes[0].yaxis.get_label()
             y = axes[-1].get_position().y0 + (

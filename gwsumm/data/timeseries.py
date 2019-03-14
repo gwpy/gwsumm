@@ -41,6 +41,7 @@ import gwdatafind
 
 from gwpy.io import nds2 as io_nds2
 from gwpy.io.cache import (file_segment, cache_segments)
+from gwpy.io.gwf import data_segments
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
@@ -102,6 +103,11 @@ SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
     'H1_HOFT_C00': 'H1_DMT_C00',
     'L1_HOFT_C00': 'L1_DMT_C00',
     'V1Online': 'V1_llhoft',
+}
+
+VIRGO_HOFT_CHANNELS = {
+    "V1:Hrec_hoft_16384Hz",
+    "V1:DQ_ANALYSIS_STATE_VECTOR",
 }
 
 
@@ -600,6 +606,15 @@ def _get_timeseries_dict(channels, segments, config=None,
             # parse discontiguous cache blocks and rebuild segment list
             new &= cache_segments(fcache)
             source = 'files'
+
+            # if reading Virgo h(t) GWF data, filter out files that don't
+            # contain the channel (Virgo state-vector only)
+            _names = set(map(str, channels))
+            _virgohoft = _names.intersection(VIRGO_HOFT_CHANNELS)
+            if _virgohoft:
+                vprint("    Determining available segments for "
+                       "Virgo h(t) data...")
+                new &= data_segments(fcache, _virgohoft.pop())
 
             # set channel type if reading with frameCPP
             if fcache and all_adc(fcache):

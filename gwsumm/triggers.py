@@ -25,7 +25,9 @@ from six.moves.urllib.parse import urlparse
 
 from astropy.table import vstack as vstack_tables
 
-from glue.lal import (Cache, CacheEntry)
+from lal.utils import CacheEntry
+
+from glue.lal import Cache
 from glue.ligolw import lsctables
 
 from gwpy.io.cache import cache_segments

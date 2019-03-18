@@ -1369,15 +1369,22 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                     setattr(ax, key, val)
             if len(self.flags) > 1:
                 ax.legend(**legendargs)
-        if len(axes) % 2 == 0 and axes[0].get_ylabel():
-            label = axes[0].yaxis.label
-            ax = axes[int(len(axes) // 2)-1]
-            ax.set_ylabel(label.get_text())
-            ax.yaxis.label.set_position((0, -.2 / len(axes)))
-            if len(axes) != 2:
-                label.set_text('')
-            axes[-1].yaxis.label.set_text('')
-            axes[-1].title.set_text('')
+
+        if len(axes) > 1 and axes[0].get_ylabel():
+            # set text
+            ylabel = axes[0].yaxis.get_label()
+            y = axes[-1].get_position().y0 + (
+                axes[0].get_position().y1 - axes[-1].get_position().y0)/2.
+            t = plot.text(0.04, y, ylabel.get_text(), rotation=90, ha='center',
+                          va='center')
+            t.set_fontproperties(ylabel.get_font_properties())
+            for i, ax in enumerate(axes):
+                ax.set_ylabel('')
+                if i:
+                    ax.set_title('')
+                if i < len(axes) - 1:
+                    ax.set_xlabel('')
+                    setp(ax.get_xticklabels(), visible=False)
 
         # set common ylim
         if 'ylim' not in self.pargs:

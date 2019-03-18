@@ -1134,12 +1134,14 @@ class TabList(list):
 
     @staticmethod
     def _sortkey(tab):
-        if tab.shortname == 'Summary' and tab.parent is None:
+        if 'Home' in tab.shortname:
             return 1
-        elif tab.shortname == 'Summary':
+        if tab.shortname == 'Summary' and tab.parent is None:
             return 2
-        elif 'ODC' in tab.shortname:
+        elif tab.shortname == 'Summary':
             return 3
+        elif 'ODC' in tab.shortname:
+            return 4
         elif tab.shortname.islower():
             return tab.shortname.upper()
         else:

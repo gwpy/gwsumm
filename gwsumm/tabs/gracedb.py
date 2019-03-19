@@ -88,6 +88,7 @@ class GraceDbTab(get_tab('default')):
     def process(self, config=GWSummConfigParser(), **kwargs):
         try:
             from ligo.gracedb.rest import GraceDb
+            from ligo.gracedb.exceptions import HTTPError
         except ImportError as e:
             e.args = ('%s, this module is required to generate a GraceDbTab'
                       % str(e),)
@@ -95,14 +96,19 @@ class GraceDbTab(get_tab('default')):
         # query gracedb
         service_url = '%s/api/' % self.url
         connection = GraceDb(service_url=service_url)
-        vprint("Connected to gracedb at %s\n" % connection.service_url)
+        vprint("Connected to gracedb at %s\n" % service_url)
         querystr = '%s %d .. %d' % (self.query, self.start, self.end)
-        self.events[None] = list(connection.events(querystr))
+        try:
+            self.events[None] = list(connection.superevents(querystr))
+            event_method = connection.superevent
+        except HTTPError:
+            self.events[None] = list(connection.events(querystr))
+            event_method = connection.event
         vprint("Recovered %d events for query %r\n"
                % (len(self.events[None]), querystr))
         if 'labels' in self.columns:
             for e in self.events[None]:
-                e['labels'] = ', '.join(connection.event(
+                e['labels'] = ', '.join(event_method(
                     e['graceid']).json()['labels'])
             vprint("Downloaded labels\n")
         return super(GraceDbTab, self).process(config=config, **kwargs)

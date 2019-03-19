@@ -472,8 +472,10 @@ class DataTab(ProcessedTab, ParentTab):
         specsegs = SegmentList(state.active)
         specchannels = set.union(sgchannels, raychannels, csgchannels)
         if specchannels and specsegs and specsegs[-1][1] == self.end:
-            stride = max(get_fftparams(c, **fftparams).stride for
-                         c in specchannels)
+            stride = max(filter(
+                lambda x: x is not None,
+                (get_fftparams(c, **fftparams).stride for c in specchannels),
+            ))
             specsegs[-1] = Segment(specsegs[-1][0], self.end+stride)
 
         if len(sgchannels):

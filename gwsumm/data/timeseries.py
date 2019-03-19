@@ -133,7 +133,7 @@ def sieve_cache(cache, ifo=None, tag=None, segment=None):
     def _sieve(url):
         try:
             uifo, utag, useg = gwdatafind.utils.filename_metadata(url)
-        except AttributeError:  # CacheEntry
+        except (AttributeError, TypeError):  # CacheEntry
             uifo = url.observatory
             utag = url.description
             useg = url.segment
@@ -399,7 +399,7 @@ def all_adc(cache):
     for path in cache:
         try:
             tag = os.path.basename(path).split('-')[1]
-        except AttributeError:  # CacheEntry
+        except (AttributeError, TypeError):  # CacheEntry
             tag = path.description
             path = path.path
         if not path.endswith('.gwf') or tag not in ADC_TYPES:

@@ -1134,18 +1134,19 @@ class TabList(list):
 
     @staticmethod
     def _sortkey(tab):
+        # NOTE: we need all return values to be strings for
+        #       the sorting to actually work
         if 'Home' in tab.shortname:
-            return 1
+            return '1'
         if tab.shortname == 'Summary' and tab.parent is None:
-            return 2
-        elif tab.shortname == 'Summary':
-            return 3
-        elif 'ODC' in tab.shortname:
-            return 4
-        elif tab.shortname.islower():
+            return '2'
+        if tab.shortname == 'Summary':
+            return '3'
+        if 'ODC' in tab.shortname:
+            return '4'
+        if tab.shortname.islower():
             return tab.shortname.upper()
-        else:
-            return tab.shortname.lower()
+        return tab.shortname.lower()
 
     def sort(self, key=None, reverse=False):
         """Sort this `TabList` in place

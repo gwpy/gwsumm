@@ -227,7 +227,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         """
         if self.state and not self.all_data:
             return self.state.active
-        if channel.sample_rate:
+        if channel.sample_rate is not None:
             return SegmentList([self.span.protract(
                 1/channel.sample_rate.value)])
         return SegmentList([self.span])

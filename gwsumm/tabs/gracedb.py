@@ -106,16 +106,23 @@ class GraceDbTab(get_tab('default')):
         querystr = '%s %d .. %d' % (self.query, self.start, self.end)
         try:
             self.events[None] = list(connection.superevents(querystr))
-            event_method = connection.superevent
         except HTTPError:
             self.events[None] = list(connection.events(querystr))
             event_method = connection.event
+            eventid_name = "graceid"
+        else:
+            event_method = connection.superevent
+            eventid_name = "superevent_id"
+            for event in self.events[None]:  # get preferred event parameters
+                event.update(connection.event(
+                    event["preferred_event"],
+                ).json())
         vprint("Recovered %d events for query %r\n"
                % (len(self.events[None]), querystr))
         if 'labels' in self.columns:
             for e in self.events[None]:
                 e['labels'] = ', '.join(event_method(
-                    e['graceid']).json()['labels'])
+                    e[eventid_name]).json()['labels'])
             vprint("Downloaded labels\n")
         return super(GraceDbTab, self).process(config=config, **kwargs)
 
@@ -161,8 +168,10 @@ class GraceDbTab(get_tab('default')):
                 page.tr(class_=context)
             for col in self.columns:
                 if col == 'date':
-                    page.td(from_gps(event['gpstime']).strftime(
-                        '%B %d %Y, %H:%M:%S.%f')[:-3])
+                    gpskey = 't_0' if 'superevent_id' in event else 'gpstime'
+                    page.td(from_gps(event[gpskey]).strftime(
+                        '%B %d %Y, %H:%M:%S.%f',
+                    )[:-3])
                     continue
                 try:
                     v = event[col]
@@ -173,12 +182,13 @@ class GraceDbTab(get_tab('default')):
                     except (KeyError, AssertionError):
                         page.td('-')
                         continue
-                if col == 'graceid':
+                if col in ("graceid", "superevent_id", "preferred_event"):
                     page.td()
-                    href = '%s/events/view/%s' % (self.url, v)
+                    tag = "superevents" if col == "superevent_id" else "events"
+                    href = '{}/{}/view/{}'.format(self.url, tag, v)
                     page.a(v, href=href, target='_blank', rel='external')
                     page.td.close()
-                elif col != 'gpstime' and isinstance(v, float):
+                elif col not in ("gpstime", "t_0") and isinstance(v, float):
                     page.td('%.3g' % v)
                 else:
                     page.td(str(v))

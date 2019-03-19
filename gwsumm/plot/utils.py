@@ -34,6 +34,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 LINE_PARAMS = [
     'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',
+    'zorder',
 ]
 COLLECTION_PARAMS = [
     'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',

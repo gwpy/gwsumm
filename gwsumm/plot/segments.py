@@ -130,6 +130,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                               outdir=outdir, **kwargs)
         self._allflags = []
+        self._onisbad = self.pargs.pop('on-is-bad', False)
         self.flags = flags
         self.preview_labels = False
         self.padding = padding
@@ -232,15 +233,10 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         active = safe_eval(
             self.pargs.pop('active', self.pargs.pop('facecolor', None)))
         known = safe_eval(self.pargs.pop('known', 0))
-        onisbad = self.pargs.pop('on-is-bad', False)
         # neither known nor active defined
         if active is None and known == 0:
-            if onisbad:
-                self.pargs['facecolor'] = 'red'
-                self.pargs['known'] = '#33cc33'
-            else:
-                self.pargs['facecolor'] = '#33cc33'
-                self.pargs['known'] = 'red'
+            self.pargs['facecolor'] = '#33cc33'
+            self.pargs['known'] = 'red'
         # only active is defined
         elif known == 0:
             if isinstance(active, dict):
@@ -335,6 +331,8 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
+            if self._onisbad:
+                segs = ~segs
             pargs.setdefault('known', None)
             pargs.setdefault('y', i)
             ax.plot(segs, label=label, **pargs)
@@ -495,6 +493,9 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 if 'int' not in str(stateseries.dtype):
                     stateseries = stateseries.astype('uint32')
                 newflags = stateseries.to_dqflags().values()
+                if self.pargs.get('on-is-bad', False):
+                    for i, flag in enumerate(newflags):
+                        newflags[i] = ~newflags[i]
                 if flags is None:
                     flags = newflags
                 else:

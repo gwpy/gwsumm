@@ -453,7 +453,7 @@ class PlotTab(Tab):
                 layout[i] = (l, None)
             else:
                 raise ValueError("Cannot parse layout element '%s'." % l)
-        while sum(zip(*layout)[0]) < len(plots):
+        while sum(list(zip(*layout))[0]) < len(plots):
             layout.append(layout[-1])
         l = i = 0
         fancyboxargs.setdefault('data-fancybox-group', 1)

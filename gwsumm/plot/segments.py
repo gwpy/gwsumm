@@ -320,7 +320,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
         # plot segments
         for i, (flag, pargs) in enumerate(
-                zip(self.flags, plotargs)[::-1]):
+                list(zip(self.flags, plotargs))[::-1]):
             label = re_quote.sub('', pargs.pop('label', str(flag)))
             if (self.fileformat == 'svg' and not str(flag) in label and
                     ax.get_insetlabels()):
@@ -417,7 +417,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         to set the bit names from the various channels as the defaults
         in stead of the channel names
         """
-        chans = zip(*self.get_channel_groups())[0]
+        chans = list(zip(*self.get_channel_groups()))[0]
         labels = list(self.pargs.pop('labels', defaults))
         if isinstance(labels, string_types):
             labels = labels.split(',')
@@ -506,7 +506,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 labels = [labels]
             while len(labels) < len(flags):
                 labels.append(None)
-            for flag, label in zip(flags, labels)[::-1]:
+            for flag, label in list(zip(flags, labels))[::-1]:
                 kwargs = pargs.copy()
                 if label is not None:
                     kwargs['label'] = label

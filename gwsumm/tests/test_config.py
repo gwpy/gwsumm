@@ -24,6 +24,7 @@ import tempfile
 from collections import OrderedDict
 
 from six.moves import StringIO
+from six.moves.configparser import (DEFAULTSECT, ConfigParser)
 
 import pytest
 
@@ -57,7 +58,7 @@ cochrane = dimensionless
 
 
 def assert_configparser_equal(a, b):
-    for sect in set([config.DEFAULTSECT] + list(a.sections()) +
+    for sect in set([DEFAULTSECT] + list(a.sections()) +
                     list(b.sections())):
         assert list(a.items(sect)) == list(b.items(sect))
 
@@ -118,7 +119,7 @@ class TestGWSummConfigParser(object):
         assert copy is cnfg
 
         # check that base ConfigParser gets converted to GWSummConfigParser
-        cp = config.ConfigParser()
+        cp = ConfigParser()
         try:
             cp.read_file(TEST_CONFIG)
         except AttributeError:
@@ -144,19 +145,19 @@ class TestGWSummConfigParser(object):
     def test_set_ifo_options(self, ifo, obs, exp):
         cp = self.new()
         cp.set_ifo_options(ifo, observatory=obs)
-        assert cp.get(config.DEFAULTSECT, 'IFO') == ifo.upper()
-        assert cp.get(config.DEFAULTSECT, 'ifo') == ifo.lower()
-        assert cp.get(config.DEFAULTSECT, 'SITE') == ifo[0].upper()
-        assert cp.get(config.DEFAULTSECT, 'site') == ifo[0].lower()
-        assert cp.get(config.DEFAULTSECT, 'observatory') == exp
+        assert cp.get(DEFAULTSECT, 'IFO') == ifo.upper()
+        assert cp.get(DEFAULTSECT, 'ifo') == ifo.lower()
+        assert cp.get(DEFAULTSECT, 'SITE') == ifo[0].upper()
+        assert cp.get(DEFAULTSECT, 'site') == ifo[0].lower()
+        assert cp.get(DEFAULTSECT, 'observatory') == exp
 
     def test_set_date_options(self):
         cp = self.new()
         cp.set_date_options(0, 100)
-        assert cp.get(config.DEFAULTSECT, 'gps-start-time') == '0'
-        assert cp.get(config.DEFAULTSECT, 'gps-end-time') == '100'
-        assert cp.get(config.DEFAULTSECT, 'yyyy') == '1980'
-        assert cp.get(config.DEFAULTSECT, 'duration') == '100'
+        assert cp.get(DEFAULTSECT, 'gps-start-time') == '0'
+        assert cp.get(DEFAULTSECT, 'gps-end-time') == '100'
+        assert cp.get(DEFAULTSECT, 'yyyy') == '1980'
+        assert cp.get(DEFAULTSECT, 'duration') == '100'
 
     def test_load_rcParams(self):
         # check empty config doesn't cause havoc
@@ -209,7 +210,7 @@ class TestGWSummConfigParser(object):
         assert c.frametype == 'X1_TEST'
 
         # test with interpolation
-        cp.set(config.DEFAULTSECT, 'IFO', 'X1')
+        cp.set(DEFAULTSECT, 'IFO', 'X1')
         cp.add_section('%(IFO)s:TEST-CHANNEL_2')
         cp.set('%(IFO)s:TEST-CHANNEL_2', 'resample', '128')
         cp.interpolate_section_names(IFO='X1')

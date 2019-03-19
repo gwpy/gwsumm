@@ -22,6 +22,11 @@
 
 import os
 
+try:
+    from configparser import ConfigParser
+except ImportError:  # python < 3
+    from ConfigParser import ConfigParser
+
 from matplotlib import use
 use('agg')  # noqa
 
@@ -35,7 +40,6 @@ from gwpy.plot.tex import HAS_TEX
 from gwpy.segments import Segment
 
 from gwsumm import plot as gwsumm_plot
-from gwsumm.config import ConfigParser
 from gwsumm.channels import get_channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

@@ -20,11 +20,11 @@
 """
 
 import re
-
+from collections import OrderedDict
 try:
-    from collections import OrderedDict
+    from configparser import NoOptionError
 except ImportError:
-    from ordereddict import OrderedDict
+    from ConfigParser import NoOptionError
 
 from dateutil import tz
 
@@ -40,7 +40,7 @@ from glue.lal import Cache
 from gwpy.segments import DataQualityDict
 
 from .. import (globalv, html)
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from ..data import get_timeseries_dict
 from ..plot.registry import get_plot
 from ..segments import get_segments

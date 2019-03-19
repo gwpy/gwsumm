@@ -22,6 +22,10 @@
 import datetime
 import re
 import operator
+try:
+    from configparser import (NoOptionError, DEFAULTSECT)
+except ImportError:  # python < 3
+    from ConfigParser import (NoOptionError, DEFAULTSECT)
 
 from astropy.time import Time
 
@@ -30,7 +34,7 @@ from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (to_gps, from_gps)
 
 from .. import globalv
-from ..config import (GWSummConfigParser, NoOptionError, DEFAULTSECT)
+from ..config import (GWSummConfigParser)
 from ..utils import re_cchar
 from ..segments import get_segments
 from ..data import get_timeseries

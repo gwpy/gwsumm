@@ -27,12 +27,13 @@ import os
 import warnings
 from math import (floor, ceil)
 from time import sleep
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from six.moves import reduce
+from six.moves.configparser import (
+    NoSectionError,
+    NoOptionError,
+)
 from six.moves.urllib.parse import urlparse
 
 from astropy import units
@@ -50,7 +51,7 @@ from gwpy.utils.mp import multiprocess_with_queues
 
 from .. import globalv
 from ..utils import vprint
-from ..config import (GWSummConfigParser, NoSectionError, NoOptionError)
+from ..config import GWSummConfigParser
 from ..channels import (get_channel, update_missing_channel_params,
                         split_combination as split_channel_combination,
                         update_channel_params)

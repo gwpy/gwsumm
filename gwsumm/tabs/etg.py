@@ -23,13 +23,13 @@ import os
 from warnings import warn
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 
 from glue.lal import Cache
 
 from gwpy.time import from_gps
 
 from .. import html
-from ..config import NoOptionError
 from ..data import get_channel
 from ..state import (get_state, ALLSTATE, generate_all_state)
 from ..triggers import (get_triggers, get_time_column)

@@ -31,11 +31,12 @@ import os.path
 import warnings
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 
 from .registry import (get_tab, register_tab)
 from ..plot import get_plot
 from ..utils import (re_quote, re_cchar)
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from ..state import (ALLSTATE, SummaryState, get_state)
 from .. import html
 

@@ -20,16 +20,17 @@
 """
 
 import re
+from collections import OrderedDict
 try:
-    from collections import OrderedDict
+    from configparser import NoOptionError
 except ImportError:
-    from ordereddict import OrderedDict
+    from ConfigParser import NoOptionError
 
 from glue.lal import Cache
 
 from gwpy.segments import (DataQualityDict, SegmentList)
 
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..data import get_timeseries

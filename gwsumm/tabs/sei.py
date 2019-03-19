@@ -23,13 +23,13 @@ from __future__ import print_function
 
 import os
 import re
+from collections import OrderedDict
+try:
+    from configparser import NoOptionError
+except ImportError:  # python < 3
+    from ConfigParser import NoOptionError
 
 from dateutil import tz
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 import numpy
 
@@ -37,7 +37,7 @@ from gwpy.time import Time
 
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
-from ..config import (NoOptionError, GWSummConfigParser)
+from ..config import GWSummConfigParser
 from ..data import (get_timeseries_dict, get_channel)
 from ..plot.registry import get_plot
 from ..utils import vprint

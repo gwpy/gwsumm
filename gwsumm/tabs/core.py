@@ -39,6 +39,7 @@ from collections import OrderedDict
 from shutil import copyfile
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 from six.moves.urllib.parse import urlparse
 
 from gwpy.time import (from_gps, to_gps)
@@ -47,7 +48,6 @@ from gwpy.segments import Segment
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
-from ..config import NoOptionError
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

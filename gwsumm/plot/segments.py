@@ -24,13 +24,10 @@ from __future__ import division
 import bisect
 from itertools import (cycle, combinations)
 from numbers import Number
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 
 import numpy
 
@@ -51,7 +48,6 @@ from gwpy.time import (from_gps, to_gps)
 
 from .. import globalv
 from ..mode import (Mode, get_mode)
-from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
 from ..channels import (get_channel, re_channel)
 from ..data import get_timeseries

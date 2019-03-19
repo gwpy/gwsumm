@@ -19,12 +19,8 @@
 """Utilities for data loading and pre-processing
 """
 
+from collections import OrderedDict
 from functools import wraps
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 from ligo.segments import segmentlist as LigoSegmentList
 

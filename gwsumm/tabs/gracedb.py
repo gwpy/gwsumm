@@ -19,12 +19,16 @@
 """Custom `SummaryTab` for the output of the FScan algorithm.
 """
 
+try:
+    from configparser import NoOptionError
+except ImportError:  # python < 3
+    from ConfigParser import NoOptionError
+
 from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
-
 from .. import html
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from ..utils import (re_quote, vprint)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

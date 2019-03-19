@@ -49,8 +49,10 @@ import warnings
 from collections import OrderedDict
 try:
     from urllib.parse import urlparse
+    from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
 except ImportError:  # python < 3
     from urlparse import urlparse
+    from ConfigParser import (DEFAULTSECT, NoOptionError, NoSectionError)
 
 from dateutil.relativedelta import relativedelta
 
@@ -71,10 +73,7 @@ from gwsumm import (
     mode,
 )
 from gwsumm.config import (
-    DEFAULTSECT,
     GWSummConfigParser,
-    NoOptionError,
-    NoSectionError,
 )
 from gwsumm.segments import get_segments
 from gwsumm.state import (

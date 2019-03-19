@@ -130,7 +130,6 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         super(SegmentDataPlot, self).__init__([], start, end, state=state,
                                               outdir=outdir, **kwargs)
         self._allflags = []
-        self._onisbad = self.pargs.get('on-is-bad', False)
         self.flags = flags
         self.preview_labels = False
         self.padding = padding
@@ -331,7 +330,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
-            if self._onisbad:
+            if self.pargs.get('on-is-bad', False):
                 segs = ~segs
             pargs.setdefault('known', None)
             pargs.setdefault('y', i)
@@ -493,7 +492,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 if 'int' not in str(stateseries.dtype):
                     stateseries = stateseries.astype('uint32')
                 newflags = stateseries.to_dqflags().values()
-                if self._onisbad:
+                if self.pargs.get('on-is-bad', False):
                     for i, flag in enumerate(newflags):
                         newflags[i] = ~newflags[i]
                 if flags is None:

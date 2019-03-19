@@ -175,8 +175,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             # validate parameters
             for ts in flatdata:
                 # double-check empty
-                if (hasattr(ts, 'metadata') and
-                        'x0' not in ts.metadata) or not ts.x0:
+                if ts.x0 is None:
                     ts.epoch = self.start
                 # double-check log scales
                 if self.logy:

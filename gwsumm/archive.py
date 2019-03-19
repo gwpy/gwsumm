@@ -91,7 +91,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                     rows.append((
                         chan.ndsname,
                         chan.sample_rate.to('Hz').value if
-                            chan.sample_rate else 0,
+                            chan.sample_rate is not None else 0,
                         str(getattr(chan, 'frametype', None)) or '',
                         str(chan.unit) if chan.unit else '',
                     ))

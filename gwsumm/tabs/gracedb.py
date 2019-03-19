@@ -96,26 +96,21 @@ class GraceDbTab(get_tab('default')):
         # query gracedb
         service_url = '%s/api/' % self.url
         connection = GraceDb(service_url=service_url)
-        vprint("Connected to gracedb at %s\n" % connection._service_url)
+        vprint("Connected to gracedb at %s\n" % service_url)
         querystr = '%s %d .. %d' % (self.query, self.start, self.end)
         try:
             self.events[None] = list(connection.superevents(querystr))
-            vprint("Recovered %d events for query %r\n"
-                   % (len(self.events[None]), querystr))
-            if 'labels' in self.columns:
-                for e in self.events[None]:
-                    e['labels'] = ', '.join(connection.superevent(
-                        e['graceid']).json()['labels'])
-                vprint("Downloaded labels\n")
+            event_method = connection.superevent
         except HTTPError:
             self.events[None] = list(connection.events(querystr))
-            vprint("Recovered %d events for query %r\n"
-                   % (len(self.events[None]), querystr))
-            if 'labels' in self.columns:
-                for e in self.events[None]:
-                    e['labels'] = ', '.join(connection.event(
-                        e['graceid']).json()['labels'])
-                vprint("Downloaded labels\n")
+            event_method = connection.event
+        vprint("Recovered %d events for query %r\n"
+               % (len(self.events[None]), querystr))
+        if 'labels' in self.columns:
+            for e in self.events[None]:
+                e['labels'] = ', '.join(event_method(
+                    e['graceid']).json()['labels'])
+            vprint("Downloaded labels\n")
         return super(GraceDbTab, self).process(config=config, **kwargs)
 
     def process_state(self, state, **kwargs):

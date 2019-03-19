@@ -22,7 +22,6 @@
 from __future__ import division
 
 import os.path
-import re
 import warnings
 from itertools import cycle
 
@@ -175,8 +174,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             # validate parameters
             for ts in flatdata:
                 # double-check empty
-                if (hasattr(ts, 'metadata') and
-                        'x0' not in ts.metadata) or not ts.x0:
+                if ts.x0 is None:
                     ts.epoch = self.start
                 # double-check log scales
                 if self.logy:
@@ -229,10 +227,11 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         """
         if self.state and not self.all_data:
             return self.state.active
-        if channel.sample_rate:
+        if channel.sample_rate is not None:
             return SegmentList([self.span.protract(
                 1/channel.sample_rate.value)])
         return SegmentList([self.span])
+
 
 register_plot(TimeSeriesDataPlot)
 
@@ -364,7 +363,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 specgrams = get_spectrogram(channel, valid, query=False,
                                             format=sdform)
             except ValueError as exc:
-                if not 'need more than 0 values' in str(exc):
+                if 'need more than 0 values' not in str(exc):
                     raise
                 # attempted to do math but one input has zero size
                 specgrams = []
@@ -401,6 +400,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
         return self.finalize()
 
+
 register_plot(SpectrogramDataPlot)
 
 
@@ -417,6 +417,7 @@ class CoherenceSpectrogramDataPlot(SpectrogramDataPlot):
         'logcolor': False,
         'colorlabel': None,
     })
+
 
 register_plot(CoherenceSpectrogramDataPlot)
 
@@ -514,7 +515,7 @@ class SpectrumDataPlot(DataPlot):
                     data = get_spectrum(str(channel), valid, query=False,
                                         format=sdform, method=method)
                 except ValueError as exc:
-                    # math operation failed beacuse one of the datasets is empty
+                    # math op failed beacuse one of the datasets is empty
                     if (
                             'could not be broadcast' in str(exc) and
                             '(0,)' in str(exc)
@@ -567,10 +568,11 @@ class SpectrumDataPlot(DataPlot):
 
         return self.finalize()
 
-    def parse_references(self, prefix='reference(\d+)?\Z'):
+    def parse_references(self, prefix=r'reference(\d+)?\Z'):
         """Parse parameters for displaying one or more reference traces
         """
         return self.parse_list('reference')
+
 
 register_plot(SpectrumDataPlot)
 
@@ -599,6 +601,7 @@ class CoherenceSpectrumDataPlot(SpectrumDataPlot):
         """
         all_ = self.allchannels
         return [(all_[i], all_[i:i+2]) for i in range(0, len(all_), 2)]
+
 
 register_plot(CoherenceSpectrumDataPlot)
 
@@ -745,7 +748,6 @@ class TimeSeriesHistogramPlot(DataPlot):
         return None
 
 
-
 register_plot(TimeSeriesHistogramPlot)
 
 
@@ -845,6 +847,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
         self.apply_parameters(ax, **self.pargs)
 
         return self.finalize(outputfile=outputfile)
+
 
 register_plot(TimeSeriesHistogram2dDataPlot)
 
@@ -962,6 +965,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
 
         return self.finalize()
 
+
 register_plot(SpectralVarianceDataPlot)
 
 
@@ -979,6 +983,7 @@ class RayleighSpectrogramDataPlot(SpectrogramDataPlot):
         'colorlabel': 'Rayleigh statistic',
     })
 
+
 register_plot(RayleighSpectrogramDataPlot)
 
 
@@ -994,6 +999,7 @@ class RayleighSpectrumDataPlot(SpectrumDataPlot):
                 'zorder': 1,
                 'no-percentiles': True,
                 'reference-linestyle': '--'}
+
 
 register_plot(RayleighSpectrumDataPlot)
 

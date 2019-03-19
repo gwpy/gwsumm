@@ -13,6 +13,7 @@ import re
 from collections import OrderedDict
 
 from six import text_type
+from six.moves.configparser import DEFAULTSECT
 
 from matplotlib import use
 use('agg')
@@ -21,7 +22,7 @@ from gwpy.time import to_gps
 
 from gwsumm import globalv
 from gwsumm.archive import (write_data_archive, read_data_archive)
-from gwsumm.config import (DEFAULTSECT, GWSummConfigParser)
+from gwsumm.config import GWSummConfigParser
 from gwsumm.data import get_timeseries
 from gwsumm.state import generate_all_state
 from gwsumm.tabs import GuardianTab

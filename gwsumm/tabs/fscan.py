@@ -28,7 +28,7 @@ from dateutil import parser
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, globalv)
+from .. import html
 from .. plot import get_plot
 from ..mode import Mode
 from ..config import GWSummConfigParser
@@ -207,7 +207,7 @@ class FscanTab(base):
             # reverse frequency order
             spectrograms = self.plots[::2]
             spectra = self.plots[1::2]
-            for pair in zip(spectrograms, spectra, freqs)[::-1]:
+            for pair in list(zip(spectrograms, spectra, freqs))[::-1]:
                 f = pair[-1]
                 page.div(class_='row', id="%s-%s" % (f[0], f[1]))
                 for p in pair[:2]:
@@ -225,5 +225,6 @@ class FscanTab(base):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(FscanTab)

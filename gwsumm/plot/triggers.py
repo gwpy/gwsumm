@@ -21,7 +21,6 @@
 
 from __future__ import division
 
-import hashlib
 import re
 from collections import OrderedDict
 from itertools import cycle
@@ -42,7 +41,7 @@ from ..utils import re_cchar
 from ..data import (get_channel, get_timeseries, add_timeseries)
 from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
-from .utils import (get_column_string, usetex_tex)
+from .utils import (get_column_string, hash, usetex_tex)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -67,21 +66,21 @@ class TriggerPlotMixin(object):
     def allchannels(self):
         """List of all unique channels for this plot
         """
-        chans = set([re.split('[#@]', str(c), 1)[0] for c in self._channels])
+        chans = set([re.split(r'[#@]', str(c), 1)[0] for c in self._channels])
         return ChannelList(map(Channel, chans))
 
     @property
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                 for c in self.channels]))
             if self.filterstr:
-                filts = "".join([filts, self.filterstr])
-            self._pid = hashlib.md5(chans+filts).hexdigest()[:6]
+                filts += self.filterstr
+            self._pid = hash(chans + filts)
             return self.pid
 
 
@@ -399,6 +398,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         self.add_state_segments(ax)
         return self.finalize()
 
+
 register_plot(TriggerTimeSeriesDataPlot)
 
 
@@ -499,6 +499,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
 
         # finalise
         return self.finalize()
+
 
 register_plot(TriggerHistogramPlot)
 
@@ -618,5 +619,6 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         out = super(TriggerRateDataPlot, self).draw(outputfile=outputfile)
         self.channels = channels
         return out
+
 
 register_plot(TriggerRateDataPlot)

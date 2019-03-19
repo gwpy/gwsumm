@@ -19,7 +19,6 @@
 """Compatibility module
 """
 
-import sys
 from functools import wraps
 
 from gwsumm import globalv

@@ -21,17 +21,13 @@
 
 from __future__ import division
 
-import hashlib
 import bisect
 from itertools import (cycle, combinations)
 from numbers import Number
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 
 import numpy
 
@@ -52,7 +48,6 @@ from gwpy.time import (from_gps, to_gps)
 
 from .. import globalv
 from ..mode import (Mode, get_mode)
-from ..config import NoOptionError
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
 from ..channels import (get_channel, re_channel)
 from ..data import get_timeseries
@@ -61,7 +56,7 @@ from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
 from .mixins import SegmentLabelSvgMixin
-from .utils import usetex_tex
+from .utils import (hash, usetex_tex)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -191,8 +186,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            self._pid = hashlib.md5(
-                "".join(map(str, self.flags))).hexdigest()[:6]
+            self._pid = hash("".join(map(str, self.flags)))
             return self.pid
 
     @pid.setter
@@ -322,7 +316,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
         # plot segments
         for i, (flag, pargs) in enumerate(
-                zip(self.flags, plotargs)[::-1]):
+                list(zip(self.flags, plotargs))[::-1]):
             label = re_quote.sub('', pargs.pop('label', str(flag)))
             if (self.fileformat == 'svg' and not str(flag) in label and
                     ax.get_insetlabels()):
@@ -405,12 +399,11 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
-            chans = "".join(map(str, self.channels))
-            self._pid = hashlib.md5(chans).hexdigest()[:6]
+        except AttributeError:
+            basis = "".join(map(str, self.channels))
             if self.pargs.get('bits', None):
-                self._pid = hashlib.md5(
-                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+                basis += str(self.pargs['bits'])
+            self._pid = hash(basis)
             return self.pid
 
     def _parse_labels(self, defaults=[]):
@@ -420,7 +413,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         to set the bit names from the various channels as the defaults
         in stead of the channel names
         """
-        chans = zip(*self.get_channel_groups())[0]
+        chans = list(zip(*self.get_channel_groups()))[0]
         labels = list(self.pargs.pop('labels', defaults))
         if isinstance(labels, string_types):
             labels = labels.split(',')
@@ -509,7 +502,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 labels = [labels]
             while len(labels) < len(flags):
                 labels.append(None)
-            for flag, label in zip(flags, labels)[::-1]:
+            for flag, label in list(zip(flags, labels))[::-1]:
                 kwargs = pargs.copy()
                 if label is not None:
                     kwargs['label'] = label
@@ -524,6 +517,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         self.add_future_shade()
 
         return self.finalize()
+
 
 register_plot(StateVectorDataPlot)
 
@@ -556,7 +550,7 @@ class DutyDataPlot(SegmentDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             super(DutyDataPlot, self).pid
             if self.pargs.get('cumulative', False):
                 self._pid += '_CUMULATIVE'
@@ -777,7 +771,8 @@ class DutyDataPlot(SegmentDataPlot):
 
         # add custom legend for mean
         if rollingmean:
-            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+            axsize = axes[0].get_position().size
+            yoff = 0.01 * axsize[0] / axsize[1]
             lkwargs = legendargs.copy()
             lkwargs.update({
                 'loc': 'lower right',
@@ -799,6 +794,7 @@ class DutyDataPlot(SegmentDataPlot):
         self.add_future_shade()
 
         return self.finalize(outputfile=outputfile)
+
 
 register_plot(DutyDataPlot)
 
@@ -835,13 +831,13 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             masks = "".join(map(str, self.get_bitmask_channels()))
-            self._pid = hashlib.md5(chans+masks).hexdigest()[:6]
+            basis = chans + masks
             if self.pargs.get('bits', None):
-                self._pid = hashlib.md5(
-                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+                basis += str(self.pargs["bits"])
+            self._pid = hash(basis)
             return self.pid
 
     def draw(self):
@@ -975,6 +971,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         self.add_future_shade()
         out = self.finalize()
         return out
+
 
 register_plot(ODCDataPlot)
 
@@ -1114,6 +1111,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         self.pargs['xlim'] = None
         return self.finalize(outputfile=outputfile, pad_inches=0)
 
+
 register_plot(SegmentPiePlot)
 
 
@@ -1187,6 +1185,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         self.flags = flags_
         return out
 
+
 register_plot(NetworkDutyPiePlot)
 
 
@@ -1194,7 +1193,6 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     type = 'segment-bar'
     _single_call = True
     defaults = {
-        'edgecolor': 'white',
         'scale': 'percent',
         'color': GREEN,
         'edgecolor': 'green',
@@ -1285,6 +1283,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         return self.finalize(outputfile=outputfile, transparent="True",
                              pad_inches=0)
 
+
 register_plot(SegmentBarPlot)
 
 
@@ -1335,9 +1334,9 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
 
         # get range
         if 'range' not in histargs[0]:
-            l = common_limits(data)
+            _lim = common_limits(data)
             for d in histargs:
-                d['range'] = l
+                d['range'] = _lim
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
@@ -1396,5 +1395,6 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
         # add bit mask axes and finalise
         return self.finalize(outputfile=outputfile, transparent="True",
                              pad_inches=0)
+
 
 register_plot(SegmentHistogramPlot)

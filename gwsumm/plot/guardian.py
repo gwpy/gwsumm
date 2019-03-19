@@ -109,7 +109,7 @@ class GuardianStatePlot(get_plot('segments')):
             valid = SegmentList([self.span])
 
         # plot segments
-        for y, (flag, label) in enumerate(zip(self.flags, labels)[::-1]):
+        for y, (flag, label) in enumerate(list(zip(self.flags, labels))[::-1]):
             inreq = str(flag) + REQUESTSTUB
             nominal = str(flag) + NOMINALSTUB
             segs = get_segments([flag, inreq, nominal], validity=valid,
@@ -209,5 +209,6 @@ class GuardianStatePlot(get_plot('segments')):
             ax_.set_epoch(epoch)
 
         return self.finalize()
+
 
 register_plot(GuardianStatePlot)

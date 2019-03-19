@@ -20,16 +20,17 @@
 """
 
 import re
+from collections import OrderedDict
 try:
-    from collections import OrderedDict
+    from configparser import NoOptionError
 except ImportError:
-    from ordereddict import OrderedDict
+    from ConfigParser import NoOptionError
 
 from glue.lal import Cache
 
 from gwpy.segments import (DataQualityDict, SegmentList)
 
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
 from ..data import get_timeseries
@@ -76,7 +77,7 @@ class AccountingTab(ParentTab):
         # parse colors
         colors = dict(
             (int(key[6:]), eval(color)) for (key, color) in
-            config.nditems(section) if re.match('color-\d+', key))
+            config.nditems(section) if re.match(r'color-\d+', key))
         for flag in pstates:
             group = int(flag // 10 * 10)
             if flag not in colors:
@@ -165,7 +166,7 @@ class AccountingTab(ParentTab):
                 instate = ts == idx * ts.unit
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
                 # append segments for group
-                group = int(idx //10. * 10)
+                group = int(idx // 10. * 10)
                 gtag = self.segmenttag % group
                 try:
                     modesegments[gtag] += modesegments[tag]
@@ -227,4 +228,6 @@ class AccountingTab(ParentTab):
                         "<samp>%s</samp>" % (title.split()[0], self.channel))))
         return super(ParentTab, self).write_state_html(state, plots=False,
                                                        pre=page)
+
+
 register_tab(AccountingTab)

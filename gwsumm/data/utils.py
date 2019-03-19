@@ -19,12 +19,8 @@
 """Utilities for data loading and pre-processing
 """
 
+from collections import OrderedDict
 from functools import wraps
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 from ligo.segments import segmentlist as LigoSegmentList
 
@@ -34,6 +30,7 @@ from ..channels import get_channel
 from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+
 
 # -- method decorators --------------------------------------------------------
 

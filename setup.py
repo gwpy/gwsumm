@@ -25,11 +25,13 @@ from __future__ import print_function
 import sys
 import glob
 import os
-
 from distutils import log
+
 from setuptools import (Command, setup, find_packages)
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_py import build_py
+
+import versioneer
 
 if sys.version < '2.6':
     raise ImportError("Python versions older than 2.6 are not supported.")
@@ -45,7 +47,6 @@ cmdclass = {}
 
 # -- versioning ---------------------------------------------------------------
 
-import versioneer
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 
@@ -184,6 +185,7 @@ class BuildHtmlFiles(Command):
             self.distribution.packages.append(self.staticpackage)
             log.info("added %s to package list" % self.staticpackage)
 
+
 cmdclass['build_html_files'] = BuildHtmlFiles
 
 old_build_py = cmdclass.pop('build_py', build_py)
@@ -196,6 +198,7 @@ class BuildPyWithHtmlFiles(old_build_py):
         self.run_command('build_html_files')
         old_build_py.run(self)
 
+
 cmdclass['build_py'] = BuildPyWithHtmlFiles
 
 old_egg_info = cmdclass.pop('egg_info', egg_info)
@@ -207,6 +210,7 @@ class EggInfoWithHtmlFiles(old_egg_info):
     def run(self):
         self.run_command('build_html_files')
         old_egg_info.run(self)
+
 
 cmdclass['egg_info'] = EggInfoWithHtmlFiles
 

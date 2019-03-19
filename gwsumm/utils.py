@@ -27,23 +27,23 @@ from socket import getfqdn
 from six import string_types
 
 # import filter evals
-from math import pi
-import numpy
+from math import pi  # noqa: F401
+import numpy  # noqa: F401
 
 from . import globalv
 
-re_cchar = re.compile("[\W_]+")
+re_cchar = re.compile(r"[\W_]+")
 re_quote = re.compile(r'^[\s\"\']+|[\s\"\']+$')
-re_flagdiv = re.compile("(&|!=|!|\|)")
+re_flagdiv = re.compile(r"(&|!=|!|\|)")
 
 # define some colours
-WARNC = '\033[93m'
-ERRC = '\033[91m'
-ENDC = '\033[0m'
+WARNC = r'\033[93m'
+ERRC = r'\033[91m'
+ENDC = r'\033[0m'
 
 # bad things to eval
-UNSAFE_EVAL_STRS = ['os\.(?![$\'\" ])', 'shutil', '\.rm', '\.mv']
-UNSAFE_EVAL = re.compile('(%s)' % '|'.join(UNSAFE_EVAL_STRS))
+UNSAFE_EVAL_STRS = [r'os\.(?![$\'\" ])', 'shutil', r'\.rm', r'\.mv']
+UNSAFE_EVAL = re.compile(r'(%s)' % '|'.join(UNSAFE_EVAL_STRS))
 
 
 # -- utilities ----------------------------------------------------------------

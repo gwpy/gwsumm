@@ -20,11 +20,11 @@
 """
 
 import re
-
+from collections import OrderedDict
 try:
-    from collections import OrderedDict
+    from configparser import NoOptionError
 except ImportError:
-    from ordereddict import OrderedDict
+    from ConfigParser import NoOptionError
 
 from dateutil import tz
 
@@ -40,7 +40,7 @@ from glue.lal import Cache
 from gwpy.segments import DataQualityDict
 
 from .. import (globalv, html)
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from ..data import get_timeseries_dict
 from ..plot.registry import get_plot
 from ..segments import get_segments
@@ -57,7 +57,7 @@ REQUESTSTUB = '+request'
 NOMINALSTUB = '+nominal'
 MODE_COLORS = ['grey', 'magenta', 'red', 'saddlebrown']
 
-re_guardian_index = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
+re_guardian_index = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
 
 
 class GuardianTab(DataTab):
@@ -119,7 +119,7 @@ class GuardianTab(DataTab):
 
         for state in new.states:
             # get common plot tag prefix
-            tagprefix = 'GRD_%s' % re.sub('[-\s]', '_', new.node.upper())
+            tagprefix = 'GRD_%s' % re.sub(r'[-\s]', '_', new.node.upper())
             if state.name.lower() != ALLSTATE:  # include state name if not All
                 tagprefix = '%s_%s' % (state.name, tagprefix)
             # segment plot
@@ -345,4 +345,6 @@ class GuardianTab(DataTab):
 
         return super(DataTab, self).write_state_html(state, plots=False,
                                                      pre=page)
+
+
 register_tab(GuardianTab)

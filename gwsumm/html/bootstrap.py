@@ -45,13 +45,13 @@ NAVBAR_TOGGLE = """<button class="navbar-toggle" data-toggle="collapse" type="bu
   <span class="icon-bar"></span>
   <span class="icon-bar"></span>
   <span class="icon-bar"></span>
-</button>"""
+</button>"""  # noqa: E501
 
 
 # -----------------------------------------------------------------------------
 # variable HTML constructs
 
-def banner(title, subtitle=None, titleclass=None, substitleclass=None):
+def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
     """Construct a banner heading in bootstrap format
 
     Parameters

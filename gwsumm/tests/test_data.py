@@ -117,8 +117,12 @@ class TestData(object):
 
     @empty_globalv_CHANNELS
     def test_make_globalv_key(self):
-        fftparams = utils.get_fftparams('L1:TEST-CHANNEL',
-            stride=123.456, window='test-window', method='scipy-welch')
+        fftparams = utils.get_fftparams(
+            'L1:TEST-CHANNEL',
+            stride=123.456,
+            window='test-window',
+            method='scipy-welch',
+        )
         key = utils.make_globalv_key('L1:TEST-CHANNEL', fftparams)
         assert key == ';'.join([
             'L1:TEST-CHANNEL',  # channel
@@ -147,16 +151,21 @@ class TestData(object):
             utils.get_fftparams(None, stride=0)
 
     @pytest.mark.parametrize('definition, math', [
-        ('L1:TEST + L1:TEST2', (
-            [('L1:TEST', 'L1:TEST2'), ([], [])],
-            [operator.add])),
-        ('L1:TEST + L1:TEST2 * 2', (
-            [('L1:TEST', 'L1:TEST2'), ([], [(operator.mul, 2)])],
-            [operator.add])),
-       ('L1:TEST * 2 + L1:TEST2 ^ 5', (
-            [('L1:TEST', 'L1:TEST2'),
-             ([(operator.mul, 2)], [(operator.pow, 5)])],
-            [operator.add])),
+        (
+             'L1:TEST + L1:TEST2',
+             ([('L1:TEST', 'L1:TEST2'), ([], [])], [operator.add]),
+        ),
+        (
+             'L1:TEST + L1:TEST2 * 2',
+             ([('L1:TEST', 'L1:TEST2'), ([], [(operator.mul, 2)])],
+              [operator.add]),
+        ),
+        (
+             'L1:TEST * 2 + L1:TEST2 ^ 5',
+             ([('L1:TEST', 'L1:TEST2'),
+               ([(operator.mul, 2)], [(operator.pow, 5)])],
+              [operator.add]),
+        ),
     ])
     def test_parse_math_definition(self, definition, math):
         chans, operators = mathutils.parse_math_definition(definition)
@@ -171,7 +180,7 @@ class TestData(object):
 
         # test simple add using 'name'
         data.add_timeseries(a)
-        assert 'test name' in  globalv.DATA
+        assert 'test name' in globalv.DATA
         assert len(globalv.DATA['test name']) == 1
         assert globalv.DATA['test name'][0] is a
 
@@ -213,10 +222,10 @@ class TestData(object):
             data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
                                  cache=self.FRAMES['H1:LOSC-STRAIN'],
                                  nproc=1)
-        a = data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
-                                 cache=self.FRAMES['H1:LOSC-STRAIN'],
-                                 stride=4, fftlength=2, overlap=1,
-                                 nproc=1)
+        data.get_spectrogram('H1:LOSC-STRAIN', LOSC_SEGMENTS,
+                             cache=self.FRAMES['H1:LOSC-STRAIN'],
+                             stride=4, fftlength=2, overlap=1,
+                             nproc=1)
 
     def test_get_spectrum(self):
         a, _, _ = data.get_spectrum('H1:LOSC-STRAIN', LOSC_SEGMENTS,
@@ -230,12 +239,14 @@ class TestData(object):
 
     def test_get_coherence_spectrogram(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
-        a = data.get_coherence_spectrogram(
+        data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1, nproc=1)
+            stride=4, fftlength=2, overlap=1, nproc=1,
+        )
 
     def test_get_coherence_spectrum(self):
         cache = Cache([e for c in self.FRAMES for e in self.FRAMES[c]])
-        a = data.get_coherence_spectrogram(
+        data.get_coherence_spectrogram(
             ('H1:LOSC-STRAIN', 'L1:LOSC-STRAIN'), LOSC_SEGMENTS, cache=cache,
-            stride=4, fftlength=2, overlap=1, nproc=1)
+            stride=4, fftlength=2, overlap=1, nproc=1,
+        )

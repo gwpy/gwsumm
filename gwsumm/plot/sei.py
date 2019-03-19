@@ -64,12 +64,14 @@ class SeiWatchDogPlot(get_plot('data')):
 
         # get channels
         mapsec = 'sei-wd-map-%s' % sensor
-        if not config.has_section(mapsec) and re.match('ISI ST\d ', sensor):
+        if not config.has_section(mapsec) and re.match(r'ISI ST\d ', sensor):
             mapsec = ('sei-wd-map-%s'
                       % (' '.join(sensor.split(' ', 2)[::2])))
-        stubs = zip(*sorted([o for o in config.items(mapsec) if o[0].isdigit()],
-                            key=lambda x: x[0]))[1]
-        if re.search('ISI ST\d ', sensor):
+        stubs = list(zip(*sorted(
+            [o for o in config.items(mapsec) if o[0].isdigit()],
+            key=lambda x: x[0],
+        )))[1]
+        if re.search(r'ISI ST\d ', sensor):
             stage = sensor.split(' ')[1]
             channels = [get_channel('%s:%s-%s_%s_%s'
                                     % (ifo, system, chamber, stage, stub))

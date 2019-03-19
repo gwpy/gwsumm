@@ -23,15 +23,13 @@ import os
 from warnings import warn
 
 from six import string_types
-
-from astropy.io.registry import (register_reader, get_reader)
+from six.moves.configparser import NoOptionError
 
 from glue.lal import Cache
 
 from gwpy.time import from_gps
 
 from .. import html
-from ..config import NoOptionError
 from ..data import get_channel
 from ..state import (get_state, ALLSTATE, generate_all_state)
 from ..triggers import (get_triggers, get_time_column)
@@ -345,8 +343,8 @@ class EventTriggerTab(get_tab('default')):
                                        '%B %d %Y, %H:%M:%S.%f')[:-3])
                     page.add(str(html.table(
                         headers, data,
-                        caption=("%d loudest <samp>%s</samp> (%s) events by %s "
-                                 "with minimum %ss separation"
+                        caption=("%d loudest <samp>%s</samp> (%s) events "
+                                 "by %s with minimum %ss separation"
                                  % (self.loudest['N'], self.channel, self.etg,
                                     rankstr, self.loudest['dt'])))))
 
@@ -376,5 +374,6 @@ class EventTriggerTab(get_tab('default')):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(EventTriggerTab)

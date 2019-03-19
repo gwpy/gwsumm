@@ -25,7 +25,6 @@ from six import string_types
 from six.moves.urllib.parse import urlparse
 
 from . import markup
-from ..utils import re_cchar
 
 DOCTYPE = '<!DOCTYPE html>'
 

@@ -23,13 +23,13 @@ from __future__ import print_function
 
 import os
 import re
+from collections import OrderedDict
+try:
+    from configparser import NoOptionError
+except ImportError:  # python < 3
+    from ConfigParser import NoOptionError
 
 from dateutil import tz
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
 
 import numpy
 
@@ -37,7 +37,7 @@ from gwpy.time import Time
 
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
-from ..config import (NoOptionError, GWSummConfigParser)
+from ..config import GWSummConfigParser
 from ..data import (get_timeseries_dict, get_channel)
 from ..plot.registry import get_plot
 from ..utils import vprint
@@ -59,7 +59,7 @@ BSC_ST1_LATCH_CHANNEL = '%s:ISI-%s_ST1_WD_MON_FIRSTTRIG_LATCH'
 BSC_ST2_GPS_CHANNEL = '%s:ISI-%s_ST2_WD_MON_GPS_TIME'
 BSC_ST2_LATCH_CHANNEL = '%s:ISI-%s_ST2_WD_MON_FIRSTTRIG_LATCH'
 
-re_no_count = re.compile('(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
+re_no_count = re.compile(r'(ISI (.*)IOP|(.*) Reset|(.*)from stage \d+)')
 
 
 class SEIWatchDogTab(base):
@@ -181,13 +181,15 @@ class SEIWatchDogTab(base):
                     bits = None
                 # associate cause
                 if not bits:
-                    if re.match('ST\d', latch.signal):
+                    if re.match(r'ST\d', latch.signal):
                         stage = 'ISI %s' % latch.signal.split('_')[0]
                     else:
                         stage = system
                     causes = ['%s Unknown' % stage]
                 else:
-                    allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
+                    allbits = numpy.nonzero(
+                        map(int, bin(int(bits))[2:][::-1]),
+                    )[0]
                     causes = [latch.bits[b] for b in allbits]
                 t2 = Time(t, format='gps', scale='utc')
                 vprint("        Trip GPS %s (%s), triggers:\n" % (t, t2.iso))
@@ -196,7 +198,7 @@ class SEIWatchDogTab(base):
                     # configure plot
                     mapsec = 'sei-wd-map-%s' % cause
                     if (not config.has_section(mapsec) and
-                            re.match('ISI ST\d ', cause)):
+                            re.match(r'ISI ST\d ', cause)):
                         mapsec = ('sei-wd-map-%s'
                                   % (' '.join(cause.split(' ', 2)[::2])))
                     if config.has_section(mapsec):
@@ -318,7 +320,7 @@ class SEIWatchDogTab(base):
                            (mask).index(x[2]) or 1000, x[3] is None))
         groups = OrderedDict()
         j = 0
-        for i in xrange(len(self.trips)):
+        for i in range(len(self.trips)):
             if i == 0:
                 j = i
                 groups[j] = []
@@ -416,5 +418,6 @@ class SEIWatchDogTab(base):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(SEIWatchDogTab)

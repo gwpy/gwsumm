@@ -20,29 +20,32 @@
 """
 
 from __future__ import (division, print_function)
-import sys
-
-try:
-    from configparser import (ConfigParser, NoSectionError, NoOptionError)
-except ImportError:
-    from ConfigParser import (ConfigParser, NoSectionError, NoOptionError)
-import warnings
 import operator
+import sys
+import warnings
 from collections import OrderedDict
 
 from six import string_types
+from six.moves import reduce
+from six.moves.configparser import (
+    DEFAULTSECT,
+    ConfigParser,
+    NoSectionError,
+    NoOptionError,
+)
 
-try:
-    from astropy.io.registry import IORegistryError
-except ImportError:  # astropy < 1.2
-    IORegistryError = Exception
+from astropy.io.registry import IORegistryError
 
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
                            SegmentList, Segment)
 
 from . import globalv
-from .config import DEFAULTSECT
-from .utils import *
+from .utils import (
+    re_flagdiv,
+    vprint,
+    WARNC,
+    ENDC,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -119,8 +122,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         the flag object representing segments for the given single flag, OR
 
     flagdict : `~gwpy.segments.DataQualityDict`
-        the dict of `~gwpy.segments.DataQualityFlag` objects for multiple flags,
-        if ``flag`` is given as a `list`, OR
+        the dict of `~gwpy.segments.DataQualityFlag` objects for multiple
+        flags, if ``flag`` is given as a `list`, OR
 
     None
        if ``return_=False``

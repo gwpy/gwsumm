@@ -22,7 +22,6 @@
 from __future__ import division
 
 import re
-import hashlib
 from math import pi
 
 from six import string_types
@@ -35,6 +34,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
 from .registry import (get_plot, register_plot)
+from .utils import hash
 from ..data import (get_range_channel, get_range, get_timeseries)
 from ..segments import get_segments
 from ..channels import split as split_channels
@@ -102,6 +102,7 @@ class RangeDataPlot(RangePlotMixin, get_plot('timeseries')):
         'ylabel': 'Sensitive distance [Mpc]',
     })
 
+
 register_plot(RangeDataPlot)
 
 
@@ -112,6 +113,7 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
     defaults.update({
         'xlabel': 'Sensitive distance [Mpc]',
     })
+
 
 register_plot(RangeDataHistogramPlot)
 
@@ -145,9 +147,8 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     def pid(self):
         try:
             return self._pid
-        except:
-            chans = "".join(map(str, self.channels+self.flags))
-            self._pid = hashlib.md5(chans).hexdigest()[:6]
+        except AttributeError:
+            self._pid = hash("".join(map(str, self.channels+self.flags)))
             return self.pid
 
     @pid.setter
@@ -246,6 +247,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         ax.yaxis.set_ticklabels(ticks)
         return self.finalize(outputfile=outputfile)
 
+
 register_plot(SimpleTimeVolumeDataPlot)
 
 
@@ -254,5 +256,6 @@ class GWpyTimeVolumeDataPlot(RangePlotMixin, SimpleTimeVolumeDataPlot):
     """
     type = 'strain-time-volume'
     _threadsafe = False
+
 
 register_plot(GWpyTimeVolumeDataPlot)

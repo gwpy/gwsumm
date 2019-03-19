@@ -21,7 +21,6 @@
 for GWSumm
 """
 
-import hashlib
 import os.path
 import re
 import warnings
@@ -35,13 +34,12 @@ from six.moves.urllib.parse import urlparse
 from matplotlib import (rcParams, rc_context)
 
 from gwpy.segments import Segment
-from gwpy.detector import (Channel, ChannelList)
+from gwpy.detector import ChannelList
 from gwpy.plot import Plot
 
 from ..channels import (get_channel, split as split_channels,
                         split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
-from ..data import parse_math_definition
 from ..state import get_state
 from ..utils import (vprint, safe_eval, re_quote)
 from . import utils as putils
@@ -49,7 +47,7 @@ from .registry import register_plot
 
 __all__ = ['SummaryPlot', 'DataPlot']
 
-re_cchar = re.compile("[\W\s_]+")
+re_cchar = re.compile(r"[\W\s_]+")
 
 putils.AXES_PARAMS.extend([
     'insetlabels',  # for segment plotting
@@ -59,10 +57,10 @@ NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
 
 # -- utilities ----------------------------------------------------------------
 
-def format_label(l):
-    l = str(l).strip('\n ')
-    l = re_quote.sub('', l)
-    return putils.usetex_tex(l)
+def format_label(label):
+    label = str(label).strip('\n ')
+    label = re_quote.sub('', label)
+    return putils.usetex_tex(label)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -172,6 +170,7 @@ class SummaryPlot(object):
 
     def __str__(self):
         return str(self.href)
+
 
 register_plot(SummaryPlot)
 
@@ -333,13 +332,12 @@ class DataPlot(SummaryPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                 for c in self.channels]))
-            h = (chans + filts).encode('utf-8')
-            self._pid = hashlib.md5(h).hexdigest()[:6]
+            self._pid = putils.hash(chans + filts)
             return self.pid
 
     @pid.setter
@@ -421,7 +419,7 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = []
         for c in all_:
-            if c.ifo == 'G1' and re.search('-(av|min|max)\Z', c.texname):
+            if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.texname):
                 name = c.texname.rsplit('-', 1)[0]
             else:
                 name = c.texname.rsplit('.', 1)[0]
@@ -453,7 +451,7 @@ class DataPlot(SummaryPlot):
             params = dict(config.items(section))
 
         # get and check type
-        ptype = re.sub('[\'\"]', '', params.pop('type'))
+        ptype = re.sub(r'[\'\"]', '', params.pop('type'))
         if ptype != cls.type:
             warnings.warn("'%s' plot definition from configuration being "
                           "parsed by different plotting class '%s'"
@@ -572,7 +570,7 @@ class DataPlot(SummaryPlot):
         -------
         params : `dict`
         """
-        re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
+        re_prefix = re.compile(r'\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
         for key in list(self.pargs.keys()):
             m = re_prefix.match(key)
@@ -681,7 +679,7 @@ class DataPlot(SummaryPlot):
          200: {'linestyle': '--', 'color': 'blue'},}
         """
         items = OrderedDict()
-        re_prefix = re.compile('{0}(\d+)?\Z'.format(prefix))
+        re_prefix = re.compile(r'{0}(\d+)?\Z'.format(prefix))
         keys = sorted(self.pargs.keys())
         while True:
             for i, key in enumerate(keys):
@@ -726,7 +724,7 @@ class DataPlot(SummaryPlot):
             except KeyError:
                 continue
             # escape text for TeX
-            if key in ('title', 'xlabel','ylabel'):
+            if key in ('title', 'xlabel', 'ylabel'):
                 kwargs[key] = putils.usetex_tex(kwargs[key])
 
         # create figure
@@ -812,6 +810,7 @@ class DataPlot(SummaryPlot):
                         val = [val]
                     for x in val:
                         axline(x, **params)
+
 
 register_plot(DataPlot)
 

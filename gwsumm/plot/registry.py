@@ -62,7 +62,7 @@ def get_plot(name):
     name
     """
     if isinstance(name, string_types):
-        name = re.sub('[\'\"]', '', name)
+        name = re.sub(r'[\'\"]', '', name)
     try:
         return _PLOTS[name]
     except KeyError:

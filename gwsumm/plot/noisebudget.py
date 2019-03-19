@@ -55,7 +55,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
     def _parse_extra_params(self, prefix, **defaults):
         """Parse parameters for an extra plot element
         """
-        re_prefix = re.compile('\A%s[-_]' % prefix.rstrip('-_'))
+        re_prefix = re.compile(r'\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
         for key in self.pargs.keys():
             m = re_prefix.match(key)
@@ -154,6 +154,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
 
         return self.finalize()
 
+
 register_plot(NoiseBudgetPlot)
 
 
@@ -236,5 +237,6 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
         self.apply_parameters(ax, **self.pargs)
 
         return self.finalize()
+
 
 register_plot(RelativeNoiseBudgetPlot)

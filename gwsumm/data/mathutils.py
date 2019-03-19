@@ -24,14 +24,15 @@ import operator
 import re
 from collections import OrderedDict
 
+from six.moves import reduce
+
 import numpy
 
-from gwpy.detector import Channel
 from gwpy.segments import SegmentList
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.types import Series
 
-from ..channels import (get_channel, re_channel)
+from ..channels import get_channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -47,8 +48,8 @@ OPERATOR = {
     '**': operator.pow,
 }
 
-re_operator = re.compile('\s+[+/^\*-]+\s+')
-re_value = re.compile('[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
+re_operator = re.compile(r'\s+[+/^\*-]+\s+')
+re_value = re.compile(r'[-+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?')
 
 
 def parse_math_definition(definition):

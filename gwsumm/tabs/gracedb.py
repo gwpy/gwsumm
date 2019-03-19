@@ -19,12 +19,16 @@
 """Custom `SummaryTab` for the output of the FScan algorithm.
 """
 
+try:
+    from configparser import NoOptionError
+except ImportError:  # python < 3
+    from ConfigParser import NoOptionError
+
 from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
-
 from .. import html
-from ..config import (GWSummConfigParser, NoOptionError)
+from ..config import GWSummConfigParser
 from ..utils import (re_quote, vprint)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -77,12 +81,12 @@ class GraceDbTab(get_tab('default')):
         for key in ['columns', 'headers']:
             try:
                 raw = config.get(section, key)
-                l = eval(raw)
+                val = eval(raw)
             except NoOptionError:
                 continue
             except (SyntaxError, NameError, TypeError):
-                l = [x.strip().rstrip() for x in raw.split(',')]
-            kwargs.setdefault(key, l)
+                val = [x.strip().rstrip() for x in raw.split(',')]
+            kwargs.setdefault(key, val)
         return super(GraceDbTab, cls).from_ini(config, section, **kwargs)
 
     def process(self, config=GWSummConfigParser(), **kwargs):
@@ -142,13 +146,13 @@ class GraceDbTab(get_tab('default')):
                             key=lambda e: e['gpstime']):
             context = None
             try:
-                l = event['labels'].split(', ')
+                labs = event['labels'].split(', ')
             except (AttributeError, KeyError):
                 pass
             else:
                 for label in ['ADVNO', 'H1NO', 'L1NO', 'DQV', 'INJ',
                               'EM_READY']:
-                    if label in l:
+                    if label in labs:
                         context = LABELS[label]
                         break
             if context is not None:
@@ -202,5 +206,6 @@ class GraceDbTab(get_tab('default')):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(GraceDbTab)

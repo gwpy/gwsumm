@@ -139,9 +139,10 @@ def _new(channel, find_parent=True):
     parts = re_channel.findall(name)
 
     # match single raw channel for LIGO
-    if (len(parts) == 1 and
+    if (
+            len(parts) == 1 and
             new.ifo in ('H1', 'L1') and
-            not re.search('\.[a-z]+\Z', name)
+            not re.search(r'\.[a-z]+\Z', name)
     ):
         new.url = '%s/channel/byname/%s' % (CIS_URL, str(new))
 
@@ -203,7 +204,7 @@ def get_channel(channel, find_parent=True, timeout=5):
         # handle special characters in channel name
         rename = name
         for cchar in ['+', '*', '^', '|']:
-            rename = rename.replace(cchar, '\%s' % cchar)
+            rename = rename.replace(cchar, r'\%s' % cchar)
         found = globalv.CHANNELS.sieve(name=rename, exact_match=True)
     # match normal channel
     else:
@@ -279,9 +280,9 @@ def update_channel_params():
             c.type = 's-trend'
 
         # update sample_rate based on trend type
-        if c.type is 'm-trend' and c.sample_rate is None:
+        if c.type == 'm-trend' and c.sample_rate is None:
             c.sample_rate = 1/60.
-        elif c.type is 's-trend' and c.sample_rate is None:
+        elif c.type == 's-trend' and c.sample_rate is None:
             c.sample_rate = 1.
     return
 

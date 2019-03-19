@@ -39,17 +39,20 @@ from glue.lal import LIGOTimeGPS
 time.LIGOTimeGPS = LIGOTimeGPS
 _tconvert.LIGOTimeGPS = LIGOTimeGPS
 
-import os
-import datetime
 import argparse
 import calendar
+import datetime
 import getpass
+import os
+import re
 import warnings
-import httplib
-import importlib
-
 from collections import OrderedDict
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+    from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
+except ImportError:  # python < 3
+    from urlparse import urlparse
+    from ConfigParser import (DEFAULTSECT, NoOptionError, NoSectionError)
 
 from dateutil.relativedelta import relativedelta
 
@@ -59,25 +62,33 @@ use('Agg')
 
 from glue.lal import Cache
 
-try:
-    from lal import lal
-except ImportError:
-    HASLAL = False
-else:
-    HASLAL = True
-
-from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.signal.fft import lal as fft_lal
 from gwpy.time import (tconvert, to_gps, Time)
 
-from gwsumm import (globalv, mode, __version__)
-from gwsumm.config import *
-from gwsumm.channels import get_channels
+from gwsumm import (
+    __version__,
+    archive,
+    globalv,
+    mode,
+)
+from gwsumm.config import (
+    GWSummConfigParser,
+)
 from gwsumm.segments import get_segments
-from gwsumm.tabs import (TabList, get_tab)
-from gwsumm.utils import *
-from gwsumm.state import *
+from gwsumm.state import (
+    ALLSTATE
+)
+from gwsumm.tabs import (
+    TabList,
+    get_tab,
+)
+from gwsumm.utils import (
+    get_default_ifo,
+    mkdir,
+    re_flagdiv,
+    vprint,
+)
 from gwsumm.data import get_timeseries_dict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -517,7 +528,6 @@ elif opts.archive is True:
 archives = []
 
 if opts.archive:
-    from gwsumm import archive
     archivedir = os.path.join(path, 'archive')
     mkdir(archivedir)
     opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.h5'
@@ -532,9 +542,8 @@ if opts.archive:
 # read daily archive for week/month/... mode
 if hasattr(opts, 'daily_archive') and opts.daily_archive:
     # find daily archive files
-    from gwsumm import archive
     archives.extend(archive.find_daily_archives(
-        opts.gpsstart, opts.gpsend, ifo, args.daily_archive, archivedir))
+        opts.gpsstart, opts.gpsend, ifo, opts.daily_archive, archivedir))
     # then don't read any actual data
     cache['datacache'] = Cache()
 
@@ -562,8 +571,9 @@ try:
 except NoSectionError:
     pass
 else:
+    base_reg = re.compile(r'-base\Z')
     for key, val in config.nditems('html'):
-        if re.search('-base\Z', key):
+        if base_reg.search(key):
             ifobases[key.rsplit('-', 1)[0]] = val
 ifobases = OrderedDict(sorted(ifobases.items(), key=lambda x: x[0]))
 

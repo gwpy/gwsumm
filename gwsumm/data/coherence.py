@@ -23,13 +23,10 @@ from __future__ import division
 
 import operator
 import warnings
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from six import string_types
-from six.moves import zip_longest
+from six.moves import (reduce, zip_longest)
 
 import numpy
 

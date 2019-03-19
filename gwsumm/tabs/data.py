@@ -33,6 +33,11 @@ from copy import copy
 from datetime import timedelta
 
 from six.moves import StringIO
+from six.moves.configparser import (
+    ConfigParser,
+    NoOptionError,
+    NoSectionError,
+)
 
 from numpy import isclose
 
@@ -45,7 +50,7 @@ from gwpy.utils.mp import multiprocess_with_queues
 from .. import (globalv, html)
 from ..channels import (re_channel,
                         split_combination as split_channel_combination)
-from ..config import *
+from ..config import GWSummConfigParser
 from ..mode import (Mode, get_mode)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
@@ -76,6 +81,7 @@ class ProcessedTab(object):
         """
         raise NotImplementedError("process() must be defined in %s"
                                   % type(self).__name__)
+
 
 register_tab(ProcessedTab)
 
@@ -242,7 +248,7 @@ class DataTab(ProcessedTab, ParentTab):
             # parse definition for section references
             try:
                 pdef, sources = [s[::-1] for s in
-                                 re.split('[\s,]', definition[::-1], 1)]
+                                 re.split(r'[\s,]', definition[::-1], 1)]
             except ValueError:
                 pdef = definition
                 sources = []
@@ -264,7 +270,7 @@ class DataTab(ProcessedTab, ParentTab):
                 mods.setdefault('etg', etg)
                 mods.setdefault('column', column)
                 PlotClass = get_plot('trigger-histogram')
-            elif re.search('-rate', pdef):
+            elif re.search(r'-rate', pdef):
                 type_ = None
                 etg = pdef.rsplit('-', 1)[0]
                 mods.setdefault('etg', etg)
@@ -466,10 +472,11 @@ class DataTab(ProcessedTab, ParentTab):
         specsegs = SegmentList(state.active)
         specchannels = set.union(sgchannels, raychannels, csgchannels)
         if specchannels and specsegs and specsegs[-1][1] == self.end:
-            stride = max(get_fftparams(c, **fftparams).stride for
-                         c in specchannels)
+            stride = max(filter(
+                lambda x: x is not None,
+                (get_fftparams(c, **fftparams).stride for c in specchannels),
+            ))
             specsegs[-1] = Segment(specsegs[-1][0], self.end+stride)
-
 
         if len(sgchannels):
             vprint("    %d channels identified for Spectrogram\n"
@@ -483,8 +490,8 @@ class DataTab(ProcessedTab, ParentTab):
         if len(raychannels):
             fp2 = fftparams.copy()
             fp2['method'] = fp2['format'] = 'rayleigh'
-            get_spectrograms(raychannels, specsegs, config=config, return_=False,
-                             nproc=nproc, **fp2)
+            get_spectrograms(raychannels, specsegs, config=config,
+                             return_=False, nproc=nproc, **fp2)
 
         if len(csgchannels):
             if (len(csgchannels) % 2 != 0):
@@ -580,7 +587,7 @@ class DataTab(ProcessedTab, ParentTab):
     # HTML operations
 
     def html_content(self, frame):
-        """Build the #main div for this tab.
+        r"""Build the #main div for this tab.
 
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
@@ -693,7 +700,7 @@ class DataTab(ProcessedTab, ParentTab):
                     if regex.match(str(channel.frametype)):
                         ftype += ' <small>[%s]</small>' % desc
                         break
-                if re.search('\.[a-z]+\Z', channel.name):
+                if re.search(r'\.[a-z]+\Z', channel.name):
                     name, ctype = channel.name.rsplit('.', 1)
                     c2 = get_channel(name)
                     ctype = ctype in ['rms'] and ctype.upper() or ctype.title()
@@ -733,7 +740,7 @@ class DataTab(ProcessedTab, ParentTab):
                 self.plots)
             for (f, p) in plot.padding.items()]), key=lambda x: x[0])
         if len(allflags):
-            re_int_decimal = re.compile('\.00(?=(\s|\%))')
+            re_int_decimal = re.compile(r'\.00(?=(\s|\%))')
             page.h1('Segment information')
             # make summary table
             headers = ['Name', 'Defined duration [s]', 'Active duration [s]',
@@ -971,6 +978,7 @@ class DataTab(ProcessedTab, ParentTab):
             for channel in plot.channels:
                 out.add((plot.etg, channel))
         return sorted(out, key=lambda ch: ch[1].name)
+
 
 register_tab(DataTab)
 register_tab(DataTab, name='default')

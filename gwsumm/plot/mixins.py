@@ -29,8 +29,8 @@ from lxml import etree
 
 from .utils import usetex_tex
 
-re_bit_label = re.compile('\[(?P<idx>.*)\] (?P<label>.*)')
-re_source_label = re.compile('(?P<label>.*) \[(?P<flag>.*)\]')
+re_bit_label = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
+re_source_label = re.compile(r'(?P<label>.*) \[(?P<flag>.*)\]')
 
 HOVERSCRIPT = """
 <script type="text/ecmascript">

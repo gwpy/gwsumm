@@ -40,7 +40,7 @@ import gwtrigfind
 
 from . import globalv
 from .utils import (re_cchar, vprint, safe_eval)
-from .config import (GWSummConfigParser, NoSectionError)
+from .config import GWSummConfigParser
 from .channels import get_channel
 
 # build list of default keyword arguments for reading ETGs
@@ -154,7 +154,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
     # extract columns (using function keyword if given)
     if columns:
-          read_kw['columns'] = columns
+        read_kw['columns'] = columns
     columns = read_kw.pop('columns', None)
 
     # override with user options

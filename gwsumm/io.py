@@ -28,7 +28,7 @@ from gwpy.frequencyseries import FrequencySeries
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-HDF5_FILENAME = re.compile('(?P<ext>(.hdf5|.hdf|.h5))\/')
+HDF5_FILENAME = re.compile(r'(?P<ext>(.hdf5|.hdf|.h5))\/')
 
 
 def read_frequencyseries(filename):
@@ -62,7 +62,7 @@ def read_frequencyseries(filename):
     # read file
     try:
         return FrequencySeries.read(filename, **kwargs)
-    except IORegistryError as e:
+    except IORegistryError:
         if filename.endswith('.gz'):
             fmt = os.path.splitext(filename[:-3])[-1]
         else:

@@ -29,7 +29,9 @@ import os
 import shutil
 from multiprocessing import cpu_count
 
-from glue import (datafind, pipeline)
+from gwdatafind.utils import find_credential
+
+from glue import pipeline
 
 from gwpy.io import kerberos as gwkerberos
 
@@ -289,7 +291,7 @@ if opts.verbose:
 
 if opts.universe != 'local':
     # copy X509 grid certificate into local location
-    x509cert, x509key = datafind.find_credential()
+    x509cert, x509key = find_credential()
     x509copy = os.path.join(etcdir, os.path.basename(x509cert))
     shutil.copyfile(x509cert, x509copy)
 

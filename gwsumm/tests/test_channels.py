@@ -98,7 +98,7 @@ def test_get_channels():
     names = [TEST_NAME, TREND_NAME, TREND_NAME2]
     nchan = len(globalv.CHANNELS)
     chans = channels.get_channels(names)
-    # trend channels automatically create an entry for the upstream channel so '+ 1'
+    # trend channels auto create entry for the upstream channel so '+ 1'
     assert len(globalv.CHANNELS) == nchan + 3 + 1
     for name, chan in zip(names, chans):
         assert name == chan.ndsname
@@ -128,6 +128,7 @@ def test_update_missing_channel_params():
 ])
 def test_split(cstr, clist):
     assert channels.split(cstr) == clist
+
 
 @pytest.mark.parametrize('cstr, clist', [
     ('X1:TEST + Y1:TEST', ['X1:TEST', 'Y1:TEST']),

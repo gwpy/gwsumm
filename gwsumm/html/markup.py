@@ -21,13 +21,7 @@ ideas or questions to nogradi at gmail dot com.
 Installation: drop markup.py somewhere into your Python path.
 """ % (__version__, __date__)
 
-try:
-    basestring
-    import string
-except:
-    # python 3
-    basestring = str
-    string = str
+from six import string_types
 
 # tags which are reserved python keywords will be referred
 # to by a leading underscore otherwise we end up with a syntax error
@@ -177,17 +171,17 @@ class page:
 
         if mode == 'strict_html' or mode == 'html':
             self.onetags = valid_onetags
-            self.onetags += list(map(string.lower, self.onetags))
+            self.onetags += list(map(str.lower, self.onetags))
             self.twotags = valid_twotags
-            self.twotags += list(map(string.lower, self.twotags))
+            self.twotags += list(map(str.lower, self.twotags))
             self.deptags = deprecated_onetags + deprecated_twotags
-            self.deptags += list(map(string.lower, self.deptags))
+            self.deptags += list(map(str.lower, self.deptags))
             self.mode = 'strict_html'
         elif mode == 'loose_html':
             self.onetags = valid_onetags + deprecated_onetags
-            self.onetags += list(map(string.lower, self.onetags))
+            self.onetags += list(map(str.lower, self.onetags))
             self.twotags = valid_twotags + deprecated_twotags
-            self.twotags += list(map(string.lower, self.twotags))
+            self.twotags += list(map(str.lower, self.twotags))
             self.mode = mode
         elif mode == 'xml':
             if onetags and twotags:
@@ -341,7 +335,7 @@ class page:
         """This convenience function is only useful for html.
         It adds css stylesheet(s) to the document via the <link> element."""
 
-        if isinstance(filelist, basestring):
+        if isinstance(filelist, string_types):
             self.link(href=filelist, rel='stylesheet', type='text/css', media='all')
         else:
             for file in filelist:
@@ -431,7 +425,7 @@ def _argsdicts(args, mydict):
 def _totuple(x):
     """Utility stuff to convert string, int, long, float, None or anything to a usable tuple."""
 
-    if isinstance(x, basestring):
+    if isinstance(x, string_types):
         out = x,
     elif isinstance(x, (int, long, float)):
         out = str(x),
@@ -445,7 +439,7 @@ def _totuple(x):
 def escape(text, newline=False):
     """Escape special html characters."""
 
-    if isinstance(text, basestring):
+    if isinstance(text, string_types):
         if '&' in text:
             text = text.replace('&', '&amp;')
         if '>' in text:
@@ -467,7 +461,7 @@ _escape = escape
 def unescape(text):
     """Inverse of escape."""
 
-    if isinstance(text, basestring):
+    if isinstance(text, string_types):
         if '&amp;' in text:
             text = text.replace('&amp;', '&')
         if '&gt;' in text:

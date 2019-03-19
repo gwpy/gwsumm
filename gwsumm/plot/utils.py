@@ -19,13 +19,17 @@
 """Utilies for GWSumm plotting
 """
 
+import hashlib
 import itertools
 import re
 
 from matplotlib import rcParams
 
 from gwpy.plot.tex import label_to_latex
-from gwpy.plot.utils import (FIGURE_PARAMS, AXES_PARAMS)
+from gwpy.plot.utils import (  # noqa: F401
+    FIGURE_PARAMS,
+    AXES_PARAMS,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -33,6 +37,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 LINE_PARAMS = [
     'linewidth', 'linestyle', 'color', 'label', 'alpha', 'rasterized',
+    'zorder',
 ]
 COLLECTION_PARAMS = [
     'cmap', 'vmin', 'vmax', 'marker', 's', 'norm', 'rasterized',
@@ -79,8 +84,7 @@ def get_column_label(column):
 
 
 def get_column_string(column):
-    # pylint: disable=anomalous-backslash-in-string
-    """
+    r"""
     Format the string columnName (e.g. xml table column) into latex format for
     an axis label.
 
@@ -111,7 +115,7 @@ def get_column_string(column):
         if word.isupper():
             words.append(word)
         else:
-            words.extend(re.split('_', word))
+            words.extend(re.split(r'_', word))
 
     # parse words
     for i, word in enumerate(words):
@@ -128,7 +132,7 @@ def get_column_string(column):
         elif word in greek and tex:
             words[i] = r'$\%s$' % word
         # get starting with greek word
-        elif re.match('(%s)' % '|'.join(greek), word) and tex:
+        elif re.match(r'(%s)' % '|'.join(greek), word) and tex:
             if word[-1].isdigit():
                 words[i] = r'$\%s_{%s}$''' % tuple(
                     re.findall(r"[a-zA-Z]+|\d+", word))
@@ -151,3 +155,28 @@ def usetex_tex(text):
     if rcParams['text.usetex']:
         return label_to_latex(text)
     return text
+
+
+def hash(string, num=6):
+    """Generate an N-character hash string based using string to initialise
+
+    Parameters
+    ----------
+    string : `str`
+        the initialisation string
+
+    num : `int`, optional
+        the length of the hash to produce
+
+    Returns
+    -------
+    hash : `str`
+        the new hash
+
+    Examples
+    --------
+    >>> from gwsumm.plot.utils import hash
+    >>> print(hash("I love gravitational waves"))
+    80c897
+    """
+    return hashlib.md5(string.encode("utf-8")).hexdigest()[:num]

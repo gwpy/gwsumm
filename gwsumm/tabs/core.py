@@ -39,6 +39,7 @@ from collections import OrderedDict
 from shutil import copyfile
 
 from six import string_types
+from six.moves.configparser import NoOptionError
 from six.moves.urllib.parse import urlparse
 
 from gwpy.time import (from_gps, to_gps)
@@ -47,7 +48,6 @@ from gwpy.segments import Segment
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
-from ..config import NoOptionError
 from .registry import (get_tab, register_tab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -662,8 +662,10 @@ class BaseTab(object):
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
                     # sort group by name
-                    re_group = re.compile('(\A{0}\s|\s{0}\Z)'.format(
-                                              group.strip('_')), re.I)
+                    re_group = re.compile(
+                        r'(\A{0}\s|\s{0}\Z)'.format(group.strip('_')),
+                        re.I,
+                    )
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]
                     groups[group] = zip(*sorted(
@@ -1083,6 +1085,7 @@ class Tab(BaseTab):
     __metaclass__ = _MetaTab
     type = 'basic'
 
+
 register_tab(Tab)
 
 
@@ -1134,18 +1137,19 @@ class TabList(list):
 
     @staticmethod
     def _sortkey(tab):
+        # NOTE: we need all return values to be strings for
+        #       the sorting to actually work
         if 'Home' in tab.shortname:
-            return 1
+            return '1'
         if tab.shortname == 'Summary' and tab.parent is None:
-            return 2
-        elif tab.shortname == 'Summary':
-            return 3
-        elif 'ODC' in tab.shortname:
-            return 4
-        elif tab.shortname.islower():
+            return '2'
+        if tab.shortname == 'Summary':
+            return '3'
+        if 'ODC' in tab.shortname:
+            return '4'
+        if tab.shortname.islower():
             return tab.shortname.upper()
-        else:
-            return tab.shortname.lower()
+        return tab.shortname.lower()
 
     def sort(self, key=None, reverse=False):
         """Sort this `TabList` in place

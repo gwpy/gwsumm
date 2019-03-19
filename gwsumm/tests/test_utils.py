@@ -26,7 +26,6 @@ import re
 import sys
 import shutil
 from math import pi
-from multiprocessing import cpu_count
 
 from six import string_types
 
@@ -64,7 +63,7 @@ def test_vprint(capsys):
     globalv.PROFILE = True
     utils.vprint('anything\n', stream=sys.stdout)
     out, err = capsys.readouterr()
-    assert re.match('\Aanything \(\d+\.\d\d\)\n\Z', out) is not None
+    assert re.match(r'\Aanything \(\d+\.\d\d\)\n\Z', out) is not None
 
 
 def test_mkdir():

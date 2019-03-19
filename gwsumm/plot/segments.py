@@ -774,7 +774,8 @@ class DutyDataPlot(SegmentDataPlot):
 
         # add custom legend for mean
         if rollingmean:
-            yoff = 0.01 * float.__div__(*axes[0].get_position().size)
+            axsize = axes[0].get_position().size
+            yoff = 0.01 * axsize[0] / axsize[1]
             lkwargs = legendargs.copy()
             lkwargs.update({
                 'loc': 'lower right',

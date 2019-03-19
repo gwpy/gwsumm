@@ -187,7 +187,9 @@ class SEIWatchDogTab(base):
                         stage = system
                     causes = ['%s Unknown' % stage]
                 else:
-                    allbits = numpy.nonzero(map(int, bin(int(bits))[2:][::-1]))[0]
+                    allbits = numpy.nonzero(
+                        map(int, bin(int(bits))[2:][::-1]),
+                    )[0]
                     causes = [latch.bits[b] for b in allbits]
                 t2 = Time(t, format='gps', scale='utc')
                 vprint("        Trip GPS %s (%s), triggers:\n" % (t, t2.iso))
@@ -318,7 +320,7 @@ class SEIWatchDogTab(base):
                            (mask).index(x[2]) or 1000, x[3] is None))
         groups = OrderedDict()
         j = 0
-        for i in xrange(len(self.trips)):
+        for i in range(len(self.trips)):
             if i == 0:
                 j = i
                 groups[j] = []
@@ -416,5 +418,6 @@ class SEIWatchDogTab(base):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(SEIWatchDogTab)

@@ -165,7 +165,7 @@ class AccountingTab(ParentTab):
                 instate = ts == idx * ts.unit
                 modesegments[tag] = instate.to_dqflag(name=name.strip('*'))
                 # append segments for group
-                group = int(idx //10. * 10)
+                group = int(idx // 10. * 10)
                 gtag = self.segmenttag % group
                 try:
                     modesegments[gtag] += modesegments[tag]
@@ -227,4 +227,6 @@ class AccountingTab(ParentTab):
                         "<samp>%s</samp>" % (title.split()[0], self.channel))))
         return super(ParentTab, self).write_state_html(state, plots=False,
                                                        pre=page)
+
+
 register_tab(AccountingTab)

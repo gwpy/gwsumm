@@ -58,7 +58,7 @@ cochrane = dimensionless
 
 def assert_configparser_equal(a, b):
     for sect in set([config.DEFAULTSECT] + list(a.sections()) +
-                     list(b.sections())):
+                    list(b.sections())):
         assert list(a.items(sect)) == list(b.items(sect))
 
 

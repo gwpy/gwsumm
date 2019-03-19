@@ -26,7 +26,10 @@ import re
 from matplotlib import rcParams
 
 from gwpy.plot.tex import label_to_latex
-from gwpy.plot.utils import (FIGURE_PARAMS, AXES_PARAMS)
+from gwpy.plot.utils import (  # noqa: F401
+    FIGURE_PARAMS,
+    AXES_PARAMS,
+)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -81,8 +84,7 @@ def get_column_label(column):
 
 
 def get_column_string(column):
-    # pylint: disable=anomalous-backslash-in-string
-    """
+    r"""
     Format the string columnName (e.g. xml table column) into latex format for
     an axis label.
 

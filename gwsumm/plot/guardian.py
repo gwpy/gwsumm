@@ -210,4 +210,5 @@ class GuardianStatePlot(get_plot('segments')):
 
         return self.finalize()
 
+
 register_plot(GuardianStatePlot)

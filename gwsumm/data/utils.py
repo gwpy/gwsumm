@@ -35,6 +35,7 @@ from ..config import GWSummConfigParser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
+
 # -- method decorators --------------------------------------------------------
 
 def use_segmentlist(f):

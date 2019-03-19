@@ -22,7 +22,7 @@
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 from astropy import units
-import gwpy.detector.units  # register gwpy units
+import gwpy.detector.units  # noqa: F401
 
 _ns = {}  # collector for new units
 

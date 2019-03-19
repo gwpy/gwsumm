@@ -102,6 +102,7 @@ class RangeDataPlot(RangePlotMixin, get_plot('timeseries')):
         'ylabel': 'Sensitive distance [Mpc]',
     })
 
+
 register_plot(RangeDataPlot)
 
 
@@ -112,6 +113,7 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
     defaults.update({
         'xlabel': 'Sensitive distance [Mpc]',
     })
+
 
 register_plot(RangeDataHistogramPlot)
 
@@ -145,7 +147,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             self._pid = hash("".join(map(str, self.channels+self.flags)))
             return self.pid
 
@@ -245,6 +247,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         ax.yaxis.set_ticklabels(ticks)
         return self.finalize(outputfile=outputfile)
 
+
 register_plot(SimpleTimeVolumeDataPlot)
 
 
@@ -253,5 +256,6 @@ class GWpyTimeVolumeDataPlot(RangePlotMixin, SimpleTimeVolumeDataPlot):
     """
     type = 'strain-time-volume'
     _threadsafe = False
+
 
 register_plot(GWpyTimeVolumeDataPlot)

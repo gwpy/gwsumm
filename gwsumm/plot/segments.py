@@ -403,7 +403,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             basis = "".join(map(str, self.channels))
             if self.pargs.get('bits', None):
                 basis += str(self.pargs['bits'])
@@ -522,6 +522,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
 
         return self.finalize()
 
+
 register_plot(StateVectorDataPlot)
 
 
@@ -553,7 +554,7 @@ class DutyDataPlot(SegmentDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             super(DutyDataPlot, self).pid
             if self.pargs.get('cumulative', False):
                 self._pid += '_CUMULATIVE'
@@ -798,6 +799,7 @@ class DutyDataPlot(SegmentDataPlot):
 
         return self.finalize(outputfile=outputfile)
 
+
 register_plot(DutyDataPlot)
 
 
@@ -833,7 +835,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             masks = "".join(map(str, self.get_bitmask_channels()))
             basis = chans + masks
@@ -974,6 +976,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         out = self.finalize()
         return out
 
+
 register_plot(ODCDataPlot)
 
 
@@ -1112,6 +1115,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         self.pargs['xlim'] = None
         return self.finalize(outputfile=outputfile, pad_inches=0)
 
+
 register_plot(SegmentPiePlot)
 
 
@@ -1185,6 +1189,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         self.flags = flags_
         return out
 
+
 register_plot(NetworkDutyPiePlot)
 
 
@@ -1192,7 +1197,6 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     type = 'segment-bar'
     _single_call = True
     defaults = {
-        'edgecolor': 'white',
         'scale': 'percent',
         'color': GREEN,
         'edgecolor': 'green',
@@ -1283,6 +1287,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         return self.finalize(outputfile=outputfile, transparent="True",
                              pad_inches=0)
 
+
 register_plot(SegmentBarPlot)
 
 
@@ -1333,9 +1338,9 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
 
         # get range
         if 'range' not in histargs[0]:
-            l = common_limits(data)
+            _lim = common_limits(data)
             for d in histargs:
-                d['range'] = l
+                d['range'] = _lim
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
@@ -1394,5 +1399,6 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
         # add bit mask axes and finalise
         return self.finalize(outputfile=outputfile, transparent="True",
                              pad_inches=0)
+
 
 register_plot(SegmentHistogramPlot)

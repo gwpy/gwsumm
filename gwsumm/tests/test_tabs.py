@@ -79,7 +79,7 @@ class TestTab(object):
 
     def _test_init(self, *args, **kwargs):
         if len(args) == 0:
-           args = self.DEFAULT_ARGS
+            args = self.DEFAULT_ARGS
         # test basic creation and defaults
         tab = self.create(*args, **kwargs)
         assert tab.type == self.TYPE

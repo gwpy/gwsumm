@@ -23,7 +23,7 @@
 import os
 
 from matplotlib import use
-use('agg')  # nopep8
+use('agg')  # noqa
 
 from matplotlib import (rcParams, rc_context)
 
@@ -37,7 +37,6 @@ from gwpy.segments import Segment
 from gwsumm import plot as gwsumm_plot
 from gwsumm.config import ConfigParser
 from gwsumm.channels import get_channel
-from gwsumm.state import get_state
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -156,7 +155,6 @@ class TestSummaryPlot(object):
     def test_repr(self, plot):
         plot.href = 'test.png'
         assert repr(plot) == '<{0}(test.png)>'.format(self.PLOT.__name__)
-
 
     def test_str(self, plot):
         plot.href = 'test.png'
@@ -279,11 +277,12 @@ class TestDataPlot(TestSummaryPlot):
         (False,
          [{'label': r'TEST_WITH_UNDERSCORE'},
           {'label': r'TEST_QUOTED'}]),
-        pytest.param(True,
-                     [{'label': r'TEST\_WITH\_UNDERSCORE'},
-                      {'label': r'TEST\_QUOTED'}],
-                     marks=pytest.mark.skipif(
-             not HAS_TEX, reason='TeX is not available')),
+        pytest.param(
+            True,
+            [{'label': r'TEST\_WITH\_UNDERSCORE'}, {'label': r'TEST\_QUOTED'}],
+            marks=pytest.mark.skipif(not HAS_TEX,
+                                     reason='TeX is not available'),
+        ),
     ])
     def test_parse_plot_kwargs_labels(self, plot, usetex, result):
         with rc_context(rc={'text.usetex': usetex}):

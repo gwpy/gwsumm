@@ -345,4 +345,6 @@ class GuardianTab(DataTab):
 
         return super(DataTab, self).write_state_html(state, plots=False,
                                                      pre=page)
+
+
 register_tab(GuardianTab)

@@ -34,13 +34,12 @@ from six.moves.urllib.parse import urlparse
 from matplotlib import (rcParams, rc_context)
 
 from gwpy.segments import Segment
-from gwpy.detector import (Channel, ChannelList)
+from gwpy.detector import ChannelList
 from gwpy.plot import Plot
 
 from ..channels import (get_channel, split as split_channels,
                         split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
-from ..data import parse_math_definition
 from ..state import get_state
 from ..utils import (vprint, safe_eval, re_quote)
 from . import utils as putils
@@ -58,10 +57,10 @@ NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
 
 # -- utilities ----------------------------------------------------------------
 
-def format_label(l):
-    l = str(l).strip('\n ')
-    l = re_quote.sub('', l)
-    return putils.usetex_tex(l)
+def format_label(label):
+    label = str(label).strip('\n ')
+    label = re_quote.sub('', label)
+    return putils.usetex_tex(label)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -171,6 +170,7 @@ class SummaryPlot(object):
 
     def __str__(self):
         return str(self.href)
+
 
 register_plot(SummaryPlot)
 
@@ -332,7 +332,7 @@ class DataPlot(SummaryPlot):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
@@ -724,7 +724,7 @@ class DataPlot(SummaryPlot):
             except KeyError:
                 continue
             # escape text for TeX
-            if key in ('title', 'xlabel','ylabel'):
+            if key in ('title', 'xlabel', 'ylabel'):
                 kwargs[key] = putils.usetex_tex(kwargs[key])
 
         # create figure
@@ -810,6 +810,7 @@ class DataPlot(SummaryPlot):
                         val = [val]
                     for x in val:
                         axline(x, **params)
+
 
 register_plot(DataPlot)
 

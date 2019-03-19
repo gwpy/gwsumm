@@ -27,11 +27,10 @@ from six import string_types
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, globalv)
+from .. import html
 from ..mode import Mode
 from ..plot import get_plot
 from ..config import GWSummConfigParser
-from ..state import SummaryState
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['StampPEMTab']
@@ -134,5 +133,6 @@ class StampPEMTab(base):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(StampPEMTab)

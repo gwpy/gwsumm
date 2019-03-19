@@ -91,7 +91,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                     rows.append((
                         chan.ndsname,
                         chan.sample_rate.to('Hz').value if
-                            chan.sample_rate is not None else 0,
+                        chan.sample_rate is not None else 0,
                         str(getattr(chan, 'frametype', None)) or '',
                         str(chan.unit) if chan.unit else '',
                     ))
@@ -158,7 +158,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                 for key in globalv.TRIGGERS:
                     archive_table(globalv.TRIGGERS[key], key, group)
 
-    except:  # if it fails for any reason, reinstate the backup
+    except Exception:  # if it fails for any reason, reinstate the backup
         if backup:
             restore_backup(backup, outfile)
         raise
@@ -236,10 +236,6 @@ def read_data_archive(sourcefile):
 
         # -- segments ---------------------------
 
-        try:
-            group = h5file['segments']
-        except KeyError:
-            group = dict()
         for name, dataset in h5file.get('segments', {}).items():
             dqflag = DataQualityFlag.read(h5file, path=dataset.name,
                                           format='hdf5')

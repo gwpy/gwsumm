@@ -73,7 +73,7 @@ class TriggerPlotMixin(object):
     def pid(self):
         try:
             return self._pid
-        except:
+        except AttributeError:
             chans = "".join(map(str, self.channels))
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
@@ -398,6 +398,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         self.add_state_segments(ax)
         return self.finalize()
 
+
 register_plot(TriggerTimeSeriesDataPlot)
 
 
@@ -498,6 +499,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
 
         # finalise
         return self.finalize()
+
 
 register_plot(TriggerHistogramPlot)
 
@@ -617,5 +619,6 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         out = super(TriggerRateDataPlot, self).draw(outputfile=outputfile)
         self.channels = channels
         return out
+
 
 register_plot(TriggerRateDataPlot)

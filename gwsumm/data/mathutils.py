@@ -24,14 +24,15 @@ import operator
 import re
 from collections import OrderedDict
 
+from six.moves import reduce
+
 import numpy
 
-from gwpy.detector import Channel
 from gwpy.segments import SegmentList
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.types import Series
 
-from ..channels import (get_channel, re_channel)
+from ..channels import get_channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

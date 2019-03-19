@@ -24,15 +24,13 @@ from __future__ import division
 import os.path
 import operator
 import warnings
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 from six import string_types
+from six.moves import reduce
 
 # imports for filter
-from math import pi
+from math import pi  # noqa: F401
 
 import numpy
 
@@ -40,14 +38,16 @@ from scipy import interpolate
 
 from astropy import units
 
-from gwpy.segments import (DataQualityFlag, SegmentList)
+from gwpy.segments import DataQualityFlag
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
 from .. import (globalv, io)
 from ..utils import (vprint, safe_eval)
-from ..channels import (get_channel, re_channel,
-                        split_combination as split_channel_combination)
+from ..channels import (
+    get_channel,
+    split_combination as split_channel_combination,
+)
 from .utils import (use_segmentlist, make_globalv_key, get_fftparams)
 from .mathutils import (get_with_math, parse_math_definition)
 from .timeseries import (get_timeseries, get_timeseries_dict)
@@ -321,7 +321,7 @@ def apply_transfer_function_series(specgram, tfunc):
     itfunc = numpy.zeros((1, specgram.frequencies.size))
     known = specgram.frequencies.value >= tfunc.frequencies.value[0]
     known &= specgram.frequencies.value <= tfunc.frequencies.value[-1]
-    itfunc[0,:][known] = interpolator(specgram.frequencies.value[known])
+    itfunc[0, :][known] = interpolator(specgram.frequencies.value[known])
     # and multiply
     return (specgram ** (1/2.) * itfunc) ** 2
 
@@ -343,8 +343,6 @@ def get_spectrum(channel, segments, config=None, cache=None,
     else:
         name = channel.ndsname
     name += ',%s' % format
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
 
     # read data for all sub-channels
     specs = []
@@ -424,11 +422,10 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
     if which == 'all':
         return (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
                 globalv.SPECTRUM[cmax])
-    elif which == 'mean':
+    if which == 'mean':
         return globalv.SPECTRUM[name]
-    elif which == 'min':
+    if which == 'min':
         return globalv.SPECTRUM[cmin]
-    elif which == 'max':
+    if which == 'max':
         return globalv.SPECTRUM[cmax]
     raise ValueError("Unrecognised value for `which`: %r" % which)
-    return out

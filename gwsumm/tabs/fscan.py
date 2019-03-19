@@ -28,7 +28,7 @@ from dateutil import parser
 
 from .registry import (get_tab, register_tab)
 
-from .. import (html, globalv)
+from .. import html
 from .. plot import get_plot
 from ..mode import Mode
 from ..config import GWSummConfigParser
@@ -225,5 +225,6 @@ class FscanTab(base):
         with open(self.frames[idx], 'w') as fobj:
             fobj.write(str(page))
         return self.frames[idx]
+
 
 register_tab(FscanTab)

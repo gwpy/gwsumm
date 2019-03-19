@@ -662,8 +662,10 @@ class BaseTab(object):
                         active = len(links) - 1
                 for group in sorted(groups.keys()):
                     # sort group by name
-                    re_group = re.compile(r'(\A{0}\s|\s{0}\Z)'.format(
-                                              group.strip('_')), re.I)
+                    re_group = re.compile(
+                        r'(\A{0}\s|\s{0}\Z)'.format(group.strip('_')),
+                        re.I,
+                    )
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]
                     groups[group] = zip(*sorted(
@@ -1082,6 +1084,7 @@ class Tab(BaseTab):
     """
     __metaclass__ = _MetaTab
     type = 'basic'
+
 
 register_tab(Tab)
 

@@ -69,16 +69,24 @@ OPERATOR = {
 }
 
 FRAMETYPE_REGEX = {
-    'commissioning': re.compile(r'[A-Z][0-9]_C\Z'),
-    'raw data': re.compile(r'([A-Z][0-9]_R\Z|raw)'),
-    'second-trend': re.compile(r'[A-Z][0-9]_T\Z'),
-    'minute-trend': re.compile(r'[A-Z][0-9]_M\Z'),
-    'low-latency h(t)': re.compile(r'([A-Z][0-9]_DMT_C00\Z|[A-Z][0-9]_llhoft)'),
-    'calibrated h(t) version 0': re.compile(r'[A-Z][0-9]_HOFT_C00\Z'),
+    'commissioning': re.compile(
+        r'[A-Z][0-9]_C\Z'),
+    'raw data': re.compile(
+        r'([A-Z][0-9]_R\Z|raw)'),
+    'second-trend': re.compile(
+        r'[A-Z][0-9]_T\Z'),
+    'minute-trend': re.compile(
+        r'[A-Z][0-9]_M\Z'),
+    'low-latency h(t)': re.compile(
+        r'([A-Z][0-9]_DMT_C00\Z|[A-Z][0-9]_llhoft)'),
+    'calibrated h(t) version 0': re.compile(
+        r'[A-Z][0-9]_HOFT_C00\Z'),
     'calibrated h(t) version 1': re.compile(
         r'([A-Z][0-9]_HOFT_C01|G1_RDS_C01_L3)\Z'),
-    'calibrated h(t) version 2': re.compile(r'[A-Z][0-9]_HOFT_C02\Z'),
-    'DMT SenseMon on GDS h(t)': re.compile(r'SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
+    'calibrated h(t) version 2': re.compile(
+        r'[A-Z][0-9]_HOFT_C02\Z'),
+    'DMT SenseMon on GDS h(t)': re.compile(
+        r'SenseMonitor_hoft_[A-Z][0-9]_M\Z'),
     'DMT SenseMon on front-end h(t)': re.compile(
         r'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
@@ -327,13 +335,6 @@ def find_frame_type(channel):
         else:
             channel.frametype = '%s1_%s' % (channel.ifo[0], ftype)
     return channel.frametype
-
-
-def find_types(site=None, match=None):
-    """Query the DataFind server for frame types matching the given options
-    """
-    conn = datafind.GWDataFindHTTPConnection()
-    return conn.find_types(site=site, match=match)
 
 
 def frame_trend_type(ifo, frametype):
@@ -648,9 +649,9 @@ def _get_timeseries_dict(channels, segments, config=None,
 
             # reset to minute trend sample times
             if frame_trend_type(ifo, frametype) == 'minute':
-               segment = Segment(*io_nds2.minute_trend_times(*segment))
-               if abs(segment) < 60:
-                   continue
+                segment = Segment(*io_nds2.minute_trend_times(*segment))
+                if abs(segment) < 60:
+                    continue
 
             if nds:  # fetch
                 tsd = DictClass.fetch(qchannels, segment[0], segment[1],

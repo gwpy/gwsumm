@@ -62,7 +62,7 @@ def read_frequencyseries(filename):
     # read file
     try:
         return FrequencySeries.read(filename, **kwargs)
-    except IORegistryError as e:
+    except IORegistryError:
         if filename.endswith('.gz'):
             fmt = os.path.splitext(filename[:-3])[-1]
         else:

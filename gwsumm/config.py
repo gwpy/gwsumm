@@ -21,30 +21,19 @@
 
 import os.path
 import re
+from collections import OrderedDict
 from importlib import import_module
 
 from six import string_types
-from six.moves import StringIO
+from six.moves import (
+    StringIO,
+    configparser,
+    http_client as httplib,
+)
 
 # import these for evaluating lambda expressions in the configuration file
-import math  # pylint: disable=unused-import
-import numpy  # pylint: disable=unused-import
-
-from six.moves import http_client as httplib
-
-try:
-    from configparser import *
-    from configparser import InterpolationMissingOptionError
-    from configparser import __all__ as _cp__all__
-except ImportError:
-    from ConfigParser import *
-    from ConfigParser import InterpolationMissingOptionError
-    from ConfigParser import __all__ as _cp__all__
-
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict
+import math  # noqa: F401
+import numpy  # noqa: F401
 
 from matplotlib import rcParams
 
@@ -58,13 +47,12 @@ from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
 from .channels import (get_channels, split as split_channels,
                        update_channel_params)
 
-__all__ = _cp__all__ + [
-    'InterpolationMissingOptionError',
+__all__ = [
     'GWSummConfigParser',
 ]
 
 
-class GWSummConfigParser(ConfigParser):
+class GWSummConfigParser(configparser.ConfigParser):
     # preserve case in options
     optionxform = str
     # disable colon separator
@@ -75,25 +63,25 @@ class GWSummConfigParser(ConfigParser):
 
     def __init__(self, *args, **kwargs):
         kwargs.setdefault('dict_type', OrderedDict)
-        ConfigParser.__init__(self, *args, **kwargs)
-    __init__.__doc__ = ConfigParser.__init__.__doc__
+        configparser.ConfigParser.__init__(self, *args, **kwargs)
+    __init__.__doc__ = configparser.ConfigParser.__init__.__doc__
 
     def read_file(self, *args, **kwargs):
         try:
-            return ConfigParser.read_file(self, *args, **kwargs)
+            return configparser.ConfigParser.read_file(self, *args, **kwargs)
         except AttributeError:  # python < 3
             return self.readfp(*args, **kwargs)
 
     def ndoptions(self, section, **kwargs):
-        options = ConfigParser.options(self, section, **kwargs)
+        options = configparser.ConfigParser.options(self, section, **kwargs)
         return [o for o in options if o not in self._defaults]
 
     def nditems(self, section, **kwargs):
-        items = ConfigParser.items(self, section, **kwargs)
+        items = configparser.ConfigParser.items(self, section, **kwargs)
         return [i for i in items if i[0] not in self._defaults]
 
     def read(self, filenames):
-        readok = ConfigParser.read(self, filenames)
+        readok = configparser.ConfigParser.read(self, filenames)
         if isinstance(filenames, string_types):
             filenames = filenames.split(',')
         for fp in filenames:
@@ -104,7 +92,7 @@ class GWSummConfigParser(ConfigParser):
 
     @classmethod
     def from_configparser(cls, cp):
-        """Copy an existing :class:`~ConfigParser.ConfigParser`.
+        """Copy an existing :class:`~configparser.ConfigParser`.
         """
         # if its already what we need, just return this instance
         if isinstance(cp, cls):
@@ -131,13 +119,13 @@ class GWSummConfigParser(ConfigParser):
                 try:
                     val = kwargs[key]
                 except KeyError:
-                    raise InterpolationMissingOptionError(
+                    raise configparser.InterpolationMissingOptionError(
                         '[%s]' % section, section, key, '%%(%s)s' % key)
                 s = section % {key: val}
             self._sections[s] = self._sections.pop(section)
 
     def set_ifo_options(self, ifo, observatory=None,
-                        section=DEFAULTSECT):
+                        section=configparser.DEFAULTSECT):
         """Set configurations options in [DEFAULT] based on the given `ifo`
 
         The following options are set
@@ -163,7 +151,7 @@ class GWSummConfigParser(ConfigParser):
         if observatory is not None:
             self.set(section, 'observatory', observatory)
 
-    def set_date_options(self, start, end, section=DEFAULTSECT):
+    def set_date_options(self, start, end, section=configparser.DEFAULTSECT):
         """Set datetime options in [DEFAULT] based on the given times
 
         The following options are set
@@ -229,7 +217,7 @@ class GWSummConfigParser(ConfigParser):
         mods = []
         try:
             plugins = self.ndoptions('plugins')
-        except NoSectionError:
+        except configparser.NoSectionError:
             pass
         else:
             for plugin in plugins:
@@ -241,7 +229,7 @@ class GWSummConfigParser(ConfigParser):
         """
         try:
             customunits = self.nditems('units')
-        except NoSectionError:
+        except configparser.NoSectionError:
             return []
         else:
             new_ = []
@@ -326,7 +314,7 @@ class GWSummConfigParser(ConfigParser):
         # parse the [states] section into individual state definitions
         try:
             states = dict(self.nditems(section))
-        except NoSectionError:
+        except configparser.NoSectionError:
             self.add_section(section)
             states = {}
         for state in states:
@@ -361,7 +349,7 @@ class GWSummConfigParser(ConfigParser):
         """
         try:
             new = dict(self.nditems(section))
-        except NoSectionError:
+        except configparser.NoSectionError:
             return dict()
         else:
             for key, value in new.items():
@@ -375,15 +363,15 @@ class GWSummConfigParser(ConfigParser):
         for key in css:
             try:
                 css[key] = self.get(section, '%s-css' % key)
-            except NoSectionError:  # no overrides are present, stop here
+            except configparser.NoSectionError:  # no overrides are present
                 return list(css.values())
-            except NoOptionError:
+            except configparser.NoOptionError:
                 continue
         files = list(css.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-css')
-        except NoOptionError:
+        except configparser.NoOptionError:
             return files
         else:
             files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))
@@ -395,15 +383,15 @@ class GWSummConfigParser(ConfigParser):
         for key in js:
             try:
                 js[key] = self.get(section, '%s-js' % key)
-            except NoSectionError:
+            except configparser.NoSectionError:
                 return list(js.values())
-            except NoOptionError:
+            except configparser.NoOptionError:
                 continue
         files = list(js.values())
         # get extra CSS
         try:
             extras = self.get(section, 'extra-js')
-        except NoOptionError:
+        except configparser.NoOptionError:
             return files
         else:
             files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))

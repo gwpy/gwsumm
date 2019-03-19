@@ -26,7 +26,6 @@ import re
 import sys
 import shutil
 from math import pi
-from multiprocessing import cpu_count
 
 from six import string_types
 

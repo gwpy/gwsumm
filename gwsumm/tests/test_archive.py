@@ -22,7 +22,6 @@
 
 import os
 import tempfile
-from functools import wraps
 
 import pytest
 

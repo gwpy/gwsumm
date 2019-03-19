@@ -22,10 +22,7 @@ This module mainly declares the resources used by standard on HTML pages
 """
 
 import os.path
-try:
-    from collections import OrderedDict
-except:
-    from ordereddict import OrderedDict
+from collections import OrderedDict
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

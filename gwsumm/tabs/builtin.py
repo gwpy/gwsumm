@@ -162,6 +162,7 @@ class ExternalTab(Tab):
                                     'source, %s.' % link)
         return super(ExternalTab, self).write_html('', **kwargs)
 
+
 register_tab(ExternalTab)
 
 
@@ -235,13 +236,13 @@ class PlotTab(Tab):
         return self._layout
 
     @layout.setter
-    def layout(self, l):
+    def layout(self, layout_):
         warnings.warn("Use of `Tab.layout = ...` has been deprecated, "
                       "please switch to using `Tab.set_layout(...)`",
                       DeprecationWarning)
-        self.set_layout(l)
+        self.set_layout(layout_)
 
-    def set_layout(self, l):
+    def set_layout(self, layout):
         """Set the plot scaffolding layout for this tab
 
         Parameters
@@ -276,27 +277,30 @@ class PlotTab(Tab):
         >>> tab.set_layout((2, (1, 2))
         """
         # shortcut None
-        if l is None:
+        if layout is None:
             self._layout = None
             return
         # parse a single int
-        if isinstance(l, int) or (isinstance(l, string_types) and l.isdigit()):
-            self._layout = [int(l)]
+        if isinstance(layout, int) or (
+                isinstance(layout, string_types) and
+                layout.isdigit()
+        ):
+            self._layout = [int(layout)]
             return
         # otherwise parse as a list of ints or pairs of ints
-        if isinstance(l, string_types):
-            l = l.split(',')
+        if isinstance(layout, string_types):
+            layout = layout.split(',')
         self._layout = []
-        for e in l:
-            if isinstance(e, int):
-                self._layout.append(e)
+        for item in layout:
+            if isinstance(item, int):
+                self._layout.append(item)
                 continue
-            if isinstance(e, string_types):
-                e = e.strip('([').rstrip(')]').split(',')
-            if not isinstance(e, (list, tuple)) or not len(e) == 2:
+            if isinstance(item, string_types):
+                item = item.strip('([').rstrip(')]').split(',')
+            if not isinstance(item, (list, tuple)) or not len(item) == 2:
                 raise ValueError("Cannot parse layout element %r (%s)"
-                                 % (e, type(e)))
-            self._layout.append(tuple(map(int, e)))
+                                 % (item, type(item)))
+            self._layout.append(tuple(map(int, item)))
 
     @property
     def foreword(self):
@@ -362,10 +366,10 @@ class PlotTab(Tab):
                                  "of integers")
             if isinstance(layout, int):
                 layout = [layout]
-            for l in layout:
-                if isinstance(l, (tuple, list)):
-                    l = l[0]
-                if l > 12:
+            for item in layout:
+                if isinstance(item, (tuple, list)):
+                    item = item[0]
+                if item > 12:
                     raise ValueError("Cannot print more than 12 plots in a "
                                      "single row. The chosen layout value for "
                                      "each row must be a divisor of 12 to fit "
@@ -446,13 +450,13 @@ class PlotTab(Tab):
                 layout = list(self.layout)
             else:
                 layout = len(plots) == 1 and [1] or [2]
-        for i, l in enumerate(layout):
-            if isinstance(l, (list, tuple)):
-                layout[i] = l
-            elif isinstance(l, int):
-                layout[i] = (l, None)
+        for i, item in enumerate(layout):
+            if isinstance(item, (list, tuple)):
+                layout[i] = item
+            elif isinstance(item, int):
+                layout[i] = (item, None)
             else:
-                raise ValueError("Cannot parse layout element '%s'." % l)
+                raise ValueError("Cannot parse layout element '%s'." % item)
         while sum(list(zip(*layout))[0]) < len(plots):
             layout.append(layout[-1])
         l = i = 0
@@ -546,6 +550,7 @@ class PlotTab(Tab):
         if afterword is not None:
             self.afterword = self.afterword
         return super(PlotTab, self).write_html(None, **kwargs)
+
 
 register_tab(PlotTab)
 
@@ -809,6 +814,7 @@ class StateTab(PlotTab):
             tabs=tabs, ifo=ifo, ifomap=ifomap, brand=brand, css=css, js=js,
             about=about, footer=footer, **inargs)
 
+
 register_tab(StateTab)
 
 
@@ -829,10 +835,11 @@ class UrlTab(Tab):
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):
-        kwargs.setdefault('url', cp.get(section,'url'))
+        kwargs.setdefault('url', cp.get(section, 'url'))
         return super(UrlTab, cls).from_ini(cp, section, *args, **kwargs)
 
     def write_html(self, **kwargs):
         return
+
 
 register_tab(UrlTab)

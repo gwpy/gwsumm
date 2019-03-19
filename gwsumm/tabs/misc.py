@@ -43,6 +43,7 @@ class AboutTab(Tab):
         return super(AboutTab, self).write_html(
             html.about_this_page(config=config), **kwargs)
 
+
 register_tab(AboutTab)
 
 
@@ -91,5 +92,6 @@ class Error404Tab(Tab):
     window.location = url.join('/');
   }""", type="text/javascript")
         return super(Error404Tab, self).write_html(page, **kwargs)
+
 
 register_tab(Error404Tab)

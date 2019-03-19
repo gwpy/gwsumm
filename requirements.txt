@@ -24,7 +24,7 @@ git+https://github.com/gwpy/gwpy.git
 pykerberos
 h5py
 dqsegdb>=1.4.2
-ligo-gracedb
+ligo-gracedb>=2.0.0
 
 # testing extras
 pytest>=2.8

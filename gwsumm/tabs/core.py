@@ -42,6 +42,8 @@ from six import string_types
 from six.moves.configparser import NoOptionError
 from six.moves.urllib.parse import urlparse
 
+from MarkupPy import markup
+
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
@@ -445,8 +447,8 @@ class BaseTab(object):
     # The `Tab.write_html` method pulls all of these things together and
     # is the primary user-facing HTML method
 
-    def html_init(self, title=None, css=list(), js=list(), copy=True,
-                  **initargs):
+    def html_init(self, title=None, base=None, css=list(), js=list(),
+                  doctype=html.DOCTYPE, metainfo=html.META, copy=True):
         """Initialise the HTML for this tab
 
         This method creates a new `~markup.page` with `<html>` and
@@ -466,8 +468,8 @@ class BaseTab(object):
 
         Returns
         -------
-        page : `~gwsumm.html.markup.page`
-            initialised HTML markup page
+        page : `~MarkupPy.markup.page`
+            initialised markup page
 
         Notes
         -----
@@ -476,7 +478,6 @@ class BaseTab(object):
         you should preserve the same tag structure, or subclass both.
         """
         # find relative base path
-        base = initargs.pop('base', None)
         if base is None:
             n = len(self.index.split(os.path.sep)) - 1
             base = os.sep.join([os.pardir] * n)
@@ -500,14 +501,21 @@ class BaseTab(object):
                             js[i-len(css)] = localscript
                         else:
                             css[i] = localscript
-        # initialise page
+
         if title is None:
             title = self.shorttitle.replace('/', ' | ')
-        initargs.setdefault('doctype', html.DOCTYPE)
-        initargs.setdefault('metainfo', html.META)
-        self.page = html.markup.page()
-        self.page.init(title=title, css=css, script=js, base=base,
-                       **initargs)
+
+        # initialise page
+        self.page = markup.page()
+        self.page.header.append(doctype)
+        self.page.html(lang="en")
+        self.page.head()
+        self.page.metainfo(metainfo)
+        self.page.base(href=base)
+        self.page.title(title)
+        self.page.css(css)
+        self.page.scripts(js)
+        self.page.head.close()
         return self.page
 
     def html_finalize(self, user=True, issues=True, about=None, content=None):
@@ -527,13 +535,13 @@ class BaseTab(object):
         about : `str`
             URL for the 'About this page' HTML page
 
-        content : `str`, `~gwsumm.html.markup.page`
+        content : `str`, `~MarkupPy.markup.page`
             user-defined content for the footer (placed below everything
             else).
 
         Returns
         -------
-        page : `~gwsumm.html.markup.page`
+        page : `~MarkupPy.markup.page`
             a copy of the `~Tab.page` for this tab.
 
         Notes
@@ -566,7 +574,7 @@ class BaseTab(object):
 
         Returns
         -------
-        banner : `~gwsumm.html.markup.page`
+        banner : `~MarkupPy.markup.page`
             formatter markup page for the banner
         """
         # work title as Parent Name/Tab Name
@@ -580,7 +588,7 @@ class BaseTab(object):
 
         Parameters
         ----------
-        brand : `str`, `~gwsumm.html.markup.page`
+        brand : `str`, `~MarkupPy.markup.page`
             content to place inside `<div class="navbar-brand"></div>`
 
         tabs : `list`, optional
@@ -599,7 +607,7 @@ class BaseTab(object):
 
         Returns
         -------
-        page : `~gwsumm.html.markup.page`
+        page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
         class_ = 'navbar navbar-fixed-top'
@@ -608,7 +616,7 @@ class BaseTab(object):
             brand_ = html.base_map_dropdown(ifo, id_='ifos', bases=ifomap)
             class_ += ' navbar-%s' % ifo.lower()
         else:
-            brand_ = html.markup.page()
+            brand_ = markup.page()
         # build HTML brand
         if brand:
             brand_.add(str(brand))
@@ -699,15 +707,15 @@ class BaseTab(object):
 
         Parameters
         ----------
-        content : `str`, `~gwsumm.html.markup.page`
+        content : `str`, `~MarkupPy.markup.page`
             HTML content to be wrapped
 
         Returns
         -------
-        #main : `~gwsumm.html.markup.page`
+        #main : `~MarkupPy.markup.page`
             A new `page` with the input content wrapped as
         """
-        page = html.markup.page()
+        page = markup.page()
         page.div(id_='main')
         page.div(str(content), id_='content')
         page.div.close()
@@ -721,7 +729,7 @@ class BaseTab(object):
 
         Parameters
         ----------
-        maincontent : `str`, `~gwsumm.html.markup.page`
+        maincontent : `str`, `~MarkupPy.markup.page`
             simple string content, or a structured `page` of markup to
             embed as the content of the #main div.
 
@@ -741,7 +749,7 @@ class BaseTab(object):
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
 
-        brand : `str`, `~gwsumm.html.markup.page`, optional
+        brand : `str`, `~MarkupPy.markup.page`, optional
             non-menu content for navigation bar
 
         css : `list`, optional
@@ -755,7 +763,7 @@ class BaseTab(object):
         about : `str`, optional
             href for the 'About' page
 
-        footer : `str`, `~gwsumm.html.markup.page`
+        footer : `str`, `~MarkupPy.markup.page`
             user-defined content for the footer (placed below everything else)
 
         issues : `bool` or `str`, default: `True`
@@ -886,8 +894,8 @@ class IntervalTab(GpsTab):
         try:
             requiredpath = get_base(date, mode=self.mode)
         except ValueError:
-            return html.markup.oneliner.div('%d-%d' % (self.start, self.end),
-                                            class_='navbar-brand')
+            return markup.oneliner.div('%d-%d' % (self.start, self.end),
+                                       class_='navbar-brand')
         if requiredpath not in self.path:
             raise RuntimeError("Tab path %r inconsistent with required "
                                "format including %r for archive calendar"
@@ -905,7 +913,7 @@ class IntervalTab(GpsTab):
 
         Parameters
         ----------
-        brand : `str`, `~gwsumm.html.markup.page`
+        brand : `str`, `~MarkupPy.markup.page`
             content for navbar-brand
         ifo : `str`, optional
             prefix for this IFO.
@@ -919,11 +927,11 @@ class IntervalTab(GpsTab):
 
         Returns
         -------
-        page : `~gwsumm.html.markup.page`
+        page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
         # build interferometer cross-links
-        brand_ = html.markup.page()
+        brand_ = markup.page()
         # add calendar
         if calendar:
             brand_.add(str(self.html_calendar()))

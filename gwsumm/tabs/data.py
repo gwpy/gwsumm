@@ -39,6 +39,8 @@ from six.moves.configparser import (
     NoSectionError,
 )
 
+from MarkupPy import markup
+
 from numpy import isclose
 
 from astropy.time import Time
@@ -592,7 +594,7 @@ class DataTab(ProcessedTab, ParentTab):
         In this construction, the <div id="id\_"> is empty, with a
         javascript hook to load the given frame into the div when ready.
         """
-        page = html.markup.page()
+        page = markup.page()
         page.div(id_='main')
         page.div('', id_='content')
         page.add(str(html.load(frame, id_='content')))
@@ -639,10 +641,10 @@ class DataTab(ProcessedTab, ParentTab):
     def write_state_placeholder(self, state):
         """Write a placeholder '#main' content for this tab
         """
-        email = html.markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar+code@ligo.org')
-        page = html.markup.page()
+        email = markup.oneliner.a('the DetChar group',
+                                  class_='alert-link',
+                                  href='mailto:detchar+code@ligo.org')
+        page = markup.page()
         page.div(class_='row')
         page.div(class_='col-md-12')
         page.div(class_='alert alert-info')
@@ -666,7 +668,7 @@ class DataTab(ProcessedTab, ParentTab):
         For now, this function just links all the plots in a 2-column
         format.
         """
-        page = html.markup.page()
+        page = markup.page()
 
         # link data
         if self.subplots:
@@ -709,8 +711,8 @@ class DataTab(ProcessedTab, ParentTab):
                     ctype = 'Raw'
                 c = '<samp>%s</samp>' % str(channel)
                 if c2.url:
-                    link = html.markup.oneliner.a(c, href=c2.url,
-                                                  target='_blank')
+                    link = markup.oneliner.a(c, href=c2.url,
+                                             target='_blank')
                 else:
                     link = c
 
@@ -814,7 +816,7 @@ class DataTab(ProcessedTab, ParentTab):
                                                      post=page)
 
     def write_state_information(self, state):
-        page = html.markup.page()
+        page = markup.page()
         # state information
         page.h1("State information")
         if state.name.lower() == ALLSTATE:
@@ -866,7 +868,7 @@ class DataTab(ProcessedTab, ParentTab):
         else:
             segwizard = StringIO()
             flag.write(segwizard, format='segwizard', coltype=dtype)
-            return html.markup.oneliner.pre(segwizard.getvalue())
+            return markup.oneliner.pre(segwizard.getvalue())
 
     # -------------------------------------------------------------------------
     # methods

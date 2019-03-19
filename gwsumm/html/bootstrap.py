@@ -26,7 +26,8 @@ import os.path
 
 from six import string_types
 
-from . import markup
+from MarkupPy import markup
+
 from .tables import table
 from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
@@ -67,7 +68,7 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
 
     Returns
     -------
-    banner : `~gwsumm.html.markup.page`
+    banner : `~MarkupPy.markup.page`
         markup.py `page` instance
     """
     page = markup.page()
@@ -92,17 +93,22 @@ def navbar(links, class_='navbar navbar-fixed-top', brand=None, collapse=True):
     ----------
     links : `list`
         list of either (Link text, linkurl) tuples or
-        :class:`~gwsumm.html.markup.page` objects. Tuples will be
+        :class:`~MarkupPy.markup.page` objects. Tuples will be
         written in ``<a>`` tags and `pages` will be copied directly.
         Both will be enclosed in a <li> element inside the navbar
 
     Returns
     -------
-    page : :class:`~gwsumm.html.markup.page`
+    page : :class:`~MarkupPy.markup.page`
         stand-alone navbar HTML `page`
     """
     # set up page
     page = markup.page()
+    page.twotags.extend((
+        "footer",
+        "header",
+        "nav",
+    ))
     markup.element('header', parent=page)(class_=class_)
     page.div(class_="container")
 
@@ -164,7 +170,7 @@ def dropdown(text, links, active=None, class_='dropdown-toggle'):
 
     Returns
     -------
-    page : :class:`~gwsumm.html.markup.page`
+    page : :class:`~MarkupPy.markup.page`
         HTML element with the following grammar::
 
         .. code:: html
@@ -284,14 +290,14 @@ def wrap_content(page):
 
     Parameters
     ----------
-    page : :class:`~gwsumm.html.markup.page`, `str`
+    page : :class:`~MarkupPy.markup.page`, `str`
         HTML content to be wrapped
     span : `int`
         column span of content, default: 'full' (``12``)
 
     Returns
     -------
-    wrappedpage : :class:`~gwsumm.html.markup.page`
+    wrappedpage : :class:`~MarkupPy.markup.page`
         A new `page` with the input content wrapped as
 
         .. code:: html
@@ -321,7 +327,7 @@ def footer(user=True, about=None, issues=True, content=None, span=12,
 
     Returns
     -------
-    page : :class:`~gwsumm.html.markup.page`
+    page : :class:`~MarkupPy.markup.page`
         HTML footer around content as
 
         .. code:: html
@@ -334,7 +340,10 @@ def footer(user=True, about=None, issues=True, content=None, span=12,
                 </div>
             </footer>
     """
-    page = markup.page(twotags=['footer'])
+    page = markup.page()
+    page.twotags.extend((
+        "footer",
+    ))
     page.FOOTER(class_=class_)
     page.div(class_='container')
     page.div(class_='row')

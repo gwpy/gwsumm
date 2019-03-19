@@ -20,6 +20,8 @@
 error handlers.
 """
 
+from MarkupPy import markup
+
 from .registry import (get_tab, register_tab)
 from .. import html
 
@@ -61,7 +63,7 @@ class Error404Tab(Tab):
         if top is None:
             top = kwargs.get('base', self.path)
         kwargs.setdefault('title', '404: Page not found')
-        page = html.markup.page()
+        page = markup.page()
         page.div(class_='alert alert-danger')
         page.p()
         page.strong("The page you are looking for doesn't exist")

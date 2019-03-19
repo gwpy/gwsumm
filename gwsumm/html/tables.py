@@ -19,7 +19,7 @@
 """HTML <table> helpers
 """
 
-from .markup import page
+from MarkupPy.markup import page
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

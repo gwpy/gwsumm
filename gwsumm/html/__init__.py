@@ -24,7 +24,7 @@ formatted to fit the
 `twitter bootstrap library <http://getbootstrap.com/>`_.
 """
 
-from . import markup
+from MarkupPy import markup
 
 from .static import *
 from .html5 import *

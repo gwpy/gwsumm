@@ -26,6 +26,8 @@ from six import string_types
 
 from dateutil import parser
 
+from MarkupPy import markup
+
 from .registry import (get_tab, register_tab)
 
 from .. import html
@@ -99,7 +101,7 @@ class FscanTab(base):
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `FscanTab`.
         """
-        page = html.markup.page()
+        page = markup.page()
 
         if self.directory is None:
             page.div(class_='alert alert-warning')
@@ -107,9 +109,9 @@ class FscanTab(base):
                    "please try again later.")
             page.p("If you believe these data should have been found, please "
                    "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
+                   % markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
+                                       href='mailto:detchar@ligo.org'))
             page.div.close()
             self.directory = []
         elif isinstance(self.directory, list):
@@ -117,9 +119,9 @@ class FscanTab(base):
             page.p("Multiple results directories were found for this period, "
                    "cannot determine correct directory.")
             page.p("If you believe this to be an error, please contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
+                   % markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
+                                       href='mailto:detchar@ligo.org'))
             page.div.close()
             page.hr(class_='row-divider')
         elif not self.plots:
@@ -127,9 +129,9 @@ class FscanTab(base):
             page.p("This analysis produced no plots.")
             page.p("If you believe these data should have been found, please "
                    "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
+                   % markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
+                                       href='mailto:detchar@ligo.org'))
             page.div.close()
             page.hr(class_='row-divider')
             self.directory = [self.directory]

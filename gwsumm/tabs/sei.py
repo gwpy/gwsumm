@@ -253,7 +253,7 @@ class SEIWatchDogTab(base):
             except KeyError:
                 count[key] = 1
 
-        page = html.markup.page()
+        page = markup.page()
 
         # build summary table
         page.div(class_='well')
@@ -355,7 +355,7 @@ class SEIWatchDogTab(base):
                 format='datetime', scale='utc')
             rows.append([t, t2.iso, tlocal.iso, chamber, trigger])
             if plot:
-                rows[-1].append(html.markup.oneliner.a(
+                rows[-1].append(markup.oneliner.a(
                     '[Click here]', href=plot.href, class_='fancybox plot',
                     **{'data-fancybox-group': '1'}))
             else:
@@ -366,10 +366,12 @@ class SEIWatchDogTab(base):
                 dt = t2 - t
                 tag = '%s %s (+%.2fs)' % (chamber2, trigger2, dt)
                 if plot2:
-                    assoc.append(html.markup.oneliner.a(
-                                     tag, href=plot2.href,
-                                     class_='fancybox plot',
-                                     **{'data-fancybox-group': '1'}))
+                    assoc.append(markup.oneliner.a(
+                        tag,
+                        href=plot2.href,
+                        class_='fancybox plot',
+                        **{'data-fancybox-group': '1'}
+                    ))
                 else:
                     assoc.append(tag)
             if assoc:

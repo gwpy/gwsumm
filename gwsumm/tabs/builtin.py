@@ -33,6 +33,8 @@ import warnings
 from six import string_types
 from six.moves.configparser import NoOptionError
 
+from MarkupPy import markup
+
 from .registry import (get_tab, register_tab)
 from ..plot import get_plot
 from ..utils import (re_quote, re_cchar)
@@ -156,9 +158,9 @@ class ExternalTab(Tab):
         """
         if not kwargs.pop('writehtml', True):
             return
-        link = html.markup.given_oneliner.a('click here to view the original',
-                                            class_='reference',
-                                            href=self.url.split()[0])
+        link = markup.given_oneliner.a('click here to view the original',
+                                       class_='reference',
+                                       href=self.url.split()[0])
         kwargs.setdefault('footer', 'This page contains data from an external '
                                     'source, %s.' % link)
         return super(ExternalTab, self).write_html('', **kwargs)
@@ -186,9 +188,9 @@ class PlotTab(Tab):
         For example ``layout=[1, 2, 3]`` will display a single plot on
         the top row, two plots on the second, and 3 plots on each row
         thereafter.
-    foreword : `~gwsumm.html.markup.page`, `str`, optional
+    foreword : `~MarkupPy.markup.page`, `str`, optional
         content to include in the #main HTML before the plots
-    afterword : `~gwsumm.html.markup.page`, `str`, optional
+    afterword : `~MarkupPy.markup.page`, `str`, optional
         content to include in the #main HTML after the plots
     index : `str`, optional
         HTML file in which to write. By default each tab is written to
@@ -311,10 +313,10 @@ class PlotTab(Tab):
 
     @foreword.setter
     def foreword(self, content):
-        if isinstance(content, html.markup.page) or content is None:
+        if isinstance(content, markup.page) or content is None:
             self._pre = content
         else:
-            self._pre = html.markup.page()
+            self._pre = markup.page()
             if not str(content).startswith('<'):
                 self._pre.p(str(content))
             else:
@@ -328,10 +330,10 @@ class PlotTab(Tab):
 
     @afterword.setter
     def afterword(self, content):
-        if isinstance(content, html.markup.page) or content is None:
+        if isinstance(content, markup.page) or content is None:
             self._post = content
         else:
-            self._post = html.markup.page()
+            self._post = markup.page()
             if not str(content).startswith('<'):
                 self._post.p(str(content))
             else:
@@ -432,10 +434,10 @@ class PlotTab(Tab):
 
         Returns
         -------
-        page : :class:`~gwsumm.html.markup.page`
+        page : :class:`~MarkupPy.markup.page`
             formatted markup with grid of plots
         """
-        page = html.markup.page()
+        page = markup.page()
         page.div(class_='scaffold well')
 
         if plots is None:
@@ -514,7 +516,7 @@ class PlotTab(Tab):
         return page
 
     def html_content(self, content):
-        page = html.markup.page()
+        page = markup.page()
         if self.foreword:
             page.add(str(self.foreword))
         if content:
@@ -529,10 +531,10 @@ class PlotTab(Tab):
 
         Parameters
         ----------
-        foreword : `str`, :class:`~gwsumm.html.markup.page`, optional
+        foreword : `str`, :class:`~MarkupPy.markup.page`, optional
             content to place above the plot grid, defaults to
             :attr:`PlotTab.foreword`
-        afterword : `str`, :class:`~gwsumm.html.markup.page`, optional
+        afterword : `str`, :class:`~MarkupPy.markup.page`, optional
             content to place below the plot grid, defaults to
             :attr:`PlotTab.afterword`
         **kwargs
@@ -711,7 +713,7 @@ class StateTab(PlotTab):
 
         Parameters
         ----------
-        brand : `str`, :class:`~gwsumm.html.markup.page`
+        brand : `str`, :class:`~MarkupPy.markup.page`
             content for navbar-brand
         ifo : `str`, optional
             prefix for this IFO.
@@ -725,10 +727,10 @@ class StateTab(PlotTab):
 
         Returns
         -------
-        page : `~gwsumm.html.markup.page`
+        page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
-        brand_ = html.markup.page()
+        brand_ = markup.page()
         # build state switch
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             default = self.states.index(self.defaultstate)
@@ -759,7 +761,7 @@ class StateTab(PlotTab):
             `SummaryState` over which to generate inner HTML
         """
         # build page
-        page = html.markup.page()
+        page = markup.page()
         if pre:
             page.add(str(pre))
         if plots:
@@ -779,7 +781,7 @@ class StateTab(PlotTab):
 
         Parameters
         ----------
-        maincontent : `str`, :class:`~gwsumm.html.markup.page`
+        maincontent : `str`, :class:`~MarkupPy.markup.page`
             simple string content, or a structured `page` of markup to
             embed as the content of the #main div.
         title : `str`, optional, default: {parent.name}
@@ -793,7 +795,7 @@ class StateTab(PlotTab):
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
-        brand : `str`, :class:`~gwsumm.html.markup.page`, optional
+        brand : `str`, :class:`~MarkupPy.markup.page`, optional
             non-menu content for navigation bar, defaults to calendar
         css : `list`, optional
             list of resolvable URLs for CSS files. See `gwsumm.html.CSS` for
@@ -803,7 +805,7 @@ class StateTab(PlotTab):
             `gwumm.html.JS` for the default list.
         about : `str`, optional
             href for the 'About' page
-        footer : `str`, `~gwsumm.html.markup.page`
+        footer : `str`, `~MarkupPy.markup.page`
             user-defined content for the footer (placed below everything else)
         **inargs
             other keyword arguments to pass to the

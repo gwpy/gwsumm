@@ -24,7 +24,7 @@ import os.path
 from six import string_types
 from six.moves.urllib.parse import urlparse
 
-from . import markup
+from MarkupPy import markup
 
 DOCTYPE = '<!DOCTYPE html>'
 

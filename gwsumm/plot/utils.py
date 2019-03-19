@@ -19,6 +19,7 @@
 """Utilies for GWSumm plotting
 """
 
+import hashlib
 import itertools
 import re
 
@@ -151,3 +152,28 @@ def usetex_tex(text):
     if rcParams['text.usetex']:
         return label_to_latex(text)
     return text
+
+
+def hash(string, num=6):
+    """Generate an N-character hash string based using string to initialise
+
+    Parameters
+    ----------
+    string : `str`
+        the initialisation string
+
+    num : `int`, optional
+        the length of the hash to produce
+
+    Returns
+    -------
+    hash : `str`
+        the new hash
+
+    Examples
+    --------
+    >>> from gwsumm.plot.utils import hash
+    >>> print(hash("I love gravitational waves"))
+    80c897
+    """
+    return hashlib.md5(string.encode("utf-8")).hexdigest()[:num]

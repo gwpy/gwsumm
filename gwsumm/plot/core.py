@@ -21,7 +21,6 @@
 for GWSumm
 """
 
-import hashlib
 import os.path
 import re
 import warnings
@@ -338,8 +337,7 @@ class DataPlot(SummaryPlot):
             filts = "".join(map(str, [
                 getattr(c, 'filter', getattr(c, 'frequency_response', ''))
                 for c in self.channels]))
-            h = (chans + filts).encode('utf-8')
-            self._pid = hashlib.md5(h).hexdigest()[:6]
+            self._pid = putils.hash(chans + filts)
             return self.pid
 
     @pid.setter

@@ -21,7 +21,6 @@
 
 from __future__ import division
 
-import hashlib
 import bisect
 from itertools import (cycle, combinations)
 from numbers import Number
@@ -61,7 +60,7 @@ from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
 from .mixins import SegmentLabelSvgMixin
-from .utils import usetex_tex
+from .utils import (hash, usetex_tex)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -191,8 +190,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         try:
             return self._pid
         except AttributeError:
-            self._pid = hashlib.md5(
-                "".join(map(str, self.flags))).hexdigest()[:6]
+            self._pid = hash("".join(map(str, self.flags)))
             return self.pid
 
     @pid.setter
@@ -406,11 +404,10 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         try:
             return self._pid
         except:
-            chans = "".join(map(str, self.channels))
-            self._pid = hashlib.md5(chans).hexdigest()[:6]
+            basis = "".join(map(str, self.channels))
             if self.pargs.get('bits', None):
-                self._pid = hashlib.md5(
-                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+                basis += str(self.pargs['bits'])
+            self._pid = hash(basis)
             return self.pid
 
     def _parse_labels(self, defaults=[]):
@@ -838,10 +835,10 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         except:
             chans = "".join(map(str, self.channels))
             masks = "".join(map(str, self.get_bitmask_channels()))
-            self._pid = hashlib.md5(chans+masks).hexdigest()[:6]
+            basis = chans + masks
             if self.pargs.get('bits', None):
-                self._pid = hashlib.md5(
-                    self._pid + str(self.pargs['bits'])).hexdigest()[:6]
+                basis += str(self.pargs["bits"])
+            self._pid = hash(basis)
             return self.pid
 
     def draw(self):

@@ -24,6 +24,8 @@ try:
 except ImportError:  # python < 3
     from ConfigParser import NoOptionError
 
+from MarkupPy import markup
+
 from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
@@ -129,7 +131,7 @@ class GraceDbTab(get_tab('default')):
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `GraceDbTab`.
         """
-        page = html.markup.page()
+        page = markup.page()
         # build table of events
         page.div(class_='scaffold well')
         page.table(class_='table table-condensed table-hover table-striped')

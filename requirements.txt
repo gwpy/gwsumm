@@ -17,6 +17,7 @@ gwdatafind
 lscsoft-glue>=1.60.0
 ligo-segments
 pygments
+MarkupPy
 # need development release of gwpy
 git+https://github.com/gwpy/gwpy.git
 

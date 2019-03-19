@@ -88,20 +88,20 @@ class StampPEMTab(base):
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `StampPEMTab`.
         """
-        page = html.markup.page()
+        page = markup.page()
 
-        a = html.markup.oneliner.a('analysis', href=self.url+'/',
-                                   class_='alert-link', rel='external',
-                                   target='_blank')
+        a = markup.oneliner.a('analysis', href=self.url+'/',
+                              class_='alert-link', rel='external',
+                              target='_blank')
         if not(os.path.isdir(self.directory)):
             page.div(class_='alert alert-warning', role='alert')
             page.p("No %s was performed for this period, "
                    "please try again later." % a)
             page.p("If you believe these data should have been found, please "
                    "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
+                   % markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
+                                       href='mailto:detchar@ligo.org'))
             page.div.close()
 
         elif not self.plots:
@@ -109,9 +109,9 @@ class StampPEMTab(base):
             page.p("This %s produced no plots." % a)
             page.p("If you believe these data should have been found, please "
                    "contact %s."
-                   % html.markup.oneliner.a('the DetChar group',
-                                            class_='alert-link',
-                                            href='mailto:detchar@ligo.org'))
+                   % markup.oneliner.a('the DetChar group',
+                                       class_='alert-link',
+                                       href='mailto:detchar@ligo.org'))
             page.div.close()
 
         else:

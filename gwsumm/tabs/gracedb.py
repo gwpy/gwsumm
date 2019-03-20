@@ -19,6 +19,7 @@
 """Custom `SummaryTab` for the output of the FScan algorithm.
 """
 
+from collections import OrderedDict
 try:
     from configparser import NoOptionError
 except ImportError:  # python < 3
@@ -36,20 +37,22 @@ from ..utils import (re_quote, vprint)
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['GraceDbTab']
 
-LABELS = {
-    'ADVOK': 'success',
-    'ADVNO': 'danger',
-    'H1OPS': 'info',
-    'H1OK': 'success',
-    'H1NO': 'danger',
-    'L1OPS': 'info',
-    'L1OK': 'success',
-    'L1NO': 'danger',
-    'DQV': 'danger',
-    'INJ': 'warning',
-    'EM_READY': 'success',
-    'PE_READY': 'success',
-    'EM_COINC': 'info',
+LABELS = OrderedDict()
+LABELS["danger"] = {
+    "ADVNO",
+    "DQV",
+    "H1NO",
+    "L1NO",
+    "V1NO",
+}
+LABELS["warning"] = {
+    "INJ",
+}
+LABELS["success"] = {
+    'EM_READY',
+    'PASTRO_READY',
+    'PE_READY',
+    'SKYMAP_READY',
 }
 
 
@@ -155,14 +158,16 @@ class GraceDbTab(get_tab('default')):
                             key=lambda e: e['gpstime']):
             context = None
             try:
-                labs = event['labels'].split(', ')
+                labs = set(event['labels'].split(', '))
             except (AttributeError, KeyError):
                 pass
             else:
-                for label in ['ADVNO', 'H1NO', 'L1NO', 'DQV', 'INJ',
-                              'EM_READY']:
-                    if label in labs:
-                        context = LABELS[label]
+                for ctx, labels in LABELS.items():
+                    if (
+                            ctx == "success" and labs.union(labels) == labs or
+                            labs.intersection(labels)
+                    ):
+                        context = ctx
                         break
             if context is not None:
                 page.tr(class_=context)
@@ -207,10 +212,8 @@ class GraceDbTab(get_tab('default')):
         page.h4("Labelling reference")
         page.p("Events in the above table may have a context based on "
                "its labels as follows:")
-        contexts = set(LABELS.values())
-        for c in contexts:
-            labels = [k for k, v in LABELS.items() if v == c]
-            labstr = ', '.join(['<b>%s</b>' % l for l in labels])
+        for c, labels in LABELS.items():
+            labstr = ', '.join(['<b>%s</b>' % l for l in sorted(labels)])
             page.p(labstr, class_='bg-%s' % c, style='width: auto;')
 
         # write to file

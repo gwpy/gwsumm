@@ -64,7 +64,7 @@ class GWSummaryJob(pipeline.CondorDAGJob):
             self.set_stdout_file(os.path.join(
                 logdir, '%s-%s.out' % (tag, self.logtag)))
         cmds.setdefault('getenv', 'True')
-        for key, val in cmds.iteritems():
+        for key, val in cmds.items():
             if hasattr(self, 'set_%s' % key.lower()):
                 getattr(self, 'set_%s' % key.lower())(val)
             else:
@@ -247,8 +247,10 @@ if N > 1 and not (opts.gps_start_time and opts.gps_end_time):
 
 for i,cf in enumerate(opts.config_file):
     opts.config_file[i] = ','.join(map(os.path.abspath, cf.split(',')))
-opts.global_config = map(os.path.abspath, [fp for csv in opts.global_config
-                                           for fp in csv.split(',')])
+opts.global_config = list(map(
+    os.path.abspath,
+    [fp for csv in opts.global_config for fp in csv.split(',')],
+))
 
 # ----------------------------------------------------------------------------
 # Build workflow directories

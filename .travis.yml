@@ -11,12 +11,6 @@ env:
   - PIP_FLAGS=""
   - PIP_FLAGS="--upgrade --pre"
 
-matrix:
-  allow_failures:
-    - python: '2.7'
-      env: PIP_FLAGS="--upgrade --pre"
-  fast_finish: true
-
 before_install:
   - python -m pip install --upgrade pip
   - python -m pip install ${PIP_FLAGS} -r requirements.txt

@@ -149,7 +149,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         labels = self.pargs.pop('labels', self.channels)
         if isinstance(labels, string_types):
             labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
+        labels = [str(s).strip('\n ') for s in labels]
 
         # get colouring params
         cmap = self.pargs.pop('cmap')
@@ -347,7 +347,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         labels = self.pargs.pop('labels', self.channels)
         if isinstance(labels, string_types):
             labels = labels.split(',')
-        labels = map(lambda s: str(s).strip('\n '), labels)
+        labels = [str(s).strip('\n ') for s in labels]
 
         # add data
         for label, channel in zip(labels, self.channels):
@@ -576,7 +576,7 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             self.pargs.setdefault('legend-title', cname)
         elif labels is None:
             labels = self.channels
-        self.pargs['labels'] = map(lambda s: str(s).strip('\n '), labels)
+        self.pargs['labels'] = [str(s).strip('\n ') for s in labels]
 
         # get time column
         tcol = self.pargs.pop('timecolumn', None)

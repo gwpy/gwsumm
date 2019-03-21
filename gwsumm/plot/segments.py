@@ -285,7 +285,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         # if list of colors, map list of edgecolors
         if (not ec and isinstance(fc, (list, tuple)) and
                 not is_color_like(fc)):
-            pargs['edgecolor'] = map(lambda x: tint_hex(x, factor=.5), fc)
+            pargs['edgecolor'] = [tint_hex(x, factor=.5) for x in fc]
         # otherwise map single color
         elif fc and not ec:
             pargs['edgecolor'] = tint_hex(fc, factor=.5)
@@ -1330,7 +1330,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
                 valid = SegmentList([self.span])
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
-            data.append(map(lambda x: float(abs(x)), segs.active))
+            data.append([float(abs(x)) for x in segs.active])
 
         # get range
         if 'range' not in histargs[0]:

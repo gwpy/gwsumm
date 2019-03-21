@@ -1,8 +1,11 @@
 language: python
 
+dist: xenial
+
 python:
   - '2.7'
-  - '3.5'
+  - '3.6'
+  - '3.7'
 
 env:
   - PIP_FLAGS=""
@@ -10,7 +13,6 @@ env:
 
 matrix:
   allow_failures:
-    - python: '3.5'
     - python: '2.7'
       env: PIP_FLAGS="--upgrade --pre"
   fast_finish: true
@@ -24,18 +26,20 @@ install:
   - python -m pip install --editable .
 
 before_script:
-  - python -m pip install ${PIP_FLAGS} coveralls "pytest>=2.8" pytest-runner unittest2
+  # we pin to <3.7 because astropy needs to and pip isn't good at resolving dependencies
+  - python -m pip install ${PIP_FLAGS} "pytest>=2.8,<3.7" pytest-cov
 
 script:
   # run test suite
-  - coverage run ./setup.py test
+  - python -m pytest --pyargs gwsumm --cov gwsumm
   # test executables
-  - coverage run --append `which gw_summary` --help
-  - coverage run --append `which gw_summary_pipe` --help
-  - coverage run --append `which gwsumm-plot-triggers` --help
-  - coverage run --append `which gwsumm-plot-guardian` --help
+  - python -m coverage run --append $(which gw_summary) --help
+  - python -m coverage run --append $(which gw_summary_pipe) --help
+  - python -m coverage run --append $(which gwsumm-plot-triggers) --help
+  - python -m coverage run --append $(which gwsumm-plot-guardian) --help
 
 after_success:
+  - python -m pip install ${PIP_FLAGS} coveralls
   - coveralls
 
 cache:

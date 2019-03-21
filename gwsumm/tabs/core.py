@@ -676,11 +676,12 @@ class BaseTab(object):
                     )
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]
-                    groups[group] = zip(*sorted(
+                    groups[group] = list(zip(*sorted(
                         zip(groups[group], names),
                         key=(lambda x:
                              x[1].lower() in ['summary', 'overview'] and
-                             ' %s' % x[1].upper() or x[1].lower())))[0]
+                             ' %s' % x[1].upper() or x[1].lower()),
+                    )))[0]
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):

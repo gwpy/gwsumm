@@ -484,7 +484,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
                 stateseries.bits = bits_
                 if 'int' not in str(stateseries.dtype):
                     stateseries = stateseries.astype('uint32')
-                newflags = stateseries.to_dqflags().values()
+                newflags = list(stateseries.to_dqflags().values())
                 if self.pargs.get('on-is-bad', False):
                     for i, flag in enumerate(newflags):
                         newflags[i] = ~newflags[i]
@@ -822,7 +822,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         if bitmaskc:
             self.bitmask = bitmaskc.split(',')
         else:
-            self.bitmask = map(get_odc_bitmask, self.channels)
+            self.bitmask = list(map(get_odc_bitmask, self.channels))
 
     def get_bitmask_channels(self):
         return type(self.channels)(list(map(get_channel, self.bitmask)))

@@ -140,4 +140,4 @@ def test_split(cstr, clist):
 def test_split_combination(cstr, clist):
     split = channels.split_combination(cstr)
     assert isinstance(split, ChannelList)
-    assert map(str, split), clist
+    assert list(map(str, split)), clist

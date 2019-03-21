@@ -179,7 +179,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             else:
                 val = cycle([val] * len(self.channels))
             for i in range(len(self.channels)):
-                plotargs[i][key] = val.next()
+                plotargs[i][key] = next(val)
 
         # add data
         valid = SegmentList([self.span])

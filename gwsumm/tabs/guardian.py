@@ -107,7 +107,7 @@ class GuardianTab(DataTab):
         grdidxs = dict((state, idx) for idx, state in
                        new.grdstates.items())
         new.segmenttag = '%s:%s %%s' % (new.ifo, new.node)
-        pstates = [l for i, l in enumerate(new.grdstates.values()[::-1])
+        pstates = [l for i, l in enumerate(list(new.grdstates.values())[::-1])
                    if plot[-i-1]]
         flags = [new.segmenttag % name for name in pstates]
         labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]

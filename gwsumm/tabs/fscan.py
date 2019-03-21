@@ -179,7 +179,7 @@ class FscanTab(base):
             page.hr(class_='row-divider')
             page.div(class_='scaffold well')
             # parse frequencies
-            freqs = [map(float, os.path.basename(p.href).split('_')[1:3])
+            freqs = [list(map(float, os.path.basename(p.href).split('_')[1:3]))
                      for p in self.plots[::2]]
             # build a grid of buttons as frequency markers
             ncols = 5

@@ -164,7 +164,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     singleops, joinoperators = parse_math_definition(str(channel))
     channel = get_channel(channel)
     names = list(singleops.keys())
-    chans = map(get_channel, names)
+    chans = list(map(get_channel, names))
     # get raw data
     if load_func is get_func:  # if load_func returns a single channel
         tsdict = dict((c.ndsname, load_func(c, segments, **ioargs))
@@ -185,7 +185,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
         meta = []
     else:
         datasegs = reduce(operator.and_, [tsl.segments for tsl in tslist])
-        meta = type(tsdict.values()[0])()
+        meta = type(list(tsdict.values())[0])()
     for seg in datasegs:
         # get data for first channel
         if isinstance(tslist[0], FrequencySeries):

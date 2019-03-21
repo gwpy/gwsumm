@@ -132,7 +132,7 @@ class GraceDbTab(get_tab('default')):
     def process_state(self, state, **kwargs):
         def in_state(event):
             return int(event['gpstime']) in state.active
-        self.events[str(state)] = filter(in_state, self.events[None])
+        self.events[str(state)] = list(filter(in_state, self.events[None]))
         reverse = self.rank not in ['gpstime', 'far']
         self.events[str(state)].sort(key=lambda x: x[self.rank],
                                      reverse=reverse)

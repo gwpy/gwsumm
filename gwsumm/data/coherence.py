@@ -399,8 +399,8 @@ def get_coherence_spectrograms(channel_pairs, segments, config=None,
         raise ValueError("Cannot process coherence data with method=%r"
                          % fftparams.get('method'))
     fftparams['method'] = 'welch'
-    channels = map(get_channel, channel_pairs)
-    pairs = zip(channels[0::2], channels[1::2])
+    channels = list(map(get_channel, channel_pairs))
+    pairs = list(zip(channels[0::2], channels[1::2]))
 
     # get timeseries data in bulk
     if query:

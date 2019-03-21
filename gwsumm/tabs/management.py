@@ -143,7 +143,7 @@ class AccountingTab(ParentTab):
                 p.new = False
 
         # get archived GPS time
-        tag = self.segmenttag % self.modes.keys()[0]
+        tag = self.segmenttag % list(self.modes.keys())[0]
         try:
             lastgps = globalv.SEGMENTS[tag].known[-1][-1]
         except (IndexError, KeyError):

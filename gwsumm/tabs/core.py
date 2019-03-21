@@ -676,11 +676,12 @@ class BaseTab(object):
                     )
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]
-                    groups[group] = zip(*sorted(
+                    groups[group] = list(zip(*sorted(
                         zip(groups[group], names),
                         key=(lambda x:
                              x[1].lower() in ['summary', 'overview'] and
-                             ' %s' % x[1].upper() or x[1].lower())))[0]
+                             ' %s' % x[1].upper() or x[1].lower()),
+                    )))[0]
                     # build link sets
                     links.append((group.strip('_'), []))
                     for i, child in enumerate(groups[group]):
@@ -1128,11 +1129,11 @@ class TabList(list):
     def get_hierarchy(self):
         parents = OrderedDict()
         # 1. Assume all tabs without parents are parents themselves
-        for tab in filter(lambda tab: tab.parent is None, self):
+        for tab in [tab for tab in self if tab.parent is None]:
             parents[tab.name] = tab
         # 2. All remaining tabs without a defined parent define that parent
         # 3. Sort all tabs into their parent sets
-        for tab in filter(lambda tab: tab.parent is not None, self):
+        for tab in [tab for tab in self if tab.parent is not None]:
             if tab.parent in parents:
                 tab.set_parent(parents[tab.parent])
             elif not isinstance(tab.parent, Tab):

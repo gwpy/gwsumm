@@ -25,10 +25,6 @@ install:
   # note: need --editable for executable coverage with `which ...` to work
   - python -m pip install --editable .
 
-before_script:
-  # we pin to <3.7 because astropy needs to and pip isn't good at resolving dependencies
-  - python -m pip install ${PIP_FLAGS} "pytest>=2.8,<3.7" pytest-cov
-
 script:
   # run test suite
   - python -m pytest --pyargs gwsumm --cov gwsumm

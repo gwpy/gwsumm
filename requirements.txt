@@ -28,7 +28,8 @@ dqsegdb>=1.4.2
 ligo-gracedb>=2.0.0
 
 # testing extras
-pytest>=2.8
+pytest>=2.8,<3.7
+pytest-cov
 mock ; python_version < '3'
 
 # docs extras

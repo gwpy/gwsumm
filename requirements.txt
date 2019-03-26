@@ -19,8 +19,7 @@ ligo-segments
 pygments
 MarkupPy
 gwdetchar>=0.3.0
-# need development release of gwpy
-git+https://github.com/gwpy/gwpy.git
+gwpy>=0.14.2
 
 # optional extras (not module-level imports)
 pykerberos

@@ -79,7 +79,7 @@ install_requires = [
     'lalsuite',
     'lscsoft-glue>=1.60.0',
     'ligo-segments',
-    'gwpy>=0.8.1',
+    'gwpy>=0.14.2',
     'gwtrigfind',
     'gwdatafind',
     'pygments',

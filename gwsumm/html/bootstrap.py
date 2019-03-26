@@ -28,6 +28,8 @@ from six import string_types
 
 from MarkupPy import markup
 
+from gwdetchar.io.html import package_table
+
 from .tables import table
 from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
@@ -460,20 +462,7 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
             page.div.close()
         page.div.close()
     if packagelist:
-        try:
-            from pip import get_installed_distributions
-        except ImportError:
-            pass
-        else:
-            page.h2('Package list')
-            headers = ['Package name', 'Version']
-            data = sorted([(p.project_name, p.version) for p in
-                           get_installed_distributions(local_only=False)],
-                          key=lambda x: x[0].lower())
-            page.add(str(table(
-                headers, data, id='package-list',
-                caption=("The list of packages present on the "
-                         "system when this page was generated."))))
+        page.add(package_table())
 
     page.div.close()
     page.div.close()

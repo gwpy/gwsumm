@@ -84,6 +84,7 @@ install_requires = [
     'gwdatafind',
     'pygments',
     'MarkupPy',
+    'gwdetchar>=0.3.0',
 ]
 if sys.version < '3':
     install_requires.append('enum34')

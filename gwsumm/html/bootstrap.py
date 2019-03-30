@@ -392,7 +392,7 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
             page.div(class_='panel-body')
             with open(cpfile, 'r') as fobj:                                           
                 contents = fobj.read()
-            page.add(gwhtml.render_code(cpfile, 'ini'))
+            page.add(gwhtml.render_code(contents, 'ini'))
             page.div.close()
             page.div.close()
             page.div.close()

@@ -28,10 +28,9 @@ from six import string_types
 
 from MarkupPy import markup
 
-from gwdetchar.io.html import package_table
+from gwdetchar.io import html as gwhtml
 
 from .tables import table
-from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
 
@@ -391,13 +390,15 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
             page.a.close()
             page.div(id_='file%d' % i, class_='panel-collapse collapse')
             page.div(class_='panel-body')
-            page.add(highlight_syntax(cpfile, 'ini'))
+            with open(cpfile, 'r') as fobj:                                           
+                contents = fobj.read()
+            page.add(gwhtml.render_code(cpfile, 'ini'))
             page.div.close()
             page.div.close()
             page.div.close()
         page.div.close()
     if packagelist:
-        page.add(package_table())
+        page.add(gwhtml.package_table())
 
     page.div.close()
     page.div.close()

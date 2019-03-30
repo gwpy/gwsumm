@@ -47,7 +47,7 @@ from MarkupPy import markup
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from gwdetchar.io import html as gwhtml
+from gwdetchar.io.html import write_footer
 
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
@@ -567,7 +567,7 @@ class BaseTab(object):
             href=url, target='_blank', style=style)
         if issues is True:
             issues = 'https://github.com/gwpy/gwsumm/issues'
-        self.page.add(gwhtml.write_footer(
+        self.page.add(write_footer(
             link=link, issues=issues, about=about, content=content,
             style=style))
         if not self.page._full:

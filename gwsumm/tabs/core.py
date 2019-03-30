@@ -530,7 +530,7 @@ class BaseTab(object):
 
         Parameters
         ----------
-        issues : `bool` or `str`, optional
+        issues : `str`, optional
             link to git issue tracker for this package
 
         about : `str`

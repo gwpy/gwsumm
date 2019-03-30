@@ -47,10 +47,13 @@ from MarkupPy import markup
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
+from gwdetchar.io import html as gwhtml
+
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
 from .registry import (get_tab, register_tab)
+from .._version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['BaseTab', 'Tab', 'TabList']
@@ -518,7 +521,8 @@ class BaseTab(object):
         self.page.head.close()
         return self.page
 
-    def html_finalize(self, user=True, issues=True, about=None, content=None):
+    def html_finalize(self, issues=True, about=None, content=None,
+                      style='color:#eee;'):
         """Finalize the HTML content for this tab.
 
         This method appends a `<footer></footer>` to the HTML page, and
@@ -526,9 +530,6 @@ class BaseTab(object):
 
         Parameters
         ----------
-        user : `bool`, default: `True`
-            print details of user running this job
-
         issues : `bool` or `str`, default: `True`
             print link to github.com issue tracker for this package
 
@@ -538,6 +539,9 @@ class BaseTab(object):
         content : `str`, `~MarkupPy.markup.page`
             user-defined content for the footer (placed below everything
             else).
+
+        style : `str`, optional
+            HTML style for footer links, default: `'color:#eee;'`
 
         Returns
         -------
@@ -554,9 +558,18 @@ class BaseTab(object):
         if not self.page:
             raise RuntimeError("Cannot finalize HTML page before intialising "
                                "one")
-        # add footer
-        self.page.add(str(html.footer(user=user, issues=issues, about=about,
-                                      content=content)))
+        # add custom footer
+        version = get_versions()['version']
+        commit = get_versions()['full-revisionid']
+        url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
+        link = markup.oneliner.a(
+            'View gwsumm-{} on GitHub'.format(version),
+            href=url, target='_blank', style=style)
+        if issues is True:
+            issues = 'https://github.com/gwpy/gwsumm/issues'
+        self.page.add(gwhtml.write_footer(
+            link=link, issues=issues, about=about, content=content,
+            style=style))
         if not self.page._full:
             self.page.body.close()
             self.page.html.close()

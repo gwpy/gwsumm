@@ -34,7 +34,6 @@ from .tables import table
 from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
-from .._version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

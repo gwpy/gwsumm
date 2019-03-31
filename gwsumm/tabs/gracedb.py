@@ -146,9 +146,6 @@ class GraceDbTab(get_tab('default')):
         page.div(class_='scaffold well')
         page.table(class_='table table-condensed table-hover table-striped',
                    id_='gracedb')
-        page.button('Export to CSV', class_='btn btn-default',
-            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
-                name='gracedb'))
         # thead
         page.thead()
         page.tr()
@@ -206,6 +203,10 @@ class GraceDbTab(get_tab('default')):
         page.table.close()
         if len(self.events[str(state)]) == 0:
             page.p("No events were recovered for this state.")
+        page.button(
+            'Export to CSV', class_='btn btn-default',
+            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                name='gracedb'))
         page.div.close()  # scaffold well
 
         # query doc

@@ -62,7 +62,8 @@ def table(headers, data, caption=None, separator='', id=None, **class_):
     p = page(separator=separator)
     if id is not None:
         kwargs['table']['id_'] = id
-        p.button('Export to CSV', class_='btn btn-default',
+        p.button(
+            'Export to CSV', class_='btn btn-default',
             onclick="exportTableToCSV('{name}.csv', '{name}')".format(
                 name=id))
     p.table(**kwargs['table'])

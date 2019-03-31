@@ -379,7 +379,7 @@ class SEIWatchDogTab(base):
             else:
                 rows[-1].append('-')
         page.add(str(html.table(
-            headers, rows,
+            headers, rows, id='%s-watchdog-trips' % self.ifo.lower(),
             caption=('List of %s watch-dog trips in interval [%d .. %d) - '
                      'trips are considered \'associated\' if they fall within '
                      '%s seconds of each other.'

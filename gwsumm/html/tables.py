@@ -64,7 +64,17 @@ def table(headers, data, caption=None, separator='', id=None, **class_):
         kwargs['table']['id_'] = id
     p.table(**kwargs['table'])
     if caption:
-        p.caption(caption, **kwargs['caption'])
+        if id is not None:
+            p.div(class_='col-md-8')
+            p.caption(caption, **kwargs['caption'])
+            p.div.close()  # col-md-8
+            p.div(class_='col-md-4')
+            p.button('Export to CSV', class_='btn btn-default',
+                     onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                         name=id))
+            p.div.close()  # col-md-4
+        else:
+            p.caption(caption, **kwargs['caption'])
 
     # write headers
     p.thead(**kwargs['thead'])

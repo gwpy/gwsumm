@@ -146,7 +146,7 @@ class GraceDbTab(get_tab('default')):
         page.div(class_='scaffold well')
         page.table(class_='table table-condensed table-hover table-striped',
                    id_='gracedb')
-        p.button('Export to CSV', class_='btn btn-default',
+        page.button('Export to CSV', class_='btn btn-default',
             onclick="exportTableToCSV('{name}.csv', '{name}')".format(
                 name='gracedb'))
         # thead

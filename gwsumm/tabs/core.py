@@ -540,9 +540,6 @@ class BaseTab(object):
             user-defined content for the footer (placed below everything
             else).
 
-        style : `str`, optional
-            HTML style for footer links, default: `'color:#eee;'`
-
         Returns
         -------
         page : `~MarkupPy.markup.page`

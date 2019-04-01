@@ -176,7 +176,7 @@ class GraceDbTab(get_tab('default')):
                 if col == 'date':
                     gpskey = 't_0' if 'superevent_id' in event else 'gpstime'
                     page.td(from_gps(event[gpskey]).strftime(
-                        '%B %d %Y, %H:%M:%S.%f',
+                        '%B %d %Y %H:%M:%S.%f',
                     )[:-3])
                     continue
                 try:

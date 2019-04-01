@@ -327,7 +327,8 @@ class GuardianTab(DataTab):
                     '%s [%d]' % (self.grdstates.get(from_, 'Unknown'), from_),
                     '%s [%d]' % (self.grdstates.get(to_, 'Unknown'), to_)))
             page.add(str(html.table(
-                headers, data, id='%s-guardian-transitions' % self.ifo.lower(),
+                headers, data,
+                id='%s-guardian-%s' % (self.ifo.lower(), str(bit)),
                 caption="Transitions for %s %r state" % (self.node, name))))
 
             # print segments

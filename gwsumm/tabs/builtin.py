@@ -159,7 +159,7 @@ class ExternalTab(Tab):
         if not kwargs.pop('writehtml', True):
             return
         link = markup.given_oneliner.a('click here to view the original',
-                                       class_='reference', style='color:#eee;',
+                                       class_='reference',
                                        href=self.url.split()[0])
         kwargs.setdefault('footer', 'This page contains data from an external '
                                     'source, %s.' % link)

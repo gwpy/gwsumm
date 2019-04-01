@@ -522,7 +522,7 @@ class BaseTab(object):
         return self.page
 
     def html_finalize(self, issues='https://github.com/gwpy/gwsumm/issues',
-                      about=None, content=None, style='color:#eee;'):
+                      about=None, content=None):
         """Finalize the HTML content for this tab.
 
         This method appends a `<footer></footer>` to the HTML page, and
@@ -564,12 +564,11 @@ class BaseTab(object):
         url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
         link = markup.oneliner.a(
             'View gwsumm-{} on GitHub'.format(version),
-            href=url, target='_blank', style=style)
+            href=url, target='_blank')
         issues = markup.oneliner.a(
-            'Report an issue', href=issues, target='_blank', style=style)
+            'Report an issue', href=issues, target='_blank')
         self.page.add(write_footer(
-            link=link, issues=issues, about=about, content=content,
-            linkstyle=style))
+            link=link, issues=issues, about=about, content=content))
         if not self.page._full:
             self.page.body.close()
             self.page.html.close()

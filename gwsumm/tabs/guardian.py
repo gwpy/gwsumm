@@ -247,7 +247,7 @@ class GuardianTab(DataTab):
 
         # draw table
         page.h2('%s state transitions' % self.node)
-        id_ = '{}-state-transitions'.format(self.ifo)
+        id_ = '{}-state-transitions'.format(self.ifo.lower())
         page.table(class_='table table-condensed table-hover '
                           'table-responsive transitions', id_=id_)
         page.button(

@@ -258,7 +258,7 @@ class SEIWatchDogTab(base):
         # build summary table
         page.div(class_='well')
         chambertype = self.chambers[0][:-1]
-        id_ = '{}-{}'.format(self.ifo, chambertype)
+        id_ = '{}-{}'.format(self.ifo.lower(), chambertype.lower())
         page.table(
             class_='table table-condensed table-hover watchdog', id_=id_)
         page.button(

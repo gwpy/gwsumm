@@ -250,10 +250,6 @@ class GuardianTab(DataTab):
         id_ = '{}-state-transitions'.format(self.ifo.lower())
         page.table(class_='table table-condensed table-hover '
                           'table-responsive transitions', id_=id_)
-        page.button(
-            'Export to CSV', class_='btn btn-default',
-            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
-                name=id_))
         page.caption("Transitions into each state (row) from each other "
                      "state (column). Only those states named in the "
                      "configuration are shown, but the 'Total' includes "
@@ -284,6 +280,10 @@ class GuardianTab(DataTab):
             page.tr.close()
         page.tbody.close()
         page.table.close()
+        page.button(
+            'Export to CSV', class_='btn btn-default',
+            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                name=id_))
         page.div.close()
         page.div.close()
 

@@ -203,10 +203,11 @@ class GraceDbTab(get_tab('default')):
         page.table.close()
         if len(self.events[str(state)]) == 0:
             page.p("No events were recovered for this state.")
-        page.button(
-            'Export to CSV', class_='btn btn-default',
-            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
-                name='gracedb'))
+        else:
+            page.button(
+                'Export to CSV', class_='btn btn-default btn-table',
+                onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                    name='gracedb'))
         page.div.close()  # scaffold well
 
         # query doc

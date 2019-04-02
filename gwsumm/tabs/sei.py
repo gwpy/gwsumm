@@ -315,7 +315,7 @@ class SEIWatchDogTab(base):
         page.thead.close()
         page.table.close()
         page.button(
-            'Export to CSV', class_='btn btn-default',
+            'Export to CSV', class_='btn btn-default btn-table',
             onclick="exportTableToCSV('{name}.csv', '{name}')".format(
                 name=id_))
         page.div.close()

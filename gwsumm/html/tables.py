@@ -87,7 +87,7 @@ def table(headers, data, caption=None, separator='', id=None, **class_):
 
     if id is not None:
         p.button(
-            'Export to CSV', class_='btn btn-default',
+            'Export to CSV', class_='btn btn-default btn-table',
             onclick="exportTableToCSV('{name}.csv', '{name}')".format(
                 name=id))
     return p

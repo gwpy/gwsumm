@@ -28,13 +28,11 @@ from six import string_types
 
 from MarkupPy import markup
 
-from gwdetchar.io.html import package_table
+from gwdetchar.io import html as gwhtml
 
 from .tables import table
-from .utils import highlight_syntax
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
-from .._version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -314,70 +312,6 @@ def wrap_content(page):
     return out
 
 
-def footer(user=True, about=None, issues=True, content=None, span=12,
-           class_='footer'):
-    """Construct a footer with the given HTML content
-
-    Parameters
-    ----------
-    user : `bool`, optional, default: `True`
-        print details of user running this job
-    issues : `str`, optional, default: 'https://github.com/gwpy/gwsumm/issues'
-        external link to a webpage where issues can be posted
-    span : `int`
-        column span of content, default: 'full' (``12``)
-
-    Returns
-    -------
-    page : :class:`~MarkupPy.markup.page`
-        HTML footer around content as
-
-        .. code:: html
-
-            <footer>
-                <div class="container">
-                    <div class="col-md-{span}">
-                        content
-                    </div>
-                </div>
-            </footer>
-    """
-    page = markup.page()
-    page.twotags.extend((
-        "footer",
-    ))
-    page.FOOTER(class_=class_)
-    page.div(class_='container')
-    page.div(class_='row')
-    page.div(class_='col-md-%d' % span)
-    if user:
-        page.p('This page was created by %s at %s.'
-               % (getpass.getuser(),
-                  datetime.datetime.now().strftime('%H:%m on %B %d %Y')))
-    if issues is True:
-        issues = 'https://github.com/gwpy/gwsumm/issues'
-    if issues:
-        version = get_versions()['version']
-        commit = get_versions()['full-revisionid']
-        url = 'https://github.com/gwpy/gwsumm/tree/%s' % commit
-        page.p()
-        page.a('View GWSumm %s on GitHub' % version, href=url, target='_blank')
-        page.add('|')
-        page.a('Report an issue', href=issues, target='_blank')
-        page.p.close()
-    if about is not None:
-        page.p(markup.oneliner.a('How was this page generated?', href=about))
-    if isinstance(content, markup.page):
-        page.add(str(content))
-    elif content is not None:
-        page.p(str(content))
-    page.div.close()
-    page.div.close()
-    page.div.close()
-    page.FOOTER.close()
-    return page
-
-
 def state_switcher(states, default=0):
     """Build a state switch button, including all of the given
     states, with the default selected by index
@@ -456,13 +390,15 @@ def about_this_page(cmdline=True, config=None, packagelist=True):
             page.a.close()
             page.div(id_='file%d' % i, class_='panel-collapse collapse')
             page.div(class_='panel-body')
-            page.add(highlight_syntax(cpfile, 'ini'))
+            with open(cpfile, 'r') as fobj:                                           
+                contents = fobj.read()
+            page.add(gwhtml.render_code(contents, 'ini'))
             page.div.close()
             page.div.close()
             page.div.close()
         page.div.close()
     if packagelist:
-        page.add(package_table())
+        page.add(gwhtml.package_table())
 
     page.div.close()
     page.div.close()

@@ -18,7 +18,7 @@ lscsoft-glue>=1.60.0
 ligo-segments
 pygments
 MarkupPy
-gwdetchar>=0.3.0
+gwdetchar>=0.4.0
 gwpy>=0.14.2
 
 # optional extras (not module-level imports)

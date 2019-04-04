@@ -703,16 +703,14 @@ for tab in tablist:
                               ifomap=ifobases, about=about.index, base=base,
                               issues=issues, writedata=not opts.html_only,
                               writehtml=not opts.no_html)
+
+    # archive this tab
+    if opts.archive:
+        vprint("Writing data to archive...")
+        archive.write_data_archive(opts.archive)
+        vprint("Archive written in\n{}\n".format(
+            os.path.abspath(opts.archive)))
     vprint("%s complete!\n" % (name))
-
-# -----------------------------------------------------------------------------
-# Finalise
-
-if opts.archive:
-    vprint("\n-------------------------------------------------\n")
-    vprint("Writing data to archive...")
-    archive.write_data_archive(opts.archive)
-    vprint("Done. Archive written in\n%s\n" % os.path.abspath(opts.archive))
 
 vprint("""
 ------------------------------------------------------------------------------

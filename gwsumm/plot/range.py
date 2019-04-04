@@ -23,6 +23,8 @@ from __future__ import division
 
 import re
 from math import pi
+from heapq import nlargest
+from itertools import combinations
 
 from six import string_types
 
@@ -183,6 +185,30 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         ts[:] = livetime(ts.times.value) * ts.unit
         return (4/3. * pi * ts * range ** 3).to('Mpc^3 year')
 
+    def combined_time_volume(self, allsegments, allranges):
+        try:
+            combined_range = TimeSeries(numpy.zeros(allranges[0].size),
+                                        xindex=allranges[0].times, unit='Mpc')
+        except IndexError:
+            combined_range = TimeSeries(
+                numpy.zeros(allranges[0].size), unit='Mpc',
+                x0=allranges[0].x0, dx=allranges[0].dx)
+
+        # get coincident observing segments
+        pairs = list(combinations(allsegments, 2))
+        coincident = SegmentList()
+        for pair in pairs:
+            coincident.extend(pair[0] & pair[1])
+        coincident = coincident.coalesce()
+
+        # get effective network range
+        values = [r.value for r in allranges]
+        values = [min(nlargest(2, x)) for x in zip(*values)]
+        combined_range[:] = values * combined_range.unit
+
+        # compute time-volume
+        return self.calculate_time_volume(coincident, combined_range)
+
     def draw(self, outputfile=None):
         """Generate the figure for this plot
         """
@@ -202,6 +228,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
             self.pargs.setdefault('ylabel', 'Time-volume [Mpc$^3$ yr]')
 
         # get data
+        allsegs, allranges = ([], [])
         for channel, flag, pargs in zip(self.channels, self.flags, plotargs):
             pad = 0
             if self.state and not self.all_data:
@@ -222,6 +249,21 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
                 ax.plot(timevolume.cumsum(), **pargs)
             else:
                 ax.plot(timevolume, **pargs)
+            allsegs.append(segments.active)
+            allranges.append(data)
+
+        # estimate combined time-volume
+        if self.all_data and len(self.channels) > 1:
+            pargs = plotargs[-1]
+            pargs['color'] = '#000000'
+            pargs['label'] = 'Combined'
+            pargs['linestyle'] = '--'
+            combined_timevolume = self.combined_time_volume(
+                allsegs, allranges)
+            if cumulative:
+                ax.plot(combined_timevolume.cumsum(), **pargs)
+            else:
+                ax.plot(combined_timevolume, **pargs)
 
         # add horizontal lines to add
         for yval in self.pargs.get('hline', []):

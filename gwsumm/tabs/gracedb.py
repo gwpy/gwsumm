@@ -144,7 +144,8 @@ class GraceDbTab(get_tab('default')):
         page = markup.page()
         # build table of events
         page.div(class_='scaffold well')
-        page.table(class_='table table-condensed table-hover table-striped')
+        page.table(class_='table table-condensed table-hover table-striped',
+                   id_='gracedb')
         # thead
         page.thead()
         page.tr()
@@ -175,7 +176,7 @@ class GraceDbTab(get_tab('default')):
                 if col == 'date':
                     gpskey = 't_0' if 'superevent_id' in event else 'gpstime'
                     page.td(from_gps(event[gpskey]).strftime(
-                        '%B %d %Y, %H:%M:%S.%f',
+                        '%B %d %Y %H:%M:%S.%f',
                     )[:-3])
                     continue
                 try:
@@ -202,6 +203,11 @@ class GraceDbTab(get_tab('default')):
         page.table.close()
         if len(self.events[str(state)]) == 0:
             page.p("No events were recovered for this state.")
+        else:
+            page.button(
+                'Export to CSV', class_='btn btn-default btn-table',
+                onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                    name='gracedb'))
         page.div.close()  # scaffold well
 
         # query doc

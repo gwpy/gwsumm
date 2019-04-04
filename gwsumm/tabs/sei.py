@@ -257,8 +257,10 @@ class SEIWatchDogTab(base):
 
         # build summary table
         page.div(class_='well')
-        page.table(class_='table table-condensed table-hover watchdog')
         chambertype = self.chambers[0][:-1]
+        id_ = '{}-{}'.format(self.ifo.lower(), chambertype.lower())
+        page.table(
+            class_='table table-condensed table-hover watchdog', id_=id_)
         page.caption("Number of watch-dog trips per %s chamber (column) and "
                      "trigger (row)" % (chambertype))
         page.thead()
@@ -312,6 +314,10 @@ class SEIWatchDogTab(base):
         page.tr.close()
         page.thead.close()
         page.table.close()
+        page.button(
+            'Export to CSV', class_='btn btn-default btn-table',
+            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
+                name=id_))
         page.div.close()
 
         # build trip groups

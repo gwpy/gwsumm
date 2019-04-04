@@ -342,9 +342,9 @@ class EventTriggerTab(get_tab('default')):
                         if date:
                             data[-1].insert(
                                 1, from_gps(row[tcol]).strftime(
-                                       '%B %d %Y, %H:%M:%S.%f')[:-3])
+                                       '%B %d %Y %H:%M:%S.%f')[:-3])
                     page.add(str(html.table(
-                        headers, data,
+                        headers, data, id='%s-loudest-table' % self.etg,
                         caption=("%d loudest <samp>%s</samp> (%s) events "
                                  "by %s with minimum %ss separation"
                                  % (self.loudest['N'], self.channel, self.etg,

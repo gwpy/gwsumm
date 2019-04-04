@@ -859,8 +859,8 @@ class DataTab(ProcessedTab, ParentTab):
                 data.append([
                     dtype(seg[0]),
                     dtype(seg[1]),
-                    from_gps(seg[0]).strftime('%B %d %Y, %H:%M:%S.%f')[:-3],
-                    from_gps(seg[1]).strftime('%B %d %Y, %H:%M:%S.%f')[:-3],
+                    from_gps(seg[0]).strftime('%B %d %Y %H:%M:%S.%f')[:-3],
+                    from_gps(seg[1]).strftime('%B %d %Y %H:%M:%S.%f')[:-3],
                     dtype(abs(seg)),
                 ])
             return html.table(headers, data, id='state-information',

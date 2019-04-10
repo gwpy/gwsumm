@@ -183,7 +183,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
 
         livetime = numpy.vectorize(livetime_, otypes=[float])
         ts[:] = livetime(ts.times.value) * ts.unit
-        return (4/3. * pi * ts * range ** 3).to('Mpc^3 year')
+        return (4/3. * pi * ts * range ** 3).to('Mpc^3 kyr')
 
     def combined_time_volume(self, allsegments, allranges):
         try:
@@ -204,7 +204,8 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # get effective network range
         values = [r.value for r in allranges]
         values = [min(nlargest(2, x)) for x in zip(*values)]
-        combined_range[:] = values * combined_range.unit
+        size = min([r.size for r in allranges])
+        combined_range[:size] = values * combined_range.unit
 
         # compute time-volume
         return self.calculate_time_volume(coincident, combined_range)
@@ -223,9 +224,9 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # set ylabel
         if cumulative:
             self.pargs.setdefault('ylabel',
-                                  'Cumulative time-volume [Mpc$^3$ yr]')
+                                  'Cumulative time-volume [Mpc$^3$ kyr]')
         else:
-            self.pargs.setdefault('ylabel', 'Time-volume [Mpc$^3$ yr]')
+            self.pargs.setdefault('ylabel', 'Time-volume [Mpc$^3$ kyr]')
 
         # get data
         allsegs, allranges = ([], [])

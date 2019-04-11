@@ -49,10 +49,7 @@ LABELS["warning"] = {
     "INJ",
 }
 LABELS["success"] = {
-    'EM_READY',
-    'PASTRO_READY',
-    'PE_READY',
-    'SKYMAP_READY',
+    'GCN_PRELIM_SENT',
 }
 
 

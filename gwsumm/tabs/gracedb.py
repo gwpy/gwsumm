@@ -61,7 +61,11 @@ class GraceDbTab(get_tab('default')):
                  **kwargs):
         super(GraceDbTab, self).__init__(name, **kwargs)
         self.url = url
-        self.query = query
+        self.query = "{} {} .. {}".format(
+            query,
+            int(self.start),
+            int(self.end),
+        )
         self.events = dict()
         self.headers = headers
         self.columns = columns
@@ -100,13 +104,14 @@ class GraceDbTab(get_tab('default')):
         service_url = '%s/api/' % self.url
         connection = GraceDb(service_url=service_url)
         vprint("Connected to gracedb at %s\n" % service_url)
-        querystr = '%s %d .. %d' % (self.query, self.start, self.end)
         try:
-            self.events[None] = list(connection.superevents(querystr))
+            self.events[None] = list(connection.superevents(self.query))
+            self._query_type = "S"
         except HTTPError:
-            self.events[None] = list(connection.events(querystr))
+            self.events[None] = list(connection.events(self.query))
             event_method = connection.event
             eventid_name = "graceid"
+            self._query_type = "E"
         else:
             event_method = connection.superevent
             eventid_name = "superevent_id"
@@ -115,7 +120,7 @@ class GraceDbTab(get_tab('default')):
                     event["preferred_event"],
                 ).json())
         vprint("Recovered %d events for query %r\n"
-               % (len(self.events[None]), querystr))
+               % (len(self.events[None]), self.query))
         if 'labels' in self.columns:
             for e in self.events[None]:
                 e['labels'] = ', '.join(event_method(
@@ -164,8 +169,10 @@ class GraceDbTab(get_tab('default')):
                     ):
                         context = ctx
                         break
-            if context is not None:
+            if context:
                 page.tr(class_=context)
+            else:
+                page.tr()
             for col in self.columns:
                 if col == 'date':
                     gpskey = 't_0' if 'superevent_id' in event else 'gpstime'
@@ -186,10 +193,14 @@ class GraceDbTab(get_tab('default')):
                     page.td()
                     tag = "superevents" if col == "superevent_id" else "events"
                     href = '{}/{}/view/{}'.format(self.url, tag, v)
-                    page.a(v, href=href, target='_blank', rel='external')
+                    title = "GraceDB {} page for {}".format(tag[:-1], v)
+                    page.a(v, title=title, href=href, target='_blank',
+                           rel='external', class_="btn btn-info btn-xs")
                     page.td.close()
                 elif col not in ("gpstime", "t_0") and isinstance(v, float):
                     page.td('%.3g' % v)
+                elif col == "labels":
+                    page.td(", ".join(['<samp>%s</samp>' % l for l in sorted(labs)]))
                 else:
                     page.td(str(v))
             page.tr.close()
@@ -205,15 +216,28 @@ class GraceDbTab(get_tab('default')):
         page.div.close()  # scaffold well
 
         # query doc
-        page.p("The above table was generated from a query to %s with the "
-               "form <code>%s</code>." % (self.url, self.query))
+        qurl = "{}/search/?query={}&query_type={}&results_format=S".format(
+            self.url,
+            self.query.replace(" ", "+"),
+            getattr(self, "_query_type", "E"),
+        )
+        qlink = markup.oneliner.a(
+            "here",
+            href=qurl,
+            target="_blank",
+        )
+        page.p("The above table was generated from a query to {} with the "
+               "form <code>{}</code>. To view the results of the same query "
+               "via the GraceDB web interface, click {}.".format(
+                   self.url, self.query, qlink),
+        )
 
         # reference the labelling
         page.h4("Labelling reference")
         page.p("Events in the above table may have a context based on "
                "its labels as follows:")
         for c, labels in LABELS.items():
-            labstr = ', '.join(['<b>%s</b>' % l for l in sorted(labels)])
+            labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
             page.p(labstr, class_='bg-%s' % c, style='width: auto;')
 
         # write to file

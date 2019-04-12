@@ -61,7 +61,11 @@ class GraceDbTab(get_tab('default')):
                  **kwargs):
         super(GraceDbTab, self).__init__(name, **kwargs)
         self.url = url
-        self.query = query
+        self.query = "{} {} .. {}".format(
+            query,
+            int(self.start),
+            int(self.end),
+        )
         self.events = dict()
         self.headers = headers
         self.columns = columns
@@ -100,11 +104,10 @@ class GraceDbTab(get_tab('default')):
         service_url = '%s/api/' % self.url
         connection = GraceDb(service_url=service_url)
         vprint("Connected to gracedb at %s\n" % service_url)
-        querystr = '%s %d .. %d' % (self.query, self.start, self.end)
         try:
-            self.events[None] = list(connection.superevents(querystr))
+            self.events[None] = list(connection.superevents(self.query))
         except HTTPError:
-            self.events[None] = list(connection.events(querystr))
+            self.events[None] = list(connection.events(self.query))
             event_method = connection.event
             eventid_name = "graceid"
         else:
@@ -115,7 +118,7 @@ class GraceDbTab(get_tab('default')):
                     event["preferred_event"],
                 ).json())
         vprint("Recovered %d events for query %r\n"
-               % (len(self.events[None]), querystr))
+               % (len(self.events[None]), self.query))
         if 'labels' in self.columns:
             for e in self.events[None]:
                 e['labels'] = ', '.join(event_method(

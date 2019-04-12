@@ -29,8 +29,8 @@ script:
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help
 
 after_success:
-  - python -m pip install ${PIP_FLAGS} coveralls
-  - coveralls
+  - python -m pip install ${PIP_FLAGS} codecov
+  - python -m codecov --flags $(uname) python${TRAVIS_PYTHON_VERSION/./}
 
 cache:
   pip: true

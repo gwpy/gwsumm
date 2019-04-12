@@ -11,9 +11,9 @@ import argparse
 import os
 import re
 from collections import OrderedDict
+from configparser import DEFAULTSECT
 
 from six import text_type
-from six.moves.configparser import DEFAULTSECT
 
 from matplotlib import use
 use('agg')

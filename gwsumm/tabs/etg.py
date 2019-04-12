@@ -20,10 +20,10 @@
 """
 
 import os
+from configparser import NoOptionError
 from warnings import warn
 
 from six import string_types
-from six.moves.configparser import NoOptionError
 
 from MarkupPy import markup
 

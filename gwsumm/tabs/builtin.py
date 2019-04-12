@@ -29,9 +29,9 @@ The `builtin` classes provide interfaces for simple operations including
 
 import os.path
 import warnings
+from configparser import NoOptionError
 
 from six import string_types
-from six.moves.configparser import NoOptionError
 
 from MarkupPy import markup
 

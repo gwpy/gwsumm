@@ -85,6 +85,7 @@ install_requires = [
     'pygments',
     'MarkupPy',
     'gwdetchar>=0.4.0',
+    'configparser ; python_version < \'3.6\'',
 ]
 if sys.version < '3':
     install_requires.append('enum34')

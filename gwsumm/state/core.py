@@ -22,10 +22,7 @@
 import datetime
 import re
 import operator
-try:
-    from configparser import (NoOptionError, DEFAULTSECT)
-except ImportError:  # python < 3
-    from ConfigParser import (NoOptionError, DEFAULTSECT)
+from configparser import (NoOptionError, DEFAULTSECT)
 
 from astropy.time import Time
 

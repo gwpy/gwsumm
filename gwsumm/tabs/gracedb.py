@@ -199,6 +199,8 @@ class GraceDbTab(get_tab('default')):
                     page.td.close()
                 elif col not in ("gpstime", "t_0") and isinstance(v, float):
                     page.td('%.3g' % v)
+                elif col == "labels":
+                    page.td(", ".join(['<samp>%s</samp>' % l for l in sorted(labs)]))
                 else:
                     page.td(str(v))
             page.tr.close()
@@ -235,7 +237,7 @@ class GraceDbTab(get_tab('default')):
         page.p("Events in the above table may have a context based on "
                "its labels as follows:")
         for c, labels in LABELS.items():
-            labstr = ', '.join(['<b>%s</b>' % l for l in sorted(labels)])
+            labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
             page.p(labstr, class_='bg-%s' % c, style='width: auto;')
 
         # write to file

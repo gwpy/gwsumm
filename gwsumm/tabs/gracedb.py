@@ -169,8 +169,10 @@ class GraceDbTab(get_tab('default')):
                     ):
                         context = ctx
                         break
-            if context is not None:
+            if context:
                 page.tr(class_=context)
+            else:
+                page.tr()
             for col in self.columns:
                 if col == 'date':
                     gpskey = 't_0' if 'superevent_id' in event else 'gpstime'

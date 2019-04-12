@@ -193,7 +193,9 @@ class GraceDbTab(get_tab('default')):
                     page.td()
                     tag = "superevents" if col == "superevent_id" else "events"
                     href = '{}/{}/view/{}'.format(self.url, tag, v)
-                    page.a(v, href=href, target='_blank', rel='external')
+                    title = "GraceDB {} page for {}".format(tag[:-1], v)
+                    page.a(v, title=title, href=href, target='_blank',
+                           rel='external', class_="btn btn-info btn-xs")
                     page.td.close()
                 elif col not in ("gpstime", "t_0") and isinstance(v, float):
                     page.td('%.3g' % v)

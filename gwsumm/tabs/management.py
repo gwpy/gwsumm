@@ -21,10 +21,7 @@
 
 import re
 from collections import OrderedDict
-try:
-    from configparser import NoOptionError
-except ImportError:
-    from ConfigParser import NoOptionError
+from configparser import NoOptionError
 
 from glue.lal import Cache
 

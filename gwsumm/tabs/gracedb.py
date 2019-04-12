@@ -20,10 +20,7 @@
 """
 
 from collections import OrderedDict
-try:
-    from configparser import NoOptionError
-except ImportError:  # python < 3
-    from ConfigParser import NoOptionError
+from configparser import NoOptionError
 
 from MarkupPy import markup
 

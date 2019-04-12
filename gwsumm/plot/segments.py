@@ -25,9 +25,9 @@ import bisect
 from itertools import (cycle, combinations)
 from numbers import Number
 from collections import OrderedDict
+from configparser import NoOptionError
 
 from six import string_types
-from six.moves.configparser import NoOptionError
 
 import numpy
 

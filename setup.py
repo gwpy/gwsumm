@@ -85,9 +85,9 @@ install_requires = [
     'pygments',
     'MarkupPy',
     'gwdetchar>=0.4.0',
+    'configparser ; python_version < \'3.6\'',
+    'enum34 ; python_version < \'3.4\''
 ]
-if sys.version < '3':
-    install_requires.append('enum34')
 
 # testing requirements
 if {'pytest', 'test'}.intersection(sys.argv):

@@ -4,7 +4,7 @@ libsass
 jsmin
 
 # core requirements
-enum34 ; python_version < '3'
+enum34 ; python_version < '3.4'
 python-dateutil
 lxml
 numpy>=1.10
@@ -20,6 +20,7 @@ pygments
 MarkupPy
 gwdetchar>=0.4.0
 gwpy>=0.14.2
+configparser ; python_version < '3.6'
 
 # optional extras (not module-level imports)
 pykerberos

@@ -19,6 +19,7 @@
 """Thin wrapper around configparser
 """
 
+import configparser
 import os.path
 import re
 from collections import OrderedDict
@@ -27,7 +28,6 @@ from importlib import import_module
 from six import string_types
 from six.moves import (
     StringIO,
-    configparser,
     http_client as httplib,
 )
 

@@ -28,16 +28,15 @@ from __future__ import print_function
 import os.path
 import getpass
 import re
-
-from copy import copy
-from datetime import timedelta
-
-from six.moves import StringIO
-from six.moves.configparser import (
+from configparser import (
     ConfigParser,
     NoOptionError,
     NoSectionError,
 )
+from copy import copy
+from datetime import timedelta
+
+from six.moves import StringIO
 
 from MarkupPy import markup
 

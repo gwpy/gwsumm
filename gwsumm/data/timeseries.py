@@ -28,12 +28,9 @@ import warnings
 from math import (floor, ceil)
 from time import sleep
 from collections import OrderedDict
+from configparser import (NoSectionError, NoOptionError)
 
 from six.moves import reduce
-from six.moves.configparser import (
-    NoSectionError,
-    NoOptionError,
-)
 from six.moves.urllib.parse import urlparse
 
 from astropy import units

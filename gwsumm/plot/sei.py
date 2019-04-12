@@ -20,8 +20,7 @@
 """
 
 import re
-
-from six.moves.configparser import NoOptionError
+from configparser import NoOptionError
 
 from matplotlib.pyplot import subplots
 from matplotlib.ticker import NullLocator

@@ -22,10 +22,7 @@
 
 import os
 
-try:
-    from configparser import ConfigParser
-except ImportError:  # python < 3
-    from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 from matplotlib import use
 use('agg')  # noqa

@@ -47,12 +47,11 @@ import os
 import re
 import warnings
 from collections import OrderedDict
+from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
 try:
     from urllib.parse import urlparse
-    from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
 except ImportError:  # python < 3
     from urlparse import urlparse
-    from ConfigParser import (DEFAULTSECT, NoOptionError, NoSectionError)
 
 from dateutil.relativedelta import relativedelta
 

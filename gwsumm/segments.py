@@ -24,15 +24,15 @@ import operator
 import sys
 import warnings
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import reduce
-from six.moves.configparser import (
+from configparser import (
     DEFAULTSECT,
     ConfigParser,
     NoSectionError,
     NoOptionError,
 )
+
+from six import string_types
+from six.moves import reduce
 
 from astropy.io.registry import IORegistryError
 

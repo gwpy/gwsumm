@@ -24,10 +24,7 @@ from __future__ import print_function
 import os
 import re
 from collections import OrderedDict
-try:
-    from configparser import NoOptionError
-except ImportError:  # python < 3
-    from ConfigParser import NoOptionError
+from configparser import NoOptionError
 
 from dateutil import tz
 

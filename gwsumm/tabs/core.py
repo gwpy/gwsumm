@@ -36,10 +36,10 @@ keyword arguments.
 import os
 import re
 from collections import OrderedDict
+from configparser import NoOptionError
 from shutil import copyfile
 
 from six import string_types
-from six.moves.configparser import NoOptionError
 from six.moves.urllib.parse import urlparse
 
 from MarkupPy import markup

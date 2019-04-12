@@ -106,10 +106,12 @@ class GraceDbTab(get_tab('default')):
         vprint("Connected to gracedb at %s\n" % service_url)
         try:
             self.events[None] = list(connection.superevents(self.query))
+            self._query_type = "S"
         except HTTPError:
             self.events[None] = list(connection.events(self.query))
             event_method = connection.event
             eventid_name = "graceid"
+            self._query_type = "E"
         else:
             event_method = connection.superevent
             eventid_name = "superevent_id"
@@ -208,8 +210,21 @@ class GraceDbTab(get_tab('default')):
         page.div.close()  # scaffold well
 
         # query doc
-        page.p("The above table was generated from a query to %s with the "
-               "form <code>%s</code>." % (self.url, self.query))
+        qurl = "{}/search/?query={}&query_type={}&results_format=S".format(
+            self.url,
+            self.query.replace(" ", "+"),
+            getattr(self, "_query_type", "E"),
+        )
+        qlink = markup.oneliner.a(
+            "here",
+            href=qurl,
+            target="_blank",
+        )
+        page.p("The above table was generated from a query to {} with the "
+               "form <code>{}</code>. To view the results of the same query "
+               "via the GraceDB web interface, click {}.".format(
+                   self.url, self.query, qlink),
+        )
 
         # reference the labelling
         page.h4("Labelling reference")

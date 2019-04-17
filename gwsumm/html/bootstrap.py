@@ -30,7 +30,6 @@ from MarkupPy import markup
 
 from gwdetchar.io import html as gwhtml
 
-from .tables import table
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
 

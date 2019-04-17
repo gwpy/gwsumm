@@ -84,7 +84,7 @@ install_requires = [
     'gwdatafind',
     'pygments',
     'MarkupPy',
-    'gwdetchar>=0.4.0',
+    'gwdetchar>=0.5.0',
     'configparser ; python_version < \'3.6\'',
     'enum34 ; python_version < \'3.4\''
 ]

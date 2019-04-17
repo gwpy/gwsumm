@@ -245,34 +245,3 @@ $(window).resize(function() {
   // set short month date
   if ($('#calendar').length){ shortenDate();}
 });
-
-// download a CSV table
-function downloadCSV(csv, filename) {
-  var csvFile;
-  var downloadLink;
-  // set download attributes
-  csvFile = new Blob([csv], {type: "text/csv"});
-  downloadLink = document.createElement("a");
-  downloadLink.download = filename;
-  downloadLink.href = window.URL.createObjectURL(csvFile);
-  downloadLink.style.display = "none";
-  document.body.appendChild(downloadLink);
-  // download action
-  downloadLink.click();
-}
-
-// export a table to CSV
-function exportTableToCSV(filename, tableId) {
-  var csv = [];
-  var table = document.getElementById(tableId);
-  var rows = table.querySelectorAll("table tr");
-  // get table rows
-  for (var i = 0; i < rows.length; i++) {
-    var row = [], cols = rows[i].querySelectorAll("td, th");
-    for (var j = 0; j < cols.length; j++) 
-        row.push(cols[j].innerText);
-    csv.push(row.join(","));        
-  }
-  // download CSV record
-  downloadCSV(csv.join("\n"), filename);
-}

@@ -47,7 +47,7 @@ from MarkupPy import markup
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from gwdetchar.io.html import write_footer
+from gwdetchar.io import html as gwhtml
 
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
@@ -564,7 +564,7 @@ class BaseTab(object):
             href=url, target='_blank')
         issues = markup.oneliner.a(
             'Report an issue', href=issues, target='_blank')
-        self.page.add(write_footer(
+        self.page.add(gwhtml.write_footer(
             link=link, issues=issues, about=about, content=content))
         if not self.page._full:
             self.page.body.close()
@@ -630,8 +630,8 @@ class BaseTab(object):
         if brand:
             brand_.add(str(brand))
         # combine and return
-        return html.navbar(self._html_navbar_links(tabs), class_=class_,
-                           brand=brand_, **kwargs)
+        return gwhtml.navbar(self._html_navbar_links(tabs), class_=class_,
+                             brand=brand_, **kwargs)
 
     def _html_navbar_links(self, tabs):
         """Construct the ordered list of tabs to write into the navbar

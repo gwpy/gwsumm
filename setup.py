@@ -39,8 +39,8 @@ if sys.version < '2.6':
 # set basic metadata
 PACKAGENAME = 'gwsumm'
 DISTNAME = 'gwsumm'
-AUTHOR = 'Duncan Macleod'
-AUTHOR_EMAIL = 'duncan.macleod@ligo.org'
+AUTHOR = 'Duncan Macleod, Alex Urban'
+AUTHOR_EMAIL = 'alexander.urban@ligo.org'
 LICENSE = 'GPLv3'
 
 cmdclass = {}
@@ -225,11 +225,16 @@ data_files = [
 packagenames = find_packages()
 scripts = glob.glob(os.path.join('bin', '*'))
 
+# read description
+with open('README.rst', 'rb') as f:
+    longdesc = f.read().decode().strip()
+
 setup(name=DISTNAME,
       provides=[PACKAGENAME],
       version=__version__,
-      description=None,
-      long_description=None,
+      description=("A python toolbox used by the LIGO Scientific "
+                   "Collaboration for detector characterisation"),
+      long_description=longdesc,
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
       license=LICENSE,
@@ -243,7 +248,7 @@ setup(name=DISTNAME,
       tests_require=tests_require,
       extras_require=extras_require,
       data_files=data_files,
-      use_2to3=True,
+      use_2to3=False,
       classifiers=[
           'Programming Language :: Python',
           'Development Status :: 3 - Alpha',

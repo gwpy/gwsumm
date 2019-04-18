@@ -18,7 +18,7 @@ lscsoft-glue>=1.60.0
 ligo-segments
 pygments
 MarkupPy
-gwdetchar>=0.4.0
+gwdetchar>=0.5.1
 gwpy>=0.14.2
 configparser ; python_version < '3.6'
 

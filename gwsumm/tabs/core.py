@@ -47,7 +47,7 @@ from MarkupPy import markup
 from gwpy.time import (from_gps, to_gps)
 from gwpy.segments import Segment
 
-from gwdetchar.io.html import write_footer
+from gwdetchar.io import html as gwhtml
 
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
@@ -441,134 +441,12 @@ class BaseTab(object):
     # -- HTML operations ------------------------
     # the following related HTML operations are defined here
     #
-    # - init: create page
     # - navbar: create navbar
     # - banner: create header
     # - content: create main content
-    # - finalize: create footer and close page
     #
     # The `Tab.write_html` method pulls all of these things together and
     # is the primary user-facing HTML method
-
-    def html_init(self, title=None, base=None, css=list(), js=list(),
-                  doctype=html.DOCTYPE, metainfo=html.META, copy=True):
-        """Initialise the HTML for this tab
-
-        This method creates a new `~markup.page` with `<html>` and
-        `<body>` tags and writes a complete `<head></head>` section
-
-        Parameters
-        ----------
-        css : `list`, optional
-            list of resolvable URLs for CSS files
-
-        js : `list`, optional
-            list of resolvable URLs for javascript files
-
-        copy : `bool`, optional, default: `True`
-            copy CSS or javascript files that exist on disk into this
-            tab's output directory
-
-        Returns
-        -------
-        page : `~MarkupPy.markup.page`
-            initialised markup page
-
-        Notes
-        -----
-        The :meth:`~Tab.html_finalize` method is provided to clean
-        up the open tags from this method, so if you want to subclass either,
-        you should preserve the same tag structure, or subclass both.
-        """
-        # find relative base path
-        if base is None:
-            n = len(self.index.split(os.path.sep)) - 1
-            base = os.sep.join([os.pardir] * n)
-        if not base.endswith('/'):
-            base += '/'
-
-        # move css and js files if needed
-        if copy:
-            staticdir = os.path.join(self.path, 'static')
-            for i, script in enumerate(css + js):
-                pr = urlparse(script)
-                if not pr.netloc and os.path.isfile(script):
-                    localscript = os.path.join(staticdir,
-                                               os.path.basename(script))
-                    if not os.path.isdir(staticdir):
-                        os.makedirs(staticdir)
-                    if (not os.path.isfile(localscript) or not
-                            os.path.samefile(script, localscript)):
-                        copyfile(script, localscript)
-                        if i >= len(css):
-                            js[i-len(css)] = localscript
-                        else:
-                            css[i] = localscript
-
-        if title is None:
-            title = self.shorttitle.replace('/', ' | ')
-
-        # initialise page
-        self.page = markup.page()
-        self.page.header.append(doctype)
-        self.page.html(lang="en")
-        self.page.head()
-        self.page.metainfo(metainfo)
-        self.page.base(href=base)
-        self.page.title(title)
-        self.page.css(css)
-        self.page.scripts(js)
-        self.page.head.close()
-        return self.page
-
-    def html_finalize(self, issues='https://github.com/gwpy/gwsumm/issues',
-                      about=None, content=None):
-        """Finalize the HTML content for this tab.
-
-        This method appends a `<footer></footer>` to the HTML page, and
-        closes the `<body>` and `<html>` tags to finalize the content.
-
-        Parameters
-        ----------
-        issues : `str`, optional
-            link to git issue tracker for this package
-
-        about : `str`
-            URL for the 'About this page' HTML page
-
-        content : `str`, `~MarkupPy.markup.page`
-            user-defined content for the footer (placed below everything
-            else).
-
-        Returns
-        -------
-        page : `~MarkupPy.markup.page`
-            a copy of the `~Tab.page` for this tab.
-
-        Notes
-        -----
-        This method is twinned with the :meth:`~Tab.html_init`
-        method, and is designed to clean up any open tags known to have been
-        created from that method. So, if you want to subclass either method,
-        you should preserve the same tag structure, or subclass both.
-        """
-        if not self.page:
-            raise RuntimeError("Cannot finalize HTML page before intialising "
-                               "one")
-        # add custom footer
-        version = get_versions()['version']
-        commit = get_versions()['full-revisionid']
-        url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
-        link = markup.oneliner.a(
-            'View gwsumm-{} on GitHub'.format(version),
-            href=url, target='_blank')
-        issues = markup.oneliner.a(
-            'Report an issue', href=issues, target='_blank')
-        self.page.add(write_footer(
-            link=link, issues=issues, about=about, content=content))
-        if not self.page._full:
-            self.page.body.close()
-            self.page.html.close()
 
     def html_banner(self, title=None, subtitle=None):
         """Build the HTML headline banner for this tab.
@@ -630,8 +508,8 @@ class BaseTab(object):
         if brand:
             brand_.add(str(brand))
         # combine and return
-        return html.navbar(self._html_navbar_links(tabs), class_=class_,
-                           brand=brand_, **kwargs)
+        return gwhtml.navbar(self._html_navbar_links(tabs), class_=class_,
+                             brand=brand_, **kwargs)
 
     def _html_navbar_links(self, tabs):
         """Construct the ordered list of tabs to write into the navbar
@@ -788,19 +666,31 @@ class BaseTab(object):
         if outdir and not os.path.isdir(outdir):
             os.makedirs(outdir)
 
-        # initialise HTML page
+        # get default style and scripts
         if css is None:
             css = html.get_css().values()
         if js is None:
             js = html.get_js().values()
-        self.html_init(title=title, css=css, base=base, js=js)
 
-        # add navigation
+        # find relative base path
+        if base is None:
+            n = len(self.index.split(os.path.sep)) - 1
+            base = os.sep.join([os.pardir] * n)
+        if not base.endswith('/'):
+            base += '/'
+
+        # set default title
+        if title is None:
+            title = self.shorttitle.replace('/', ' | ')
+
+        # construct navigation
         if tabs:
-            self.page.add(str(self.html_navbar(ifo=ifo, ifomap=ifomap,
-                                               tabs=tabs, brand=brand)))
-        # -- open main page container
-        self.page.div(class_='container')
+            navbar = str(self.html_navbar(ifo=ifo, ifomap=ifomap,
+                                          tabs=tabs, brand=brand))
+
+        # initialize page
+        self.page = gwhtml.new_bootstrap_page(
+            title=title, base=base, css=css, script=js, navbar=navbar)
 
         # add banner
         self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))
@@ -808,11 +698,19 @@ class BaseTab(object):
         # add #main content
         self.page.add(str(self.html_content(maincontent)))
 
-        self.page.div.close()  # container
+        # format custom footer
+        version = get_versions()['version']
+        commit = get_versions()['full-revisionid']
+        url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
+        link = markup.oneliner.a(
+            'View gwsumm-{} on GitHub'.format(version),
+            href=url, target='_blank')
+        issues = markup.oneliner.a(
+            'Report an issue', href=issues, target='_blank')
+
         # close page and write
-        self.html_finalize(about=about, content=footer, issues=issues)
-        with open(self.index, 'w') as fobj:
-            fobj.write(str(self.page))
+        gwhtml.close_page(self.page, self.index, about=about,
+                          link=link, issues=issues, content=footer)
         return
 
 

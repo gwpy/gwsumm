@@ -29,6 +29,5 @@ from MarkupPy import markup
 from .static import *
 from .html5 import *
 from .bootstrap import *
-from .tables import *
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

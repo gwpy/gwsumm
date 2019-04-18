@@ -48,6 +48,8 @@ from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import from_gps
 from gwpy.utils.mp import multiprocess_with_queues
 
+from gwdetchar.io import html as gwhtml
+
 from .. import (globalv, html)
 from ..channels import (re_channel,
                         split_combination as split_channel_combination)
@@ -731,7 +733,7 @@ class DataTab(ProcessedTab, ParentTab):
                 else:
                     unit = str(channel.unit) if channel.unit else 'Unknown'
                 data.append([link, ctype, ftype, rate, unit])
-            page.add(str(html.table(
+            page.add(str(gwhtml.table(
                 headers, data, id='channel-information',
                 caption="Channels used to generate data on this page")))
 
@@ -769,7 +771,7 @@ class DataTab(ProcessedTab, ParentTab):
                 data.append(['<samp>%s</samp>' % flag.name, valid, active,
                              padding and str(padding) or '-',
                              flag.description or ''])
-            page.add(str(html.table(
+            page.add(str(gwhtml.table(
                 headers, data, id='segment-information',
                 caption="The following flags were used in "
                         "the above data. This list does not include state "
@@ -862,8 +864,8 @@ class DataTab(ProcessedTab, ParentTab):
                     from_gps(seg[1]).strftime('%B %d %Y %H:%M:%S.%f')[:-3],
                     dtype(abs(seg)),
                 ])
-            return html.table(headers, data, id='state-information',
-                              caption=caption)
+            return gwhtml.table(headers, data, id='state-information',
+                                caption=caption)
         else:
             segwizard = StringIO()
             flag.write(segwizard, format='segwizard', coltype=dtype)

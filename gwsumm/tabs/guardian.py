@@ -36,7 +36,9 @@ from glue.lal import Cache
 
 from gwpy.segments import DataQualityDict
 
-from .. import (globalv, html)
+from gwdetchar.io import html
+
+from .. import globalv
 from ..config import GWSummConfigParser
 from ..data import get_timeseries_dict
 from ..plot.registry import get_plot

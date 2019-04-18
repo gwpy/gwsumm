@@ -675,11 +675,12 @@ class BaseTab(object):
         # construct navigation
         if tabs:
             navbar = str(self.html_navbar(ifo=ifo, ifomap=ifomap,
-                                          tabs=tabs, brand=brand)))
+                                          tabs=tabs, brand=brand))
 
         # initialize page
+        print(title)
         self.page = gwhtml.new_bootstrap_page(
-            title=title, base=base, css=css, script=js, navbar=navbar)
+            base=base, css=css, script=js, navbar=navbar)
 
         # add banner
         self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))

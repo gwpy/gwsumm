@@ -31,7 +31,7 @@ from gwdetchar.io import html
 
 from ..config import GWSummConfigParser
 from .registry import (get_tab, register_tab)
-from .. import html
+from .. import globalv
 from ..data import get_timeseries
 from ..segments import get_segments
 from ..plot.registry import get_plot

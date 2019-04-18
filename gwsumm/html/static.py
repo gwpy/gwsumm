@@ -23,43 +23,42 @@ This module mainly declares the resources used by standard on HTML pages
 
 import os.path
 from collections import OrderedDict
+from gwdetchar.io.html import (CSS_FILES, JS_FILES)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 
 STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
 
-# set bootstrap info
-BOOTSTRAP_VERSION = "3.3.6"
-BOOTSTRAP_CDN = '//netdna.bootstrapcdn.com/bootstrap/%s' % BOOTSTRAP_VERSION
-BOOTSTRAP_CSS = '%s/css/bootstrap.min.css' % BOOTSTRAP_CDN
-BOOTSTRAP_JS = '%s/js/bootstrap.min.js' % BOOTSTRAP_CDN
-
 # build list of javascript resources
-JS = OrderedDict()
-JS['jquery'] = '//code.jquery.com/jquery-1.12.3.min.js'
-JS['moment'] = (
-    '//cdnjs.cloudflare.com/ajax/libs/moment.js/2.13.0/moment.min.js')
-JS['bootstrap'] = BOOTSTRAP_JS
-JS['fancybox'] = (
-    '//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.pack.js')
-JS['datepicker'] = (
-    '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-    '1.6.0/js/bootstrap-datepicker.min.js')
-JS['bootstrap-ligo'] = os.path.join(STATICDIR, 'bootstrap-ligo.min.js')
-JS['gwsumm'] = os.path.join(STATICDIR, 'gwsumm.min.js')
+JS = OrderedDict((
+    ('jquery', JS_FILES[0]),
+    ('moment', JS_FILES[1]),
+    ('bootstrap', JS_FILES[2]),
+    ('fancybox', JS_FILES[3]),
+    ('datepicker', (
+        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+        '1.6.0/js/bootstrap-datepicker.min.js')),
+    ('bootstrap-ligo', JS_FILES[4]),
+    ('gwdetchar', JS_FILES[5]),
+    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
+))
 
 # build list of CSS resources
-CSS = OrderedDict()
-CSS['bootstrap'] = BOOTSTRAP_CSS
-CSS['fancybox'] = (
-    '//cdnjs.cloudflare.com/ajax/libs/fancybox/2.1.5/jquery.fancybox.css')
-CSS['datepicker'] = (
-    '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-    '1.6.0/css/bootstrap-datepicker.min.css')
-CSS['bootstrap-ligo'] = os.path.join(STATICDIR, 'bootstrap-ligo.min.css')
-CSS['gwsumm'] = os.path.join(STATICDIR, 'gwsumm.min.css')
+CSS = OrderedDict((
+    ('bootstrap', CSS_FILES[0]),
+    ('fancybox', CSS_FILES[1]),
+    ('datepicker', (
+        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+        '1.6.0/css/bootstrap-datepicker.min.css')),
+    ('bootstrap-ligo', CSS_FILES[2]),
+    ('gwdetchar', CSS_FILES[3]),
+    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
+))
 
+
+# -- utilities ----------------------------------------------------------------
 
 def get_css():
     """Return a `dict` of CSS files to link in the HTML <head>

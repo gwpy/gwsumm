@@ -111,11 +111,9 @@ extras_require = {
 # -- data files ---------------------------------------------------------------
 
 JAVASCRIPT_SOURCES = [
-    f for f in glob.glob(os.path.join('share', 'js', '*.js')) + (
-               glob.glob(os.path.join('bootstrap-ligo', 'js', '*.js')))
+    f for f in glob.glob(os.path.join('share', 'js', '*.js'))
     if not f.endswith('.min.js')]
-CSS_SOURCES = glob.glob(os.path.join('share', 'sass', '[!_]*.scss')) + (
-    glob.glob(os.path.join('bootstrap-ligo', 'css', '[!_]*.scss')))
+CSS_SOURCES = glob.glob(os.path.join('share', 'sass', '[!_]*.scss'))
 
 
 class BuildHtmlFiles(Command):

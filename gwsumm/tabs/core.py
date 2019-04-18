@@ -672,15 +672,25 @@ class BaseTab(object):
         if js is None:
             js = html.get_js().values()
 
+        # find relative base path
+        if base is None:
+            n = len(self.index.split(os.path.sep)) - 1
+            base = os.sep.join([os.pardir] * n)
+        if not base.endswith('/'):
+            base += '/'
+
+        # set default title
+        if title is None:
+            title = self.shorttitle.replace('/', ' | ')
+
         # construct navigation
         if tabs:
             navbar = str(self.html_navbar(ifo=ifo, ifomap=ifomap,
                                           tabs=tabs, brand=brand))
 
         # initialize page
-        print(title)
         self.page = gwhtml.new_bootstrap_page(
-            base=base, css=css, script=js, navbar=navbar)
+            title=title, base=base, css=css, script=js, navbar=navbar)
 
         # add banner
         self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))

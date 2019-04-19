@@ -67,7 +67,7 @@ class BaseTab(object):
     """
     def __init__(self, name, index=None,
                  shortname=None, parent=None, children=list(), group=None,
-                 path=os.curdir, mode=None, hidden=False):
+                 path=os.curdir, mode=None, hidden=False, **kwargs):
         # mode
         self.mode = mode
         # names
@@ -1072,8 +1072,7 @@ class TabList(list):
         """
         if key is None:
             key = self._sortkey
-        hlist = self.get_hierarchy()
-        hlist.sort(key=key)
+        hlist = sorted(self.get_hierarchy(), key=key)
         for tab in hlist:
             tab.children.sort(key=key)
         super(TabList, self).sort(key=key, reverse=reverse)

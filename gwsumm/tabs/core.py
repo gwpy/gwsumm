@@ -39,7 +39,7 @@ from collections import OrderedDict
 from configparser import NoOptionError
 from shutil import copyfile
 
-from six import string_types
+from six import (string_types, add_metaclass)
 from six.moves.urllib.parse import urlparse
 
 from MarkupPy import markup
@@ -67,7 +67,7 @@ class BaseTab(object):
     """
     def __init__(self, name, index=None,
                  shortname=None, parent=None, children=list(), group=None,
-                 path=os.curdir, mode=None, hidden=False, **kwargs):
+                 path=os.curdir, mode=None, hidden=False):
         # mode
         self.mode = mode
         # names
@@ -945,6 +945,7 @@ class _MetaTab(type):
 # this is the first actual Tab object, all of the functionality is defined
 # in the `BaseTab` object
 
+@add_metaclass(_MetaTab)
 class Tab(BaseTab):
     """A Simple HTML tab.
 
@@ -998,7 +999,6 @@ class Tab(BaseTab):
     to collect child tabs in a given place, assign them all the same
     `~Tab.group`.
     """
-    __metaclass__ = _MetaTab
     type = 'basic'
 
 

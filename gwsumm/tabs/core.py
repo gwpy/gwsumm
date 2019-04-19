@@ -1072,8 +1072,7 @@ class TabList(list):
         """
         if key is None:
             key = self._sortkey
-        hlist = self.get_hierarchy()
-        hlist.sort(key=key)
+        hlist = sorted(self.get_hierarchy(), key=key)
         for tab in hlist:
             tab.children.sort(key=key)
         super(TabList, self).sort(key=key, reverse=reverse)

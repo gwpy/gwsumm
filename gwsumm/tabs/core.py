@@ -67,7 +67,7 @@ class BaseTab(object):
     """
     def __init__(self, name, index=None,
                  shortname=None, parent=None, children=list(), group=None,
-                 path=os.curdir, mode=None, hidden=False):
+                 path=os.curdir, mode=None, hidden=False, **kwargs):
         # mode
         self.mode = mode
         # names

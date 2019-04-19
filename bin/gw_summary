@@ -495,8 +495,7 @@ vprint("    Loaded %d rcParams\n" % len(rcp))
 tablist = TabList.from_ini(config, match=opts.process_tab,
                            path=path, plotdir=plotdir)
 tablist.sort(reverse=True)
-tabs = tablist.get_hierarchy()
-tabs.sort(key=tablist._sortkey)
+tabs = sorted(tablist.get_hierarchy(), key=tablist._sortkey)
 vprint("    Loaded %d tabs [%d parents overall]\n" % (len(tablist), len(tabs)))
 
 # read caches

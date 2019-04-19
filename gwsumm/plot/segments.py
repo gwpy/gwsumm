@@ -992,7 +992,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
 
     def parse_wedge_kwargs(self, defaults=dict()):
         wedgeargs = defaults.copy()
-        for key in self.pargs.keys():
+        for key in list(self.pargs):
             if key.startswith('wedge-') or key.startswith('wedge_'):
                 wedgeargs[key[6:]] = self.pargs.pop(key)
         return wedgeargs
@@ -1072,7 +1072,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         # sort entries
         if legsort:
             patches, pclabels, data = map(list, zip(*sorted(
-                 zip(patches, pclabels, data),
+                 list(zip(patches, pclabels, data)),
                  key=lambda x: x[2],
                  reverse=True)))
         # and restrict to the given threshold
@@ -1149,7 +1149,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
             valid = SegmentList([self.span])
         # construct compound flags for each network size
         flags = dict((f[:2], f) for f in self.flags)
-        network = ''.join(sorted(set(flags.keys())))
+        network = ''.join(sorted(set(flags)))
         self.pargs.setdefault('title', '%s network duty factor' % network)
         networkflags = []
         colors = []
@@ -1161,7 +1161,7 @@ class NetworkDutyPiePlot(SegmentPiePlot):
             networksegs = DataQualityFlag(flag, known=valid)
             for ifoset in combinations(flags, i):
                 if not ifoset:
-                    compound = '!%s' % '!'.join(flags.values())
+                    compound = '!%s' % '!'.join(list(flags.values()))
                 else:
                     compound = '&'.join(flags[ifo] for ifo in ifoset)
                 segs = get_segments(compound, validity=valid, query=False,
@@ -1258,8 +1258,8 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                 data.append(livetime / scale)
 
         if sort:
-            data, labels = zip(*sorted(
-                zip(data, labels), key=lambda x: x[0], reverse=True))
+            data, labels = list(zip(*sorted(
+                list(zip(data, labels)), key=lambda x: x[0], reverse=True)))
 
         # make bar chart
         width = plotargs.pop('width', .8)

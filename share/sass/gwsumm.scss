@@ -7,6 +7,9 @@ body {
 }
 
 .navbar {
+		.btn-group {
+				margin-bottom: 0px;
+		}
 		// map page to another IFO
 		.base-map {
 				padding-right: 5px;
@@ -50,6 +53,11 @@ body {
 		}
 }
 
+// footer height
+.footer {
+		height: 148px;
+}
+
 // detchar stuff
 #idq img,
 #upv img {
@@ -76,9 +84,4 @@ body {
 		-o-transform-origin: 0 0;
 		-webkit-transform: scale(0.55);
 		-webkit-transform-origin: 0 0;
-}
-
-// disqus comments
-.disqus_thread {
-		padding-bottom: 20px;
 }

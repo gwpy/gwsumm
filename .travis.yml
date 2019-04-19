@@ -24,6 +24,10 @@ script:
   - python -m pytest --pyargs gwsumm --cov gwsumm
   # test executables
   - python -m coverage run --append $(which gw_summary) --help
+  - python -m coverage run --append $(which gw_summary) day --help
+  - python -m coverage run --append $(which gw_summary) week --help
+  - python -m coverage run --append $(which gw_summary) month --help
+  - python -m coverage run --append $(which gw_summary) gps --help
   - python -m coverage run --append $(which gw_summary_pipe) --help
   - python -m coverage run --append $(which gwsumm-plot-triggers) --help
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help

@@ -735,7 +735,7 @@ class StateTab(PlotTab):
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             default = self.states.index(self.defaultstate)
             brand_.add(str(html.state_switcher(
-                zip(self.states, self.frames), default)))
+                list(zip(self.states, self.frames)), default)))
         # build HTML brand
         if brand:
             brand_.add(str(brand))

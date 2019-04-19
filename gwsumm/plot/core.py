@@ -572,7 +572,7 @@ class DataPlot(SummaryPlot):
         """
         re_prefix = re.compile(r'\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
-        for key in list(self.pargs.keys()):
+        for key in list(self.pargs):
             m = re_prefix.match(key)
             if m:
                 extras[key[m.span()[1]:]] = safe_eval(self.pargs.pop(key))
@@ -654,7 +654,7 @@ class DataPlot(SummaryPlot):
         """Parse matplotlib rcParams settings from a dict of plot params
         """
         self.rcParams = {}
-        for key in list(params.keys()):
+        for key in list(params):
             if key in rcParams:
                 self.rcParams[key] = safe_eval(params.pop(key))
         return self.rcParams
@@ -680,7 +680,7 @@ class DataPlot(SummaryPlot):
         """
         items = OrderedDict()
         re_prefix = re.compile(r'{0}(\d+)?\Z'.format(prefix))
-        keys = sorted(self.pargs.keys())
+        keys = sorted(list(self.pargs))
         while True:
             for i, key in enumerate(keys):
                 if re_prefix.match(key):
@@ -689,7 +689,7 @@ class DataPlot(SummaryPlot):
                     break  # go to next iteration
             else:  # no references matched, so stop
                 break
-            keys = sorted(self.pargs.keys()[i:])
+            keys = sorted(list(self.pargs)[i:])
 
         return items
 
@@ -772,7 +772,7 @@ class DataPlot(SummaryPlot):
         return outputfile
 
     def apply_parameters(self, *axes, **pargs):
-        keys = sorted(pargs.keys(),
+        keys = sorted(list(pargs),
                       key=lambda x: 1 if x in ('xscale', 'yscale') else 2)
         for ax in axes:
             for key in keys:

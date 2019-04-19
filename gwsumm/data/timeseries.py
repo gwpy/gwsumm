@@ -898,7 +898,7 @@ def resample_timeseries_dict(tsd, nproc=1, **sampling_dict):
     resampled = multiprocess_with_queues(nproc, _resample, inputs)
 
     # map back to original dict keys
-    return dict(zip(tsd.keys(), resampled))
+    return dict(zip(list(tsd), resampled))
 
 
 def filter_timeseries(ts, filt):

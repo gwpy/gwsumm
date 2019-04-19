@@ -138,7 +138,7 @@ class TestData(object):
         fftparams = utils.get_fftparams('L1:TEST-CHANNEL')
         assert isinstance(fftparams, utils.FftParams)
 
-        for key in utils.FFT_PARAMS.keys():
+        for key in utils.FFT_PARAMS:
             assert (getattr(fftparams, key) is
                     utils.DEFAULT_FFT_PARAMS.get(key, None))
 
@@ -169,7 +169,7 @@ class TestData(object):
     ])
     def test_parse_math_definition(self, definition, math):
         chans, operators = mathutils.parse_math_definition(definition)
-        assert chans == OrderedDict(zip(*math[0]))
+        assert chans == OrderedDict(list(zip(*math[0])))
         assert operators == math[1]
 
     # -- test add/get methods -------------------

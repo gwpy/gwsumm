@@ -555,7 +555,7 @@ class BaseTab(object):
                     links.append((child.shortname.strip('_'), child.href))
                     if child == self:
                         active = len(links) - 1
-                for group in sorted(groups.keys()):
+                for group in sorted(list(groups)):
                     # sort group by name
                     re_group = re.compile(
                         r'(\A{0}\s|\s{0}\Z)'.format(group.strip('_')),
@@ -564,7 +564,7 @@ class BaseTab(object):
                     names = [re_group.sub('', t.shortname)
                              for t in groups[group]]
                     groups[group] = list(zip(*sorted(
-                        zip(groups[group], names),
+                        list(zip(groups[group], names)),
                         key=(lambda x:
                              x[1].lower() in ['summary', 'overview'] and
                              ' %s' % x[1].upper() or x[1].lower()),
@@ -668,9 +668,9 @@ class BaseTab(object):
 
         # get default style and scripts
         if css is None:
-            css = html.get_css().values()
+            css = list(html.get_css().values())
         if js is None:
-            js = html.get_js().values()
+            js = list(html.get_js().values())
 
         # find relative base path
         if base is None:
@@ -693,7 +693,8 @@ class BaseTab(object):
             title=title, base=base, css=css, script=js, navbar=navbar)
 
         # add banner
-        self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))
+        self.page.add(str(self.html_banner(
+            title=title.replace('|', ':'), subtitle=subtitle)))
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))
@@ -1049,7 +1050,7 @@ class TabList(list):
             parents.setdefault(tab.parent.name, tab.parent)
             if tab not in tab.parent.children:
                 tab.parent.add_child(tab)
-        return parents.values()
+        return list(parents.values())
 
     @staticmethod
     def _sortkey(tab):

@@ -598,9 +598,9 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
                 table_ = table_.filter(self.filterstr)
             tcol_ = tcol or get_time_column(table_, self.etg)
             if self.column:
-                rates = table_.binned_event_rates(
+                rates = list(table_.binned_event_rates(
                     stride, self.column, bins, operator=operator,
-                    start=self.start, end=self.end, timecolumn=tcol_).values()
+                    start=self.start, end=self.end, timecolumn=tcol_).values())
             else:
                 rates = [table_.event_rate(stride, start=self.start,
                                            end=self.end, timecolumn=tcol_)]

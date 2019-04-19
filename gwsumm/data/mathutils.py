@@ -163,7 +163,7 @@ def get_with_math(channel, segments, load_func, get_func, **ioargs):
     # parse definition
     singleops, joinoperators = parse_math_definition(str(channel))
     channel = get_channel(channel)
-    names = list(singleops.keys())
+    names = list(singleops)
     chans = list(map(get_channel, names))
     # get raw data
     if load_func is get_func:  # if load_func returns a single channel

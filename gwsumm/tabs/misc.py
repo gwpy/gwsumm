@@ -26,7 +26,7 @@ from .registry import (get_tab, register_tab)
 from gwdetchar.io import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__all__ = ['AboutTab', 'Error404Tab']
+__all__ = ['AboutTab', 'Error404Tab', 'HTMLContentTab']
 
 Tab = get_tab('basic')
 
@@ -97,3 +97,125 @@ class Error404Tab(Tab):
 
 
 register_tab(Error404Tab)
+
+
+# -- HTMLContent --------------------------------------------------------------
+class HTMLContentTab(Tab):
+    """A simple tab to add any generic HTML content into the #main div.
+
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    content : `~MarkupPy.markup.page`, `str`, optional
+        content to include in the #main HTML
+    afterword : `~MarkupPy.markup.page`, `str`, optional
+        content to include in the #main HTML after the plots
+    index : `str`, optional
+        HTML file in which to write. By default each tab is written to
+        an index.html file in its own directory. Use :attr:`~Tab.index`
+        to find out the default index, if not given.
+    shortname : `str`, optional
+        shorter name for this tab to use in the navigation bar. By
+        default the regular name is used
+    parent : :class:`~gwsumm.tabs.Tab`, optional
+        parent of this tab. This is used to position this tab in the
+        navigation bar.
+    children : `list`, optional
+        list of child :class:`Tabs <~gwsumm.tabs.Tab>` of this one. This
+        is used to position this tab in the navigation bar.
+    group : `str`, optional
+        name of containing group for this tab in the navigation bar
+        dropdown menu. This is only relevant if this tab has a parent.
+    path : `str`, optional,
+        base output directory for this tab (should be the same directory
+        for all tabs in this run).
+    """
+    type = 'htmlcontent'
+
+    def __init__(self, name, content=None, **kwargs):
+        """Initialise a new :class:`HTMLContentTab`.
+        """
+        super(HTMLContentTab, self).__init__(name, **kwargs)
+
+        self.content = content
+
+    @property
+    def content(self):
+        """HTML content to be included on the page
+        """
+        return self._content
+
+    @content.setter
+    def content(self, content):
+        if isinstance(content, markup.page) or content is None:
+            self._content = content
+        else:
+            self._content = markup.page()
+            if not str(content).startswith('<'):
+                self._content.p(str(content))
+            else:
+                self._content.add(str(content))
+
+    @classmethod
+    def from_ini(cls, cp, section, *args, **kwargs):
+        """Define a new tab from a :class:`~gwsumm.config.GWConfigParser`
+
+        Parameters
+        ----------
+        cp : :class:`~ConfigParser.GWConfigParser`
+            customised configuration parser containing given section
+        section : `str`
+            name of section to parse
+
+        Returns
+        -------
+        tab : `HTMLContentTab`
+            a new tab defined from the configuration
+        """
+        cp = GWSummConfigParser.from_configparser(cp)
+
+        kwargs.setdefault('path', '')
+
+        # get content
+        try:
+            kwargs.setdefault('content', cp.get(section, 'content'))
+        except NoOptionError:
+            pass
+
+        # build and return tab
+        return super(HTMLContentTab, cls).from_ini(cp, section, *args, **kwargs)
+
+    def html_content(self, content):
+        page = markup.page()
+        if self.content:
+            page.add(str(self.content))
+        if content:
+            page.add(str(content))
+        return Tab.html_content(str(page))
+
+    def write_html(self, foreword=None, afterword=None, **kwargs):
+        """Write the HTML page for this tab.
+
+        Parameters
+        ----------
+        content : `str`, :class:`~MarkupPy.markup.page`, optional
+            content to place on the page, defaults to
+            :attr:`HTMLContentTab.content`
+        **kwargs
+            other keyword arguments to be passed through
+            :meth:`~Tab.write_html`
+
+        See Also
+        --------
+        gwsumm.tabs.Tab.write_html : for details of all valid unnamed
+                                     keyword arguments
+        """
+        if not kwargs.pop('writehtml', True):
+            return
+        if content is not None:
+            self.content = content
+        return super(HTMLContentTab, self).write_html(None, **kwargs)
+
+
+register_tab(HTMLContentTab)

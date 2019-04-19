@@ -693,7 +693,8 @@ class BaseTab(object):
             title=title, base=base, css=css, script=js, navbar=navbar)
 
         # add banner
-        self.page.add(str(self.html_banner(title=title, subtitle=subtitle)))
+        self.page.add(str(self.html_banner(
+            title=title.replace('|', ':'), subtitle=subtitle)))
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))

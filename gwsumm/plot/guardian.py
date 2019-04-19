@@ -202,8 +202,8 @@ class GuardianStatePlot(get_plot('segments')):
             'bbox_to_anchor': (1., 0.),
             'loc': 'lower left',
         })
-        sax.legend(legentry.values(), legentry.keys(), title='Node mode',
-                   **legendargs)
+        sax.legend(list(legentry.values()), list(legentry),
+                   title='Node mode', **legendargs)
         sax.tick_params(axis='y', which='major', labelsize=12)
         for ax_ in (ax, sax):
             ax_.set_epoch(epoch)

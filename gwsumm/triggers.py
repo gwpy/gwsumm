@@ -194,7 +194,7 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
 
         # get find/read kwargs
         trigfindkwargs = dict(
-             (k[9:], read_kw.pop(k)) for k in read_kw.keys() if
+             (k[9:], read_kw.pop(k)) for k in list(read_kw) if
              k.startswith('trigfind-'))
         trigfindetg = trigfindkwargs.pop('etg', etg)
 
@@ -379,7 +379,7 @@ def get_etg_read_kwargs(etg, config=None, exclude=['columns']):
     kwargs.update(config_kw)
 
     # format kwargs
-    for key in list(kwargs.keys()):
+    for key in list(kwargs):
         # remove unwanted keys
         if key in exclude:
             kwargs.pop(key)

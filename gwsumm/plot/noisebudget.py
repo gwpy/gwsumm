@@ -57,7 +57,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         """
         re_prefix = re.compile(r'\A%s[-_]' % prefix.rstrip('-_'))
         extras = defaults.copy()
-        for key in self.pargs.keys():
+        for key in list(self.pargs):
             m = re_prefix.match(key)
             if m:
                 extras[key[m.span()[1]:]] = self.pargs.pop(key)

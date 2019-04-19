@@ -90,7 +90,7 @@ class AccountingTab(ParentTab):
             for state in new.states:
                 new.plots.append(get_plot('segments')(
                     [new.segmenttag % idx for idx in flags],
-                    new.span[0], new.span[1], labels=flags.values(),
+                    new.span[0], new.span[1], labels=list(flags.values()),
                     state=state, outdir=plotdir,
                     pid='%s_SEGMENTS_%s' % (tag, ptag.upper()),
                     active=segcolors,
@@ -108,16 +108,17 @@ class AccountingTab(ParentTab):
             piecolors = None
 
         for state in new.states:
+            labels = list(groups.values())
             new.plots.append(get_plot('segment-pie')(
                 [new.segmenttag % idx for idx in groups],
-                new.span[0], new.span[1], state=state, labels=groups.values(),
+                new.span[0], new.span[1], state=state, labels=labels,
                 outdir=plotdir, pid='%s_PIE_%s' % (tag, ptag.upper()),
                 colors=piecolors, explode=explode,
                 title='%s operating mode %s' % (new.ifo, ptag)))
 
             shortlabels = ['\n'.join('{0:.9}.'.format(w) if len(w) > 9 else w
                                      for w in l.split()) for
-                           l in groups.values()]
+                           l in labels]
             new.plots.append(get_plot('duty')(
                 [new.segmenttag % idx for idx in groups],
                 new.span[0], new.span[1], state=state, labels=shortlabels,
@@ -142,7 +143,7 @@ class AccountingTab(ParentTab):
                 p.new = False
 
         # get archived GPS time
-        tag = self.segmenttag % list(self.modes.keys())[0]
+        tag = self.segmenttag % list(self.modes)[0]
         try:
             lastgps = globalv.SEGMENTS[tag].known[-1][-1]
         except (IndexError, KeyError):

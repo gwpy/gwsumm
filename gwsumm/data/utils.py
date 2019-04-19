@@ -84,7 +84,7 @@ DEFAULT_FFT_PARAMS = {
 class FftParams(object):
     """Convenience object to hold signal-processing parameters
     """
-    __slots__ = FFT_PARAMS.keys()
+    __slots__ = list(FFT_PARAMS)
 
     def __init__(self, **kwargs):
         for slot in self.__slots__:

@@ -346,7 +346,7 @@ def get_spectrum(channel, segments, config=None, cache=None,
 
     # read data for all sub-channels
     specs = []
-    channels = list(parse_math_definition(str(channel))[0].keys())
+    channels = list(parse_math_definition(str(channel))[0])
     if len(channels) == 0:
         channels = [channel]
     for c in channels:

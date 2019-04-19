@@ -98,7 +98,7 @@ class GuardianTab(DataTab):
             new.transstates = map(
                 int, config.get(section, 'transitions').split(','))
         except NoOptionError:
-            new.transstates = new.grdstates.keys()
+            new.transstates = list(new.grdstates)
 
         # -- build plots ------------------------
 
@@ -175,11 +175,11 @@ class GuardianTab(DataTab):
         state = sorted(self.states, key=lambda s: abs(s.active))[-1]
 
         prefices = ['STATE_N', 'REQUEST_N', 'NOMINAL_N', 'OK', 'MODE', 'OP']
-        alldata = get_timeseries_dict(
+        alldata = list(get_timeseries_dict(
             [prefix % x for x in prefices],
             state, config=config, nds=nds, nproc=nproc,
             cache=datacache, datafind_error=datafind_error,
-            dtype='int32').values()
+            dtype='int32').values())
         vprint("    All time-series data loaded\n")
 
         # --------------------------------------------------------------------
@@ -256,7 +256,7 @@ class GuardianTab(DataTab):
                      "transitions from that state.")
         page.thead()
         page.tr()
-        for th in ['State'] + self.grdstates.values() + ['Total']:
+        for th in ['State'] + list(self.grdstates.values()) + ['Total']:
             page.th(th)
         page.tr.close()
         page.thead.close()

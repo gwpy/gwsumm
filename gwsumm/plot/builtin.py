@@ -161,8 +161,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         legendargs = self.parse_legend_kwargs()
 
         # add data
-        channels, groups = zip(*self.get_channel_groups())
-        for clist, pargs in zip(groups, plotargs):
+        channels, groups = list(zip(*self.get_channel_groups()))
+        for clist, pargs in list(zip(groups, plotargs)):
             # get data
             valid = self._get_data_segments(clist[0])
             data = [get_timeseries(c, valid, query=False)
@@ -493,9 +493,10 @@ class SpectrumDataPlot(DataPlot):
 
         # add data
         if self.type == 'coherence-spectrum':
-            iterator = zip(self.channels[0::2], self.channels[1::2], plotargs)
+            iterator = list(zip(self.channels[0::2], self.channels[1::2],
+                                plotargs))
         else:
-            iterator = zip(self.channels, plotargs)
+            iterator = list(zip(self.channels, plotargs))
 
         for chantuple in iterator:
             channel = chantuple[0]

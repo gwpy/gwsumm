@@ -22,6 +22,7 @@ error handlers.
 
 from MarkupPy import markup
 
+from ..config import GWSummConfigParser
 from .registry import (get_tab, register_tab)
 from gwdetchar.io import html
 
@@ -194,7 +195,7 @@ class HTMLContentTab(Tab):
             page.add(str(content))
         return Tab.html_content(str(page))
 
-    def write_html(self, foreword=None, afterword=None, **kwargs):
+    def write_html(self, content=None, **kwargs):
         """Write the HTML page for this tab.
 
         Parameters

@@ -37,6 +37,26 @@ LOAD = """<script>
         });
 </script>"""
 
+BOX = """<div id="disqus_thread">
+<script type="text/javascript">
+    var disqus_shortname = "Test";
+    var disqus_identifier = "test";
+    var disqus_title = "Test";
+    var disqus_url = "https://github.com/gwpy/gwsumm";
+
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] ||
+             document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    
+</script>
+<noscript>Please enable JavaScript to view the</noscript>
+<a href="https://disqus.com/?ref_noscript">comments powered by Disqus</a>
+</div>"""  # nopep8
+
 
 # test utilities
 
@@ -73,3 +93,8 @@ def test_load_custom():
     # test non-local url
     content = html5.load(URL, success=success, error=error)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
+
+
+def test_comments_box():
+    box = html5.comments_box('Test', identifier='test', title='Test', url=URL)
+    assert parse_html(str(box)) == parse_html(BOX)

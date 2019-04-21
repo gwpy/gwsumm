@@ -604,6 +604,10 @@ class DataTab(ProcessedTab, ParentTab):
                 id_ = '/%s/%s/%s' % (getpass.getuser(), globalv.IFO, self.path)
             else:
                 id_ = '/%s/%s' % (getpass.getuser(), self.path)
+            page.hr(class_='row-divider')
+            page.h1('Comments')
+            page.add(str(html.comments_box(
+                globalv.HTML_COMMENTS_NAME, identifier=id_)))
         page.div.close()
         return page
 

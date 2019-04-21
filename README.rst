@@ -4,7 +4,9 @@ Gravitational-wave Summary Information Generator
 
 GWSumm is a python toolbox used by the LIGO Scientific Collaboration to summarise and archive sundry facets of the performance of the LIGO instruments, and archive these data in a nested HTML structure.
 
-|PyPI version| |DOI| |License| |Supported Python versions|
+|PyPI version| |Conda version|
+	
+|DOI| |License| |Supported Python versions|
 
 |Build Status| |Coverage Status| |Code Climate|
 
@@ -43,6 +45,8 @@ proposing additions/changes.
 
 .. |PyPI version| image:: https://badge.fury.io/py/gwsumm.svg
    :target: http://badge.fury.io/py/gwsumm
+.. |Conda version| image:: https://img.shields.io/conda/vn/conda-forge/gwsumm.svg
+   :target: https://anaconda.org/conda-forge/gwsumm/
 .. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2647609.svg
    :target: https://doi.org/10.5281/zenodo.2647609
 .. |License| image:: https://img.shields.io/pypi/l/gwsumm.svg

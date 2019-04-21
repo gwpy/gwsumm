@@ -49,4 +49,3 @@ HTMLONLY = False
 
 # comments
 IFO = None
-HTML_COMMENTS_NAME = None

@@ -65,7 +65,7 @@ def load(url, id_='main', error=False, success=None):
                                             % (id_, url))
     elif ps.netloc and not error:
         error = ('alert("Cannot load content from %r, use browser console '
-                 'to inspect failure.");')
+                 'to inspect failure.");' % url)
     else:
         if not isinstance(error, (string_types, markup.page)):
             error = 'Failed to load content from %r' % url

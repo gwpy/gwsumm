@@ -42,7 +42,7 @@ BOX = """<div id="disqus_thread">
     var disqus_shortname = "Test";
     var disqus_identifier = "test";
     var disqus_title = "Test";
-    var disqus_url = "https://github.com/gwpy/gwsumm";
+    var disqus_url = "%s";
 
         (function() {
             var dsq = document.createElement('script');
@@ -55,7 +55,7 @@ BOX = """<div id="disqus_thread">
 </script>
 <noscript>Please enable JavaScript to view the</noscript>
 <a href="https://disqus.com/?ref_noscript">comments powered by Disqus</a>
-</div>"""  # nopep8
+</div>"""
 
 
 # test utilities
@@ -76,8 +76,15 @@ def test_load():
     # test non-local url
     success = '$(\"#main\").html(data);'
     errormsg = ('alert(\"Cannot load content from %r, use '
-                'browser console to inspect failure.\");')
+                'browser console to inspect failure.\");' % URL)
     content = html5.load(URL)
+    assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
+    # test with non-string error argument
+    success = '$(\"#main\").html(data);'
+    error = 'Failed to load content from %r' % URL
+    errormsg = ('$(\"#main\").html(\"<div class=\'alert alert-warning\'>'
+                '<p>%s</p></div>\");' % error)
+    content = html5.load(URL, error=1)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
 
 
@@ -97,4 +104,4 @@ def test_load_custom():
 
 def test_comments_box():
     box = html5.comments_box('Test', identifier='test', title='Test', url=URL)
-    assert parse_html(str(box)) == parse_html(BOX)
+    assert parse_html(str(box)) == parse_html(BOX % URL)

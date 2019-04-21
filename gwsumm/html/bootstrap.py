@@ -93,8 +93,6 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         triggering dropdown
     """
     mode = get_mode(mode)
-    if mode < Mode.day:
-        raise ValueError("Cannot generate calendar for Mode %s" % mode)
     if dateformat is None:
         if mode == Mode.day:
             dateformat = '%B %d %Y'
@@ -105,7 +103,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         elif mode == Mode.year:
             dateformat = '%Y'
         else:
-            raise ValueError("Cannot set dateformat for Mode %s" % mode)
+            raise ValueError("Cannot generate calendar for Mode %s" % mode)
     datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()

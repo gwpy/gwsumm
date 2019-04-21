@@ -196,5 +196,5 @@ def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
                                      class_='navbar-brand dropdown-toggle')))
         page.div.close()
     else:
-        page.div(str(this), class_='navbar-brand')
+        page.div(str(this), class_='navbar-brand', **id_)
     return page

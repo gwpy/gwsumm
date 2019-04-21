@@ -93,9 +93,9 @@ def test_state_switcher():
 
 
 def test_base_map_dropdown():
-    menu = bootstrap.base_map_dropdown('test')
+    menu = bootstrap.base_map_dropdown('test', id_='id')
     assert parse_html(str(menu)) == parse_html(
-        '<div class="navbar-brand">test</div>')
+        '<div class=\"navbar-brand\" id=\"id\">test</div>')
     # test with bases
     menu_wbases = bootstrap.base_map_dropdown('test', bases={'key': 'value'})
     assert parse_html(str(menu_wbases)) == parse_html(

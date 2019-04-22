@@ -15,23 +15,12 @@ The output of this package, known internally as the 'summary pages', give an
 archive of a number of figures or merit, including time-series amplitude
 trends, frequency spectra and spectrograms, and transient event triggers.
 
-Overview
-========
-
-To begin, simply import the core module:
+This package includes a collection of command-line utilities and a python
+module:
 
 .. code:: python
 
    import gwsumm
-
-There are numerous submodules used for signal processing, data plotting, and
-HTML generation. Further detail may be found in the links below:
-
-.. toctree::
-   :maxdepth: 1
-
-   overview
-   automation
 
 Installation
 ============
@@ -77,6 +66,10 @@ GWSumm is distributed under the `GNU General Public License`_.
 .. toctree::
    :maxdepth: 1
    :hidden:
+
+   overview
+   cli
+   automation
    tabs/index
    tabs/flavour
    tabs/websites

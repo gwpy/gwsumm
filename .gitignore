@@ -10,6 +10,7 @@
 /docs/_static
 /docs/api/modules.rst
 /docs/api/gwsumm.*
+/docs/api/api
 /*.patch
 .nfs*
 *.swp

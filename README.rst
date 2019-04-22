@@ -10,6 +10,8 @@ GWSumm is a python toolbox used by the LIGO Scientific Collaboration to summaris
 
 |Build Status| |Coverage Status| |Code Climate|
 
+https://gwsumm.readthedocs.io
+
 ------------
 Installation
 ------------

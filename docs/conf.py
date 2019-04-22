@@ -14,15 +14,10 @@
 
 import sys
 import os
-
-from gwsumm import __version__ as gwsumm_version
-
+import glob
 import sphinx_bootstrap_theme
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('.'))
+from gwsumm import __version__ as gwsumm_version
 
 # -- General configuration ------------------------------------------------
 
@@ -41,8 +36,9 @@ extensions = [
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
     'sphinx.ext.autosummary',
+    'sphinxcontrib.programoutput',
     'numpydoc',
-    'astropy_helpers.sphinx.ext.automodapi',
+    'sphinx_automodapi.automodapi',
 ]
 
 # Configure autosummary
@@ -66,6 +62,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'GWSumm'
 copyright = u'2013, Duncan Macleod'
+author = u'Duncan Macleod, Alex Urban'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -95,18 +92,18 @@ exclude_patterns = ['_build', '_templates']
 default_role = 'obj'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
-#add_function_parentheses = True
+add_function_parentheses = True
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
 #show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'default'
 
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
@@ -129,7 +126,7 @@ html_theme_options = {
     'navbar_site_name': "Contents",
     'navbar_sidebarrel': True,
     'navbar_pagenav': False,
-    'bootswatch_theme': 'flatly',
+    'bootswatch_theme': 'united',
 }
 
 # Add any paths that contain custom themes here, relative to this directory.
@@ -224,7 +221,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'GWSumm.tex', u'GWSumm Documentation',
-   u'Duncan Macleod', 'manual'),
+   u'Duncan Macleod, Alex Urban', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -254,7 +251,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'gwsumm', u'GWSumm Documentation',
-     [u'Duncan Macleod'], 1)
+     [u'Duncan Macleod, Alex Urban'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -268,7 +265,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'GWSumm', u'GWSumm Documentation',
-   u'Duncan Macleod', 'GWSumm', 'One line description of project.',
+   u'Duncan Macleod, Alex Urban', 'GWSumm', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -295,4 +292,52 @@ intersphinx_mapping = {
     'gwpy': ('https://gwpy.github.io/docs/stable/',
              None),
     'gwtrigfind': ('https://gwtrigfind.readthedocs.io/en/stable/', None),
+    'gwdetchar': ('https://gwdetchar.readthedocs.io/en/stable/', None),
+    'hveto': ('http://hveto.readthedocs.io/en/stable/', None),
 }
+
+# -- autosummary
+
+autosummary_generate = True
+
+# -- numpydoc
+
+# use blockquotes (numpydoc>=0.8 only)
+numpydoc_use_blockquotes = True
+
+
+# -- run sphinx-apidoc automatically ------------------------------------------
+# this is required to have apidoc generated as part of readthedocs builds
+# see https://github.com/rtfd/readthedocs.org/issues/1139
+
+def run_apidoc(_):
+    """Call sphinx-apidoc
+    """
+    from sphinx.ext.apidoc import main as apidoc_main
+    curdir = os.path.abspath(os.path.dirname(__file__))
+    apidir = os.path.join(curdir, 'api')
+    module = os.path.join(curdir, os.path.pardir, 'gwsumm')
+    apidoc_main([module, '--separate', '--force', '--output-dir', apidir])
+
+
+# -- add static files----------------------------------------------------------
+
+def setup_static_content(app):
+    # configure stylesheets
+    for sdir in html_static_path:
+        # add stylesheets
+        cssdir = os.path.join(sdir, 'css')
+        for cssf in glob.glob(os.path.join(cssdir, '*.css')):
+            app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
+
+        # add custom javascript
+        jsdir = os.path.join(sdir, 'js')
+        for jsf in glob.glob(os.path.join(jsdir, '*.js')):
+            app.add_javascript(jsf.split(os.path.sep, 1)[1])
+
+
+# -- setup --------------------------------------------------------------------
+
+def setup(app):
+    setup_static_content(app)
+    app.connect('builder-inited', run_apidoc)

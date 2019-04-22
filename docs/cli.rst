@@ -9,7 +9,7 @@ The primary interface for GWSumm is a command-line utility called `gw_summary`.
 For a full explanation of the available command-line arguments and options, you
 can run
 
-.. command-output:: gw_summary --help
+.. command-output:: python ../bin/gw_summary --help
 
 This tool can be run in four modes: daily, weekly, and monthly analyses, and
 a specific range of GPS times.
@@ -19,28 +19,28 @@ Day mode
 
 To run in daily summary mode, the following command-line options are available:
 
-.. command-output:: gw_summary day --help
+.. command-output:: python ../bin/gw_summary day --help
 
 Week mode
 ---------
 
 The arguments in weekly mode are as follows:
 
-.. command-output:: gw_summary week --help
+.. command-output:: python ../bin/gw_summary week --help
 
 Month mode
 ----------
 
 In monthly mode:
 
-.. command-output:: gw_summary month --help
+.. command-output:: python ../bin/gw_summary month --help
 
 GPS mode
 --------
 
 To run within a specific (but arbitrary) range of GPS seconds:
 
-.. command-output:: gw_summary gps --help
+.. command-output:: python ../bin/gw_summary gps --help
 
 Batch mode
 ==========
@@ -54,4 +54,4 @@ and run jobs in parallel.
 To see all the available arguments and options for this tool, you can run
 with `--help` as usual:
 
-.. command-output:: gw_summary_pipe --help
+.. command-output:: python ../bin/gw_summary_pipe --help

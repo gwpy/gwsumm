@@ -32,8 +32,3 @@ ligo-gracedb>=2.0.0
 pytest>=2.8,<3.7
 pytest-cov
 mock ; python_version < '3'
-
-# docs extras
-sphinx
-astropy_helpers < 3.0 ; python_version < '3'
-astropy_helpers ; python_version >= '3'

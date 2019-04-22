@@ -12,19 +12,10 @@ sphinx:
 # Build docs in additional formats
 formats: all
 
-# include submodules
-submodules:
-  include: all
-
 # Set the version of Python and requirements required to build your docs
 python:
    version: 3.7
    install:
       - requirements: docs/requirements.txt
-      - requirements: requirements.txt
       - method: setuptools
         path: .
-      - method: pip
-        path: .
-        extra_requirements:
-           - docs

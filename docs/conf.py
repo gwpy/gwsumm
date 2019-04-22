@@ -69,7 +69,7 @@ author = u'Duncan Macleod, Alex Urban'
 # built documents.
 #
 # The short X.Y version.
-version = '{0}.{1}'.format(*gwsumm_version.split('.'))
+version = gwsumm_version
 # The full version, including alpha/beta/rc tags.
 release = gwsumm_version
 

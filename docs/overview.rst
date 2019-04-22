@@ -1,6 +1,6 @@
-########################
-What is GWSumm used for?
-########################
+###############
+What is GWSumm?
+###############
 
 The `gwsumm` package ('the summary pages') is a python toolbox that can be
 used to generate a structured HTML webpage displaying graphical data that

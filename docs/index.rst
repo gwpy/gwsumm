@@ -8,7 +8,7 @@ GWSumm: the gravitational-wave summary information system
 
 The `gwsumm` package is a tool used by the
 `Laser Interferometer Gravitational-wave Observatory (LIGO) <http://www.ligo.org>`_
-to collect, aggregate, and visually summarise the myriad data produced
+to collect, aggregate, and visually summarise the sundry data produced
 throughout the experiment in order to characterise instrument performance.
 
 The output of this package, known internally as the 'summary pages', give an
@@ -25,7 +25,7 @@ To begin, simply import the core module:
    import gwsumm
 
 There are numerous submodules used for signal processing, data plotting, and
-HTML generation. Further detail may be found in the links below.
+HTML generation. Further detail may be found in the links below:
 
 .. toctree::
    :maxdepth: 1
@@ -48,12 +48,10 @@ but can also be installed with `pip`_:
 
    python -m pip install gwsumm
 
-For more information, see the link below:
-
-.. toctree::
-   :maxdepth: 1
-
-   install
+Note, users with `LIGO.ORG` credentials have access to a LIGO software
+container with a regularly-updated build of GWSumm. For more
+information please refer to the
+`LSCSoft Conda <https://docs.ligo.org/lscsoft/conda/>`_ documentation.
 
 Contributing
 ============
@@ -82,13 +80,17 @@ Package documentation
 Summary page configuration
 --------------------------
 
+Each run of `gw_summary` command-line tools are configured with INI-format
+files that dictate the data-quality segments, channels, and signal processing
+and plot parameters. The following links have more detailed information:
+
 .. toctree::
    :maxdepth: 2
 
    configuration/index
 
-API
----
+Table of Contents
+-----------------
 
 **Working with Tabs**
 
@@ -101,31 +103,17 @@ API
    tabs/modes
    tabs/api
 
-**Working with States**
+**GWSumm API**
 
 .. toctree::
    :maxdepth: 1
 
    states
-
-**Working with Plots**
-
-.. toctree::
-   :maxdepth: 1
-
    plots
-
-Other modules
--------------
-
-.. toctree::
-   :maxdepth: 1
-
    modes
    api/index
 
-Sitemap
-=======
+**Sitemap**
 
 * :ref:`genindex`
 * :ref:`modindex`

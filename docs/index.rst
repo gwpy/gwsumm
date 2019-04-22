@@ -74,50 +74,18 @@ License
 
 GWSumm is distributed under the `GNU General Public License`_.
 
-Package documentation
-=====================
-
-Summary page configuration
---------------------------
-
-Each run of `gw_summary` command-line tools are configured with INI-format
-files that dictate the data-quality segments, channels, and signal processing
-and plot parameters. The following links have more detailed information:
-
-.. toctree::
-   :maxdepth: 2
-
-   configuration/index
-
-Table of Contents
------------------
-
-**Working with Tabs**
-
 .. toctree::
    :maxdepth: 1
-
+   :hidden:
    tabs/index
    tabs/flavour
    tabs/websites
    tabs/modes
    tabs/api
-
-**GWSumm API**
-
-.. toctree::
-   :maxdepth: 1
-
    states
    plots
    modes
    api/index
-
-**Sitemap**
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
 
 .. _PEP 0008: https://www.python.org/dev/peps/pep-0008/
 .. _pep8: https://pypi.python.org/pypi/pep8

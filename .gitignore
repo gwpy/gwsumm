@@ -7,7 +7,9 @@
 /gwsumm/version.py
 /docs/_build
 /docs/_generated
-/docs/api
+/docs/_static
+/docs/api/modules.rst
+/docs/api/gwsumm.*
 /*.patch
 .nfs*
 *.swp

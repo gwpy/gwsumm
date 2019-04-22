@@ -2,30 +2,93 @@
 GWSumm: the gravitational-wave summary information system
 #########################################################
 
-The `gwsumm` package is a tool used by the `Laser Interferometer Gravitational-wave Observatory (LIGO) <http://www.ligo.org>`_ to collect, aggregate, and visually summarise the myriad data produced throughout the experiment in order to characterise instrument performance.
+|PyPI version| |Conda version|
 
-The output of this package, known internally as the 'summary pages', give an archive of a number of figures or merit, including time-series amplitude trends, frequency spectra and spectrograms, and transient event triggers.
+|DOI| |License| |Supported Python versions|
+
+The `gwsumm` package is a tool used by the
+`Laser Interferometer Gravitational-wave Observatory (LIGO) <http://www.ligo.org>`_
+to collect, aggregate, and visually summarise the myriad data produced
+throughout the experiment in order to characterise instrument performance.
+
+The output of this package, known internally as the 'summary pages', give an
+archive of a number of figures or merit, including time-series amplitude
+trends, frequency spectra and spectrograms, and transient event triggers.
 
 Overview
 ========
+
+To begin, simply import the core module:
+
+.. code:: python
+
+   import gwsumm
+
+There are numerous submodules used for signal processing, data plotting, and
+HTML generation. Further detail may be found in the links below.
+
+.. toctree::
+   :maxdepth: 1
+
+   overview
+   automation
+
+Installation
+============
+
+GWSumm is best installed with `conda`_:
+
+.. code:: bash
+
+   conda install -c conda-forge gwsumm
+
+but can also be installed with `pip`_:
+
+.. code:: bash
+
+   python -m pip install gwsumm
+
+For more information, see the link below:
 
 .. toctree::
    :maxdepth: 1
 
    install
-   overview
-   automation
+
+Contributing
+============
+
+All code should follow the Python Style Guide outlined in `PEP 0008`_;
+users can use the `pep8`_ package to check their code for style issues
+before submitting.
+
+See `the contributions guide`_ for the recommended procedure for
+proposing additions/changes.
+
+The GWSumm project is hosted on GitHub:
+
+* Issue tickets: https://github.com/gwpy/gwsumm/issues
+* Source code: https://github.com/gwpy/gwsumm
+
+
+License
+-------
+
+GWSumm is distributed under the `GNU General Public License`_.
+
+Package documentation
+=====================
 
 Summary page configuration
-==========================
+--------------------------
 
 .. toctree::
    :maxdepth: 2
 
    configuration/index
 
-API documentation
-=================
+API
+---
 
 **Working with Tabs**
 
@@ -33,6 +96,7 @@ API documentation
    :maxdepth: 1
 
    tabs/index
+   tabs/flavour
    tabs/websites
    tabs/modes
    tabs/api
@@ -51,18 +115,36 @@ API documentation
 
    plots
 
-Modules
-=======
+Other modules
+-------------
 
 .. toctree::
    :maxdepth: 1
 
    modes
+   api/index
 
-Indices and tables
-==================
+Sitemap
+=======
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
+.. _PEP 0008: https://www.python.org/dev/peps/pep-0008/
+.. _pep8: https://pypi.python.org/pypi/pep8
+.. _the contributions guide: https://github.com/gwpy/gwsumm/blob/master/CONTRIBUTING.md
+.. _conda: https://conda.io
+.. _pip: https://pip.pypa.io/en/stable/
+.. _GNU General Public License: https://github.com/gwpy/gwsumm/blob/master/LICENSE
+
+.. |PyPI version| image:: https://badge.fury.io/py/gwsumm.svg
+   :target: http://badge.fury.io/py/gwsumm
+.. |Conda version| image:: https://img.shields.io/conda/vn/conda-forge/gwsumm.svg
+   :target: https://anaconda.org/conda-forge/gwsumm/
+.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.2647609.svg
+   :target: https://doi.org/10.5281/zenodo.2647609
+.. |License| image:: https://img.shields.io/pypi/l/gwsumm.svg
+   :target: https://choosealicense.com/licenses/gpl-3.0/
+.. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/gwsumm.svg
+   :target: https://pypi.org/project/gwsumm/

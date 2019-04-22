@@ -37,7 +37,7 @@ but can also be installed with `pip`_:
 
    python -m pip install gwsumm
 
-Note, users with `LIGO.ORG` credentials have access to a LIGO software
+Note, users with `LIGO.ORG` credentials have access to a software
 container with a regularly-updated build of GWSumm. For more
 information please refer to the
 `LSCSoft Conda <https://docs.ligo.org/lscsoft/conda/>`_ documentation.

@@ -21,9 +21,12 @@
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 
+import os.path
+
 from collections import OrderedDict
 
-from gwdetchar.io.html import (CSS_FILES, JS_FILES)
+from gwdetchar.io.html import (CSS_FILES as GWDETCHAR_CSS_FILES,
+                               JS_FILES as GWDETCHAR_JS_FILES)
 
 from .. import static
 
@@ -44,11 +47,11 @@ def test_get_css():
         'gwsumm',
     ]
     # test list of files
-    files = list(css.values())
-    assert len(files) == len(CSS_FILES) + 2
-    assert set(CSS_FILES) <= set(files)
-    assert files[2].endswith('bootstrap-datepicker.min.css')
-    assert files[5].endswith('gwsumm.min.css')
+    css_files = list(css.values())
+    assert len(css_files) == len(GWDETCHAR_CSS_FILES) + 2
+    assert set(GWDETCHAR_CSS_FILES) < set(css_files)
+    assert os.path.basename(css_files[2]) == 'bootstrap-datepicker.min.css'
+    assert os.path.basename(css_files[5]) == 'gwsumm.min.css'
 
 
 def test_get_js():
@@ -67,8 +70,8 @@ def test_get_js():
         'gwsumm',
     ]
     # test list of files
-    files = list(js.values())
-    assert len(files) == len(JS_FILES) + 2
-    assert set(JS_FILES) <= set(files)
-    assert files[4].endswith('bootstrap-datepicker.min.js')
-    assert files[7].endswith('gwsumm.min.js')
+    js_files = list(js.values())
+    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 2
+    assert set(GWDETCHAR_JS_FILES) < set(js_files)
+    assert os.path.basename(js_files[4]) == 'bootstrap-datepicker.min.js'
+    assert os.path.basename(js_files[7]) == 'gwsumm.min.js'

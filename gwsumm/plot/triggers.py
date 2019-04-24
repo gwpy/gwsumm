@@ -392,7 +392,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
         legendargs = self.parse_legend_kwargs()
         self.apply_parameters(ax, **self.pargs)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
+            ax.legend(**legendargs)
 
         # finalise
         self.add_state_segments(ax)
@@ -495,7 +495,7 @@ class TriggerHistogramPlot(TriggerPlotMixin, get_plot('histogram')):
         # customise plot
         self.apply_parameters(ax, **self.pargs)
         if len(self.channels) > 1:
-            plot.add_legend(ax=ax, **legendargs)
+            ax.legend(**legendargs)
 
         # finalise
         return self.finalize()

@@ -196,14 +196,15 @@ $(window).load(function() {
       // highlight selected dates if given
       if ( document.getElementById('calendar').hasAttribute('selected-dates') ){
         var selected_dates = document.getElementById('calendar').getAttribute('selected-dates').split(',');
-        var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
-        var search_index = highlightdays.indexOf(calendar_date);
-        if ( search_index == -1 ){
-          // disable dates that are not given
-          return {enabled: false, tooltip: 'Date not available'};
-        }
-        else{
-          return {classes: 'highlighted', enabled: true};
+        if (selected_dates.length > 0 ){
+          var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
+          if ( selected_dates.indexOf(calendar_date) == -1 ){
+            // disable dates that are not given
+            return {enabled: false, tooltip: 'Date not available'};
+          }
+          else{
+            return {classes: 'highlighted', enabled: true};
+          }
         }
       }
     }

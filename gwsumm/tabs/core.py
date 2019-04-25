@@ -791,6 +791,37 @@ class IntervalTab(GpsTab):
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)
 
+    @classmethod
+    def from_ini(cls, cp, section='calendar', *args, **kwargs):
+        """Configure a new `IntervalTab` from a `ConfigParser` section
+        Parameters
+        ----------
+        cp : :class:`~gwsumm.config.ConfigParser`
+            configuration to parse.
+        section : `str`
+            name of section to read
+        See Also
+        --------
+        Tab.from_ini :
+            for documentation of the standard configuration
+            options
+        Notes
+        -----
+        On top of the standard configuration options, the `IntervalTab` can
+        be configured with the ``selected-dates`` option, specifying dates to
+        be highlighted in the calendar:
+        .. code-block:: ini
+           [calendar]
+           selected-dates = 2019-01-04,2019-01-07
+        """
+        
+        if cp.has_option(section, 'selected-dates'):
+            self.selecteddates = cp.get(section, 'selected-dates'))
+        else:
+            self.selecteddates = None
+        return super(IntervalTab, cls).from_ini(cp, section, url,
+                                                *args, **kwargs)
+        
     def html_calendar(self):
         """Build the datepicker calendar for this tab.
 
@@ -810,7 +841,7 @@ class IntervalTab(GpsTab):
                                "format including %r for archive calendar"
                                % (self.path, requiredpath))
         # format calendar
-        return html.calendar(date, mode=self.mode)
+        return html.calendar(date, mode=self.mode, selecteddates=self.selecteddates)
 
     def html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.

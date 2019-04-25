@@ -191,7 +191,22 @@ $(window).load(function() {
     weekStart: 1,
     endDate: moment().utc().format('DD/MM/YYYY'),
     todayHighlight: true,
-    todayBtn: "linked"
+    todayBtn: "linked",
+    beforeShowDay: function(date) {
+      // highlight selected dates if given
+      if ( document.getElementById('calendar').hasAttribute('selected-dates') ){
+        var selected_dates = document.getElementById('calendar').getAttribute('selected-dates').split(',');
+        var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
+        var search_index = highlightdays.indexOf(calendar_date);
+        if ( search_index == -1 ){
+          // disable dates that are not given
+          return {enabled: false, tooltip: 'Date not available'};
+        }
+        else{
+          return {classes: 'highlighted', enabled: true};
+        }
+      }
+    }
   }).on('changeDate', move_to_date);
 
   // load correct run type

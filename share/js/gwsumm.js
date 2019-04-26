@@ -194,8 +194,8 @@ $(window).load(function() {
     todayBtn: "linked",
     beforeShowDay: function(date) {
       // highlight selected dates if given
-      if ( document.getElementById('calendar').hasAttribute('selected-dates') ){
-        var selected_dates = document.getElementById('calendar').getAttribute('selected-dates').split(',');
+      if ( document.getElementById('calendar').hasAttribute('highlighted-dates') ){
+        var selected_dates = document.getElementById('calendar').getAttribute('highlighted-dates').split(',');
         if (selected_dates.length > 0 ){
           var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
           if ( selected_dates.indexOf(calendar_date) == -1 ){

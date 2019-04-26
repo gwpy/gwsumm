@@ -76,7 +76,8 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
-             id_='calendar', dateformat=None, mode=None, selecteddates=None):
+             id_='calendar', dateformat=None, mode=None,
+             highlighteddates=None):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -109,10 +110,13 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     page = markup.page()
     page.a('&laquo;', class_='navbar-brand step-back', title='Step back',
            onclick='stepDate(-1)')
+    attributekwargs = {'data-date': data_date,
+                       'data-date-format': 'dd-mm-yyyy',
+                       'data-viewmode': '%ss' % mode.name}
+    if highlighteddates is not None:
+        attributekwargs['highlighted-dates'] = highligheddates.replace('-', '')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
-           **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': '%ss' % mode.name,
-              'selected-dates': ','.join([str(seldate) for seldate in selected]) })
+           **attributekwargs)
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()

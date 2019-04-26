@@ -818,7 +818,7 @@ class IntervalTab(GpsTab):
         # check for highlighted dates
         self.highlightteddates = None
         if cp.has_option('calendar', 'highlighted-dates'):
-            self.highlighteddates = cp.get(section, 'highlighted-dates'))
+            self.highlighteddates = cp.get(section, 'highlighted-dates')
 
         return super(IntervalTab, cls).from_ini(cp, section, *args, **kwargs)
 

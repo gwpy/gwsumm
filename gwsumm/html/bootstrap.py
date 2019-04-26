@@ -77,7 +77,7 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
              id_='calendar', dateformat=None, mode=None,
-             highlighteddates=None):
+             highlighteddates=None, highlightavailable=False):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -114,7 +114,10 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
                        'data-date-format': 'dd-mm-yyyy',
                        'data-viewmode': '%ss' % mode.name}
     if highlighteddates is not None:
-        attributekwargs['highlighted-dates'] = highlighteddates.replace('-', '')
+        attributekwargs['highlight-dates'] = highlighteddates.replace('-', '')
+    else:
+        if highlightavailable:
+            attributekwargs['highlight-available-dates'] = 'true'
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **attributekwargs)
     page.add(datestring)

@@ -437,12 +437,17 @@ class BaseTab(object):
                 kwargs['duration'] = cp.getfloat(section, 'duration')
 
         # check for calendar dates to highlight
-        print(cp.has_option('calendar', 'highlighted-dates'))
-        if cp.has_option('calendar', 'highlighted-dates'):
-            try:
-                kwargs['highlighteddates']
-            except KeyError:
-                kwargs['highlighteddates'] = cp.get('calendar', 'highlighted-dates')
+        if cp.has_section('calendar'):
+            if cp.has_option('calendar', 'highlighted-dates'):
+                try:
+                    kwargs['highlighteddates']
+                except KeyError:
+                    kwargs['highlighteddates'] = cp.get('calendar', 'highlighted-dates')
+            elif cp.has_option('calendar', 'highlightavailable'):
+                try:
+                    kwargs['highlightavailable']
+                except KeyError:
+                    kwargs['highlightavailable'] = cp.getboolean('calendar', 'highlight-available')
 
         return cls(name, *args, **kwargs)
 
@@ -782,7 +787,6 @@ class GpsTab(BaseTab):
 class IntervalTab(GpsTab):
     """`Tab` defined within a GPS [start, end) interval
     """
-    #def __init__(self, highlighteddates=None, *args, **kwargs):
     def __init__(self, *args, **kwargs):
         try:
             span = kwargs.pop('span')
@@ -802,6 +806,11 @@ class IntervalTab(GpsTab):
             self.highlighteddates = kwargs.pop('highlighteddates')
         except KeyError:
             self.highlighteddates = None
+
+        try:
+            self.highlightavailable = kwargs.pop('highlightavailable')
+        except KeyError:
+            self.highlightavailable = False
 
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)
@@ -826,7 +835,8 @@ class IntervalTab(GpsTab):
                                % (self.path, requiredpath))
         # format calendar
         return html.calendar(date, mode=self.mode,
-                             highlighteddates=self.highlighteddates)
+                             highlighteddates=self.highlighteddates,
+                             highlightavailable=self.highlightavailable)
 
     def html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.

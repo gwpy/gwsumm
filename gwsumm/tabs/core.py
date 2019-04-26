@@ -443,11 +443,12 @@ class BaseTab(object):
                     kwargs['highlighteddates']
                 except KeyError:
                     kwargs['highlighteddates'] = cp.get('calendar', 'highlighted-dates')
-            elif cp.has_option('calendar', 'highlightavailable'):
+            elif cp.has_option('calendar', 'highlight-available'):
                 try:
                     kwargs['highlightavailable']
                 except KeyError:
                     kwargs['highlightavailable'] = cp.getboolean('calendar', 'highlight-available')
+            print(kwargs)
 
         return cls(name, *args, **kwargs)
 

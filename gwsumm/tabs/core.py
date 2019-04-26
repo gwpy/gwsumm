@@ -436,6 +436,14 @@ class BaseTab(object):
             except KeyError:
                 kwargs['duration'] = cp.getfloat(section, 'duration')
 
+        # check for calendar dates to highlight
+        print(cp.has_option('calendar', 'highlighted-dates'))
+        if cp.has_option('calendar', 'highlighted-dates'):
+            try:
+                kwargs['highlighteddates']
+            except KeyError:
+                kwargs['highlighteddates'] = cp.get('calendar', 'highlighted-dates')
+
         return cls(name, *args, **kwargs)
 
     # -- HTML operations ------------------------
@@ -774,6 +782,7 @@ class GpsTab(BaseTab):
 class IntervalTab(GpsTab):
     """`Tab` defined within a GPS [start, end) interval
     """
+    #def __init__(self, highlighteddates=None, *args, **kwargs):
     def __init__(self, *args, **kwargs):
         try:
             span = kwargs.pop('span')
@@ -788,39 +797,14 @@ class IntervalTab(GpsTab):
                                 % (type(self).__name__, mode))
             else:
                 span = (start, end)
+
+        try:
+            self.highlighteddates = kwargs.pop('highlighteddates')
+        except KeyError:
+            self.highlighteddates = None
+
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)
-
-    @classmethod
-    def from_ini(cls, cp, section, *args, **kwargs):
-        """Configure a new `IntervalTab` from a `ConfigParser` section
-        Parameters
-        ----------
-        cp : :class:`~gwsumm.config.ConfigParser`
-            configuration to parse.
-        section : `str`
-            name of section to read
-        See Also
-        --------
-        Tab.from_ini :
-            for documentation of the standard configuration
-            options
-        Notes
-        -----
-        On top of the standard configuration options, the `IntervalTab` can
-        be configured with the ``highlighted-dates`` option, specifying dates
-        to be highlighted in the calendar:
-        .. code-block:: ini
-           [calendar]
-           highlighted-dates = 2019-01-04,2019-01-07
-        """
-
-        # check for highlighted dates
-        self.highlightteddates = None
-        if cp.has_option('calendar', 'highlighted-dates'):
-            self.highlighteddates = cp.get(section, 'highlighted-dates')
-
-        return super(IntervalTab, cls).from_ini(cp, section, *args, **kwargs)
 
     def html_calendar(self):
         """Build the datepicker calendar for this tab.
@@ -842,7 +826,7 @@ class IntervalTab(GpsTab):
                                % (self.path, requiredpath))
         # format calendar
         return html.calendar(date, mode=self.mode,
-                             highlighteddates=self.selecteddates)
+                             highlighteddates=self.highlighteddates)
 
     def html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.

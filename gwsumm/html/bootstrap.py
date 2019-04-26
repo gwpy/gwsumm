@@ -114,7 +114,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
                        'data-date-format': 'dd-mm-yyyy',
                        'data-viewmode': '%ss' % mode.name}
     if highlighteddates is not None:
-        attributekwargs['highlighted-dates'] = highligheddates.replace('-', '')
+        attributekwargs['highlighted-dates'] = highlighteddates.replace('-', '')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **attributekwargs)
     page.add(datestring)

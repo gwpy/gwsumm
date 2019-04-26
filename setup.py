@@ -182,8 +182,8 @@ class BuildHtmlFiles(Command):
     def copy_php(self):
         phpfile = os.path.join('share', 'php', 'list-dirs.php')
         target = self.staticdir
-        copyfile(phpfile, target)
-        log.info('%s written to %s' % (phpfile, target)
+        copyfile(phpfile, os.path.join(target, 'list-dirs.php'))
+        log.info('%s written to %s' % (phpfile, target))
 
     def run(self):
         self.compile_sass()

@@ -559,7 +559,8 @@ javascript = config.get_javascript(section='html')
 
 # add PHP directory lister if required
 if mode.is_calendar() and config.has_option("calendar", "highlight-available"):
-    phppath = os.path.join(opt.output_dir, os.path.split(mode.dir_format())[0])
+    phppath = os.path.join(opt.output_dir, os.path.split(mode.dir_format())[0],
+                           'list-dirs.php')
     from ..html import PHP_LIST_DIRS
     copyfile(PHP_LIST_DIRS, phppath)
 

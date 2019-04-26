@@ -26,6 +26,7 @@ import sys
 import glob
 import os
 from distutils import log
+from shutil import copyfile
 
 from setuptools import (Command, setup, find_packages)
 from setuptools.command.egg_info import egg_info
@@ -178,9 +179,16 @@ class BuildHtmlFiles(Command):
             f.write(css)
         log.info('%s CSS written to %s' % (self.output_style, target))
 
+    def copy_php(self):
+        phpfile = os.path.join('share', 'php', 'list-dirs.php')
+        target = self.staticdir
+        copyfile(phpfile, target)
+        log.info('%s written to %s' % (phpfile, target)
+
     def run(self):
         self.compile_sass()
         self.minify_js()
+        self.copy_php()
         if self.staticpackage not in self.distribution.packages:
             self.distribution.packages.append(self.staticpackage)
             log.info("added %s to package list" % self.staticpackage)

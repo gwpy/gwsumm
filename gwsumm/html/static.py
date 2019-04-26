@@ -57,6 +57,9 @@ CSS = OrderedDict((
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
 ))
 
+# the PHP file to list directories
+PHP_LIST_DIRS = os.path.join(STATICDIR, 'list-dirs.php')
+
 
 # -- utilities ----------------------------------------------------------------
 
@@ -70,3 +73,4 @@ def get_js():
     """Return a `dict` of javascript files to link in the HTML <head>
     """
     return JS
+

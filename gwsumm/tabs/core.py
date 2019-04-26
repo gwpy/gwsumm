@@ -448,7 +448,6 @@ class BaseTab(object):
                     kwargs['highlightavailable']
                 except KeyError:
                     kwargs['highlightavailable'] = cp.getboolean('calendar', 'highlight-available')
-            print(kwargs)
 
         return cls(name, *args, **kwargs)
 

@@ -30,7 +30,11 @@ from dateutil import tz
 
 import numpy
 
+from MarkupPy import markup
+
 from gwpy.time import Time
+
+from gwdetchar.io import html as gwhtml
 
 from .registry import (get_tab, register_tab)
 from .. import (globalv, html)
@@ -297,7 +301,7 @@ class SEIWatchDogTab(base):
                     totals[i][j] = c
             # add row total
             totals[i][-1] = totals[i].sum()
-            page.th(totals[i][-1])
+            page.th(str(totals[i][-1]))
             page.tr.close()
         page.tbody.close()
 
@@ -306,8 +310,7 @@ class SEIWatchDogTab(base):
         page.tr(class_='header')
         page.th('Totals')
         for i in range(totals.shape[1]):
-            t = totals[:, i].sum()
-            page.th(t)
+            page.th(str(totals[:, i].sum()))
         page.tr.close()
         page.thead.close()
         page.table.close()
@@ -381,7 +384,7 @@ class SEIWatchDogTab(base):
                 rows[-1].append('<br>'.join(assoc))
             else:
                 rows[-1].append('-')
-        page.add(str(html.table(
+        page.add(str(gwhtml.table(
             headers, rows,
             caption=('List of %s watch-dog trips in interval [%d .. %d) - '
                      'trips are considered \'associated\' if they fall within '

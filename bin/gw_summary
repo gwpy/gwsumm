@@ -459,13 +459,15 @@ plotdir = os.path.join(path, 'plots')
 mkdir(plotdir)
 
 # add file containing a list of directories if required
-if mode.is_calendar() and config.has_option("calendar", "highlight-available"):
+if (mode.get_mode().is_calendar() and
+        config.has_option("calendar", "highlight-available")):
     # directory to list
     dirpath = os.path.split(path)[:-1][0]
-    dirs = [dir for dir in os.listdir(dirpath) if os.path.isdir(dir)]
-    dirfile = os.path.join(os.path.split(path)[:-1][0], 'list-dirs.txt')
+    datedirs = [thisdir for thisdir in os.listdir(dirpath)
+               if os.path.isdir(os.path.join(dirpath, thisdir))]
+    dirfile = os.path.join(dirpath, 'list-dirs.txt')
     with open(dirfile, 'w') as fp:
-        fp.write(','.join(dirs))
+        fp.write(','.join(datedirs))
 
 # -----------------------------------------------------------------------------
 # Setup

@@ -206,7 +206,7 @@ $(window).load(function() {
   $('#calendar').datepicker({
     weekStart: 1,
     endDate: moment().utc().format('DD/MM/YYYY'),
-    todayHighlight: ( !document.getElementById('calendar').hasAttribute('highlight-available-dates') && !document.getElementById('calendar').hasAttribute('highlight-available-dates') ), 
+    todayHighlight: ( !document.getElementById('calendar').hasAttribute('highlight-dates') && !document.getElementById('calendar').hasAttribute('highlight-available-dates') ), 
     todayBtn: "linked",
     beforeShowDay: function(date) {
       var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);

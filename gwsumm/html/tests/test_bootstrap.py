@@ -31,7 +31,7 @@ from .. import bootstrap
 # global variables
 DATE = datetime.strptime('20140410', '%Y%m%d')
 CALENDAR = """<a class="navbar-brand step-back" title="Step back" onclick="stepDate(-1)">&laquo;</a>
-<a id="calendar" class="navbar-brand dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}">
+<a id="calendar" class="navbar-brand dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}" {} {}>
 {}
 <b class="caret"></b>
 </a>
@@ -51,16 +51,26 @@ def test_banner():
         '<div class="banner">\n<h1 class=\"test\">Test</h1>\n'
         '<p class=\"subtest\">Subtest</p>\n</div>')
 
-@pytest.mark.parametrize('mode, datefmt', [
-    ('day', 'April 10 2014'),
-    ('week', 'Week of April 10 2014'),
-    ('month', 'April 2014'),
-    ('year', '2014'),
+@pytest.mark.parametrize('mode, datefmt, highlighteddates, highlightavailable', [
+    ('day', 'April 10 2014', '2014-04-10', False),
+    ('week', 'Week of April 10 2014', None, True),
+    ('month', 'April 2014', '20140410,20140412', False),
+    ('year', '2014', '20140410,20140412', True),
 ])
-def test_calendar(mode, datefmt):
-    cal = bootstrap.calendar(DATE, mode=mode)
+def test_calendar(mode, datefmt, highlighteddates, highlightavailable):
+    cal = bootstrap.calendar(DATE, mode=mode,
+                             highlighteddates=highlighteddates,
+                             highlightavailable=highlightavailable)
+    hdcheck = ""
+    if highlighteddates is not None:
+        hdcheck = 'highlight-dates="{}"'.format(highlighteddates.replace('-',
+                                                                         ''))
+    hacheck = ""
+    if isinstance(highlightavailable, bool):
+        if highlightavailable:
+            hacheck = 'highlight-available="true"'
     assert parse_html(str(cal)) == parse_html(CALENDAR.format(
-        '%ss' % mode, datefmt))
+        '%ss' % mode, datefmt, hdcheck, hacheck))
 
 
 def test_calendar_no_mode():

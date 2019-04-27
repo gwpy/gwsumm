@@ -62,15 +62,15 @@ def test_calendar(mode, datefmt, highlighteddates, highlightavailable):
                              highlighteddates=highlighteddates,
                              highlightavailable=highlightavailable)
     hdcheck = ""
+    hacheck = ""
     if highlighteddates is not None:
         hdcheck = 'highlight-dates="{}"'.format(highlighteddates.replace('-',
                                                                          ''))
-    hacheck = ""
-    if isinstance(highlightavailable, bool):
+    elif isinstance(highlightavailable, bool):
         if highlightavailable:
-            hacheck = 'highlight-available="true"'
+            hacheck = 'highlight-available-dates="true"'
     assert parse_html(str(cal)) == parse_html(CALENDAR.format(
-        '%ss' % mode, datefmt, hdcheck, hacheck))
+        '%ss' % mode, hdcheck, hacheck, datefmt))
 
 
 def test_calendar_no_mode():

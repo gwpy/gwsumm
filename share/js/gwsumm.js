@@ -176,22 +176,22 @@ function shortenDate() {
 // When document is ready, run this stuff:
 $(window).load(function() {
   // get directories if required
-  var date_directories = new Array();
+  var selected_dates = new Array();
   if ( document.getElementById('calendar').hasAttribute('highlight-available-dates') ){
     //var cururl = window.location.href;
     var url = window.location.href.split('/');
-    var geturl = url.slice(url.length-3, url.length-2).join('/') + '/list-dirs.php';
+    var geturl = url.slice(url.length-3, url.length-2).join('/') + '/list-dirs.txt';
     console.log(geturl);
     var request = new XMLHttpRequest();
     request.onload = function() {
       if ( this.status != 404 ){
-        date_directories = JSON.parse(this.responseText);
+        selected_dates = this.responseText.split(',');
       }
     };
-    request.open("GET", geturl, false);
+    request.open("GET", geturl, false);  // use synchronous request
     request.send();
   }
-  console.log(date_directories);
+  console.log(selected_dates);
 
   // shorten the date
   if ($('#calendar').length){ shortenDate();}
@@ -211,9 +211,11 @@ $(window).load(function() {
     todayBtn: "linked",
     beforeShowDay: function(date) {
       var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
-      if ( document.getElementById('calendar').hasAttribute('highlight-dates') ){
+      if ( document.getElementById('calendar').hasAttribute('highlight-dates') || document.getElementById('calendar').hasAttribute('highlight-available-dates') ){
         // highlight selected dates if given
-        var selected_dates = document.getElementById('calendar').getAttribute('highlight-dates').split(',');
+        if ( document.getElementById('calendar').hasAttribute('highlight-dates') ){
+          selected_dates = document.getElementById('calendar').getAttribute('highlight-dates').split(',');
+        }
         if (selected_dates.length > 0 ){
           if ( selected_dates.indexOf(calendar_date) == -1 ){
             // disable dates that are not given
@@ -222,28 +224,6 @@ $(window).load(function() {
           else{
             return {classes: 'highlighted', enabled: true};
           }
-        }
-      }
-      else if ( document.getElementById('calendar').hasAttribute('highlight-available-dates') ) {
-        // highlight dates for which the URL exists (this is slow)
-        if ( date_directories.length > 0 ){
-          if ( date_directories.indexOf(calendar_date) == -1 ){
-            return {enabled: false, tooltip: 'Date not available'};
-          }
-          else{
-            return {classes: 'highlighted', enabled: true};
-          }
-        //var cururl = window.location.href
-        //var dateurl = cururl.slice(0, -9) + calendar_date;
-        //var request = new XMLHttpRequest();
-        //request.open('HEAD', dateurl, false);
-        //request.send()
-        //if ( request.status == 404 ){
-        //  return {enabled: false, tooltip: 'Date not available'};
-        //}
-        //else {
-        //  return {classes: 'highlighted', enabled: true};
-        //}
         }
       }
     }

@@ -458,6 +458,15 @@ os.chdir(opts.output_dir)
 plotdir = os.path.join(path, 'plots')
 mkdir(plotdir)
 
+# add file containing a list of directories if required
+if mode.is_calendar() and config.has_option("calendar", "highlight-available"):
+    # directory to list
+    dirpath = os.path.split(path)[:-1][0]
+    dirs = [dir for dir in os.listdir(dirpath) if os.path.isdir(dir)]
+    dirfile = os.path.join(os.path.split(path)[:-1][0], 'list-dirs.txt')
+    with open(dirfile, 'w') as fp:
+        fp.write(','.join(dirs))
+
 # -----------------------------------------------------------------------------
 # Setup
 
@@ -556,13 +565,6 @@ for arch in archives:
 
 css = config.get_css(section='html')
 javascript = config.get_javascript(section='html')
-
-# add PHP directory lister if required
-if mode.is_calendar() and config.has_option("calendar", "highlight-available"):
-    phppath = os.path.join(opt.output_dir, os.path.split(mode.dir_format())[0],
-                           'list-dirs.php')
-    from ..html import PHP_LIST_DIRS
-    copyfile(PHP_LIST_DIRS, phppath)
 
 # enable comments
 try:

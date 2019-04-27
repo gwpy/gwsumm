@@ -57,9 +57,6 @@ CSS = OrderedDict((
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
 ))
 
-# the PHP file to list directories
-PHP_LIST_DIRS = os.path.join(STATICDIR, 'list-dirs.php')
-
 
 # -- utilities ----------------------------------------------------------------
 

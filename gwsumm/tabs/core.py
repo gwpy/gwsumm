@@ -802,8 +802,8 @@ class IntervalTab(GpsTab):
             else:
                 span = (start, end)
 
-       self.highlighteddates = kwargs.pop('highlighteddates', None)
-       self.highlightavailable = kwargs.pop('highlightavailable', False)
+        self.highlighteddates = kwargs.pop('highlighteddates', None)
+        self.highlightavailable = kwargs.pop('highlightavailable', False)
 
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)

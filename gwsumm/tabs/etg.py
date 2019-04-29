@@ -187,20 +187,23 @@ class EventTriggerTab(get_tab('default')):
                 ]
             # override from config
             if config.has_option(section, 'loudest-columns'):
-                new.loudest['columns'] = map(
+                new.loudest['columns'] = list(map(
                     lambda s: re_quote.sub('', s),
-                    config.get(section, 'loudest-columns').split(','))
+                    config.get(section, 'loudest-columns').split(',')
+                ))
             if config.has_option(section, 'loudest-labels'):
-                new.loudest['labels'] = map(
+                new.loudest['labels'] = list(map(
                     lambda s: re_quote.sub('', s),
-                    config.get(section, 'loudest-labels').split(','))
+                    config.get(section, 'loudest-labels').split(',')
+                ))
             else:
                 new.loudest['labels'] = [' '.join(map(str.title, s.split('_')))
                                          for s in new.loudest['columns']]
             if config.has_option(section, 'loudest-rank'):
-                new.loudest['rank'] = map(
+                new.loudest['rank'] = list(map(
                     lambda c: re_quote.sub('', c),
-                    config.get(section, 'loudest-rank').split(','))
+                    config.get(section, 'loudest-rank').split(',')
+                ))
             if config.has_option(section, 'loudest-dt'):
                 new.loudest['dt'] = config.getfloat(section, 'loudest-dt')
         else:

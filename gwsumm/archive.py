@@ -338,6 +338,9 @@ def archive_table(table, key, parent):
         the h5py group in which to add this dataset
 
     """
+    # copy table so we can modify meta without impacting anything
+    table = table.copy(copy_data=False)
+
     if len(table) == 0:
         warnings.warn("%r table is empty and will not be archived" % key)
         return

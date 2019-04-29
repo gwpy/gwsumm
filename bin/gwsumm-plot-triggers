@@ -175,7 +175,7 @@ clabel = params.pop('colorlabel', 'Signal-to-noise ratio (SNR)')
 cmap = params.pop('cmap', get_plot('triggers').defaults.get('cmap',  'YlGnBu'))
 ax.colorbar(mappable=mapabble, label=clabel, cmap=cmap, clim=(vmin, vmax))
 
-for key, val in params.iteritems():
+for key, val in params.items():
     try:
         getattr(ax, 'set_%s' % key)(val)
     except AttributeError:

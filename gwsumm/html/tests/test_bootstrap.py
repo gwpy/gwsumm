@@ -68,7 +68,7 @@ def test_calendar(mode, datefmt, highlighteddates, highlightavailable):
                                                                          ''))
     elif isinstance(highlightavailable, bool):
         if highlightavailable:
-            hacheck = 'highlight-available-dates="true"'
+            hacheck = 'highlight-available-dates="{}/list-dirs.txt"'.format(mode)
     assert parse_html(str(cal)) == parse_html(CALENDAR.format(
         '%ss' % mode, hdcheck, hacheck, datefmt))
 

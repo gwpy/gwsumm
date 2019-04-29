@@ -178,9 +178,7 @@ $(window).load(function() {
   // get directories if required
   var selected_dates = new Array();
   if ( document.getElementById('calendar').hasAttribute('highlight-available-dates') ){
-    //var cururl = window.location.href;
-    var url = window.location.href.split('/');
-    var geturl = url.slice(url.length-3, url.length-2).join('/') + '/list-dirs.txt';
+    var geturl = document.getElementById('calendar').getAttribute('highlight-available-dates');
     var request = new XMLHttpRequest();
     request.onload = function() {
       if ( this.status != 404 ){

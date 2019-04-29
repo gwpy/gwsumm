@@ -116,7 +116,10 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     if highlighteddates is not None:
         attributekwargs['highlight-dates'] = highlighteddates.replace('-', '')
     elif highlightavailable:
-        attributekwargs['highlight-available-dates'] = 'true'
+        # set location of dates file
+        datefile = '{}/list-dirs.txt'.format(
+            os.path.split(mode.dir_format())[0])
+        attributekwargs['highlight-available-dates'] = datefile
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **attributekwargs)
     page.add(datestring)

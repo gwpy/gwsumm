@@ -181,11 +181,10 @@ $(window).load(function() {
     //var cururl = window.location.href;
     var url = window.location.href.split('/');
     var geturl = url.slice(url.length-3, url.length-2).join('/') + '/list-dirs.txt';
-    console.log(geturl);
     var request = new XMLHttpRequest();
     request.onload = function() {
       if ( this.status != 404 ){
-        selected_dates = this.responseText.split(',');
+        selected_dates = this.responseText.replace(/^\s+|\s+$/g, '').split(',');
       }
     };
     request.open("GET", geturl, false);  // use synchronous request

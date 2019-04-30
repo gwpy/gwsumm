@@ -463,8 +463,8 @@ if (mode.get_mode().is_calendar() and
         config.has_option("calendar", "highlight-available")):
     # directory to list
     dirpath = os.path.split(path)[:-1][0]
-    datedirs = [thisdir for thisdir in os.listdir(dirpath)
-               if os.path.isdir(os.path.join(dirpath, thisdir))]
+    datedirs = sorted([thisdir for thisdir in os.listdir(dirpath)
+                       if os.path.isdir(os.path.join(dirpath, thisdir))])
     dirfile = os.path.join(dirpath, 'list-dirs.txt')
     with open(dirfile, 'w') as fp:
         fp.write(','.join(datedirs))

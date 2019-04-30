@@ -216,7 +216,7 @@ class SummaryState(DataQualityFlag):
             for seg in segs:
                 try:
                     # parse hour segment
-                    hours.append(map(float, seg.split('-', 1)))
+                    hours.append(list(map(float, seg.split('-', 1))))
                 except ValueError:
                     # parse time-zone
                     if seg == segs[-1]:

@@ -128,7 +128,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
-                    self._pid += '_%s' % re_cchar.sub('_', column)
+                    self._pid += '_%s' % re_cchar.sub('_', str(column))
             self._pid = self._pid.upper()
             return self.pid
 
@@ -238,7 +238,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         self.apply_parameters(ax, **self.pargs)
 
         # correct log-scale empty axes
-        if any(map(isinf, ax.get_ylim())):
+        if any(list(map(isinf, ax.get_ylim()))):
             ax.set_ylim(0.1, 10)
 
         # add colorbar

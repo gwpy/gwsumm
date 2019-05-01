@@ -746,7 +746,7 @@ class GpsTab(BaseTab):
     @span.setter
     def span(self, seg):
         if seg:
-            self._span = Segment(*list(map(to_gps, seg)))
+            self._span = Segment(*map(to_gps, seg))
         else:
             self._span = None
 

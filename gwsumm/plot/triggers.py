@@ -67,7 +67,7 @@ class TriggerPlotMixin(object):
         """List of all unique channels for this plot
         """
         chans = set([re.split(r'[#@]', str(c), 1)[0] for c in self._channels])
-        return ChannelList(list(map(Channel, chans)))
+        return ChannelList(map(Channel, chans))
 
     @property
     def pid(self):
@@ -238,7 +238,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         self.apply_parameters(ax, **self.pargs)
 
         # correct log-scale empty axes
-        if any(list(map(isinf, ax.get_ylim()))):
+        if any(map(isinf, ax.get_ylim())):
             ax.set_ylim(0.1, 10)
 
         # add colorbar

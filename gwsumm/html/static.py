@@ -70,4 +70,3 @@ def get_js():
     """Return a `dict` of javascript files to link in the HTML <head>
     """
     return JS
-

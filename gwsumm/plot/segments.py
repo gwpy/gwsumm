@@ -1071,15 +1071,15 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                               linewidth=0)
         # sort entries
         if legsort:
-            patches, pclabels, data = map(list, zip(*sorted(
+            patches, pclabels, data = list(map(list, zip(*sorted(
                  list(zip(patches, pclabels, data)),
                  key=lambda x: x[2],
-                 reverse=True)))
+                 reverse=True))))
         # and restrict to the given threshold
         if legth:
             try:
-                patches, pclabels, data = map(list, zip(*[
-                    x for x in zip(patches, pclabels, data) if x[2] >= legth]))
+                patches, pclabels, data = list(map(list, zip(*[
+                    x for x in zip(patches, pclabels, data) if x[2] >= legth])))
             except ValueError:
                 pass
 

@@ -160,7 +160,7 @@ def make_globalv_key(channels, fftparams=None):
     """
     if not isinstance(channels, (list, tuple)):
         channels = [channels]
-    channels = map(get_channel, channels)
+    channels = list(map(get_channel, channels))
     parts = []
     # comma-separated list of names
     parts.append(','.join(c.ndsname for c in channels))

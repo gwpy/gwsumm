@@ -95,8 +95,8 @@ class GuardianTab(DataTab):
                     plot.append(True)
                 new.grdstates[int(key)] = name.strip('*')
         try:
-            new.transstates = map(
-                int, config.get(section, 'transitions').split(','))
+            new.transstates = list(map(
+                int, config.get(section, 'transitions').split(',')))
         except NoOptionError:
             new.transstates = list(new.grdstates)
 

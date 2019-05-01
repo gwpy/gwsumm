@@ -268,7 +268,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
                 break
 
     # validate files existing and return
-    cache = list(filter(os.path.exists, map(_urlpath, cache)))
+    cache = list(filter(os.path.exists, list(map(_urlpath, cache))))
     vprint(' %d found.\n' % len(cache))
     return cache
 
@@ -580,7 +580,7 @@ def _get_timeseries_dict(channels, segments, config=None,
 
             # get NDS channel segments
             if ndsconnection is not None and ndsconnection.get_protocol() > 1:
-                span = map(int, new.extent())
+                span = list(map(int, new.extent()))
                 avail = io_nds2.get_availability(
                     channels, *span, connection=ndsconnection
                 )
@@ -660,7 +660,7 @@ def _get_timeseries_dict(channels, segments, config=None,
                 #       ligo.segments.segment to prevent `TypeError` from
                 #       a mismatch with ligo.segments.segment
                 segcache = sieve_cache(fcache, segment=segment)
-                segstart, segend = map(float, segment)
+                segstart, segend = list(map(float, segment))
                 tsd = DictClass.read(segcache, qchannels, start=segstart,
                                      end=segend, nproc=nproc,
                                      verbose=vstr.format(segment), **ioargs)
@@ -748,7 +748,7 @@ def locate_data(channels, segments, list_class=TimeSeriesList):
                     if abs(seg) == 0 or abs(seg) < ts.dt.value:
                         continue
                     if ts.span.intersects(seg):
-                        common = map(float, ts.span & seg)
+                        common = list(map(float, ts.span & seg))
                         cropped = ts.crop(*common, copy=False)
                         if cropped.size:
                             data.append(cropped)

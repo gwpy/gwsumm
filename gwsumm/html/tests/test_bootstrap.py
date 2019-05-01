@@ -51,7 +51,7 @@ def test_banner():
         '<div class="banner">\n<h1 class=\"test\">Test</h1>\n'
         '<p class=\"subtest\">Subtest</p>\n</div>')
 
-@pytest.mark.parametrize('mode, datefmt, highlighteddates, highlightavailable', [
+@pytest.mark.parametrize('mode, datefmt, highlighteddates, datefile', [
     ('day', 'April 10 2014', '2014-04-10', None),
     ('week', 'Week of April 10 2014', None, 'list-dirs.txt'),
     ('month', 'April 2014', '20140410,20140412', None),

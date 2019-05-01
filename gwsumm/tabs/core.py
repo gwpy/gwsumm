@@ -805,7 +805,7 @@ class IntervalTab(GpsTab):
                 span = (start, end)
 
         self.highlighteddates = kwargs.pop('highlighteddates', None)
-        self.datefile = kwargs.pop('datafile', None)
+        self.datefile = kwargs.pop('datefile', None)
 
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)

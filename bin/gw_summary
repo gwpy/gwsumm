@@ -466,6 +466,7 @@ if (mode.get_mode().is_calendar() and
     datedirs = sorted([thisdir for thisdir in os.listdir(dirpath)
                        if os.path.isdir(os.path.join(dirpath, thisdir))])
     dirfile = os.path.join(dirpath, 'list-dirs.txt')
+    config.set('calendar', 'date-file', dirfile)
     with open(dirfile, 'w') as fp:
         fp.write(','.join(datedirs))
 

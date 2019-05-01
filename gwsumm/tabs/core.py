@@ -443,11 +443,13 @@ class BaseTab(object):
                     kwargs['highlighteddates']
                 except KeyError:
                     kwargs['highlighteddates'] = cp.get('calendar', 'highlighted-dates')
-            elif cp.has_option('calendar', 'highlight-available'):
-                try:
-                    kwargs['highlightavailable']
-                except KeyError:
-                    kwargs['highlightavailable'] = cp.getboolean('calendar', 'highlight-available')
+            elif (cp.has_option('calendar', 'highlight-available') and
+                  cp.has_option('calendar', 'date-file')):
+                if cp.getboolean('calendar', 'highlight-available'):
+                    try:
+                        kwargs['datefile']
+                    except KeyError:
+                        kwargs['datefile'] = cp.get('calendar', 'date-file')
 
         return cls(name, *args, **kwargs)
 
@@ -803,7 +805,7 @@ class IntervalTab(GpsTab):
                 span = (start, end)
 
         self.highlighteddates = kwargs.pop('highlighteddates', None)
-        self.highlightavailable = kwargs.pop('highlightavailable', False)
+        self.datefile = kwargs.pop('datafile', None)
 
         self.span = span
         super(IntervalTab, self).__init__(*args, **kwargs)
@@ -829,7 +831,7 @@ class IntervalTab(GpsTab):
         # format calendar
         return html.calendar(date, mode=self.mode,
                              highlighteddates=self.highlighteddates,
-                             highlightavailable=self.highlightavailable)
+                             datefile=self.datefile)
 
     def html_navbar(self, brand=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.

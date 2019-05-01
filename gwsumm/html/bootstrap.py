@@ -77,7 +77,7 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
              id_='calendar', dateformat=None, mode=None,
-             highlighteddates=None, highlightavailable=False):
+             highlighteddates=None, datefile=None):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -86,6 +86,15 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         active date for the calendar
     tag : `str`
         type of enclosing HTML tag, default: ``<a>``
+    highlighteddates: `str`
+        a string containing a comma seperated list of dates in the format
+        ``yyyymmdd`` or ``yyyy-mm-dd`` to highlight in the calendar.
+        Non-highlighted dates are disabled.
+    datefile: `str`
+        the name of a file containing a comma seperated list of dates in the
+        format ``yyyymmdd`` to highlight in the calendar. Non-highlighted dates
+        are disabled. The `highlighteddates` option takes precedence over this
+        one.
 
     Returns
     -------
@@ -115,10 +124,8 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
                        'data-viewmode': '%ss' % mode.name}
     if highlighteddates is not None:
         attributekwargs['highlight-dates'] = highlighteddates.replace('-', '')
-    elif highlightavailable:
-        # set location of dates file
-        datefile = '{}/list-dirs.txt'.format(
-            os.path.split(mode.dir_format())[0])
+    elif datefile is not None:
+        # set location of the dates file
         attributekwargs['highlight-available-dates'] = datefile
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **attributekwargs)

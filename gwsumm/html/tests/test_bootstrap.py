@@ -52,23 +52,22 @@ def test_banner():
         '<p class=\"subtest\">Subtest</p>\n</div>')
 
 @pytest.mark.parametrize('mode, datefmt, highlighteddates, highlightavailable', [
-    ('day', 'April 10 2014', '2014-04-10', False),
-    ('week', 'Week of April 10 2014', None, True),
-    ('month', 'April 2014', '20140410,20140412', False),
-    ('year', '2014', '20140410,20140412', True),
+    ('day', 'April 10 2014', '2014-04-10', None),
+    ('week', 'Week of April 10 2014', None, 'list-dirs.txt'),
+    ('month', 'April 2014', '20140410,20140412', None),
+    ('year', '2014', '20140410,20140412', 'list-dirs.txt'),
 ])
-def test_calendar(mode, datefmt, highlighteddates, highlightavailable):
+def test_calendar(mode, datefmt, highlighteddates, datefile):
     cal = bootstrap.calendar(DATE, mode=mode,
                              highlighteddates=highlighteddates,
-                             highlightavailable=highlightavailable)
+                             datefile=datefile)
     hdcheck = ""
     hacheck = ""
     if highlighteddates is not None:
         hdcheck = 'highlight-dates="{}"'.format(
             highlighteddates.replace('-', ''))
-    elif isinstance(highlightavailable, bool):
-        if highlightavailable:
-            hacheck = 'highlight-available-dates="{}/list-dirs.txt"'.format(mode)
+    elif datefile is not None:
+        hacheck = 'highlight-available-dates="list-dirs.txt"'
     assert parse_html(str(cal)) == parse_html(CALENDAR.format(
         '%ss' % mode, hdcheck, hacheck, datefmt))
 

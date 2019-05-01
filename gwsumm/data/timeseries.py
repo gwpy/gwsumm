@@ -580,7 +580,7 @@ def _get_timeseries_dict(channels, segments, config=None,
 
             # get NDS channel segments
             if ndsconnection is not None and ndsconnection.get_protocol() > 1:
-                span = map(int, new.extent())
+                span = list(map(int, new.extent()))
                 avail = io_nds2.get_availability(
                     channels, *span, connection=ndsconnection
                 )

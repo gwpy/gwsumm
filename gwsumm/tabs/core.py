@@ -417,6 +417,8 @@ class BaseTab(object):
                 kwargs['mode'] = get_mode(cp.get(section, 'mode'))
             except NoOptionError:
                 kwargs['mode'] = get_mode()
+        if isinstance(kwargs['mode'], str):
+            kwargs['mode'] = get_mode(kwargs['mode'])
         if kwargs['mode'] >= Mode.gps:
             try:
                 kwargs['start']

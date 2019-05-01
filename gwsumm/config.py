@@ -374,7 +374,7 @@ class GWSummConfigParser(configparser.ConfigParser):
         except configparser.NoOptionError:
             return files
         else:
-            files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))
+            files.extend([re_quote.sub('', x) for x in extras.split(',')])
         return files
 
     def get_javascript(self, section='html'):
@@ -394,5 +394,5 @@ class GWSummConfigParser(configparser.ConfigParser):
         except configparser.NoOptionError:
             return files
         else:
-            files.extend(map(lambda x: re_quote.sub('', x), extras.split(',')))
+            files.extend([re_quote.sub('', x) for x in extras.split(',')])
         return files

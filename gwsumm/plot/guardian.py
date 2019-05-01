@@ -71,12 +71,12 @@ class GuardianStatePlot(get_plot('segments')):
         ax = plot.gca()
 
         # get labels
-        flags = map(lambda f: str(f).replace('_', r'\_'), self.flags)
+        flags = [str(f).replace('_', r'\_') for f in self.flags]
         labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         if isinstance(labels, string_types):
             labels = labels.split(',')
-        labels = map(lambda s: re_quote.sub('', str(s).strip('\n ')), labels)
+        labels = [re_quote.sub('', str(s).strip('\n ')) for s in labels]
 
         # parse plotting arguments
         legendargs = self.parse_legend_kwargs()

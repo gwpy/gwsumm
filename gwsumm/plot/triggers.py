@@ -128,7 +128,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             self._pid += '_%s' % re_cchar.sub('_', self.etg)
             for column in self.columns:
                 if column:
-                    self._pid += '_%s' % re_cchar.sub('_', column)
+                    self._pid += '_%s' % re_cchar.sub('_', str(column))
             self._pid = self._pid.upper()
             return self.pid
 

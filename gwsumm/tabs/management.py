@@ -99,7 +99,8 @@ class AccountingTab(ParentTab):
 
         # plot pie charts
         try:
-            explode = map(float, config.get(section, 'pie-explode').split(','))
+            explode = list(
+                map(float, config.get(section, 'pie-explode').split(',')))
         except NoOptionError:
             explode = None
         ptag = 'overview'
@@ -221,9 +222,8 @@ class AccountingTab(ParentTab):
                 totp += activep
                 data.append([str(idx), name.strip('*'), '%.1f' % actives,
                              '%.1f' % activeh, '%.1f' % activep])
-            data.append(map(
-                lambda x: '<strong>%s</strong>' % x,
-                ['', 'Total:', '%.1f' % tots, '%.1f' % toth, '%.1f' % totp]))
+            data.append(['<strong>%s</strong>' % x for x in [
+                '', 'Total:', '%.1f' % tots, '%.1f' % toth, '%.1f' % totp]])
             page.add(str(html.table(
                 headers, data, id=id,
                 caption="%s observatory mode statistics as recorded in "

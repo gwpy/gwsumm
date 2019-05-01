@@ -258,15 +258,15 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
                      nproc=1, datafind_error='raise', **fftparams):
     """Get spectrograms for multiple channels
     """
-    channels = map(get_channel, channels)
+    channels = list(map(get_channel, channels))
 
     # get timeseries data in bulk
     if query:
         # get underlying list of data channels to read
-        qchannels = map(get_channel,
+        qchannels = list(map(get_channel,
                         set([c for group in
                              map(split_channel_combination, channels)
-                             for c in group]))
+                             for c in group])))
 
         # work out FFT params and storage keys for each data channel
         keys = []

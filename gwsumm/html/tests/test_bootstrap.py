@@ -64,8 +64,8 @@ def test_calendar(mode, datefmt, highlighteddates, highlightavailable):
     hdcheck = ""
     hacheck = ""
     if highlighteddates is not None:
-        hdcheck = 'highlight-dates="{}"'.format(highlighteddates.replace('-',
-                                                                         ''))
+        hdcheck = 'highlight-dates="{}"'.format(
+            highlighteddates.replace('-', ''))
     elif isinstance(highlightavailable, bool):
         if highlightavailable:
             hacheck = 'highlight-available-dates="{}/list-dirs.txt"'.format(mode)

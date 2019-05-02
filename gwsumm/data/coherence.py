@@ -439,7 +439,8 @@ def _get_from_list(serieslist, segment):
     data within the list is guaranteed
     """
     for series in serieslist:
-        if segment in series.span:
+        if segment.intersects(series.span):
+            segment = segment & series.span
             return series.crop(*segment)
     raise ValueError("Cannot crop series for segment %s from list"
                      % str(segment))

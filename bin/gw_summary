@@ -47,7 +47,6 @@ import os
 import re
 import warnings
 from collections import OrderedDict
-from shutil import copyfile
 from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
 try:
     from urllib.parse import urlparse

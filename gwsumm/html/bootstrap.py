@@ -76,7 +76,8 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
 
 
 def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
-             id_='calendar', dateformat=None, mode=None):
+             id_='calendar', dateformat=None, mode=None,
+             highlighteddates=None, datefile=None):
     """Construct a bootstrap-datepicker calendar.
 
     Parameters
@@ -85,6 +86,15 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
         active date for the calendar
     tag : `str`
         type of enclosing HTML tag, default: ``<a>``
+    highlighteddates: `str`
+        a string containing a comma seperated list of dates in the format
+        ``yyyymmdd`` or ``yyyy-mm-dd`` to highlight in the calendar.
+        Non-highlighted dates are disabled.
+    datefile: `str`
+        the name of a file containing a comma seperated list of dates in the
+        format ``yyyymmdd`` to highlight in the calendar. Non-highlighted dates
+        are disabled. The `highlighteddates` option takes precedence over this
+        one.
 
     Returns
     -------
@@ -109,9 +119,16 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     page = markup.page()
     page.a('&laquo;', class_='navbar-brand step-back', title='Step back',
            onclick='stepDate(-1)')
+    attributekwargs = {'data-date': data_date,
+                       'data-date-format': 'dd-mm-yyyy',
+                       'data-viewmode': '%ss' % mode.name}
+    if highlighteddates is not None:
+        attributekwargs['highlight-dates'] = highlighteddates.replace('-', '')
+    elif datefile is not None:
+        # set location of the dates file
+        attributekwargs['highlight-available-dates'] = datefile
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
-           **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': '%ss' % mode.name})
+           **attributekwargs)
     page.add(datestring)
     page.b('', class_='caret')
     page.a.close()

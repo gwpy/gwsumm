@@ -175,6 +175,19 @@ function shortenDate() {
 
 // When document is ready, run this stuff:
 $(window).load(function() {
+  // get directories if required
+  var selected_dates = new Array();
+  if ( document.getElementById('calendar').hasAttribute('highlight-available-dates') ){
+    var geturl = document.getElementById('calendar').getAttribute('highlight-available-dates');
+    var request = new XMLHttpRequest();
+    request.onload = function() {
+      if ( this.status != 404 ){
+        selected_dates = this.responseText.replace(/^\s+|\s+$/g, '').split(',');
+      }
+    };
+    request.open("GET", geturl, false);  // use synchronous request
+    request.send();
+  }
 
   // shorten the date
   if ($('#calendar').length){ shortenDate();}
@@ -190,8 +203,26 @@ $(window).load(function() {
   $('#calendar').datepicker({
     weekStart: 1,
     endDate: moment().utc().format('DD/MM/YYYY'),
-    todayHighlight: true,
-    todayBtn: "linked"
+    todayHighlight: ( !document.getElementById('calendar').hasAttribute('highlight-dates') && !document.getElementById('calendar').hasAttribute('highlight-available-dates') ), 
+    todayBtn: "linked",
+    beforeShowDay: function(date) {
+      var calendar_date = date.getUTCFullYear() + ('0'+(date.getMonth()+1)).slice(-2) + ('0'+date.getDate()).slice(-2);
+      if ( document.getElementById('calendar').hasAttribute('highlight-dates') || document.getElementById('calendar').hasAttribute('highlight-available-dates') ){
+        // highlight selected dates if given
+        if ( document.getElementById('calendar').hasAttribute('highlight-dates') ){
+          selected_dates = document.getElementById('calendar').getAttribute('highlight-dates').split(',');
+        }
+        if (selected_dates.length > 0 ){
+          if ( selected_dates.indexOf(calendar_date) == -1 ){
+            // disable dates that are not given
+            return {enabled: false, tooltip: 'Date not available'};
+          }
+          else{
+            return {classes: 'highlighted', enabled: true};
+          }
+        }
+      }
+    }
   }).on('changeDate', move_to_date);
 
   // load correct run type

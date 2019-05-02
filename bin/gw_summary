@@ -465,9 +465,16 @@ if (mode.get_mode().is_calendar() and
     datedirs = sorted([thisdir for thisdir in os.listdir(dirpath)
                        if os.path.isdir(os.path.join(dirpath, thisdir))])
     dirfile = os.path.join(dirpath, 'list-dirs.txt')
-    config.set('calendar', 'date-file', dirfile)
-    with open(dirfile, 'w') as fp:
-        fp.write(','.join(datedirs))
+    if not config.has_option('calendar', 'date-file'):
+        config.set('calendar', 'date-file')
+        with open(dirfile, 'w') as fp:
+            fp.write(','.join(datedirs))
+    else:
+        if not os.path.isfile(config.get('calendar', 'date-file')):
+            raise parser.error("The file '{}'  supplied to 'date-file' in the "
+                               "[calendar] section option does not "
+                               "exist.".format(config.get('calendar',
+                                                          'date-file')))
 
 # -----------------------------------------------------------------------------
 # Setup

@@ -125,6 +125,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     None
        if ``return_=False``
     """
+    read_kw = dict()
     if isinstance(flag, str):
         flags = flag.split(',')
     else:
@@ -179,8 +180,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         query &= len(cache) != 0
     if query:
         if cache is not None:
+            if cache.endswith((".h5", "hdf", ".hdf5")):
+                read_kw['path'] = config.get('DEFAULT', 'segments-h5-path')
             try:
-                new = DataQualityDict.read(cache, list(allflags))
+                new = DataQualityDict.read(cache, list(allflags), **read_kw)
             except IORegistryError as e:
                 # can remove when astropy >= 1.2 is required
                 if type(e) is not IORegistryError:
@@ -188,7 +191,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 if len(allflags) == 1:
                     f = list(allflags)[0]
                     new = DataQualityDict()
-                    new[f] = DataQualityFlag.read(cache, f, coalesce=False)
+                    new[f] = DataQualityFlag.read(
+                        cache, f, coalesce=False, **read_kw)
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs

@@ -104,7 +104,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  etg=None, **kwargs):
-        if (len(channels) == 1) and ('title' not in kwargs.keys()):
+        if (len(channels) == 1) and ('title' not in kwargs):
             kwargs['title'] = usetex_tex('%s (%s)' % (str(channels[0]), etg))
         super(TriggerDataPlot, self).__init__(channels, start, end,
                                               state=state, outdir=outdir,

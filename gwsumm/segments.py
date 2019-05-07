@@ -181,7 +181,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     if query:
         if cache is not None:
             if cache.endswith((".h5", "hdf", ".hdf5")):
-                read_kw['path'] = config.get('DEFAULT', 'segments-h5-path')
+                read_kw['path'] = config.get('DEFAULT', 'segments-hdf5-path')
             try:
                 new = DataQualityDict.read(cache, list(allflags), **read_kw)
             except IORegistryError as e:

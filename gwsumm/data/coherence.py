@@ -21,6 +21,7 @@
 
 import operator
 import warnings
+from functools import reduce
 from itertools import zip_longest
 from collections import OrderedDict
 

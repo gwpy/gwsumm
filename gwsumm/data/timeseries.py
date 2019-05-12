@@ -24,6 +24,7 @@ import re
 import operator
 import warnings
 from time import sleep
+from functools import reduce
 from math import (floor, ceil)
 from urllib.parse import urlparse
 from collections import OrderedDict

@@ -19,9 +19,10 @@
 """Handle arbitrary mathematical operations applied to data series
 """
 
+import re
 import numbers
 import operator
-import re
+from functools import reduce
 from collections import OrderedDict
 
 import numpy

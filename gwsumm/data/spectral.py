@@ -22,6 +22,7 @@
 import os.path
 import operator
 import warnings
+from functools import reduce
 from collections import OrderedDict
 
 # imports for filter

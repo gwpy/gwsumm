@@ -22,6 +22,7 @@
 import operator
 import sys
 import warnings
+from functools import reduce
 from collections import OrderedDict
 from configparser import (
     DEFAULTSECT,

@@ -240,14 +240,17 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        # calculate coherence from the components and store in globalv
-        for seg in new:
-            cxy, cxx, cyy = [
-                _get_from_list(globalv.COHERENCE_COMPONENTS[ck], seg) for
-                ck in ckeys]
-            csg = abs(cxy)**2 / cxx / cyy
-            globalv.SPECTROGRAMS[key].append(csg)
-            globalv.SPECTROGRAMS[key].coalesce()
+        spans = [  # record data spans
+            series.span for series in globalv.COHERENCE_COMPONENTS[ck] for
+            ck in ckeys]
+        for seg in new:  # compute coherence from components
+            if all([seg.intersects(span) for span in spans]):
+                cxy, cxx, cyy = [
+                    _get_from_list(globalv.COHERENCE_COMPONENTS[ck], seg) for
+                    ck in ckeys]
+                csg = abs(cxy)**2 / cxx / cyy
+                globalv.SPECTROGRAMS[key].append(csg)
+                globalv.SPECTROGRAMS[key].coalesce()
 
     if not return_:
         return

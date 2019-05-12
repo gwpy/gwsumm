@@ -240,6 +240,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
+        # store coherence in globalv
         spans = [  # record data spans
             series.span for series in globalv.COHERENCE_COMPONENTS[ck] for
             ck in ckeys]

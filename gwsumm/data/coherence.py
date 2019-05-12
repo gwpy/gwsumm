@@ -244,9 +244,12 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         spans = SegmentList([  # record data spans
             series.span for series in globalv.COHERENCE_COMPONENTS[ck] for
             ck in ckeys])
-        for seg in new:  # compute coherence
-            if spans.intersects_segment(seg):
+        for seg in new:
+            try:  # take the union of all segments
                 outseg = reduce(operator.and_, spans, seg)
+            except ValueError:
+                outseg = None
+            if outseg:  # compute coherence
                 cxy, cxx, cyy = [_get_from_list(
                     globalv.COHERENCE_COMPONENTS[ck], outseg) for
                     ck in ckeys]

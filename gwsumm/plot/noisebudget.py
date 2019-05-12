@@ -19,8 +19,6 @@
 """Extensions to the spectrum plot for noise budgets
 """
 
-from __future__ import division
-
 import re
 
 import numpy

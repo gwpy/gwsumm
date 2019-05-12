@@ -1,4 +1,4 @@
-#!/home/detchar/opt/gwpysoft-2.7/bin/python
+#!/usr/bin/env python
 
 """Plot the triggers for a given ETG and a given channel
 """

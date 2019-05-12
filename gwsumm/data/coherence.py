@@ -19,14 +19,10 @@
 """Utilities for data handling and display
 """
 
-from __future__ import division
-
 import operator
 import warnings
+from itertools import zip_longest
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import (reduce, zip_longest)
 
 import numpy
 
@@ -152,7 +148,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             except AttributeError:
                 filter_ = None
             else:
-                if isinstance(filter_, string_types):
+                if isinstance(filter_, str):
                     filter_ = safe_eval(filter_, strict=True)
 
             # check how much of this component still needs to be calculated

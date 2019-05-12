@@ -19,19 +19,15 @@
 """Utilities for data handling and display
 """
 
-from __future__ import division
-
-import operator
-import re
 import os
+import re
+import operator
 import warnings
-from math import (floor, ceil)
 from time import sleep
+from math import (floor, ceil)
+from urllib.parse import urlparse
 from collections import OrderedDict
 from configparser import (NoSectionError, NoOptionError)
-
-from six.moves import reduce
-from six.moves.urllib.parse import urlparse
 
 from astropy import units
 

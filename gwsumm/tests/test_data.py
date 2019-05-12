@@ -25,8 +25,7 @@ import operator
 import tempfile
 import shutil
 from collections import OrderedDict
-
-from six.moves.urllib.request import urlopen
+from urllib.request import urlopen
 
 import pytest
 

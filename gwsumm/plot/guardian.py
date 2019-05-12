@@ -21,8 +21,6 @@
 
 from collections import OrderedDict
 
-from six import string_types
-
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.plot.colors import tint
 from gwpy.plot.segments import SegmentRectangle
@@ -74,7 +72,7 @@ class GuardianStatePlot(get_plot('segments')):
         flags = [str(f).replace('_', r'\_') for f in self.flags]
         labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
-        if isinstance(labels, string_types):
+        if isinstance(labels, str):
             labels = labels.split(',')
         labels = [re_quote.sub('', str(s).strip('\n ')) for s in labels]
 

@@ -19,15 +19,10 @@
 """Get spectrograms and spectra
 """
 
-from __future__ import division
-
 import os.path
 import operator
 import warnings
 from collections import OrderedDict
-
-from six import string_types
-from six.moves import reduce
 
 # imports for filter
 from math import pi  # noqa: F401
@@ -148,9 +143,9 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
         except AttributeError:
             filter_ = None
         else:
-            if isinstance(filter_, string_types) and os.path.isfile(filter_):
+            if isinstance(filter_, str) and os.path.isfile(filter_):
                 filter_ = io.read_frequencyseries(filter_)
-            elif isinstance(filter_, string_types):
+            elif isinstance(filter_, str):
                 filter_ = safe_eval(filter_, strict=True)
 
         # get time-series data

@@ -19,7 +19,6 @@
 """Utilities for segment handling and display
 """
 
-from __future__ import (division, print_function)
 import operator
 import sys
 import warnings
@@ -30,9 +29,6 @@ from configparser import (
     NoSectionError,
     NoOptionError,
 )
-
-from six import string_types
-from six.moves import reduce
 
 from astropy.io.registry import IORegistryError
 
@@ -128,7 +124,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     None
        if ``return_=False``
     """
-    if isinstance(flag, string_types):
+    if isinstance(flag, str):
         flags = flag.split(',')
     else:
         flags = flag
@@ -273,7 +269,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             out[compound].active &= validity
             if coalesce:
                 out[compound].coalesce()
-        if isinstance(flag, string_types):
+        if isinstance(flag, str):
             return out[flag]
         else:
             return out
@@ -321,7 +317,7 @@ def format_padding(flags, padding):
     """Format an arbitrary collection of paddings into a `dict`
     """
     # parse string to start with
-    if isinstance(padding, string_types):
+    if isinstance(padding, str):
         padding = list(eval(str))
     # zip list into dict
     if (isinstance(padding, (list)) or

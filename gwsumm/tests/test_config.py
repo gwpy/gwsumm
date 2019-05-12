@@ -21,10 +21,9 @@
 
 import os.path
 import tempfile
+from io import StringIO
 from collections import OrderedDict
 from configparser import (DEFAULTSECT, ConfigParser)
-
-from six.moves import StringIO
 
 import pytest
 

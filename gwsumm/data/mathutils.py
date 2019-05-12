@@ -24,8 +24,6 @@ import operator
 import re
 from collections import OrderedDict
 
-from six.moves import reduce
-
 import numpy
 
 from gwpy.segments import SegmentList

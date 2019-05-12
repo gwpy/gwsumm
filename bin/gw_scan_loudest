@@ -26,8 +26,6 @@ HTCondor Directed Acyclic Graph (DAG) to generate an Omega scan report of
 each.
 """
 
-from __future__ import print_function
-
 import os
 import argparse
 

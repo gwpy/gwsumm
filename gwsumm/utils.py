@@ -24,8 +24,6 @@ import sys
 import re
 from socket import getfqdn
 
-from six import string_types
-
 # import filter evals
 from math import pi  # noqa: F401
 import numpy  # noqa: F401
@@ -185,7 +183,7 @@ def safe_eval(val, strict=False, globals_=None, locals_=None):
         for more documentation on the underlying evaluation method
     """
     # don't evaluate non-strings
-    if not isinstance(val, string_types):
+    if not isinstance(val, str):
         return val
     # check that we aren't evaluating something dangerous
     try:

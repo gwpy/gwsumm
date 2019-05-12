@@ -20,8 +20,7 @@
 """
 
 import warnings
-
-from six.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from astropy.table import vstack as vstack_tables
 

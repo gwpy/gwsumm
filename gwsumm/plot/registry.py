@@ -23,7 +23,6 @@ configuration INI files
 """
 
 import re
-from six import string_types
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -61,7 +60,7 @@ def get_plot(name):
     """Query the registry for the plot class registered to the given
     name
     """
-    if isinstance(name, string_types):
+    if isinstance(name, str):
         name = re.sub(r'[\'\"]', '', name)
     try:
         return _PLOTS[name]

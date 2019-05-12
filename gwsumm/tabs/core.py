@@ -35,12 +35,10 @@ keyword arguments.
 
 import os
 import re
+from urllib,parse import urlparse
 from collections import OrderedDict
 from configparser import NoOptionError
 from shutil import copyfile
-
-from six import (string_types, add_metaclass)
-from six.moves.urllib.parse import urlparse
 
 from MarkupPy import markup
 
@@ -948,7 +946,6 @@ class _MetaTab(type):
 # this is the first actual Tab object, all of the functionality is defined
 # in the `BaseTab` object
 
-@add_metaclass(_MetaTab)
 class Tab(BaseTab):
     """A Simple HTML tab.
 
@@ -1002,6 +999,7 @@ class Tab(BaseTab):
     to collect child tabs in a given place, assign them all the same
     `~Tab.group`.
     """
+    __metaclass__ = _MetaTab
     type = 'basic'
 
 
@@ -1083,7 +1081,7 @@ class TabList(list):
     @classmethod
     def from_ini(cls, config, tag='tab[_-]', match=[],
                  path=os.curdir, plotdir='plots'):
-        if isinstance(tag, string_types):
+        if isinstance(tag, str):
             tag = re.compile(tag)
         tabs = cls()
         parents = {}

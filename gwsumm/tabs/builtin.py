@@ -31,8 +31,6 @@ import os.path
 import warnings
 from configparser import NoOptionError
 
-from six import string_types
-
 from MarkupPy import markup
 
 from .registry import (get_tab, register_tab)
@@ -285,20 +283,20 @@ class PlotTab(Tab):
             return
         # parse a single int
         if isinstance(layout, int) or (
-                isinstance(layout, string_types) and
+                isinstance(layout, str) and
                 layout.isdigit()
         ):
             self._layout = [int(layout)]
             return
         # otherwise parse as a list of ints or pairs of ints
-        if isinstance(layout, string_types):
+        if isinstance(layout, str):
             layout = layout.split(',')
         self._layout = []
         for item in layout:
             if isinstance(item, int):
                 self._layout.append(item)
                 continue
-            if isinstance(item, string_types):
+            if isinstance(item, str):
                 item = item.strip('([').rstrip(')]').split(',')
             if not isinstance(item, (list, tuple)) or not len(item) == 2:
                 raise ValueError("Cannot parse layout element %r (%s)"
@@ -421,7 +419,7 @@ class PlotTab(Tab):
             either the URL of a plot to embed, or a formatted `SummaryPlot`
             object.
         """
-        if isinstance(plot, string_types):
+        if isinstance(plot, str):
             plot = SummaryPlot(href=plot)
             plot.new = False
         if not isinstance(plot, SummaryPlot):
@@ -637,7 +635,7 @@ class StateTab(PlotTab):
             # allow default indication by trailing asterisk
             if state == default:
                 default_ = True
-            elif (default is None and isinstance(state, string_types) and
+            elif (default is None and isinstance(state, str) and
                     state.endswith('*')):
                 state = state[:-1]
                 default_ = True

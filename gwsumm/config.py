@@ -19,17 +19,13 @@
 """Thin wrapper around configparser
 """
 
-import configparser
-import os.path
 import re
+import os.path
+import configparser
+from io import StringIO
 from collections import OrderedDict
 from importlib import import_module
-
-from six import string_types
-from six.moves import (
-    StringIO,
-    http_client as httplib,
-)
+from http import client as http_client
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
@@ -82,7 +78,7 @@ class GWSummConfigParser(configparser.ConfigParser):
 
     def read(self, filenames):
         readok = configparser.ConfigParser.read(self, filenames)
-        if isinstance(filenames, string_types):
+        if isinstance(filenames, str):
             filenames = filenames.split(',')
         for fp in filenames:
             if fp not in readok:

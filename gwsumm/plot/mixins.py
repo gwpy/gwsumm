@@ -19,11 +19,10 @@
 """
 """
 
+import re
 import abc
 import os.path
-import re
-
-from six.moves import StringIO
+from io import StringIO
 
 from lxml import etree
 

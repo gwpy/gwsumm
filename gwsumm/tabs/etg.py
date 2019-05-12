@@ -23,8 +23,6 @@ import os
 from configparser import NoOptionError
 from warnings import warn
 
-from six import string_types
-
 from MarkupPy import markup
 
 from glue.lal import Cache
@@ -234,7 +232,7 @@ class EventTriggerTab(get_tab('default')):
     def process(self, *args, **kwargs):
         error = None
         # read the cache files
-        if isinstance(self.cache, string_types) and os.path.isfile(self.cache):
+        if isinstance(self.cache, str) and os.path.isfile(self.cache):
             with open(self.cache, 'r') as fobj:
                 try:
                     self.cache = Cache.fromfile(fobj).sieve(
@@ -244,7 +242,7 @@ class EventTriggerTab(get_tab('default')):
                         error = 'could not parse event cache file'
                     else:
                         raise
-        elif isinstance(self.cache, string_types):
+        elif isinstance(self.cache, str):
             error = 'could not locate event cache file'
             warn("Cache file %s not found." % self.cache)
         elif self.cache is not None and not isinstance(self.cache, Cache):

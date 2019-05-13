@@ -240,22 +240,12 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        # store coherence in globalv
-        spans = SegmentList([  # record data spans
-            series.span for series in globalv.COHERENCE_COMPONENTS[ck] for
-            ck in ckeys])
-        for seg in new:
-            try:  # take the union of all segments
-                outseg = reduce(operator.and_, spans, seg)
-            except ValueError:
-                outseg = None
-            if outseg:  # compute coherence
-                cxy, cxx, cyy = [_get_from_list(
-                    globalv.COHERENCE_COMPONENTS[ck], outseg) for
-                    ck in ckeys]
-                csg = abs(cxy)**2 / cxx / cyy
-                globalv.SPECTROGRAMS[key].append(csg)
-                globalv.SPECTROGRAMS[key].coalesce()
+        for seg in new:  # store coherence in globalv
+            cxy, cxx, cyy = [_get_from_list(
+                globalv.COHERENCE_COMPONENTS[ck], seg) for ck in ckeys]
+            csg = abs(cxy)**2 / cxx / cyy
+            globalv.SPECTROGRAMS[key].append(csg)
+            globalv.SPECTROGRAMS[key].coalesce()
 
     if not return_:
         return
@@ -446,12 +436,15 @@ def _get_from_list(serieslist, segment):
     Should only be used in situations where the existence of the target
     data within the list is guaranteed
     """
-    for series in serieslist:
-        if segment.intersects(series.span):
-            segment = segment & series.span
-            return series.crop(*segment)
-    raise ValueError("Cannot crop series for segment %s from list"
-                     % str(segment))
+    spans = SegmentList([series.span for series in serieslist])
+    try:  # take the union of all segments
+        outseg = reduce(operator.and_, spans, segment)
+    except ValueError:  # raise exception if segments do not overlap
+        raise ValueError("Cannot crop series for segment %s from list"
+                         % str(segment))
+    else:  # return cropped series
+        for series in serieslist:
+            return series.crop(*outseg)
 
 
 def complex_percentile(array, percentile):

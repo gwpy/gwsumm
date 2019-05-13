@@ -240,7 +240,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        for seg in new:  # store coherence in globalv
+        spans = [SegmentList([  # record spectrogaram spans
+            spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
+        ]) for ck in ckeys]
+        new = _get_common_segments(new, spans)
+        for seg in new:  # compute coherence from components
             cxy, cxx, cyy = [_get_from_list(
                 globalv.COHERENCE_COMPONENTS[ck], seg) for ck in ckeys]
             csg = abs(cxy)**2 / cxx / cyy
@@ -430,21 +434,46 @@ def get_coherence_spectrograms(channel_pairs, segments, config=None,
     return out
 
 
+def _get_common_segments(segments, spans):
+    """Internal function to find the union of a collection of segments
+
+    Parameters
+    ----------
+    segments : `SegmentList`
+        list of `~gwpy.segments.Segment`
+
+    spans : `list` of `SegmentList`
+        list of time-domain spans of `~gwpy.types.Series` objects
+
+    Returns
+    -------
+    outsegs : `SegmentList`
+        list of segments common between `spans` and `segments`
+
+    Notes
+    -----
+    The `spans` object is a list of `SegmentList`, each of which should
+    individually have the same number of elements as `segments`.
+    """
+    outsegs = SegmentList([])
+    for i, segment in enumerate(segments):
+        spanlist = SegmentList([s[i] for s in spans])
+        outsegs.append(reduce(operator.and_, spanlist, segment))
+    return outsegs
+
+
 def _get_from_list(serieslist, segment):
     """Internal function to crop a series from a serieslist
 
     Should only be used in situations where the existence of the target
     data within the list is guaranteed
     """
-    spans = [series.span for series in serieslist]
-    try:  # take the union of all segments
-        outseg = reduce(operator.and_, spans, segment)
-    except ValueError:  # raise exception if segments do not overlap
-        raise ValueError("Cannot crop series for segment %s from list"
-                         % str(segment))
-    else:  # return cropped series
-        for series in serieslist:
-            return series.crop(*outseg)
+    for series in serieslist:
+        if segment.intersects(series.span):
+            outseg = segment & series.span
+            return series.crop(*segment)
+    raise ValueError("Cannot crop series for segment %s from list"
+                     % str(segment))
 
 
 def complex_percentile(array, percentile):

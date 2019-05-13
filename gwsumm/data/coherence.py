@@ -436,7 +436,7 @@ def _get_from_list(serieslist, segment):
     Should only be used in situations where the existence of the target
     data within the list is guaranteed
     """
-    spans = SegmentList([series.span for series in serieslist])
+    spans = [series.span for series in serieslist]
     try:  # take the union of all segments
         outseg = reduce(operator.and_, spans, segment)
     except ValueError:  # raise exception if segments do not overlap

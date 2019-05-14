@@ -180,7 +180,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         query &= len(cache) != 0
     if query:
         if cache is not None:
-            if cache.endswith((".h5", "hdf", ".hdf5")):
+            if cache.endswith((".h5", ".hdf", ".hdf5")):
                 read_kw['path'] = config.get('DEFAULT', 'segments-hdf5-path')
             try:
                 new = DataQualityDict.read(cache, list(allflags), **read_kw)

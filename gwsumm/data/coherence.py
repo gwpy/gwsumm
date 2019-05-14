@@ -240,9 +240,9 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        spans = [SegmentList([  # record spectrogaram spans
+        spans = [[  # record spectrogaram spans
             spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
-        ]).coalesce() for ck in ckeys]
+        ] for ck in ckeys]
         new = _get_common_segments(new, spans)
         for seg in new:  # compute coherence from components
             cxy, cxx, cyy = [_get_from_list(
@@ -450,14 +450,11 @@ def _get_common_segments(segments, spans):
     outsegs : `SegmentList`
         list of segments common between `spans` and `segments`
     """
-    outsegs = SegmentList([])
-    for segment in segments:
-        for spanlist in zip_longest(*spans, fillvalue=segment):
-            try:  # take the intersection of all segments
-                outsegs.append(reduce(operator.and_, spanlist, segment))
-            except ValueError:
-                pass  # ignore non-overlapping segments
-    return outsegs.coalesce()
+    # coalesce all segments
+    segments = SegmentList(segments).coalesce()
+    spans = [SegmentList(s).coalesce() for s in spans]
+    # return the coalesced union of all segments
+    return reduce(operator.and_, spans, segments).coalesce()
 
 
 def _get_from_list(serieslist, segment):

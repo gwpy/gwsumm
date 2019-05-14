@@ -449,11 +449,6 @@ def _get_common_segments(segments, spans):
     -------
     outsegs : `SegmentList`
         list of segments common between `spans` and `segments`
-
-    Notes
-    -----
-    The `spans` object is a list of `SegmentList`, each of which should
-    individually have the same number of elements as `segments`.
     """
     outsegs = SegmentList([])
     for segment in segments:

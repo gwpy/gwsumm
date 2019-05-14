@@ -456,12 +456,12 @@ def _get_common_segments(segments, spans):
     individually have the same number of elements as `segments`.
     """
     outsegs = SegmentList([])
-    for i, segment in enumerate(segments):
-        spanlist = SegmentList([s[i] for s in spans])
-        try:  # take the intersection of all segments
-            outsegs.append(reduce(operator.and_, spanlist, segment))
-        except ValueError:
-            pass  # ignore non-overlapping segments
+    for segment in segments:
+        for spanlist in zip_longest(*spans, fillvalue=segment):
+            try:  # take the intersection of all segments
+                outsegs.append(reduce(operator.and_, spanlist, segment))
+            except ValueError:
+                pass  # ignore non-overlapping segments
     return outsegs.coalesce()
 
 

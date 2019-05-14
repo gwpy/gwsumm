@@ -458,10 +458,10 @@ def _get_common_segments(segments, spans):
     outsegs = SegmentList([])
     for i, segment in enumerate(segments):
         spanlist = SegmentList([s[i] for s in spans])
-        try:
+        try:  # take the intersection of all segments
             outsegs.append(reduce(operator.and_, spanlist, segment))
         except ValueError:
-            pass
+            pass  # ignore non-overlapping segments
     return outsegs.coalesce()
 
 

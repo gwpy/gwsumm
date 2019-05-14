@@ -242,7 +242,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 
         spans = [SegmentList([  # record spectrogaram spans
             spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
-        ]) for ck in ckeys]
+        ]).coalesce() for ck in ckeys]
         new = _get_common_segments(new, spans)
         for seg in new:  # compute coherence from components
             cxy, cxx, cyy = [_get_from_list(
@@ -458,8 +458,11 @@ def _get_common_segments(segments, spans):
     outsegs = SegmentList([])
     for i, segment in enumerate(segments):
         spanlist = SegmentList([s[i] for s in spans])
-        outsegs.append(reduce(operator.and_, spanlist, segment))
-    return outsegs
+        try:
+            outsegs.append(reduce(operator.and_, spanlist, segment))
+        except ValueError:
+            pass
+    return outsegs.coalesce()
 
 
 def _get_from_list(serieslist, segment):

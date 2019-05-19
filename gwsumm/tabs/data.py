@@ -43,6 +43,7 @@ from astropy.time import Time
 
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import from_gps
+from gwpy.utils.env import bool_env
 from gwpy.utils.mp import multiprocess_with_queues
 
 from gwdetchar.io import html as gwhtml
@@ -559,7 +560,7 @@ class DataTab(ProcessedTab, ParentTab):
                      (p.state is None or p.state.name == state.name)]
 
         # separate plots into serial and parallel groups
-        if int(nproc) <= 1:
+        if int(nproc) <= 1 or not bool_env("GWPY_USETEX", False):
             serial = new_plots
             parallel = []
         else:

@@ -31,10 +31,6 @@ from setuptools.command.build_py import build_py
 
 import versioneer
 
-# enforce python version
-if sys.version < '3.5':
-    raise ImportError("Python versions older than 3.5 are not supported.")
-
 # set basic metadata
 PACKAGENAME = 'gwsumm'
 DISTNAME = 'gwsumm'

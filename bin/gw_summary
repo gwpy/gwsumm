@@ -56,6 +56,7 @@ from dateutil.relativedelta import relativedelta
 # set matplotlib backend
 from matplotlib import use
 use('Agg')
+from matplotlib.mathtext import MathTextWarning
 
 from glue.lal import Cache
 
@@ -372,6 +373,13 @@ opts = parser.parse_args()
 
 if opts.debug:
     warnings.simplefilter('error', DeprecationWarning)
+
+# filter mathtext warnings
+warnings.filterwarnings(
+    'ignore',
+    message='Substituting with a symbol from Computer Modern.',
+    category=MathTextWarning,
+)
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose

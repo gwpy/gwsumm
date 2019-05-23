@@ -41,8 +41,12 @@ The available classes are:
 """
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+
+import warnings
 
 from matplotlib import rcParams
+from matplotlib.mathtext import MathTextWarning
 
 from .registry import *
 from .utils import *
@@ -66,3 +70,10 @@ rcParams.update({
     'figure.figsize': (12, 6),
     'svg.fonttype': 'none',
 })
+
+# filter mathtext warnings
+warnings.filterwarnings(
+    'ignore',
+    message='Substituting with a symbol from Computer Modern.',
+    category=MathTextWarning,
+)

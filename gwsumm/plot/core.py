@@ -417,12 +417,12 @@ class DataPlot(SummaryPlot):
         all_ = self.channels
         out = []
         for c in all_:
-            if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.texname):
-                name = c.texname.rsplit('-', 1)[0]
+            if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.name):
+                name = putils.usetex_tex(c.texname.rsplit('-', 1)[0])
             else:
-                name = c.texname.rsplit('.', 1)[0]
-            if ' ' in c.texname:
-                out.append((c.texname, [c]))
+                name = putils.usetex_tex(c.texname.rsplit('.', 1)[0])
+            if ' ' in c.name:
+                out.append((putils.usetex_tex(c.texname), [c]))
             else:
                 try:
                     id_ = list(zip(*out))[0].index(name)

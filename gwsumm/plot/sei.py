@@ -146,7 +146,7 @@ class SeiWatchDogPlot(get_plot('data')):
                        color='red')
             ax.set_xlabel('')
             ax.set_ylabel('')
-            ax.set_title(usetex_tex(channel.texname), fontsize=10)
+            ax.set_title(usetex_tex(channel.name), fontsize=10)
             ax.xaxis.set_minor_locator(NullLocator())
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(10)

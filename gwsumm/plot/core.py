@@ -418,11 +418,11 @@ class DataPlot(SummaryPlot):
         out = []
         for c in all_:
             if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.name):
-                name = putils.usetex_tex(c.texname.rsplit('-', 1)[0])
+                name = putils.usetex_tex(c.name.rsplit('-', 1)[0])
             else:
-                name = putils.usetex_tex(c.texname.rsplit('.', 1)[0])
+                name = putils.usetex_tex(c.name.rsplit('.', 1)[0])
             if ' ' in c.name:
-                out.append((putils.usetex_tex(c.texname), [c]))
+                out.append((putils.usetex_tex(c.name), [c]))
             else:
                 try:
                     id_ = list(zip(*out))[0].index(name)

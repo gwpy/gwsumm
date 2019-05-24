@@ -4,14 +4,12 @@
 """
 
 import argparse
-import warnings
 from collections import OrderedDict
 
 from numpy import ndarray
 
 from matplotlib import use
 use('agg')  # nopep8
-from matplotlib.mathtext import MathTextWarning
 
 from matplotlib.artist import setp
 from matplotlib.colors import LogNorm
@@ -91,13 +89,6 @@ if not args.y_column:
     args.y_column = args.columns[1]
 if not args.color and len(args.columns) >= 3:
     args.color = args.columns[2]
-
-# filter mathtext warnings
-warnings.filterwarnings(
-    'ignore',
-    message='Substituting with a symbol from Computer Modern.',
-    category=MathTextWarning,
-)
 
 # add columns for tile plot
 for c in ('duration', 'bandwidth'):

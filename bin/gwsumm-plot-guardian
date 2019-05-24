@@ -8,13 +8,11 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 import argparse
 import os
 import re
-import warnings
 from collections import OrderedDict
 from configparser import DEFAULTSECT
 
 from matplotlib import use
 use('agg')
-from matplotlib.mathtext import MathTextWarning
 
 from gwpy.time import to_gps
 
@@ -78,13 +76,6 @@ if args.epoch is None:
 globalv.VERBOSE = args.verbose
 globalv.PROFILE = args.profile
 state = generate_all_state(args.gpsstart, args.gpsend)
-
-# filter mathtext warnings
-warnings.filterwarnings(
-    'ignore',
-    message='Substituting with a symbol from Computer Modern.',
-    category=MathTextWarning,
-)
 
 # format params
 params = {}

@@ -219,10 +219,10 @@ class TestGWSummConfigParser(object):
 
         # test bit parsing
         cp.set('X1:TEST-CHANNEL', '0', 'Bit 0')
-        cp.set('X1:TEST-CHANNEL', '1', r'r"A\_B"')
+        cp.set('X1:TEST-CHANNEL', '1', 'A_B')
         cp.load_channels()
         c = get_channel('X1:TEST-CHANNEL')
-        assert c.bits == ['Bit 0', r'A\_B']
+        assert c.bits == ['Bit 0', 'A_B']
 
         # test channels section
         cp.add_section('channels-test')

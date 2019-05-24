@@ -35,6 +35,7 @@ from .. import globalv
 from ..data import get_timeseries
 from ..segments import get_segments
 from ..plot.registry import get_plot
+from ..plot.utils import usetex_tex
 from ..utils import vprint
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -125,7 +126,7 @@ class AccountingTab(ParentTab):
                 new.span[0], new.span[1], state=state, labels=shortlabels,
                 outdir=plotdir, pid='%s_SEGMENT_BAR_%s' % (tag, ptag.upper()),
                 colors=piecolors, stacked=True, ylim=[0, 100],
-                ylabel=r'Percentage [\%] of available time',
+                ylabel=usetex_tex('Percentage [%] of available time'),
                 legend_loc='upper left', legend_bbox_to_anchor=(1., 1),
                 legend_fontsize=12, legend_borderaxespad=0,
                 legend_frameon=False,

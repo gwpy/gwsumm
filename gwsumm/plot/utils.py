@@ -145,7 +145,7 @@ def get_column_string(column):
             else:
                 words[i] = word.title()
             # escape underscore
-            words[i] = usetex_tex(re.sub(r'(?<!\\)_', r'\_', words[i]))
+            words[i] = usetex_tex(words[i])
     return ' '.join(words)
 
 

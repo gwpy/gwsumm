@@ -28,10 +28,11 @@ from matplotlib.ticker import NullLocator
 from gwpy.plot import Plot
 from gwpy.timeseries import TimeSeriesDict
 
+from gwdetchar.plot import texify
+
 from ..channels import get_channel
 from ..utils import re_quote
 from .registry import (get_plot, register_plot)
-from .utils import usetex_tex
 
 
 class SeiWatchDogPlot(get_plot('data')):
@@ -147,7 +148,7 @@ class SeiWatchDogPlot(get_plot('data')):
                        color='red')
             ax.set_xlabel('')
             ax.set_ylabel('')
-            ax.set_title(usetex_tex(channel.name), fontsize=10)
+            ax.set_title(texify(channel.name), fontsize=10)
             ax.xaxis.set_minor_locator(NullLocator())
             for tick in ax.yaxis.get_major_ticks():
                 tick.label.set_fontsize(10)

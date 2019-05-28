@@ -33,6 +33,8 @@ from gwpy.plot.colors import tint
 from gwpy.plot.gps import GPSTransform
 from gwpy.segments import SegmentList
 
+from gwdetchar.plot import texify
+
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
@@ -42,7 +44,6 @@ from ..data import (get_timeseries, get_spectrogram,
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
-from .utils import usetex_tex
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -180,15 +181,15 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 label = pargs.pop('label')
             except KeyError:
                 try:
-                    label = usetex_tex(flatdata[0].name)
+                    label = texify(flatdata[0].name)
                 except IndexError:
                     label = clist[0]
                 else:
                     if self.fileformat == 'svg' and not label.startswith(
-                            usetex_tex(
+                            texify(
                             str(flatdata[0].channel)).split('.')[0]):
                         label += ' [%s]' % (
-                            usetex_tex(str(flatdata[0].channel)))
+                            texify(str(flatdata[0].channel)))
 
             # plot groups or single TimeSeries
             if len(clist) > 1:
@@ -468,7 +469,7 @@ class SpectrumDataPlot(DataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')
@@ -689,7 +690,7 @@ class TimeSeriesHistogramPlot(DataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')
@@ -797,8 +798,8 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
 
     def _update_defaults_from_channels(self):
         c1, c2 = self.channels
-        self.pargs.setdefault('xlabel', usetex_tex(str(c1)))
-        self.pargs.setdefault('ylabel', usetex_tex(str(c2)))
+        self.pargs.setdefault('xlabel', texify(str(c1)))
+        self.pargs.setdefault('ylabel', texify(str(c2)))
         if hasattr(c1, 'amplitude_range'):
             self.pargs.setdefault('xlim', c1.amplitude_range)
         if hasattr(c2, 'amplitude_range'):
@@ -839,7 +840,7 @@ class TimeSeriesHistogram2dDataPlot(TimeSeriesHistogramPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')
@@ -926,7 +927,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')

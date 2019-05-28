@@ -26,7 +26,7 @@ from io import StringIO
 
 from lxml import etree
 
-from .utils import usetex_tex
+from gwdetchar.plot import texify
 
 re_bit_label = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
 re_source_label = re.compile(r'(?P<label>.*) \[(?P<flag>.*)\]')
@@ -128,7 +128,7 @@ class DataLabelSvgMixin(SvgMixin):
                         text.get_text()).groups()
                 except (AttributeError, ValueError):
                     continue
-                channel = usetex_tex(str(source))
+                channel = texify(str(source))
                 text.set_text(label)
                 t2 = ax.text(
                     0.994, 1.02, channel, ha='right', va='bottom',

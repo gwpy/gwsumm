@@ -25,11 +25,12 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.plot.colors import tint
 from gwpy.plot.segments import SegmentRectangle
 
+from gwdetchar.plot import texify
+
 from ..data import get_timeseries
 from ..segments import get_segments
 from ..utils import re_quote
 from .registry import (get_plot, register_plot)
-from .utils import usetex_tex
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -70,7 +71,7 @@ class GuardianStatePlot(get_plot('segments')):
         ax = plot.gca()
 
         # get labels
-        flags = [usetex_tex(str(f)) for f in self.flags]
+        flags = [texify(str(f)) for f in self.flags]
         labels = self.pargs.pop('labels', self.pargs.pop('label', flags))
         ax.set_insetlabels(self.pargs.pop('insetlabels', True))
         if isinstance(labels, str):

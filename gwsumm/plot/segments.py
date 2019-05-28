@@ -42,6 +42,8 @@ from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
 
+from gwdetchar.plot import texify
+
 from .. import globalv
 from ..mode import (Mode, get_mode)
 from ..utils import (re_quote, get_odc_bitmask, re_flagdiv, safe_eval)
@@ -52,7 +54,7 @@ from ..state import ALLSTATE
 from .core import (BarPlot, PiePlot, format_label)
 from .registry import (get_plot, register_plot)
 from .mixins import SegmentLabelSvgMixin
-from .utils import (hash, usetex_tex)
+from .utils import hash
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -531,7 +533,7 @@ class DutyDataPlot(SegmentDataPlot):
         'normalized': None,
         'cumulative': False,
         'stacked': False,
-        'ylabel': usetex_tex('Duty factor [%]'),
+        'ylabel': texify('Duty factor [%]'),
         'ylim': (0, 100),
     })
 
@@ -685,14 +687,14 @@ class DutyDataPlot(SegmentDataPlot):
             duty, mean = self.calculate_duty_factor(
                 segs, normalized=normalized, cumulative=cumulative)
             # plot duty cycle
-            if sep and pargs.get('label') == usetex_tex(flag):
+            if sep and pargs.get('label') == texify(flag):
                 pargs.pop('label', None)
             elif 'label' in pargs and normalized == 'percent' and not stacked:
                 if legendargs.get('loc', None) in ['upper left', 2]:
-                    pargs['label'] = pargs['label'] + '\n' + usetex_tex(
+                    pargs['label'] = pargs['label'] + '\n' + texify(
                         '[%.1f%%]' % mean[-1])
                 else:
-                    pargs['label'] = pargs['label'] + usetex_tex(
+                    pargs['label'] = pargs['label'] + texify(
                         ' [%.1f%%]' % mean[-1])
             color = pargs.pop('color', propc['color'])
             # plot in relevant style
@@ -1010,7 +1012,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
@@ -1059,7 +1061,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                     pc = d/tot * 100
                 except ZeroDivisionError:
                     pc = 0.0
-                pclabels.append(usetex_tex(
+                pclabels.append(texify(
                     '%s [%1.1f%%]' % (label, pc)).replace(r'\\', '\\'))
 
         # add time to top
@@ -1200,7 +1202,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     SCALE_UNIT = {
         None: 'seconds',
         1: 'seconds',
-        'percent': usetex_tex('%'),
+        'percent': texify('%'),
         60: 'minutes',
         3600: 'hours',
     }
@@ -1213,7 +1215,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
@@ -1308,7 +1310,7 @@ class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         else:
             self.pargs.setdefault(
                 'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))

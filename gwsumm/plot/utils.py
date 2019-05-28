@@ -30,6 +30,8 @@ from gwpy.plot.utils import (  # noqa: F401
     AXES_PARAMS,
 )
 
+from gwdetchar.plot import texify
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # -- plotting parameters ------------------------------------------------------
@@ -144,7 +146,7 @@ def get_column_string(column):
             else:
                 words[i] = word.title()
             # escape underscore
-            words[i] = usetex_tex(words[i])
+            words[i] = texify(words[i])
     return ' '.join(words)
 
 

@@ -946,7 +946,7 @@ class _MetaTab(type):
 # this is the first actual Tab object, all of the functionality is defined
 # in the `BaseTab` object
 
-class Tab(BaseTab):
+class Tab(BaseTab, metaclass=_MetaTab):
     """A Simple HTML tab.
 
     This `class` provides a mechanism to generate a full-formatted
@@ -999,7 +999,6 @@ class Tab(BaseTab):
     to collect child tabs in a given place, assign them all the same
     `~Tab.group`.
     """
-    __metaclass__ = _MetaTab
     type = 'basic'
 
 

@@ -25,7 +25,7 @@ import configparser
 from io import StringIO
 from collections import OrderedDict
 from importlib import import_module
-from http import client
+from http.client import HTTPException
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
@@ -276,7 +276,7 @@ class GWSummConfigParser(configparser.ConfigParser):
         for group in [raw, trend]:
             try:
                 newchannels = get_channels(group)
-            except client.HTTPException:
+            except HTTPException:
                 newchannels = []
 
             # read custom channel definitions

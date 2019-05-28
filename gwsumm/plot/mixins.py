@@ -27,7 +27,6 @@ from io import StringIO
 from lxml import etree
 
 from .utils import usetex_tex
-from future.utils import with_metaclass
 
 re_bit_label = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
 re_source_label = re.compile(r'(?P<label>.*) \[(?P<flag>.*)\]')
@@ -76,7 +75,7 @@ Your browser cannot display this SVG
 """
 
 
-class SvgMixin(with_metaclass(abc.ABCMeta, object)):
+class SvgMixin(object, metaclass=abc.ABCMeta):
     def __init__(self, *args, **kwargs):
         super(SvgMixin, self).__init__(*args, **kwargs)
         self.preview_labels = False

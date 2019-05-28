@@ -27,8 +27,6 @@ import sys
 import shutil
 from math import pi
 
-from six import string_types
-
 import pytest
 
 try:
@@ -120,7 +118,7 @@ def test_safe_eval(value, out):
     evalue = utils.safe_eval(value)
     assert type(evalue) is type(out)
 
-    if not isinstance(value, string_types):
+    if not isinstance(value, str):
         assert evalue is out
     elif callable(out):
         assert evalue(4) == out(4)

@@ -19,13 +19,9 @@
 """Definitions for the standard plots
 """
 
-from __future__ import division
-
 import os.path
 import warnings
 from itertools import cycle
-
-from six import string_types
 
 import numpy
 
@@ -276,7 +272,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
             return self._pid
         except AttributeError:
             super(SpectrogramDataPlot, self).pid
-            if (isinstance(self.ratio, string_types) and
+            if (isinstance(self.ratio, str) and
                     os.path.isfile(self.ratio)):
                 self._pid += '_REFERENCE_RATIO'
             elif self.ratio:
@@ -311,7 +307,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
                 return allspec.percentile(ratio)
             else:
                 return getattr(allspec, ratio)(axis=0)
-        elif isinstance(ratio, string_types) and os.path.isfile(ratio):
+        elif isinstance(ratio, str) and os.path.isfile(ratio):
             try:
                 return io.read_frequencyseries(ratio)
             except IOError as e:  # skip if file can't be read

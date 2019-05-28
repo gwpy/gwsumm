@@ -23,20 +23,17 @@ to declare that a tab has a `process()` method that should be executed
 as part of a workflow, see the ``gw_summary`` executable as an example.
 """
 
-from __future__ import print_function
-
+import re
 import os.path
 import getpass
-import re
 from configparser import (
     ConfigParser,
     NoOptionError,
     NoSectionError,
 )
 from copy import copy
+from io import StringIO
 from datetime import timedelta
-
-from six.moves import StringIO
 
 from MarkupPy import markup
 

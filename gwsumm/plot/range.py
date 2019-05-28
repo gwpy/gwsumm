@@ -19,14 +19,10 @@
 """Definitions for range plots
 """
 
-from __future__ import division
-
 import re
 from math import pi
 from heapq import nlargest
 from itertools import combinations
-
-from six import string_types
 
 import numpy
 
@@ -133,7 +129,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
     parse_plot_kwargs = get_plot('timeseries').parse_plot_kwargs
 
     def __init__(self, sources, *args, **kwargs):
-        if isinstance(sources, string_types):
+        if isinstance(sources, str):
             sources = split_channels(sources)
         channels = sources[::2]
         flags = sources[1::2]

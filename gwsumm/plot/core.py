@@ -24,12 +24,10 @@ for GWSumm
 import os.path
 import re
 import warnings
+from urllib.parse import urlparse
 from collections import OrderedDict
 from math import (floor, ceil)
 from numbers import Number
-
-from six import string_types
-from six.moves.urllib.parse import urlparse
 
 from matplotlib import (rcParams, rc_context)
 
@@ -220,7 +218,7 @@ class DataPlot(SummaryPlot):
                  tag=None, pid=None, href=None, new=True, all_data=False,
                  read=True, fileformat='png', caption=None, **pargs):
         super(DataPlot, self).__init__(href=href, new=new, caption=caption)
-        if isinstance(channels, string_types):
+        if isinstance(channels, str):
             channels = split_channels(channels)
         self.channels = channels
         self.span = (start, end)
@@ -269,7 +267,7 @@ class DataPlot(SummaryPlot):
 
     @state.setter
     def state(self, state_):
-        if isinstance(state_, string_types):
+        if isinstance(state_, str):
             self._state = get_state(state_)
         else:
             self._state = state_
@@ -459,7 +457,7 @@ class DataPlot(SummaryPlot):
         # get channels
         if channels is None:
             channels = params.pop('channels', [])
-        if isinstance(channels, string_types):
+        if isinstance(channels, str):
             channels = split_channels(channels)
         # parse specific parameters
         if 'all-data' in params:
@@ -534,7 +532,7 @@ class DataPlot(SummaryPlot):
                 raise e
 
         # evaluate (safely) allowing references to self as 'plot'
-        if isinstance(val, string_types):
+        if isinstance(val, str):
             try:
                 val = safe_eval(val, locals_={'plot': self, 'self': self})
             except ZeroDivisionError:  # e.g. zero livetime
@@ -747,7 +745,7 @@ class DataPlot(SummaryPlot):
         # save figure and close (build both png and pdf for pdf choice)
         if outputfile is None:
             outputfile = self.outputfile
-        if not isinstance(outputfile, string_types):
+        if not isinstance(outputfile, str):
             extensions = [None]
         elif outputfile.endswith('.pdf'):
             extensions = ['.pdf', '.png']
@@ -765,7 +763,7 @@ class DataPlot(SummaryPlot):
                 warnings.warn("Caught %s: %s [retrying...]"
                               % (type(e).__name__, str(e)))
                 self.plot.save(fp, **savekwargs)
-            if isinstance(fp, string_types):
+            if isinstance(fp, str):
                 vprint("        %s written\n" % fp)
         if close:
             self.plot.close()
@@ -779,7 +777,7 @@ class DataPlot(SummaryPlot):
                 if key.startswith('no-'):  # skip no-xxx keys
                     continue
                 val = pargs[key]
-                if key in ['xlim', 'ylim'] and isinstance(val, string_types):
+                if key in ['xlim', 'ylim'] and isinstance(val, str):
                     val = eval(val)
                 elif key == 'grid':
                     self._apply_grid_params(ax, val)

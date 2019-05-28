@@ -19,15 +19,11 @@
 """Definitions for the standard plots
 """
 
-from __future__ import division
-
 import bisect
 from itertools import (cycle, combinations)
 from numbers import Number
 from collections import OrderedDict
 from configparser import NoOptionError
-
-from six import string_types
 
 import numpy
 
@@ -138,7 +134,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
     @flags.setter
     def flags(self, flist):
-        if isinstance(flist, string_types):
+        if isinstance(flist, str):
             flist = [f.strip('\n ') for f in flist.split(',')]
         self._flags = []
         for f in flist:
@@ -210,7 +206,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
         # get flags
         if flags is None:
             flags = dict(config.items(section)).pop('flags', [])
-        if isinstance(flags, string_types):
+        if isinstance(flags, str):
             flags = [f.strip('\n ') for f in flags.split(',')]
         new.flags = flags
         return new
@@ -237,7 +233,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
                 active = active.get('facecolor')
             else:
                 self.pargs['facecolor'] = active
-            if (isinstance(active, string_types) and
+            if (isinstance(active, str) and
                     active.lower() in ('red', '#ff0000')):
                 self.pargs['known'] = 'dodgerblue'
             else:
@@ -259,7 +255,7 @@ class SegmentDataPlot(SegmentLabelSvgMixin, TimeSeriesDataPlot):
 
         # format defaults
         self.pargs.setdefault('height', .8)
-        if isinstance(self.pargs['known'], string_types):
+        if isinstance(self.pargs['known'], str):
             self.pargs['known'] = {'facecolor': self.pargs['known']}
 
         for dtup in (self.pargs, self.pargs['known']):
@@ -412,7 +408,7 @@ class StateVectorDataPlot(TimeSeriesDataPlot):
         """
         chans = list(zip(*self.get_channel_groups()))[0]
         labels = list(self.pargs.pop('labels', defaults))
-        if isinstance(labels, string_types):
+        if isinstance(labels, str):
             labels = labels.split(',')
         for i, l in enumerate(labels):
             if isinstance(l, (list, tuple)):

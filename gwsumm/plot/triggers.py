@@ -19,13 +19,9 @@
 """Definitions for event trigger plots
 """
 
-from __future__ import division
-
 import re
 from collections import OrderedDict
 from itertools import cycle
-
-from six import string_types
 
 from numpy import isinf
 
@@ -147,7 +143,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
-        if isinstance(labels, string_types):
+        if isinstance(labels, str):
             labels = labels.split(',')
         labels = [str(s).strip('\n ') for s in labels]
 
@@ -345,7 +341,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)
-        if isinstance(labels, string_types):
+        if isinstance(labels, str):
             labels = labels.split(',')
         labels = [str(s).strip('\n ') for s in labels]
 
@@ -563,7 +559,7 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # work out labels
         labels = self.pargs.pop('labels', None)
-        if isinstance(labels, string_types):
+        if isinstance(labels, str):
             labels = labels.split(',')
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []

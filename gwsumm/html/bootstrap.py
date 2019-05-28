@@ -24,8 +24,6 @@ import getpass
 import datetime
 import os.path
 
-from six import string_types
-
 from MarkupPy import markup
 
 from gwdetchar.io import html as gwhtml

@@ -3,8 +3,6 @@
 """Script to plot h(t) triggers for some epoch
 """
 
-from __future__ import unicode_literals
-
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 import argparse
@@ -12,8 +10,6 @@ import os
 import re
 from collections import OrderedDict
 from configparser import DEFAULTSECT
-
-from six import text_type
 
 from matplotlib import use
 use('agg')
@@ -50,8 +46,8 @@ parser.add_argument('node')
 parser.add_argument('gpsstart', type=to_gps)
 parser.add_argument('gpsend', type=to_gps)
 parser.add_argument('config', help='config-file defining guardian node')
-parser.add_argument('-i', '--ifo', type=text_type, default='L1')
-parser.add_argument('-s', '--section', type=text_type,
+parser.add_argument('-i', '--ifo', type=str, default='L1')
+parser.add_argument('-s', '--section', type=str,
                     help='suffix of INI tab section to read, e.g. give '
                          '--section=\'ISC_LOCK\' to read [tab-ISC_LOCK] '
                          'section, defaults to {node}')
@@ -90,8 +86,8 @@ for input_ in args.plot_params:
 # read config
 config = GWSummConfigParser(dict_type=OrderedDict)
 config.read([args.config])
-config.set(DEFAULTSECT, 'gps-start-time', text_type(int(args.gpsstart)))
-config.set(DEFAULTSECT, 'gps-end-time', text_type(int(args.gpsend)))
+config.set(DEFAULTSECT, 'gps-start-time', str(int(args.gpsstart)))
+config.set(DEFAULTSECT, 'gps-end-time', str(int(args.gpsend)))
 config.set(DEFAULTSECT, 'IFO', args.ifo)
 sec = 'tab-%s' % (args.section or args.node)
 

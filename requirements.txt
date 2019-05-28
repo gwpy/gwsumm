@@ -4,7 +4,6 @@ libsass
 jsmin
 
 # core requirements
-enum34 ; python_version < '3.4'
 python-dateutil
 lxml
 numpy>=1.10
@@ -31,4 +30,3 @@ ligo-gracedb>=2.0.0
 # testing extras
 pytest>=2.8,<3.7
 pytest-cov
-mock ; python_version < '3'

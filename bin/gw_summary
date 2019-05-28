@@ -29,8 +29,6 @@ Run 'gw_summary <mode> --help' for details of the specific arguments and
 options acceptable for each mode.
 """
 
-from __future__ import (division, print_function)
-
 # XXX HACK XXX
 # plots don't work with multiprocessing with lal.LIGOTimeGPS
 from gwpy import time

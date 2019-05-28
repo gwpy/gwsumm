@@ -20,8 +20,6 @@
 """Setup the GWSumm package
 """
 
-from __future__ import print_function
-
 import sys
 import glob
 import os
@@ -32,9 +30,6 @@ from setuptools.command.egg_info import egg_info
 from setuptools.command.build_py import build_py
 
 import versioneer
-
-if sys.version < '2.6':
-    raise ImportError("Python versions older than 2.6 are not supported.")
 
 # set basic metadata
 PACKAGENAME = 'gwsumm'
@@ -86,7 +81,6 @@ install_requires = [
     'MarkupPy',
     'gwdetchar>=0.5.1',
     'configparser ; python_version < \'3.6\'',
-    'enum34 ; python_version < \'3.4\''
 ]
 
 # testing requirements
@@ -253,7 +247,7 @@ setup(name=DISTNAME,
           'Programming Language :: Python',
           'Development Status :: 3 - Alpha',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 2.7',
+          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
           'Intended Audience :: Science/Research',

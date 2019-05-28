@@ -42,10 +42,6 @@ The available classes are:
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-from matplotlib import rcParams
-from gwpy.plot.tex import (has_tex, MACROS as GWPY_TEX_MACROS)
-from gwpy.utils.env import bool_env
-
 from .registry import *
 from .utils import *
 from .core import *
@@ -56,25 +52,3 @@ from .range import *
 from .noisebudget import *
 from .guardian import *
 from .sei import *
-
-rcParams.update({
-    # custom GWSumm formatting
-    'font.size': 10,
-    'xtick.labelsize': 18,
-    'ytick.labelsize': 18,
-    'axes.labelsize': 20,
-    'axes.titlesize': 24,
-    'grid.alpha': 0.5,
-    'figure.figsize': (12, 6),
-    'svg.fonttype': 'none',
-})
-
-if has_tex() and bool_env("GWPY_USETEX", True):
-    rcParams.update({
-        # reproduce GWPY_TEX_RCPARAMS
-        'text.usetex': True,
-        'text.latex.preamble': (
-            rcParams.get('text.latex.preamble', []) + GWPY_TEX_MACROS),
-        'font.family': ['serif'],
-        'axes.formatter.use_mathtext': False,
-    })

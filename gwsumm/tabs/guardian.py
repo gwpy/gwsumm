@@ -42,6 +42,7 @@ from .. import globalv
 from ..config import GWSummConfigParser
 from ..data import get_timeseries_dict
 from ..plot.registry import get_plot
+from ..plot.utils import usetex_tex
 from ..segments import get_segments
 from ..state import ALLSTATE
 from ..utils import vprint
@@ -128,7 +129,7 @@ class GuardianTab(DataTab):
                 known={'hatch': 'x', 'alpha': 0.1, 'facecolor': 'none'},
                 tag='%s_SEGMENTS' % tagprefix,
                 title='%s Guardian %s state' % (
-                    new.ifo, new.node.replace('_', r'\_')), zorder=2))
+                    new.ifo, usetex_tex(new.node)), zorder=2))
 
             # pie
             new.plots.append(get_plot('segment-pie')(
@@ -137,7 +138,7 @@ class GuardianTab(DataTab):
                 tag='%s_SEGMENT_PIE' % tagprefix,
                 startangle=180, counterclock=False, wedge_linewidth=0.01,
                 outdir=plotdir, title='%s Guardian %s state' % (
-                    new.ifo, new.node.replace('_', r'\_')),
+                    new.ifo, usetex_tex(new.node)),
                 legend_fontsize=16, legend_sorted=True, legend_threshold=th,
             ))
 
@@ -147,7 +148,7 @@ class GuardianTab(DataTab):
                 labels=pstates, sorted=True,
                 tag='%s_SEGMENT_BAR' % tagprefix,
                 outdir=plotdir, title='%s Guardian %s state' % (
-                    new.ifo, new.node.replace('_', r'\_')),
+                    new.ifo, usetex_tex(new.node)),
             ))
         return new
 

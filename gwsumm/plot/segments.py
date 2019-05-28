@@ -531,7 +531,7 @@ class DutyDataPlot(SegmentDataPlot):
         'normalized': None,
         'cumulative': False,
         'stacked': False,
-        'ylabel': r'Duty factor [\%]',
+        'ylabel': usetex_tex('Duty factor [%]'),
         'ylim': (0, 100),
     })
 
@@ -685,13 +685,15 @@ class DutyDataPlot(SegmentDataPlot):
             duty, mean = self.calculate_duty_factor(
                 segs, normalized=normalized, cumulative=cumulative)
             # plot duty cycle
-            if sep and pargs.get('label') == flag.replace('_', r'\_'):
+            if sep and pargs.get('label') == usetex_tex(flag):
                 pargs.pop('label', None)
             elif 'label' in pargs and normalized == 'percent' and not stacked:
                 if legendargs.get('loc', None) in ['upper left', 2]:
-                    pargs['label'] = pargs['label'] + '\n[%.1f\\%%]' % mean[-1]
+                    pargs['label'] = pargs['label'] + '\n' + usetex_tex(
+                        '[%.1f%%]' % mean[-1])
                 else:
-                    pargs['label'] = pargs['label'] + r' [%.1f\%%]' % mean[-1]
+                    pargs['label'] = pargs['label'] + usetex_tex(
+                        ' [%.1f%%]' % mean[-1])
             color = pargs.pop('color', propc['color'])
             # plot in relevant style
             if style == 'line':
@@ -1198,7 +1200,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     SCALE_UNIT = {
         None: 'seconds',
         1: 'seconds',
-        'percent': r'\%',
+        'percent': usetex_tex('%'),
         60: 'minutes',
         3600: 'hours',
     }

@@ -347,7 +347,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # add data
         for label, channel in zip(labels, self.channels):
-            label = label.replace('_', r'\_')
+            label = usetex_tex(label)
             if self.state and not self.all_data:
                 valid = self.state.active
             else:

@@ -55,7 +55,7 @@ from ..mode import (Mode, get_mode)
 from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..data.utils import get_fftparams
-from ..plot import get_plot
+from ..plot import (rcParams, get_plot)
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, get_state)
 from ..triggers import get_triggers
@@ -559,7 +559,7 @@ class DataTab(ProcessedTab, ParentTab):
                      (p.state is None or p.state.name == state.name)]
 
         # separate plots into serial and parallel groups
-        if int(nproc) <= 1:
+        if int(nproc) <= 1 or not rcParams['text.usetex']:
             serial = new_plots
             parallel = []
         else:

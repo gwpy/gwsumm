@@ -32,7 +32,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
 from .registry import (get_plot, register_plot)
-from .utils import hash
+from .utils import (hash, usetex_tex)
 from ..data import (get_range_channel, get_range, get_timeseries)
 from ..segments import get_segments
 from ..channels import split as split_channels
@@ -275,7 +275,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # customise plot
         self.apply_parameters(ax, **self.pargs)
         if (len(self.channels) > 1 or plotargs[0].get('label', None) in
-                [re.sub(r'(_|\\_)', r'\_', str(self.channels[0])), None]):
+                [usetex_tex(str(self.channels[0])), None]):
             ax.legend(**legendargs)
 
         # add extra axes and finalise

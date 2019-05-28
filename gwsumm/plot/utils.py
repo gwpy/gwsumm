@@ -25,7 +25,6 @@ import re
 
 from matplotlib import rcParams
 
-from gwpy.plot.tex import label_to_latex
 from gwpy.plot.utils import (  # noqa: F401
     FIGURE_PARAMS,
     AXES_PARAMS,
@@ -147,14 +146,6 @@ def get_column_string(column):
             # escape underscore
             words[i] = usetex_tex(words[i])
     return ' '.join(words)
-
-
-def usetex_tex(text):
-    """Format text for TeX if `text.usetex` is True
-    """
-    if rcParams['text.usetex']:
-        return label_to_latex(text)
-    return text
 
 
 def hash(string, num=6):

@@ -41,6 +41,7 @@ def test_get_css():
     assert keys == [
         'bootstrap',
         'fancybox',
+        'google-fonts',
         'datepicker',
         'dialog-polyfill',
         'bootstrap-ligo',
@@ -51,9 +52,9 @@ def test_get_css():
     css_files = list(css.values())
     assert len(css_files) == len(GWDETCHAR_CSS_FILES) + 3
     assert set(GWDETCHAR_CSS_FILES) < set(css_files)
-    assert os.path.basename(css_files[2]) == 'bootstrap-datepicker.min.css'
-    assert os.path.basename(css_files[3]) == 'dialog-polyfill.min.css'
-    assert os.path.basename(css_files[6]) == 'gwsumm.min.css'
+    assert os.path.basename(css_files[3]) == 'bootstrap-datepicker.min.css'
+    assert os.path.basename(css_files[4]) == 'dialog-polyfill.min.css'
+    assert os.path.basename(css_files[7]) == 'gwsumm.min.css'
 
 
 def test_get_js():

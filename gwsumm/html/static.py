@@ -52,16 +52,18 @@ JS = OrderedDict((
 CSS = OrderedDict((
     ('bootstrap', CSS_FILES[0]),
     ('fancybox', CSS_FILES[1]),
+    ('google-fonts', CSS_FILES[2]),
     ('datepicker', (
         '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
         '1.6.0/css/bootstrap-datepicker.min.css')),
     ('dialog-polyfill', (
         'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
         '0.5.0/dialog-polyfill.min.css')),
-    ('bootstrap-ligo', CSS_FILES[2]),
-    ('gwdetchar', CSS_FILES[3]),
+    ('bootstrap-ligo', CSS_FILES[3]),
+    ('gwdetchar', CSS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
 ))
+print(CSS_FILES.keys())
 
 
 # -- utilities ----------------------------------------------------------------

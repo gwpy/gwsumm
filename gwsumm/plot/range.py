@@ -33,12 +33,33 @@ from gwpy.timeseries import TimeSeries
 
 from .registry import (get_plot, register_plot)
 from .utils import (hash, usetex_tex)
-from ..data import (get_range_channel, get_range, get_timeseries)
+from ..data import (get_range_channel, get_range,
+                    get_range_spectrogram, get_timeseries)
 from ..segments import get_segments
 from ..channels import split as split_channels
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
+
+# -- utils --------------------------------------------------------------------
+
+def _get_params(keys, pargs, nchans=1):
+    """Return a `dict` of `list` of plot arguments for every channel
+    """
+    params = {}
+    for key in keys:
+        try:
+            value = pargs.pop(key)
+        except KeyError:
+            continue
+        if not isinstance(value, (tuple, list)):
+            value = [value] * nchans
+        params[key] = value
+    return params
+
+
+# -- sensitive range ----------------------------------------------------------
 
 class RangePlotMixin(object):
     data = 'spectrogram'
@@ -53,41 +74,42 @@ class RangePlotMixin(object):
 
     def __init__(self, *args, **kwargs):
         super(RangePlotMixin, self).__init__(*args, **kwargs)
-        self.rangeparams = {}
-        for key in ['mass1', 'mass2', 'snr', 'energy', 'stride', 'fftlength',
-                    'overlap', 'fmin', 'fmax']:
-            try:
-                value = self.pargs.pop(key)
-            except KeyError:
-                continue
-            if not isinstance(value, (tuple, list)):
-                value = [value]*len(self.channels)
-            self.rangeparams[key] = value
+        self.fftparams = _get_params(
+            ['stride', 'fftlength', 'overlap'],
+            self.pargs, nchans=len(self.channels))
+        self.rangeparams = _get_params(
+            ['mass1', 'mass2', 'snr', 'energy', 'fmin', 'fmax'],
+            self.pargs, nchans=len(self.channels))
+        self.range_func = (get_range_spectrogram if
+                           'spec' in self.type else get_range)
 
     def draw(self):
-        """Read in all necessary data, and generate the figure.
+        """Read in all necessary data and generate a figure
         """
-        # generate data
         keys = []
+        # generate data
         for i, channel in enumerate(self.channels):
-            kwargs = dict((key, self.rangeparams[key][i]) for
-                          key in self.rangeparams if
-                          self.rangeparams[key][i] is not None)
+            fftkwargs = dict((key, self.fftparams[key][i]) for
+                             key in self.fftparams if
+                             self.fftparams[key][i] is not None)
+            rangekwargs = dict((key, self.rangeparams[key][i]) for
+                               key in self.rangeparams if
+                               self.rangeparams[key][i] is not None)
             if self.state and not self.all_data:
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
-            rlist = get_range(channel, valid, query=self.read, **kwargs)
+            rlist = self.range_func(channel, valid, query=self.read,
+                                    **fftkwargs, **rangekwargs)
             try:
-                keys.append(rlist[0].channel)
+                keys.append(str(rlist[0].channel))
             except IndexError:
-                keys.append(get_range_channel(channel, **kwargs))
+                keys.append(get_range_channel(channel, **rangekwargs))
 
-        # reset channel lists and generate time-series plot
+        # reset channel lists and generate plot
         channels = self.channels
-        outputfile = self.outputfile
         self.channels = keys
-        out = super(RangePlotMixin, self).draw(outputfile=outputfile)
+        out = super(RangePlotMixin, self).draw()
         self.channels = channels
         return out
 
@@ -114,6 +136,51 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
 
 
 register_plot(RangeDataHistogramPlot)
+
+
+class RangeSpectrogramDataPlot(RangePlotMixin, get_plot('spectrogram')):
+    type = 'range-spectrogram'
+    defaults = get_plot('spectrogram').defaults.copy()
+    defaults.update(RangePlotMixin.defaults.copy())
+    defaults.update({
+        'cmap': 'inferno',
+        'norm': 'linear',
+    })
+
+
+register_plot(RangeSpectrogramDataPlot)
+
+
+class RangeSpectrumDataPlot(RangePlotMixin, get_plot('spectrum')):
+    type = 'range-spectrum'
+    data = 'spectrum'
+    defaults = get_plot('spectrum').defaults.copy()
+    defaults.update(RangePlotMixin.defaults.copy())
+    defaults.update({
+        'xlabel': 'Frequency [Hz]',
+        'yscale': 'linear',
+    })
+
+
+register_plot(RangeSpectrumDataPlot)
+
+
+class RangeCumulativeSpectrumDataPlot(RangePlotMixin, get_plot('spectrum')):
+    type = 'cumulative-range-spectrum'
+    data = 'spectrum'
+    defaults = get_plot('spectrum').defaults.copy()
+    defaults.update(RangePlotMixin.defaults.copy())
+    defaults.update({
+        'xlabel': 'Frequency [Hz]',
+        'ylim': [0, 100],
+        'ylabel': 'Cumulative fraction of range [%]',
+        'yscale': 'linear',
+        'yticks': [0, 20, 40, 60, 80, 100],
+        'ytickmarks': [0, 20, 40, 60, 80, 100],
+    })
+
+
+register_plot(RangeCumulativeSpectrumDataPlot)
 
 
 # -- time-volume --------------------------------------------------------------

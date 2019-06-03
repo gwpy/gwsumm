@@ -63,7 +63,6 @@ CSS = OrderedDict((
     ('gwdetchar', CSS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
 ))
-print(CSS_FILES.keys())
 
 
 # -- utilities ----------------------------------------------------------------

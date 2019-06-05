@@ -240,10 +240,10 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        spans = [[  # record spectrogaram spans
+        spans = [SegmentList([  # record spectrogaram spans
             spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
-        ] for ck in ckeys]
-        new = _get_common_segments(new, spans)
+        ]) for ck in ckeys]
+        new = reduce(operator.and_, spans, new).coalesce()
         for seg in new:  # compute coherence from components
             cxy, cxx, cyy = [_get_from_list(
                 globalv.COHERENCE_COMPONENTS[ck], seg) for ck in ckeys]
@@ -432,29 +432,6 @@ def get_coherence_spectrograms(channel_pairs, segments, config=None,
             nds=nds, nproc=nproc, return_=return_,
             datafind_error=datafind_error, **fftparams)
     return out
-
-
-def _get_common_segments(segments, spans):
-    """Internal function to find the union of a collection of segments
-
-    Parameters
-    ----------
-    segments : `SegmentList`
-        list of `~gwpy.segments.Segment`
-
-    spans : `list` of `SegmentList`
-        list of time-domain spans of `~gwpy.types.Series` objects
-
-    Returns
-    -------
-    outsegs : `SegmentList`
-        list of segments common between `spans` and `segments`
-    """
-    # coalesce all segments
-    segments = SegmentList(segments).coalesce()
-    spans = [SegmentList(s).coalesce() for s in spans]
-    # return the coalesced union of all segments
-    return reduce(operator.and_, spans, segments).coalesce()
 
 
 def _get_from_list(serieslist, segment):

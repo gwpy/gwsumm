@@ -690,7 +690,8 @@ class BaseTab(object):
 
         # initialize page
         self.page = gwhtml.new_bootstrap_page(
-            title=title, base=base, css=css, script=js, navbar=navbar)
+            title=title, base=base, path=self.path,
+            css=css, script=js, navbar=navbar)
 
         # add banner
         self.page.add(str(self.html_banner(

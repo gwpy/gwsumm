@@ -240,11 +240,13 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 if len(tslist1) + len(tslist2):
                     vprint('\n')
 
-        # calculate coherence from the components and store in globalv
-        for seg in new:
-            cxy, cxx, cyy = [
-                _get_from_list(globalv.COHERENCE_COMPONENTS[ck], seg) for
-                ck in ckeys]
+        spans = [SegmentList([  # record spectrogaram spans
+            spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
+        ]) for ck in ckeys]
+        new = reduce(operator.and_, spans, new).coalesce()
+        for seg in new:  # compute coherence from components
+            cxy, cxx, cyy = [_get_from_list(
+                globalv.COHERENCE_COMPONENTS[ck], seg) for ck in ckeys]
             csg = abs(cxy)**2 / cxx / cyy
             globalv.SPECTROGRAMS[key].append(csg)
             globalv.SPECTROGRAMS[key].coalesce()
@@ -439,7 +441,8 @@ def _get_from_list(serieslist, segment):
     data within the list is guaranteed
     """
     for series in serieslist:
-        if segment in series.span:
+        if segment.intersects(series.span):
+            outseg = segment & series.span
             return series.crop(*segment)
     raise ValueError("Cannot crop series for segment %s from list"
                      % str(segment))

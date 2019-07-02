@@ -516,9 +516,9 @@ class SpectrumDataPlot(DataPlot):
                 data = get_range_spectrum(
                     str(channel), valid, query=False, which='mean')
                 if str(data.unit) == 'Mpc':
-                    data = numpy.cumsum(data**3) ** (1/3.)
+                    data = (data**3).cumsum() ** (1/3.)
                 else:
-                    data = numpy.cumsum(data**2) ** (1/2.)
+                    data = (data**2).cumsum() ** (1/2.)
                 data = (100 * data / data[-1],)
             else:
                 try:

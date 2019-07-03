@@ -348,6 +348,7 @@ class DataTab(ProcessedTab, ParentTab):
         # load state segments
         self.finalize_states(
             config=config, datacache=stateargs.get('datacache', None),
+            segmentcache=stateargs.get('segmentcache', None),
             segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))

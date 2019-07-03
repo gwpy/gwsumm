@@ -123,7 +123,7 @@ if args.state:
 
 # read cache
 if args.cache_file:
-    with open(args.cache_file, 'rb') as f:
+    with open(args.cache_file, 'r') as f:
         cache = Cache.fromfile(f).sieve(segment=span)
     print("Read cache of {0} files".format(len(cache)))
 else:

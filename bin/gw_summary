@@ -504,7 +504,7 @@ for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
         vprint("Reading %s from %d files... " % (key, len(var)))
         cache[key] = Cache()
         for fp in var:
-            with open(fp, 'rb') as f:
+            with open(fp, 'r') as f:
                 cache[key].extend(Cache.fromfile(f))
         cache[key] = cache[key].sieve(segment=span)
         vprint("done [%d entries]\n" % len(cache[key]))

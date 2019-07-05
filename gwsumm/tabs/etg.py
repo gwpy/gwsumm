@@ -32,6 +32,7 @@ from gwpy.time import from_gps
 from gwdetchar.io import html
 
 from ..data import get_channel
+from ..html.html5 import ldvw_qscan
 from ..state import (get_state, ALLSTATE, generate_all_state)
 from ..triggers import (get_triggers, get_time_column)
 from ..utils import re_quote
@@ -309,7 +310,7 @@ class EventTriggerTab(get_tab('default')):
                     table = table.filter(self.filterstr)
                 tcol = get_time_column(table, self.etg)
                 # set table headers
-                headers = list(self.loudest['labels'])
+                headers = list(self.loudest['labels']) + ['LDVW Action']
                 columns = list(self.loudest['columns'])
                 if tcol in columns:
                     headers.insert(1, 'UTC time')
@@ -345,12 +346,25 @@ class EventTriggerTab(get_tab('default')):
                             data[-1].insert(
                                 1, from_gps(row[tcol]).strftime(
                                        '%B %d %Y %H:%M:%S.%f')[:-3])
+                        data[-1].append(ldvw_qscan(self.channel, data[-1][0]))
+
+                    # construct table
+                    times = ' '.join(str(row[0]) for row in data)
+                    launch = marukup.oneliner.a(
+                        'Click here to launch omega scans through LDVW.',
+                        target='_blank',
+                        href='https://ldvw.ligo.caltech.edu/ldvw/Wdq?'
+                             'submitAct=go&wdq_ifo={0}&wdq_cmap=viridis&'
+                             'wdq_gps={1}&wdq_prog=py-Omega&'
+                             'goBtn=goBtn'.format(self.channel[:2], times),
+                    )
                     page.add(str(html.table(
                         headers, data, id='%s-loudest-table' % self.etg,
                         caption=("%d loudest <samp>%s</samp> (%s) events "
-                                 "by %s with minimum %ss separation"
+                                 "by %s with minimum %ss separation. %s"
                                  % (self.loudest['N'], self.channel, self.etg,
-                                    rankstr, self.loudest['dt'])))))
+                                    rankstr, self.loudest['dt'], str(launch)))
+                    )))
 
             if self.subplots:
                 page.hr(class_='row-divider')

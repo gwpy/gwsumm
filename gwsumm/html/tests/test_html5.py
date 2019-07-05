@@ -113,6 +113,6 @@ def test_ldvw_qscan():
         '<a href="https://ldvw.ligo.caltech.edu/ldvw/view?'
         'act=doplot&amp;chanName=X1:TEST&amp;doQxfrm=yes&amp;'
         'strtTime=0&amp;qxfrm_pltfrq=10 inf&amp;qxfrm_srchqrng=4 100&'
-        'amp;qxfrm_plttimes=1 4 16" target="_blank" rel="external" '
+        'amp;qxfrm_plttimes=0.5 2 8" target="_blank" rel="external" '
         'class="btn btn-default btn-xs" title="Q-scan of X1:TEST at 0 '
         'in LDVW">Q-Scan</a>')

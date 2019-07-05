@@ -116,7 +116,7 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     """
     uri = ('https://ldvw.ligo.caltech.edu/ldvw/view?act=doplot&chanName='
            '{0}&doQxfrm=yes&strtTime={1}&qxfrm_pltfrq={2} {3}&qxfrm_srchqrng='
-           '{4} {5}&qxfrm_plttimes=1 4 16').format(
+           '{4} {5}&qxfrm_plttimes=0.5 2 8').format(
                channel, time, fmin, fmax, qmin, qmax)
     return markup.oneliner.a(
         'Q-Scan',

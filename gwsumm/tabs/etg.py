@@ -351,7 +351,7 @@ class EventTriggerTab(get_tab('default')):
                     # construct table
                     times = ' '.join(str(row[0]) for row in data)
                     launch = markup.oneliner.a(
-                        'Click here to launch omega scans through LDVW.',
+                        'Launch full omega scans through LDVW',
                         target='_blank',
                         href='https://ldvw.ligo.caltech.edu/ldvw/Wdq?'
                              'submitAct=go&wdq_ifo=%s&wdq_cmap=viridis&'

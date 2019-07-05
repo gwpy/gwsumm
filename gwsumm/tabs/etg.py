@@ -354,9 +354,9 @@ class EventTriggerTab(get_tab('default')):
                         'Click here to launch omega scans through LDVW.',
                         target='_blank',
                         href='https://ldvw.ligo.caltech.edu/ldvw/Wdq?'
-                             'submitAct=go&wdq_ifo={0}&wdq_cmap=viridis&'
-                             'wdq_gps={1}&wdq_prog=py-Omega&'
-                             'goBtn=goBtn'.format(self.channel[:2], times),
+                             'submitAct=go&wdq_ifo=%s&wdq_cmap=viridis&'
+                             'wdq_gps=%s&wdq_prog=py-Omega&'
+                             'goBtn=goBtn' % (self.channel.name[:2], times),
                     )
                     page.add(str(html.table(
                         headers, data, id='%s-loudest-table' % self.etg,

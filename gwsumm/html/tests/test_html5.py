@@ -107,7 +107,7 @@ def test_comments_box():
     assert parse_html(str(box)) == parse_html(BOX % URL)
 
 
-def test_ldvw_qscans():
+def test_ldvw_qscan():
     button = html5.ldvw_qscan('X1:TEST', 0)
     assert parse_html(str(button)) == parse_html(
         '<a href="https://ldvw.ligo.caltech.edu/ldvw/view?'

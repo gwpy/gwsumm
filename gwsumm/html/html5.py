@@ -109,3 +109,20 @@ def comments_box(name, identifier=None, title=None, url=None):
            href="https://disqus.com/?ref_noscript")
     page.div.close()
     return page
+
+
+def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
+    """Generate a Q-scan through LIGO DataViewer Web (LDVW)
+    """
+    uri = ('https://ldvw.ligo.caltech.edu/ldvw/view?act=doplot&chanName='
+           '{0}&doQxfrm=yes&strtTime={1}&qxfrm_pltfrq={2} {3}&qxfrm_srchqrng='
+           '{4} {5}&qxfrm_plttimes=0.5 2 8').format(
+               channel, time, fmin, fmax, qmin, qmax)
+    return markup.oneliner.a(
+        'Q-scan',
+        href=uri,
+        target='_blank',
+        rel='external',
+        class_='btn btn-default btn-xs',
+        title='Q-scan of {0} at {1} in LDVW'.format(channel, time),
+    )

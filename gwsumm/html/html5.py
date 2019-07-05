@@ -119,7 +119,7 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
            '{4} {5}&qxfrm_plttimes=0.5 2 8').format(
                channel, time, fmin, fmax, qmin, qmax)
     return markup.oneliner.a(
-        'Q-Scan',
+        'Q-scan',
         href=uri,
         target='_blank',
         rel='external',

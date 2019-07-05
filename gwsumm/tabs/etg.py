@@ -350,7 +350,7 @@ class EventTriggerTab(get_tab('default')):
 
                     # construct table
                     times = ' '.join(str(row[0]) for row in data)
-                    launch = marukup.oneliner.a(
+                    launch = markup.oneliner.a(
                         'Click here to launch omega scans through LDVW.',
                         target='_blank',
                         href='https://ldvw.ligo.caltech.edu/ldvw/Wdq?'

@@ -40,3 +40,25 @@ cache:
   pip: true
 before_cache:
   - rm -f $HOME/.cache/pip/log/debug.log
+
+flake8:
+    docker:
+      - image: python
+    steps:
+      - checkout
+      - run:
+          name: Lint
+          command: |
+            set -ex
+            python -m pip install ${PIP_FLAGS} "flake8>=3.7.0"
+            mkdir -p test-reports
+            python -m flake8 --output-file test-reports/flake8.txt
+      - run:
+          name: Create flake8 report
+          when: always
+          command: |
+            set -ex
+            python -m pip install ${PIP_FLAGS} flake8-junit-report
+            python -m junit_conversor test-reports/flake8.txt test-reports/junit.xml
+      - *store_test_results
+      - *store_test_artifacts

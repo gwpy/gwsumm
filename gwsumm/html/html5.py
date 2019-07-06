@@ -116,7 +116,7 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     """
     channel = str(channel)
     if isinstance(time, (tuple, list)):
-        label = 'Launch omega scans (LDVW)'
+        label = 'Launch omega scans'
         title = 'Batch-process omega scans of the loudest triggers via LDVW'
         times = '&'.join('wdq_gps=' + str(t) for t in time)
         query = ('Wdq?submitAct=go&wdq_ifo=%s&wdq_cmap=viridis&%s&'

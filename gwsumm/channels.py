@@ -47,7 +47,7 @@ def _match(channel):
     name = str(channel)
     type_ = channel.type
     found = globalv.CHANNELS.sieve(
-        name=name, type=type_, exact_match=True)
+       name=name, type=type_, exact_match=True)
 
     # if match, return now
     if found:

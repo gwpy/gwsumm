@@ -107,12 +107,22 @@ def test_comments_box():
     assert parse_html(str(box)) == parse_html(BOX % URL)
 
 
-def test_ldvw_qscan():
+def test_ldvw_qscan_single():
     button = html5.ldvw_qscan('X1:TEST', 0)
     assert parse_html(str(button)) == parse_html(
-        '<a href="https://ldvw.ligo.caltech.edu/ldvw/view?'
-        'act=doplot&amp;chanName=X1:TEST&amp;doQxfrm=yes&amp;'
-        'strtTime=0&amp;qxfrm_pltfrq=10 inf&amp;qxfrm_srchqrng=4 100&'
-        'amp;qxfrm_plttimes=0.5 2 8" target="_blank" rel="external" '
-        'class="btn btn-default btn-xs" title="Q-scan of X1:TEST at 0 '
-        'in LDVW">Q-scan</a>')
+        '<a href="https://ldvw.ligo.caltech.edu/ldvw/view?act=doplot&amp;'
+        'chanName=X1:TEST&amp;doQxfrm=yes&amp;strtTime=0&amp;&amp;'
+        'qxfrm_pltfrq=10 inf&amp;qxfrm_srchqrng=4 100&amp;'
+        'qxfrm_plttimes=0.5 2 8" target="_blank" rel="external" '
+        'class="btn btn-default btn-xs" title="Q-scan X1:TEST at 0 via LDVW">'
+        'Q-scan</a>')
+
+
+def test_ldvw_qscan_batch():
+    button = html5.ldvw_qscan('X1:TEST', (0,))
+    assert parse_html(str(button)) == parse_html(
+        '<a href="https://ldvw.ligo.caltech.edu/ldvw/Wdq?submitAct=go&amp;'
+        'wdq_ifo=X1&amp;wdq_cmap=viridis&amp;wdq_gps=0&amp;wdq_prog=py-Omega&'
+        'amp;goBtn=goBtn" target="_blank" rel="external" class="btn '
+        'btn-default btn-xs" title="Batch-process omega scans of the loudest '
+        'triggers via LDVW">Launch omega scans (LDVW)</a>')

@@ -114,15 +114,20 @@ def comments_box(name, identifier=None, title=None, url=None):
 def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     """Generate a Q-scan through LIGO DataViewer Web (LDVW)
     """
-    uri = ('https://ldvw.ligo.caltech.edu/ldvw/view?act=doplot&chanName='
-           '{0}&doQxfrm=yes&strtTime={1}&qxfrm_pltfrq={2} {3}&qxfrm_srchqrng='
-           '{4} {5}&qxfrm_plttimes=0.5 2 8').format(
-               channel, time, fmin, fmax, qmin, qmax)
+    if isinstance(time, (tuple, str)):
+        label = 'Launch omega scans (LDVW)'
+        title = 'Batch-process omega scans of the loudest triggers via LDVW'
+        times = '&'.join('wdq_gps=' + str(t) for t in time)
+        query = ('Wdq?submitAct=go&wdq_ifo=%s&wdq_cmap=viridis&%s&'
+                 'wdq_prog=py-Omega&goBtn=goBtn') % (channel[:2], times)
+    else:
+        label = 'Q-scan'
+        title = 'Q-scan {0} at {1} via LDVW'.format(channel, time)
+        query = ('view?act=doplot&chanName={0}&doQxfrm=yes&strtTime={1}&'
+                 '&qxfrm_pltfrq={2} {3}&qxfrm_srchqrng={4} {5}&'
+                 'qxfrm_plttimes=0.5 2 8').format(
+                     channel, time, fmin, fmax, qmin, qmax)
+    uri = 'https://ldvw.ligo.caltech.edu/ldvw/{0}'.format(query)
     return markup.oneliner.a(
-        'Q-scan',
-        href=uri,
-        target='_blank',
-        rel='external',
-        class_='btn btn-default btn-xs',
-        title='Q-scan of {0} at {1} in LDVW'.format(channel, time),
-    )
+        label, href=uri, target='_blank', rel='external',
+        class_='btn btn-default btn-xs', title=title)

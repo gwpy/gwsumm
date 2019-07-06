@@ -27,7 +27,8 @@ from MarkupPy import markup
 
 from .registry import (get_tab, register_tab)
 
-from .. import html
+from gwdetchar.io import html
+
 from .. plot import get_plot
 from ..mode import Mode
 from ..config import GWSummConfigParser
@@ -101,35 +102,35 @@ class FscanTab(base):
         page = markup.page()
 
         if self.directory is None:
-            page.div(class_='alert alert-warning')
-            page.p("No analysis was performed for this period, "
-                   "please try again later.")
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                "No analysis was performed for this period, "
+                "please try again later.",
+                "If you believe these data should have been found, please "
+                "contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context='warning', dismiss=False))
             self.directory = []
         elif isinstance(self.directory, list):
-            page.div(class_='alert alert-warning')
-            page.p("Multiple results directories were found for this period, "
-                   "cannot determine correct directory.")
-            page.p("If you believe this to be an error, please contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                "Multiple results directories were found for this period, "
+                "cannot determine correct directory.",
+                "If you believe this to be an error, please contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context='warning', dismiss=False))
             page.hr(class_='row-divider')
         elif not self.plots:
-            page.div(class_='alert alert-warning')
-            page.p("This analysis produced no plots.")
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                "This analysis produced no plots.",
+                "If you believe these data should have been found, please "
+                "contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context='warning', dismiss=False))
             page.hr(class_='row-divider')
             self.directory = [self.directory]
         else:

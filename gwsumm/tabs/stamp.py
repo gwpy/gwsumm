@@ -23,9 +23,12 @@ import os
 import re
 import glob
 
+from MarkupPy import markup
+
+from gwdetchar.io import html
+
 from .registry import (get_tab, register_tab)
 
-from .. import html
 from ..mode import Mode
 from ..plot import get_plot
 from ..config import GWSummConfigParser
@@ -92,25 +95,25 @@ class StampPEMTab(base):
                               class_='alert-link', rel='external',
                               target='_blank')
         if not(os.path.isdir(self.directory)):
-            page.div(class_='alert alert-warning', role='alert')
-            page.p("No %s was performed for this period, "
-                   "please try again later." % a)
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                "No %s was performed for this period, "
+                "please try again later." % a,
+                "If you believe these data should have been found, please "
+                "contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context='warning', dismiss=False))
 
         elif not self.plots:
-            page.div(class_='alert alert-warning', role='alert')
-            page.p("This %s produced no plots." % a)
-            page.p("If you believe these data should have been found, please "
-                   "contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                "This %s produced no plots." % a,
+                "If you believe these data should have been found, please "
+                "contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context='warning', dismiss=False))
 
         else:
             page.add(str(self.scaffold_plots(

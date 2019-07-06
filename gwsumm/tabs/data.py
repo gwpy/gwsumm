@@ -646,12 +646,10 @@ class DataTab(ProcessedTab, ParentTab):
         page = markup.page()
         page.div(class_='row')
         page.div(class_='col-md-12')
-        page.div(class_='alert alert-info')
-        page.p("These data have not been generated yet, please check back "
-               "later.")
-        page.p("If this state persists for more than three or four hours, "
-               "please contact %s." % email)
-        page.div.close()
+        page.add(gwhtml.alert((
+            "These data have not been generated yet, please check back later.",
+            "If this state persists for more than three or four hours, "
+            "please contact %s." % email), dismiss=False))
         page.div.close()
         page.div.close()
 

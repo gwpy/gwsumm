@@ -35,10 +35,8 @@ keyword arguments.
 
 import os
 import re
-from urllib.parse import urlparse
 from collections import OrderedDict
 from configparser import NoOptionError
-from shutil import copyfile
 
 from MarkupPy import markup
 

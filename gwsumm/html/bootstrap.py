@@ -26,7 +26,7 @@ import os.path
 
 from MarkupPy import markup
 
-from gwdetchar.io import html as gwhtml
+from gwdetchar.io import html
 
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
@@ -190,8 +190,8 @@ def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
     page = markup.page()
     if baselinks:
         page.div(class_=class_, **id_)
-        page.add(str(gwhtml.dropdown(this, baselinks,
-                                     class_='navbar-brand dropdown-toggle')))
+        page.add(str(html.dropdown(this, baselinks,
+                                   class_='navbar-brand dropdown-toggle')))
         page.div.close()
     else:
         page.div(str(this), class_='navbar-brand', **id_)

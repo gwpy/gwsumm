@@ -23,6 +23,7 @@ error handlers.
 from MarkupPy import markup
 
 from .registry import (get_tab, register_tab)
+
 from gwdetchar.io import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

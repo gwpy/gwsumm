@@ -350,7 +350,7 @@ class EventTriggerTab(get_tab('default')):
 
                     # construct table
                     times = (row[0] for row in data)
-                    launch = ldvw_qscan(self.channel.name, times)
+                    launch = ldvw_qscan(self.channel, times)
                     page.add(str(html.table(
                         headers, data, id='%s-loudest-table' % self.etg,
                         caption=("%d loudest <samp>%s</samp> (%s) events "

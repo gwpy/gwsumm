@@ -114,7 +114,8 @@ def comments_box(name, identifier=None, title=None, url=None):
 def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     """Generate a Q-scan through LIGO DataViewer Web (LDVW)
     """
-    if isinstance(time, (tuple, str)):
+    channel = str(channel)
+    if isinstance(time, (tuple, list)):
         label = 'Launch omega scans (LDVW)'
         title = 'Batch-process omega scans of the loudest triggers via LDVW'
         times = '&'.join('wdq_gps=' + str(t) for t in time)

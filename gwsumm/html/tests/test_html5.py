@@ -125,4 +125,4 @@ def test_ldvw_qscan_batch():
         'wdq_ifo=X1&amp;wdq_cmap=viridis&amp;wdq_gps=0&amp;wdq_prog=py-Omega&'
         'amp;goBtn=goBtn" target="_blank" rel="external" class="btn '
         'btn-default btn-xs" title="Batch-process omega scans of the loudest '
-        'triggers via LDVW">Launch omega scans (LDVW)</a>')
+        'triggers via LDVW">Launch omega scans</a>')

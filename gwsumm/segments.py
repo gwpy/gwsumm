@@ -56,7 +56,7 @@ SEGDB_URLS = [
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                  query=True, return_=True, coalesce=True, padding=None,
-                 segdb_error='raise', url=None):
+                 segdb_error='raise', url=None, **read_kw):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -113,6 +113,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         anything. This is useful if you want to download/read segments now
         but not use them until later (e.g. plotting)
 
+    **read_kw : `dict`, optional
+        additional keyword arguments to `~gwpy.segments.DataQualityDict.read`
+        or `~gwpy.segments.DataQualityFlag.read`
+
     Returns
     -------
     flag : `~gwpy.segments.DataQualityFlag`
@@ -125,7 +129,6 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     None
        if ``return_=False``
     """
-    read_kw = dict()
     if isinstance(flag, str):
         flags = flag.split(',')
     else:

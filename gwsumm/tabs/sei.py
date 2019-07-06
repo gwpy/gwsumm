@@ -32,10 +32,10 @@ from MarkupPy import markup
 
 from gwpy.time import Time
 
-from gwdetchar.io import html as gwhtml
+from gwdetchar.io import html
 
 from .registry import (get_tab, register_tab)
-from .. import (globalv, html)
+from .. import globalv
 from ..config import GWSummConfigParser
 from ..data import (get_timeseries_dict, get_channel)
 from ..plot.registry import get_plot
@@ -382,7 +382,7 @@ class SEIWatchDogTab(base):
                 rows[-1].append('<br>'.join(assoc))
             else:
                 rows[-1].append('-')
-        page.add(str(gwhtml.table(
+        page.add(str(html.table(
             headers, rows,
             caption=('List of %s watch-dog trips in interval [%d .. %d) - '
                      'trips are considered \'associated\' if they fall within '

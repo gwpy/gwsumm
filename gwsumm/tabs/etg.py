@@ -277,13 +277,13 @@ class EventTriggerTab(get_tab('default')):
         if self.error.get(state, None):
             level, message = self.error[state]
             # no segments, print warning
-            page.div(class_='alert alert-%s' % level)
-            page.p(message)
-            page.p("If you believe this to be an error, please contact %s."
-                   % markup.oneliner.a('the DetChar group',
-                                       class_='alert-link',
-                                       href='mailto:detchar@ligo.org'))
-            page.div.close()
+            page.add(html.alert((
+                message,
+                "If you believe this to be an error, please contact %s."
+                % markup.oneliner.a('the DetChar group',
+                                    class_='alert-link',
+                                    href='mailto:detchar@ligo.org'),
+            ), context=level, dismiss=False))
         else:
             # otherwise, carry on...
             if pre is not None:

@@ -145,14 +145,14 @@ class FscanTab(base):
             # find HTML
             try:
                 index = glob.glob(os.path.join(
-                            d, self.channel.replace(':', '_', 1), '*html'))[0]
+                    d, self.channel.replace(':', '_', 1), '*html'))[0]
             except IndexError:
                 index = d + os.path.sep
             home_, postbase = index.split('/public_html/', 1)
             user = os.path.split(home_)[1]
             index = '/~%s/%s' % (user, postbase)
             page.div(class_='btn-group')
-            page.a('Click here for the full Fscan results for %s' % date,
+            page.a('Full Fscan results for %s' % date,
                    href=index, rel='external', target='_blank',
                    class_='btn btn-default btn-info btn-xl')
             page.div.close()
@@ -161,16 +161,16 @@ class FscanTab(base):
             page.h2('Fscan links:')
         for i, (key, url) in enumerate(sorted(self.navigation,
                                               key=lambda x: x[0])):
-            if not i % 6:
+            if not i % 4:
                 page.div(class_="row")
-            if i + 6 > len(self.navigation):
-                page.div(class_='col-sm-2')
+            if i + 4 > len(self.navigation):
+                page.div(class_='col-sm-3')
             else:
-                page.div(class_='col-sm-2', style='margin-bottom: 10px;')
+                page.div(class_='col-sm-3', style='margin-bottom: 10px;')
             page.a(key, href=url, rel='external', target='_blank',
                    class_='btn btn-success btn-lg btn-block')
             page.div.close()
-            if i % 6 == 6 or i == len(self.navigation) - 1:
+            if i % 4 == 3 or i == len(self.navigation) - 1:
                 page.div.close()
 
         if self.plots:

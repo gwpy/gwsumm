@@ -349,15 +349,8 @@ class EventTriggerTab(get_tab('default')):
                         data[-1].append(ldvw_qscan(self.channel, data[-1][0]))
 
                     # construct table
-                    times = ' '.join(str(row[0]) for row in data)
-                    launch = markup.oneliner.a(
-                        'Launch full omega scans through LDVW',
-                        target='_blank',
-                        href='https://ldvw.ligo.caltech.edu/ldvw/Wdq?'
-                             'submitAct=go&wdq_ifo=%s&wdq_cmap=viridis&'
-                             'wdq_gps=%s&wdq_prog=py-Omega&'
-                             'goBtn=goBtn' % (self.channel.name[:2], times),
-                    )
+                    times = tuple(row[0] for row in data)
+                    launch = ldvw_qscan(self.channel, times)
                     page.add(str(html.table(
                         headers, data, id='%s-loudest-table' % self.etg,
                         caption=("%d loudest <samp>%s</samp> (%s) events "

@@ -25,7 +25,7 @@ import glob
 
 from MarkupPy import markup
 
-from gwdetchar.io import html as html
+from gwdetchar.io import html
 
 from .registry import (get_tab, register_tab)
 

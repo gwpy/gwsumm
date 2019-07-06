@@ -104,6 +104,8 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
     def __init__(self, channels, start, end, state=None, outdir='.',
                  etg=None, **kwargs):
+        if (len(channels) == 1) and ('title' not in kwargs):
+            kwargs['title'] = usetex_tex('%s (%s)' % (str(channels[0]), etg))
         super(TriggerDataPlot, self).__init__(channels, start, end,
                                               state=state, outdir=outdir,
                                               **kwargs)
@@ -222,9 +224,6 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
-        if len(self.channels) == 1:
-            self.pargs.setdefault('title', usetex_tex(
-                '%s (%s)' % (str(self.channels[0]), self.etg)))
         for axis in ('x', 'y'):  # prevent zeros on log scale
             scale = getattr(ax, 'get_{0}scale'.format(axis))()
             lim = getattr(ax, 'get_{0}lim'.format(axis))()

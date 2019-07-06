@@ -56,7 +56,7 @@ SEGDB_URLS = [
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                  query=True, return_=True, coalesce=True, padding=None,
-                 segdb_error='raise', url=None):
+                 segdb_error='raise', url=None, **read_kw):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -112,6 +112,10 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         internal flag to enable (True) or disable (False) actually returning
         anything. This is useful if you want to download/read segments now
         but not use them until later (e.g. plotting)
+
+    **read_kw : `dict`, optional
+        additional keyword arguments to `~gwpy.segments.DataQualityDict.read`
+        or `~gwpy.segments.DataQualityFlag.read`
 
     Returns
     -------
@@ -179,8 +183,12 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         query &= len(cache) != 0
     if query:
         if cache is not None:
+            if cache.endswith((".h5", ".hdf", ".hdf5")) and (
+                    'path' not in read_kw):
+                read_kw['path'] = config.get('DEFAULT', 'segments-hdf5-path',
+                                             fallback='')
             try:
-                new = DataQualityDict.read(cache, list(allflags))
+                new = DataQualityDict.read(cache, list(allflags), **read_kw)
             except IORegistryError as e:
                 # can remove when astropy >= 1.2 is required
                 if type(e) is not IORegistryError:
@@ -188,7 +196,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 if len(allflags) == 1:
                     f = list(allflags)[0]
                     new = DataQualityDict()
-                    new[f] = DataQualityFlag.read(cache, f, coalesce=False)
+                    new[f] = DataQualityFlag.read(
+                        cache, f, coalesce=False, **read_kw)
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs

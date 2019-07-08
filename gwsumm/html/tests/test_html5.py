@@ -126,3 +126,12 @@ def test_ldvw_qscan_batch():
         'amp;goBtn=goBtn" target="_blank" rel="external" class="btn '
         'btn-default btn-xs" title="Batch-process omega scans of the loudest '
         'triggers via LDVW">Launch omega scans</a>')
+
+
+def test_dialog_box():
+    box = html5.dialog_box('test', 'title')
+    assert parse_html(str(box)) == parse_html(
+        '<dialog>\n<div class="row">\n<div class="col-sm-11">\n<h1>title</h1>'
+        '\n</div>\n<div class="col-sm-1">\n<a title="Close" '
+        'onclick="closeDialog()" aria-label="Close">&times;</a>\n</div>\n'
+        '</div>\n<p>test</p>\n</dialog>')

@@ -610,7 +610,7 @@ class BaseTab(object):
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
                    ifo=None, ifomap=dict(), brand=None, base=None,
                    css=None, js=None, about=None, footer=None, issues=True,
-                   **inargs):
+                   notes=None, **inargs):
         """Write the HTML page for this `Tab`.
 
         Parameters
@@ -655,6 +655,10 @@ class BaseTab(object):
         issues : `bool` or `str`, default: `True`
             print link to github.com issue tracker for this package
 
+        notes : `str`, `~MarkupPy.markup.page`, optional
+            simple string or structured `page` of content describing new
+            features available on the website, default: none
+
         **inargs
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
@@ -694,6 +698,13 @@ class BaseTab(object):
         # add banner
         self.page.add(str(self.html_banner(
             title=title.replace('|', ':'), subtitle=subtitle)))
+
+        # add help button
+        if notes is not None:
+            self.page.add(html.dialog_box(notes, "What's new?"))
+            self.page.button(markup.oneliner.span('&#63;'),
+                             title="What's new?", onclick='showDialog()',
+                             class_='btn-float', id_='help-btn')
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))

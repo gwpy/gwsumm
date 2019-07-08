@@ -132,3 +132,25 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     return markup.oneliner.a(
         label, href=uri, target='_blank', rel='external',
         class_='btn btn-default btn-xs', title=title)
+
+
+def dialog_box(content, title):
+    """Generate a dialog box to be loaded modal atop the main page
+    """
+    page = markup.page()
+    page.add('<dialog>')  # MarkupPy does not support dialog elements
+    page.div(class_='row')
+    page.div(class_='col-sm-11')
+    page.h1(title)
+    page.div.close()  # col-sm-11
+    page.div(class_='col-sm-1')
+    page.a('&times;', title='Close', onclick='closeDialog()',
+           **{'aria-label': 'Close'})
+    page.div.close()  # col-sm-1
+    page.div.close()  # row
+    if isinstance(content, str):
+        content = markup.oneliner.p(content) if (
+            not content.startswith('<')) else content
+    page.add(str(content))
+    page.add('</dialog>')
+    return page

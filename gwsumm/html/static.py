@@ -40,6 +40,9 @@ JS = OrderedDict((
     ('datepicker', (
         '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
         '1.6.0/js/bootstrap-datepicker.min.js')),
+    ('dialog-polyfill', (
+        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
+        '0.5.0/dialog-polyfill.min.js')),
     ('bootstrap-ligo', JS_FILES[4]),
     ('gwdetchar', JS_FILES[5]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
@@ -52,6 +55,9 @@ CSS = OrderedDict((
     ('datepicker', (
         '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
         '1.6.0/css/bootstrap-datepicker.min.css')),
+    ('dialog-polyfill', (
+        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
+        '0.5.0/dialog-polyfill.min.css')),
     ('bootstrap-ligo', CSS_FILES[2]),
     ('gwdetchar', CSS_FILES[3]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),

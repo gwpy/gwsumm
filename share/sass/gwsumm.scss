@@ -6,6 +6,29 @@ body {
 		background-color: #eee;
 }
 
+dialog {
+		top: 50%;
+		left: 50%;
+		position: fixed;
+		border-radius: 6px;
+		background-color: white;
+		border: 1px solid rgba(0, 0, 0, 0.3);
+		box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+}
+
+dialog::backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.8);
+}
+
+.footer {
+		height: 148px;
+}
+
 .navbar {
 		.btn-group {
 				margin-bottom: 0px;
@@ -53,11 +76,6 @@ body {
 		}
 }
 
-// footer height
-.footer {
-		height: 148px;
-}
-
 // detchar stuff
 #idq img,
 #upv img {
@@ -84,4 +102,11 @@ body {
 		-o-transform-origin: 0 0;
 		-webkit-transform: scale(0.55);
 		-webkit-transform-origin: 0 0;
+}
+
+// help button
+#help-btn {
+		@media(min-width:992px) {
+				bottom: 80px;
+		}
 }

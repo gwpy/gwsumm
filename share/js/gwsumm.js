@@ -254,12 +254,10 @@ var dialog = document.querySelector('dialog');
 // register element
 dialogPolyfill.registerDialog(dialog);
 
-document.querySelector('#show').onclick = function() {
-  // show dialog
-  dialog.show();
+function showDialog() {
+  dialog.showModal();
 };
 
-document.querySelector('#close').onclick = function() {
-  // close dialog
-  dialog.close();
+function closeDialog() {
+  dialog.closeModal();
 };

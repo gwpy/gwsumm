@@ -130,7 +130,9 @@ def test_ldvw_qscan_batch():
 
 def test_dialog_box():
     box = html5.dialog_box('test', 'title', 'testid')
+    print(box)
     assert parse_html(str(box)) == parse_html(
-        '<dialog id="testid">\n<a title="Close" onclick="closeDialog()" '
+        '<dialog id="testid">\n<a title="Close" '
+        'onclick="closeDialog(&quot;testid&quot;)" '
         'class="btn btn-default pull-right" aria-label="Close">&#x2715;</a>\n'
         '<h1>title</h1>\n<hr class="row-divider">\n<p>test</p>\n</dialog>')

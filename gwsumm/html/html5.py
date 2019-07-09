@@ -139,7 +139,7 @@ def dialog_box(content, title, id_):
     """
     page = markup.page()
     page.add('<dialog id="%s">' % id_)  # MarkupPy does not support dialog
-    page.a('&#x2715;', title='Close', onclick='closeDialog()',
+    page.a('&#x2715;', title='Close', onclick="closeDialog('%s')" % id_,
            class_='btn btn-default pull-right', **{'aria-label': 'Close'})
     page.h1(title)
     page.add('<hr class="row-divider">')

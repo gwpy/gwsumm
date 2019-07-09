@@ -720,9 +720,10 @@ class BaseTab(object):
         if self.notes is not None:
             self.page.add(str(html.dialog_box(
                 self.notes, "What's new?", id_='whats-new')))
-            self.page.button(markup.oneliner.span('&#63;'),
-                             title="What's new?", onclick='showDialog()',
-                             class_='btn-float', id_='help-btn')
+            self.page.button(
+                markup.oneliner.span('&#63;'), title="What's new?",
+                onclick="showDialog('whats-new')", class_='btn-float',
+                id_='help-btn')
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))

@@ -134,11 +134,11 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
         class_='btn btn-default btn-xs', title=title)
 
 
-def dialog_box(content, title):
+def dialog_box(content, title, id_):
     """Generate a dialog box to be loaded modal atop the main page
     """
     page = markup.page()
-    page.add('<dialog>')  # MarkupPy does not support dialog elements
+    page.add('<dialog id="%s">' % id_)  # MarkupPy does not support dialog
     page.div(class_='row')
     page.div(class_='col-sm-11')
     page.h1(title)

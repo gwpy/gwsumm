@@ -249,15 +249,20 @@ $(window).resize(function() {
 
 /* ------------------------------------------------------------------------- */
 /* html5 dialog elements                                                     */ 
-var dialog = document.querySelector('dialog');
 
-// register element
-dialogPolyfill.registerDialog(dialog);
+function getDialog(id) {
+  var dialog = document.getElementById(id);
+  // register polyfill for new dialog element
+  dialogPolyfill.registerDialog(dialog);
+  return dialog;
+}
 
-function showDialog() {
+function showDialog(id) {
+  var dialog = getDialog(id);
   dialog.showModal();
-};
+}
 
-function closeDialog() {
-  dialog.closeModal();
-};
+function closeDialog(id) {
+  var dialog = getDialog(id);
+  dialog.close();
+}

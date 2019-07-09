@@ -159,6 +159,6 @@ def dialog_box(content, id_):
     if os.path.isfile(content):
         with open(content, 'r') as source:
             content = source.read()
-    page.add(markdown(content))
+    page.add(markdown(str(content)))
     page.add('</dialog>')
     return page

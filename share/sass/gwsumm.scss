@@ -11,6 +11,8 @@ dialog {
 		-ms-transform: translateY(-50%);
 		transform: translateY(-50%);
 		min-width: 60%;
+		max-height: 80%;
+		overflow-y: scroll;
 		position: fixed;
 		border-radius: 6px;
 		background-color: white;

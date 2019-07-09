@@ -8,21 +8,34 @@ body {
 
 dialog {
 		top: 50%;
-		left: 50%;
+		-ms-transform: translateY(-50%);
+		transform: translateY(-50%);
+		min-width: 60%;
 		position: fixed;
 		border-radius: 6px;
 		background-color: white;
 		border: 1px solid rgba(0, 0, 0, 0.3);
-		box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+		box-shadow:0 3px 7px rgba(0, 0, 0, 0.8);
 }
 
+// native dialog
 dialog::backdrop {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.8);
+		background-color: rgba(0, 0, 0, 0.6);
+}
+
+// polyfill dialog
+dialog+.backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.6);
 }
 
 .footer {
@@ -108,5 +121,7 @@ dialog::backdrop {
 #help-btn {
 		@media(min-width:992px) {
 				bottom: 80px;
+				padding-left: 16px;
+				padding-right: 16px;
 		}
 }

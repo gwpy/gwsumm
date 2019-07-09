@@ -21,6 +21,11 @@
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 
+import os
+import shutil
+
+from markdown import markdown
+
 from gwdetchar.utils import parse_html
 
 from .. import html5
@@ -56,6 +61,20 @@ BOX = """<div id="disqus_thread">
 <noscript>Please enable JavaScript to view the</noscript>
 <a href="https://disqus.com/?ref_noscript">comments powered by Disqus</a>
 </div>"""
+
+CONTENTS = """Heading
+=======
+
+This is a test.
+
+* Bullet 1
+* Bullet 2"""
+
+DIALOG = ('<dialog id="id">\n<a title="Close" '
+          'onclick="closeDialog(&quot;id&quot;)" '
+          'class="btn btn-default pull-right" '
+          'aria-label="Close">&#x2715;</a>\n%s\n'
+          '</dialog>') % markdown(CONTENTS)
 
 
 # test utilities
@@ -128,11 +147,10 @@ def test_ldvw_qscan_batch():
         'triggers via LDVW">Launch omega scans</a>')
 
 
-def test_dialog_box():
-    box = html5.dialog_box('test', 'title', 'testid')
-    print(box)
-    assert parse_html(str(box)) == parse_html(
-        '<dialog id="testid">\n<a title="Close" '
-        'onclick="closeDialog(&quot;testid&quot;)" '
-        'class="btn btn-default pull-right" aria-label="Close">&#x2715;</a>\n'
-        '<h1>title</h1>\n<hr class="row-divider">\n<p>test</p>\n</dialog>')
+def test_dialog_box(tmpdir):
+    mdfile = os.path.join(str(tmpdir), 'test.md')
+    with open(mdfile, 'w') as f:
+        f.write(CONTENTS)
+    box = html5.dialog_box(mdfile, 'id')
+    assert parse_html(str(box)) == parse_html(DIALOG)
+    shutil.rmtree(str(tmpdir), ignore_errors=True)

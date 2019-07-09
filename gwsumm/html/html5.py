@@ -139,15 +139,10 @@ def dialog_box(content, title, id_):
     """
     page = markup.page()
     page.add('<dialog id="%s">' % id_)  # MarkupPy does not support dialog
-    page.div(class_='row')
-    page.div(class_='col-sm-11')
+    page.a('&#x2715;', title='Close', onclick='closeDialog()',
+           class_='btn btn-default pull-right', **{'aria-label': 'Close'})
     page.h1(title)
-    page.div.close()  # col-sm-11
-    page.div(class_='col-sm-1')
-    page.a('&times;', title='Close', onclick='closeDialog()',
-           **{'aria-label': 'Close'})
-    page.div.close()  # col-sm-1
-    page.div.close()  # row
+    page.add('<hr class="row-divider">')
     if isinstance(content, str):
         content = markup.oneliner.p(content) if (
             not content.startswith('<')) else content

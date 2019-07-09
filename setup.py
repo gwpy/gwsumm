@@ -79,6 +79,7 @@ install_requires = [
     'gwdatafind',
     'pygments',
     'MarkupPy',
+    'markdown',
     'gwdetchar>=0.5.1',
     'configparser ; python_version < \'3.6\'',
 ]

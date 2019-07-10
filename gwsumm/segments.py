@@ -184,7 +184,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         query &= len(cache) != 0
     if query:
         if cache is not None:
-            if os.path.isfile(cache) and cache.endswith(
+            if os.path.isfile(str(cache)) and str(cache).endswith(
                 (".h5", ".hdf", ".hdf5")) and (
                     'path' not in read_kw):
                 read_kw['path'] = config.get(

@@ -19,8 +19,9 @@
 """Utilities for segment handling and display
 """
 
-import operator
+import os
 import sys
+import operator
 import warnings
 from functools import reduce
 from collections import OrderedDict
@@ -183,11 +184,11 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         query &= len(cache) != 0
     if query:
         if cache is not None:
-            if isinstance(cache, str) and cache.endswith(
+            if os.path.isfile(cache) and cache.endswith(
                 (".h5", ".hdf", ".hdf5")) and (
                     'path' not in read_kw):
-                read_kw['path'] = config.get('DEFAULT', 'segments-hdf5-path',
-                                             fallback='')
+                read_kw['path'] = config.get(
+                    'DEFAULT', 'segments-hdf5-path', fallback='segments')
             try:
                 new = DataQualityDict.read(cache, list(allflags), **read_kw)
             except IORegistryError as e:

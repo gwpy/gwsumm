@@ -32,6 +32,7 @@ import warnings
 from configparser import NoOptionError
 
 from MarkupPy import markup
+from markdown import markdown
 
 from .registry import (get_tab, register_tab)
 from ..plot import get_plot
@@ -315,10 +316,7 @@ class PlotTab(Tab):
             self._pre = content
         else:
             self._pre = markup.page()
-            if not str(content).startswith('<'):
-                self._pre.p(str(content))
-            else:
-                self._pre.add(str(content))
+            self._pre.add(markdown(str(content)))
 
     @property
     def afterword(self):
@@ -332,10 +330,7 @@ class PlotTab(Tab):
             self._post = content
         else:
             self._post = markup.page()
-            if not str(content).startswith('<'):
-                self._post.p(str(content))
-            else:
-                self._post.add(str(content))
+            self._post.add(markdown(str(content)))
 
     @classmethod
     def from_ini(cls, cp, section, *args, **kwargs):

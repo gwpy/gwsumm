@@ -24,6 +24,7 @@ import os.path
 from urllib.parse import urlparse
 
 from MarkupPy import markup
+from markdown import markdown
 
 DOCTYPE = '<!DOCTYPE html>'
 
@@ -132,3 +133,32 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     return markup.oneliner.a(
         label, href=uri, target='_blank', rel='external',
         class_='btn btn-default btn-xs', title=title)
+
+
+def dialog_box(content, id_):
+    """Generate a dialog box to be loaded modal atop the main page
+
+    Parameters
+    ----------
+    content : `str`
+        either raw markdown text or the path to a file containing markdown,
+        this will be rendered in HTML as the contents of the dialog box
+
+    id_ : `str`
+        unique identifier for the dialog box
+
+    Returns
+    -------
+    page : `~MarkupPy.markup.page`
+        fully rendered HTML containing the dialog box
+    """
+    page = markup.page()
+    page.add('<dialog id="%s">' % id_)  # MarkupPy does not support dialog
+    page.a('&#x2715;', title='Close', onclick="closeDialog('%s')" % id_,
+           class_='btn btn-default pull-right', **{'aria-label': 'Close'})
+    if os.path.isfile(content):
+        with open(content, 'r') as source:
+            content = source.read()
+    page.add(markdown(str(content)))
+    page.add('</dialog>')
+    return page

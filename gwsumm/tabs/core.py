@@ -63,7 +63,7 @@ class BaseTab(object):
     """
     def __init__(self, name, index=None,
                  shortname=None, parent=None, children=list(), group=None,
-                 path=os.curdir, mode=None, hidden=False):
+                 notes=None, path=os.curdir, mode=None, hidden=False):
         # mode
         self.mode = mode
         # names
@@ -74,6 +74,7 @@ class BaseTab(object):
         self.parent = parent
         self.children = children
         self.group = group
+        self.notes = notes
         # HTML format
         self.path = path
         self.index = index
@@ -255,6 +256,19 @@ class BaseTab(object):
             self._group = str(gp)
 
     @property
+    def notes(self):
+        """Release notes for this `Tab`
+        """
+        return self._notes
+
+    @notes.setter
+    def notes(self, n):
+        if n is None:
+            self._notes = None
+        else:
+            self._notes = n
+
+    @property
     def mode(self):
         """The date-time mode of this tab.
 
@@ -345,6 +359,7 @@ class BaseTab(object):
            ~Tab.shortname
            ~Tab.parent
            ~Tab.group
+           ~Tab.notes
            ~Tab.index
 
         Sub-classes should parse their own configuration values and then pass
@@ -404,6 +419,12 @@ class BaseTab(object):
             else:
                 hidden = bool(hidden.title())
         kwargs.setdefault('hidden', hidden)
+
+        # get release notes
+        try:
+            kwargs.setdefault('notes', cp.get(section, 'notes'))
+        except NoOptionError:
+            pass
 
         # get mode and times if required
         try:
@@ -694,6 +715,14 @@ class BaseTab(object):
         # add banner
         self.page.add(str(self.html_banner(
             title=title.replace('|', ':'), subtitle=subtitle)))
+
+        # add help button
+        if self.notes is not None:
+            self.page.add(str(html.dialog_box(self.notes, id_='help')))
+            self.page.button(
+                markup.oneliner.span('&#63;'), title='Help',
+                onclick="showDialog('help')", class_='btn-float',
+                id_='help-btn')
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))

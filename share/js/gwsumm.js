@@ -245,3 +245,24 @@ $(window).resize(function() {
   // set short month date
   if ($('#calendar').length){ shortenDate();}
 });
+
+
+/* ------------------------------------------------------------------------- */
+/* html5 dialog elements                                                     */ 
+
+function getDialog(id) {
+  var dialog = document.getElementById(id);
+  // register polyfill for new dialog element
+  dialogPolyfill.registerDialog(dialog);
+  return dialog;
+}
+
+function showDialog(id) {
+  var dialog = getDialog(id);
+  dialog.showModal();
+}
+
+function closeDialog(id) {
+  var dialog = getDialog(id);
+  dialog.close();
+}

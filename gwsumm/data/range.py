@@ -21,8 +21,6 @@
 
 import re
 
-import numpy
-
 from gwpy import astro
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList

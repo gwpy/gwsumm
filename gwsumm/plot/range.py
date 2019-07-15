@@ -19,7 +19,6 @@
 """Definitions for range plots
 """
 
-import re
 from math import pi
 from heapq import nlargest
 from itertools import combinations

@@ -56,14 +56,6 @@ def _segments_diff(segments, havesegs, query=True):
     return (new, query)
 
 
-def _get_percentile(specgram, p):
-    """Return a percentile spectrum from a spectrogram, with the correct units
-    """
-    outspec = specgram.percentile(p)
-    outspec.override_unit(specgram.unit)
-    return outspec
-
-
 def get_range_channel(channel, **rangekwargs):
     """Return the meta-channel name used to store range data
     """
@@ -151,7 +143,7 @@ def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
             fftlength=fftlength, overlap=overlap, **rangekwargs)
         specgram = speclist.join(gap='ignore')
         try:  # store median spectrum
-            globalv.SPECTRUM[name] = _get_percentile(specgram, 50)
+            globalv.SPECTRUM[name] = specgram.percentile(50)
         except (ValueError, IndexError):
             unit = 'Mpc' if 'energy' in rangekwargs else 'Mpc^2 / Hz'
             globalv.SPECTRUM[name] = FrequencySeries(
@@ -159,8 +151,8 @@ def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
             globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
             globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
         else:  # store percentiles
-            globalv.SPECTRUM[cmin] = _get_percentile(specgram, 5)
-            globalv.SPECTRUM[cmax] = _get_percentile(specgram, 95)
+            globalv.SPECTRUM[cmin] = specgram.percentile(5)
+            globalv.SPECTRUM[cmax] = specgram.percentile(95)
 
     if not return_:
         return

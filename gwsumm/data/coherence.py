@@ -122,7 +122,11 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                               config=config, cache=cache, frametype=frametype,
                               nproc=nproc, query=query,
                               datafind_error=datafind_error, nds=nds)
-        sampling = min(dts1[0].sample_rate.value, dts2[0].sample_rate.value)
+        try:
+            sampling = min(dts1[0].sample_rate.value,
+                           dts2[0].sample_rate.value)
+        except IndexError:
+            sampling = None
     else:
         sampling = None
 

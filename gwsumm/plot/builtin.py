@@ -37,8 +37,8 @@ from .. import (globalv, io)
 from ..mode import (Mode, get_mode)
 from ..utils import re_cchar
 from ..data import (get_timeseries, get_spectrogram,
-                    get_coherence_spectrogram, get_spectrum,
-                    get_coherence_spectrum)
+                    get_coherence_spectrogram, get_range_spectrogram,
+                    get_spectrum, get_coherence_spectrum, get_range_spectrum)
 from ..state import ALLSTATE
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
@@ -352,12 +352,15 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         else:
             valid = SegmentList([self.span])
         if self.type == 'coherence-spectrogram':
-            specgrams = get_coherence_spectrogram(self.channels, valid,
-                                                  query=False)
+            specgrams = get_coherence_spectrogram(
+                self.channels, valid, query=False)
+        elif self.type == 'range-spectrogram':
+            specgrams = get_range_spectrogram(
+                channel, valid, query=False)
         else:
             try:
-                specgrams = get_spectrogram(channel, valid, query=False,
-                                            format=sdform)
+                specgrams = get_spectrogram(
+                    channel, valid, query=False, format=sdform)
             except ValueError as exc:
                 if 'need more than 0 values' not in str(exc):
                     raise
@@ -505,8 +508,21 @@ class SpectrumDataPlot(DataPlot):
                 valid = SegmentList([self.span])
 
             if self.type == 'coherence-spectrum':
-                data = get_coherence_spectrum([str(channel), str(channel2)],
-                                              valid, query=False)
+                data = get_coherence_spectrum(
+                    [str(channel), str(channel2)], valid, query=False)
+            elif self.type == 'range-spectrum':
+                data = get_range_spectrum(str(channel), valid, query=False)
+            elif self.type == 'cumulative-range-spectrum':
+                data = get_range_spectrum(
+                    str(channel), valid, query=False, which='mean')
+                if str(data.unit) == 'Mpc':
+                    data = (data**3).cumsum() ** (1/3.)
+                else:
+                    data = (data**2).cumsum() ** (1/2.)
+                try:
+                    data = (100 * data / data[-1],)
+                except IndexError:
+                    data = tuple()
             else:
                 try:
                     data = get_spectrum(str(channel), valid, query=False,
@@ -537,7 +553,14 @@ class SpectrumDataPlot(DataPlot):
             if 'label' in pargs:
                 use_legend = True
 
-            if data and use_percentiles:
+            if data and self.type == 'cumulative-range-spectrum':
+                pargs_reverse = pargs.copy()
+                pargs_reverse.pop('label', None)
+                pargs_reverse['linestyle'] = 'dashed'
+                # plot cumulative spectrum and its reverse
+                ax.plot(data[0], **pargs)
+                ax.plot(100 - data[0], **pargs_reverse)
+            elif data and use_percentiles:
                 _, minline, maxline, _ = ax.plot_mmm(*data, **pargs)
                 # make min, max lines lighter:
                 minline.set_alpha(pargs.get('alpha', .1) * 2)

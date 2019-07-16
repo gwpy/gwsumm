@@ -21,33 +21,50 @@
 
 import re
 
-import numpy
-
 from gwpy import astro
-from gwpy.timeseries import (TimeSeries, TimeSeriesList)
 from gwpy.frequencyseries import FrequencySeries
+from gwpy.spectrogram import SpectrogramList
+from gwpy.timeseries import TimeSeriesList
 
 from .. import globalv
 from ..utils import re_cchar
 from ..channels import get_channel
 from .utils import (use_segmentlist, make_globalv_key)
 from .timeseries import (add_timeseries, get_timeseries)
-from .spectral import get_spectrogram
+from .spectral import (add_spectrogram, get_spectrogram)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+
+
+def _metadata(channel, **rangekwargs):
+    """Return a common set of metadata for range calculations
+    """
+    channel = get_channel(channel)
+    key = make_globalv_key(get_range_channel(channel, **rangekwargs))
+    return (channel, key)
+
+
+def _segments_diff(segments, havesegs, query=True):
+    """Return a diff of two `SegmentList`, and determine whether to query for
+    new data
+    """
+    new = segments - havesegs
+    query &= abs(new) != 0
+    return (new, query)
 
 
 def get_range_channel(channel, **rangekwargs):
     """Return the meta-channel name used to store range data
     """
-    if not rangekwargs:
-        rangekwargs = {'mass1': 1.4, 'mass2': 1.4}
-    re_float = re.compile(r'[.-]')
-    rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
-                                re_float.sub('_', str(val))) for key, val in
-                    rangekwargs.items()])
     channel = get_channel(channel)
-    return '%s_%s' % (channel.ndsname, rkey)
+    if rangekwargs:
+        re_float = re.compile(r'[.-]')
+        rkey = '_'.join(['%s_%s' % (re_cchar.sub('_', key),
+                                    re_float.sub('_', str(val))) for key, val
+                        in rangekwargs.items()])
+        return '%s_%s' % (channel.ndsname, rkey)
+    return channel.ndsname
 
 
 @use_segmentlist
@@ -58,36 +75,93 @@ def get_range(channel, segments, config=None, cache=None,
               method=None, **rangekwargs):
     """Calculate the sensitive distance for a given strain channel
     """
-    if not rangekwargs:
-        rangekwargs = {'mass1': 1.4, 'mass2': 1.4}
-    if 'energy' in rangekwargs:
-        range_func = astro.burst_range
-    else:
-        range_func = astro.inspiral_range
-    channel = get_channel(channel)
-    key = make_globalv_key(get_range_channel(channel, **rangekwargs))
-    # get old segments
+    channel, key = _metadata(channel, **rangekwargs)
+    # get new segments
     havesegs = globalv.DATA.get(key, TimeSeriesList()).segments
-    new = segments - havesegs
-    query &= abs(new) != 0
-    # calculate new range
-    if query:
-        # get spectrograms
-        spectrograms = get_spectrogram(channel, new, config=config,
-                                       cache=cache, nproc=nproc,
-                                       frametype=frametype, format='psd',
-                                       datafind_error=datafind_error, nds=nds,
-                                       stride=stride, fftlength=fftlength,
-                                       overlap=overlap, method=method)
-        # calculate range for each PSD in each spectrogram
-        for sg in spectrograms:
-            ts = TimeSeries(numpy.zeros(sg.shape[0],), unit='Mpc',
-                            epoch=sg.epoch, dx=sg.dx, channel=key)
-            for i in range(sg.shape[0]):
-                psd = sg[i]
-                psd = FrequencySeries(psd.value, f0=psd.x0, df=psd.dx)
-                ts[i] = range_func(psd, **rangekwargs)
+    new, query = _segments_diff(segments, havesegs, query)
+    if query:  # calculate new range
+        spectrograms = get_spectrogram(
+            channel, new, config=config, cache=cache, nds=nds, format='psd',
+            frametype=frametype, nproc=nproc, datafind_error=datafind_error,
+            stride=stride, fftlength=fftlength, overlap=overlap, method=method)
+        for sg in spectrograms:  # calculate range for each spectrogram
+            ts = astro.range_timeseries(sg, **rangekwargs)
+            ts.channel = key
             add_timeseries(ts, key=key)
 
     if return_:
         return get_timeseries(key, segments, query=False)
+
+
+@use_segmentlist
+def get_range_spectrogram(channel, segments, config=None, cache=None,
+                          query=True, nds=None, return_=True, nproc=1,
+                          datafind_error='raise', frametype=None, stride=60,
+                          fftlength=None, overlap=None, method=None,
+                          **rangekwargs):
+    """Estimate the spectral contribution to sensitive distance for a given
+    strain channel
+    """
+    channel, key = _metadata(channel, **rangekwargs)
+    # get new segments
+    havesegs = globalv.SPECTROGRAMS.get(key, SpectrogramList()).segments
+    new, query = _segments_diff(segments, havesegs, query)
+    if query:  # calculate new data
+        spectrograms = get_spectrogram(
+            channel, new, config=config, cache=cache, nds=nds, format='psd',
+            frametype=frametype, nproc=nproc, datafind_error=datafind_error,
+            stride=stride, fftlength=fftlength, overlap=overlap, method=method)
+        for sg in spectrograms:  # get contribution from each spectrogram
+            outspec = astro.range_spectrogram(sg, **rangekwargs)
+            outspec.channel = key
+            add_spectrogram(outspec if 'energy' in rangekwargs else
+                            outspec**(1/2.), key=key)
+
+    if return_:
+        return globalv.SPECTROGRAMS.get(key, SpectrogramList())
+
+
+@use_segmentlist
+def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
+                       nds=None, return_=True, nproc=1, datafind_error='raise',
+                       frametype=None, stride=60, fftlength=None, overlap=None,
+                       method=None, which='all', **rangekwargs):
+    """Compute percentile spectra of the range integrand from a set of
+    spectrograms
+    """
+    name = str(channel)
+    cmin = '%s.min' % name
+    cmax = '%s.max' % name
+
+    if name not in globalv.SPECTRUM:
+        speclist = get_range_spectrogram(
+            channel, segments, config=config, cache=cache, query=query,
+            nds=nds, return_=return_, nproc=nproc, frametype=frametype,
+            datafind_error=datafind_error, method=method, stride=stride,
+            fftlength=fftlength, overlap=overlap, **rangekwargs)
+        specgram = speclist.join(gap='ignore')
+        try:  # store median spectrum
+            globalv.SPECTRUM[name] = specgram.percentile(50)
+        except (ValueError, IndexError):
+            unit = 'Mpc' if 'energy' in rangekwargs else 'Mpc^2 / Hz'
+            globalv.SPECTRUM[name] = FrequencySeries(
+                [], channel=channel, f0=0, df=1, unit=unit)
+            globalv.SPECTRUM[cmin] = globalv.SPECTRUM[name]
+            globalv.SPECTRUM[cmax] = globalv.SPECTRUM[name]
+        else:  # store percentiles
+            globalv.SPECTRUM[cmin] = specgram.percentile(5)
+            globalv.SPECTRUM[cmax] = specgram.percentile(95)
+
+    if not return_:
+        return
+
+    if which == 'all':
+        return (globalv.SPECTRUM[name], globalv.SPECTRUM[cmin],
+                globalv.SPECTRUM[cmax])
+    if which == 'mean':
+        return globalv.SPECTRUM[name]
+    if which == 'min':
+        return globalv.SPECTRUM[cmin]
+    if which == 'max':
+        return globalv.SPECTRUM[cmax]
+    raise ValueError("Unrecognised value for `which`: %r" % which)

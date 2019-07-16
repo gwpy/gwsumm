@@ -519,7 +519,10 @@ class SpectrumDataPlot(DataPlot):
                     data = (data**3).cumsum() ** (1/3.)
                 else:
                     data = (data**2).cumsum() ** (1/2.)
-                data = (100 * data / data[-1],) if data.value else tuple()
+                try:
+                    data = (100 * data / data[-1],)
+                except IndexError:
+                    data = tuple()
             else:
                 try:
                     data = get_spectrum(str(channel), valid, query=False,

@@ -61,9 +61,9 @@ __all__ = ['BaseTab', 'Tab', 'TabList']
 class BaseTab(object):
     """The core `Tab` object, defining basic functionality
     """
-    def __init__(self, name, index=None,
-                 shortname=None, parent=None, children=list(), group=None,
-                 notes=None, path=os.curdir, mode=None, hidden=False):
+    def __init__(self, name, index=None, shortname=None, parent=None,
+                 children=list(), group=None, notes=None, overlay=None,
+                 path=os.curdir, mode=None, hidden=False):
         # mode
         self.mode = mode
         # names
@@ -75,6 +75,7 @@ class BaseTab(object):
         self.children = children
         self.group = group
         self.notes = notes
+        self.overlay = overlay
         # HTML format
         self.path = path
         self.index = index
@@ -269,6 +270,16 @@ class BaseTab(object):
             self._notes = n
 
     @property
+    def overlay(self):
+        """Boolean switch to enable plot overlay for this `Tab`
+        """
+        return self._overlay
+
+    @overlay.setter
+    def overlay(self, ovl):
+        self._overlay = ovl
+
+    @property
     def mode(self):
         """The date-time mode of this tab.
 
@@ -360,6 +371,7 @@ class BaseTab(object):
            ~Tab.parent
            ~Tab.group
            ~Tab.notes
+           ~Tab.overlay
            ~Tab.index
 
         Sub-classes should parse their own configuration values and then pass
@@ -425,6 +437,18 @@ class BaseTab(object):
             kwargs.setdefault('notes', cp.get(section, 'notes'))
         except NoOptionError:
             pass
+
+        # determine whether plot overlay is requested
+        try:
+            overlay = cp.get(section, 'overlay')
+        except NoOptionError:
+            overlay = True
+        else:
+            if overlay is None:
+                overlay = True
+            else:
+                overlay = bool(overlay.title())
+        kwargs.setdefault('overlay', overlay)
 
         # get mode and times if required
         try:
@@ -629,9 +653,8 @@ class BaseTab(object):
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=dict(), brand=None, base=None,
-                   css=None, js=None, about=None, footer=None, issues=True,
-                   **inargs):
+                   ifo=None, ifomap=dict(), brand=None, base=None, css=None,
+                   js=None, about=None, footer=None, issues=True, **inargs):
         """Write the HTML page for this `Tab`.
 
         Parameters
@@ -671,7 +694,7 @@ class BaseTab(object):
             href for the 'About' page
 
         footer : `str`, `~MarkupPy.markup.page`
-            user-defined content for the footer (placed below everything else)
+            external link, if applicable (linked from an icon in the footer)
 
         issues : `bool` or `str`, default: `True`
             print link to github.com issue tracker for this package
@@ -720,7 +743,11 @@ class BaseTab(object):
         if self.notes is not None:
             self.page.add(str(html.dialog_box(
                 self.notes, title='Help', id_='help',
-                btntxt=markup.oneliner.span('&#63;'))))
+                btntxt=markup.oneliner.i('', class_='fas fa-question'))))
+
+        # add overlay button
+        if self.overlay:
+            self.page.add(str(html.overlay_canvas()))
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))
@@ -729,15 +756,11 @@ class BaseTab(object):
         version = get_versions()['version']
         commit = get_versions()['full-revisionid']
         url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
-        link = markup.oneliner.a(
-            'View gwsumm-{} on GitHub'.format(version),
-            href=url, target='_blank')
-        issues = markup.oneliner.a(
-            'Report an issue', href=issues, target='_blank')
 
         # close page and write
         gwhtml.close_page(self.page, self.index, about=about,
-                          link=link, issues=issues, content=footer)
+                          link=('gwsumm-%s' % version, url, 'GitHub'),
+                          issues=issues, external=footer)
         return
 
 

@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>.
 
-"""HTML5 specific extensions
+"""HTML5-specific extensions
 """
 
 import re
@@ -33,6 +33,8 @@ from urllib.parse import urlparse
 from MarkupPy import markup
 from markdown import markdown
 
+# global variables
+
 DOCTYPE = '<!DOCTYPE html>'
 
 COMMENTS_JS = """
@@ -45,9 +47,27 @@ COMMENTS_JS = """
         })();
 """
 
+OVERLAY_INSTRUCTIONS = """\
+This tool is designed to help visually correlate multiple types of data by
+laying transparent figures atop one another. To use it, follow these steps:
+
+* From the main page(s), drag-and-drop figures onto the button with this icon:
+  <i class="fas fa-layer-group"></i>
+* Expand this dialog box and use the `Overlay` button (to the right) to render
+  a new figure by overlaying the ones selected
+* Add more figures using the steps above, click `Overlay` to re-render, and
+  use the `Download` button to save to a local file
+* Use the `Clear` button to clear all figure selections
+
+**Note:** figures are remembered across tabs, so multiple times and subsystems
+can be compared at once.\
+"""
+
+
+# -- utilities ----------------------------------------------------------------
 
 def _expand_path(path):
-    """Expand a server path that may contain symbolic links
+    """
     """
     subbed = Path(re.sub(r'^/\~(.*?)/', r'/home/\1/public_html/', path))
     resolved = subbed.resolve() if subbed.exists() else subbed
@@ -178,11 +198,14 @@ def dialog_box(content, title, id_, btntxt):
     page : `~MarkupPy.markup.page`
         fully rendered HTML containing the dialog box
     """
-    btnid = '-'.join([id_, 'btn'])
+    btnargs = {
+        'title': title,
+        'id_': '-'.join([id_, 'btn']),
+        'class_': 'btn-float btn-open',
+        'data-id': '#' + id_,
+    }
     page = markup.page()
-    page.button(btntxt, title=title, id_=btnid,
-                class_='btn-float btn-open',
-                **{'data-id': '#' + id_})
+    page.button(btntxt, **btnargs)
     page.div(
         class_='dialog',
         title=title,
@@ -194,3 +217,39 @@ def dialog_box(content, title, id_, btntxt):
     page.add(markdown(str(content)))
     page.div.close()
     return page
+
+
+def overlay_canvas():
+    """Generate a dialog box allowing users to select and overlay plots
+
+    Returns
+    -------
+    page : `~MarkupPy.markup.page`
+        fully rendered HTML containing the dialog box
+    """
+    page = markup.page()
+    page.h1('Overlay figures for easy comparison')
+    page.hr(class_='row-divider')
+    page.div(class_='row', id_='overlay-outer')
+    page.div(class_='col-md-4')
+    page.div(class_='scaffold well', id_='overlay-info')
+    page.h4('Instructions')
+    page.add(markdown(OVERLAY_INSTRUCTIONS))
+    page.div.close()  # scaffold well
+    page.div.close()  # col-md-4
+    page.div(class_='col-md-8')
+    page.div(class_='center-text')
+    page.a('Overlay', title='Overlay all selected figures',
+           class_='btn btn-default', id_='overlay-figures')
+    page.a('Download', title='Download overlay figure',
+           class_='btn btn-default', id_='download-overlay')
+    page.a('Clear', title='Clear all figure selections',
+           class_='btn btn-default', id_='clear-figures')
+    page.div.close()  # center-text
+    page.br()
+    page.add(markup.oneliner.canvas(id_='overlay-canvas'))
+    page.div.close()  # col-md-8
+    page.div.close()  # row
+    return dialog_box(
+        str(page), title='Overlay figures', id_='overlay',
+        btntxt=markup.oneliner.i('', class_='fas fa-layer-group'))

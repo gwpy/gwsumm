@@ -74,6 +74,22 @@ DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open" '
           'data-id="#id">T</button>\n<div class="dialog" title="Test" '
           'id="id">\n%s\n</div>') % markdown(CONTENTS)
 
+OVERLAY = (
+    '<button title="Overlay figures" id="overlay-btn" class="btn-float '
+    'btn-open" data-id="#overlay"><i class="fas fa-layer-group"></i></button>'
+    '\n<div class="dialog" title="Overlay figures" id="overlay">\n'
+    '<h1>Overlay figures for easy comparison</h1>\n\n<p><hr '
+    'class="row-divider" />\n<div class="row" id="overlay-outer">\n'
+    '<div class="col-md-4">\n<div class="scaffold well" id="overlay-info">\n'
+    '<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div class="col-md-8">\n'
+    '<div class="center-text">\n<a title="Overlay all selected figures" '
+    'class="btn btn-default" id="overlay-figures">Overlay</a>\n'
+    '<a title="Download overlay figure" class="btn btn-default" '
+    'id="download-overlay">Download</a>\n<a title="Clear all figure '
+    'selections" class="btn btn-default" id="clear-figures">Clear</a>\n'
+    '</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div></p>\n'
+    '</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
+
 
 # test utilities
 
@@ -156,3 +172,8 @@ def test_dialog_box(tmpdir):
     box = html5.dialog_box(mdfile, 'Test', 'id', 'T')
     assert parse_html(str(box)) == parse_html(DIALOG)
     shutil.rmtree(str(tmpdir), ignore_errors=True)
+
+
+def test_overlay_canvas():
+    box = html5.overlay_canvas()
+    assert parse_html(str(box)) == parse_html(OVERLAY)

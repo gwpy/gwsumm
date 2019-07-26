@@ -34,17 +34,18 @@ STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
 # build list of javascript resources
 JS = OrderedDict((
     ('jquery', JS_FILES[0]),
-    ('moment', JS_FILES[1]),
-    ('bootstrap', JS_FILES[2]),
-    ('fancybox', JS_FILES[3]),
+    ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
+               'moment.js/2.24.0/moment.min.js'),
+    ('bootstrap', JS_FILES[1]),
+    ('fancybox', JS_FILES[2]),
     ('datepicker', (
         '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
         '1.6.0/js/bootstrap-datepicker.min.js')),
     ('dialog-polyfill', (
         'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
         '0.5.0/dialog-polyfill.min.js')),
-    ('bootstrap-ligo', JS_FILES[4]),
-    ('gwdetchar', JS_FILES[5]),
+    ('bootstrap-ligo', JS_FILES[3]),
+    ('gwdetchar', JS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
 ))
 

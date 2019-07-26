@@ -34,16 +34,13 @@ STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
 # build list of javascript resources
 JS = OrderedDict((
     ('jquery', JS_FILES[0]),
+    ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
                'moment.js/2.24.0/moment.min.js'),
     ('bootstrap', JS_FILES[1]),
     ('fancybox', JS_FILES[2]),
-    ('datepicker', (
-        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-        '1.6.0/js/bootstrap-datepicker.min.js')),
-    ('dialog-polyfill', (
-        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
-        '0.5.0/dialog-polyfill.min.js')),
+    ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+                   '1.6.0/js/bootstrap-datepicker.min.js'),
     ('bootstrap-ligo', JS_FILES[3]),
     ('gwdetchar', JS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
@@ -51,16 +48,15 @@ JS = OrderedDict((
 
 # build list of CSS resources
 CSS = OrderedDict((
+    ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/'
+                  'vader/jquery-ui.min.css'),
     ('bootstrap', CSS_FILES[0]),
     ('fancybox', CSS_FILES[1]),
-    ('datepicker', (
-        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-        '1.6.0/css/bootstrap-datepicker.min.css')),
-    ('dialog-polyfill', (
-        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
-        '0.5.0/dialog-polyfill.min.css')),
-    ('bootstrap-ligo', CSS_FILES[2]),
-    ('gwdetchar', CSS_FILES[3]),
+    ('google-fonts', CSS_FILES[2]),
+    ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
+                   '1.6.0/css/bootstrap-datepicker.min.css'),
+    ('bootstrap-ligo', CSS_FILES[3]),
+    ('gwdetchar', CSS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
 ))
 

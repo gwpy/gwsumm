@@ -260,7 +260,7 @@ $(window).resize(function() {
 
 
 /* ------------------------------------------------------------------------- */
-/* html5 dialog elements                                                     */ 
+/* HTML5 dialog elements                                                     */
 
 function getDialog(id) {
   var dialog = document.getElementById(id);

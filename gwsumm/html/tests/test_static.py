@@ -39,10 +39,11 @@ def test_get_css():
     # test dict keys
     keys = list(css.keys())
     assert keys == [
+        'jquery-ui',
         'bootstrap',
         'fancybox',
+        'google-fonts',
         'datepicker',
-        'dialog-polyfill',
         'bootstrap-ligo',
         'gwdetchar',
         'gwsumm',
@@ -51,9 +52,9 @@ def test_get_css():
     css_files = list(css.values())
     assert len(css_files) == len(GWDETCHAR_CSS_FILES) + 3
     assert set(GWDETCHAR_CSS_FILES) < set(css_files)
-    assert os.path.basename(css_files[2]) == 'bootstrap-datepicker.min.css'
-    assert os.path.basename(css_files[3]) == 'dialog-polyfill.min.css'
-    assert os.path.basename(css_files[6]) == 'gwsumm.min.css'
+    assert os.path.basename(css_files[0]) == 'jquery-ui.min.css'
+    assert os.path.basename(css_files[4]) == 'bootstrap-datepicker.min.css'
+    assert os.path.basename(css_files[7]) == 'gwsumm.min.css'
 
 
 def test_get_js():
@@ -63,19 +64,20 @@ def test_get_js():
     keys = list(js.keys())
     assert keys == [
         'jquery',
+        'jquery-ui',
         'moment',
         'bootstrap',
         'fancybox',
         'datepicker',
-        'dialog-polyfill',
         'bootstrap-ligo',
         'gwdetchar',
         'gwsumm',
     ]
     # test list of files
     js_files = list(js.values())
-    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 3
+    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 4
     assert set(GWDETCHAR_JS_FILES) < set(js_files)
-    assert os.path.basename(js_files[4]) == 'bootstrap-datepicker.min.js'
-    assert os.path.basename(js_files[5]) == 'dialog-polyfill.min.js'
+    assert os.path.basename(js_files[1]) == 'jquery-ui.min.js'
+    assert os.path.basename(js_files[2]) == 'moment.min.js'
+    assert os.path.basename(js_files[5]) == 'bootstrap-datepicker.min.js'
     assert os.path.basename(js_files[8]) == 'gwsumm.min.js'

@@ -70,11 +70,9 @@ This is a test.
 * Bullet 1
 * Bullet 2"""
 
-DIALOG = ('<dialog id="id">\n<a title="Close" '
-          'onclick="closeDialog(&quot;id&quot;)" '
-          'class="btn btn-default pull-right" '
-          'aria-label="Close">&#x2715;</a>\n%s\n'
-          '</dialog>') % markdown(CONTENTS)
+DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open" '
+          'data-id="#id">T</button>\n<div class="dialog" title="Test" '
+          'id="id">\n%s\n</div>' % markdown(CONTENTS))
 
 
 # test utilities
@@ -155,6 +153,7 @@ def test_dialog_box(tmpdir):
     mdfile = os.path.join(str(tmpdir), 'test.md')
     with open(mdfile, 'w') as f:
         f.write(CONTENTS)
-    box = html5.dialog_box(mdfile, 'id')
+    box = html5.dialog_box(mdfile, 'Test', 'id', 'T')
+    print(box)
     assert parse_html(str(box)) == parse_html(DIALOG)
     shutil.rmtree(str(tmpdir), ignore_errors=True)

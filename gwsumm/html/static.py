@@ -49,7 +49,7 @@ JS = OrderedDict((
 # build list of CSS resources
 CSS = OrderedDict((
     ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/'
-                  'vader/jquery-ui.min.css'),
+                  'cupertino/jquery-ui.min.css'),
     ('bootstrap', CSS_FILES[0]),
     ('fancybox', CSS_FILES[1]),
     ('google-fonts', CSS_FILES[2]),

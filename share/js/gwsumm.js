@@ -76,28 +76,28 @@ function stepDate(step) {
 }
 
 // Load a given 'state'
-$.fn.load_state = function loadState(page) {
-  if ($(this).attr('id') == undefined) {
+jQuery.fn.load_state = function loadState(page) {
+  if (jQuery(this).attr('id') == undefined) {
     return;
   }
-  $('#main').load(page);
-  $(this).set_state();
+  jQuery('#main').load(page);
+  jQuery(this).set_state();
 }
 
 // Set a given state in the menu
-$.fn.set_state = function setState() {
-  if ($(this).attr('id') == undefined) {
+jQuery.fn.set_state = function setState() {
+  if (jQuery(this).attr('id') == undefined) {
     return;
   }
-  var id = $(this).attr('id').substring(6);
-  $('#states').html($(this).attr('title') + ' <b class="caret"></b>');
-  $('.state').removeClass('open');
-  $(this).toggleClass('open');
+  var id = jQuery(this).attr('id').substring(6);
+  jQuery('#states').html(jQuery(this).attr('title') + ' <b class="caret"></b>');
+  jQuery('.state').removeClass('open');
+  jQuery(this).toggleClass('open');
   window.location.hash = '#' + id;
-  $('a.ifo-switch').each(function() {
-    var oldurl = $(this).attr('href');
+  jQuery('a.ifo-switch').each(function() {
+    var oldurl = jQuery(this).attr('href');
     var oldhash = oldurl.split('#')[1];
-    $(this).attr('href', oldurl.replace(oldhash, id));
+    jQuery(this).attr('href', oldurl.replace(oldhash, id));
   });
 }
 
@@ -136,37 +136,37 @@ function move_to_date(ev) {
 
 // fix width of fixed navbar
 function reset_width_on_resize() {
-  $('#nav').width($("#nav").width());
+  jQuery('#nav').width(jQuery("#nav").width());
 }
 
 // resize fancybox iframe to 'normal' proportions
 function resizeFancyboxIframe() {
-  var width = Math.min(1200, $(".fancybox-skin").width());
+  var width = Math.min(1200, jQuery(".fancybox-skin").width());
   var height = (width - 40) * 0.5;
   if (width > document.body.clientWidth ) {
-    $(".fancybox-iframe").width(width - 40);
+    jQuery(".fancybox-iframe").width(width - 40);
   } else {
-    $(".fancybox-iframe").width(width);
+    jQuery(".fancybox-iframe").width(width);
   }
-  $(".fancybox-wrap").width(width + 30);
+  jQuery(".fancybox-wrap").width(width + 30);
 
   // set heights as half width
-  $(".fancybox-iframe").height(parseInt($(".fancybox-iframe").width() * 0.5));
-  $(".fancybox-wrap").height(parseInt($(".fancybox-wrap").width() * 0.5));
+  jQuery(".fancybox-iframe").height(parseInt(jQuery(".fancybox-iframe").width() * 0.5));
+  jQuery(".fancybox-wrap").height(parseInt(jQuery(".fancybox-wrap").width() * 0.5));
 }
 
 // shorten date in calendar if very small screen
 function shortenDate() {
-  var $calendar = $('#calendar');
-  var date_ = moment($calendar.data('date'),
-                     $calendar.data('date-format').toUpperCase());
-  if ($calendar.html().startsWith('Calendar')) {  // don't break non-dates
+  var jQuerycalendar = jQuery('#calendar');
+  var date_ = moment(jQuerycalendar.data('date'),
+                     jQuerycalendar.data('date-format').toUpperCase());
+  if (jQuerycalendar.html().startsWith('Calendar')) {  // don't break non-dates
     return;
   }
-  if ($(document).width() < 400 ) {  // print shortened month name
-    $calendar.html(date_.format('MMM D YYYY'));
+  if (jQuery(document).width() < 400 ) {  // print shortened month name
+    jQuerycalendar.html(date_.format('MMM D YYYY'));
   } else {  // print full month name
-    $calendar.html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
+    jQuerycalendar.html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
   }
 }
 
@@ -174,16 +174,16 @@ function shortenDate() {
 /* Document ready and loaded                                                  */
 
 // When document is ready, run this stuff:
-$(window).load(function() {
+jQuery(window).load(function() {
 
   // shorten the date
-  if ($('#calendar').length){shortenDate();}
+  if (jQuery('#calendar').length){ shortenDate();}
 
   // define inter-IFO links
   var thisbase = document.getElementsByTagName('base')[0].href;
-  $('[data-new-base]').each(function() {
-    var newbase = $(this).data('new-base') + '/';
-    $(this).attr('href', window.location.href.replace(thisbase, newbase));
+  jQuery('[data-new-base]').each(function() {
+    var newbase = jQuery(this).data('new-base') + '/';
+    jQuery(this).attr('href', window.location.href.replace(thisbase, newbase));
   });
 
   // set 'today' location
@@ -201,6 +201,7 @@ $(window).load(function() {
 
   // define the calendar
   $('#calendar').datepicker({
+  jQuery('#calendar').datepicker({
     endDate: moment().utc().format('DD/MM/YYYY'),
     todayHighlight: true,
     todayBtn: "linked"
@@ -210,41 +211,43 @@ $(window).load(function() {
   if (location.hash.length > 1) {
     var hash = location.hash.substring(1);
     var path = location.pathname + hash + '.html';
-    $('#state_' + hash).load_state(path);
+    jQuery('#state_' + hash).load_state(path);
   }
 
   // load the fancybox
-  $(".fancybox").fancybox({nextEffect: 'none',
-                           prevEffect: 'none',
-                           width: 1200,
-                           iframe: {scrolling: 'no'},
-                           scrolling: 'no',
-                           beforeShow: function() {resizeFancyboxIframe()},
-                           helpers: {overlay: {locked: false},
-                                     title: {type: 'inside'}}
+  jQuery(".fancybox").fancybox({
+    nextEffect: 'none',
+    prevEffect: 'none',
+    width: 1200,
+    iframe: {scrolling: 'no'},
+    scrolling: 'no',
+    beforeShow: function() {resizeFancyboxIframe()},
+    helpers: {overlay: {locked: false},
+              title: {type: 'inside'}}
   });
 
   // custom fancybox for stamp-pem bokeh plot
-  $(".fancybox-stamp").fancybox({width: 1000,
-                                 height: 500,
-                                 showNavArrows: false,
-                                 padding: 0,
-                                 title: this.title,
-                                 href: $(this).attr('href'),
-                                 type: 'iframe'
+  jQuery(".fancybox-stamp").fancybox({
+    width: 1000,
+    height: 500,
+    showNavArrows: false,
+    padding: 0,
+    title: this.title,
+    href: jQuery(this).attr('href'),
+    type: 'iframe'
   });
 
   // reposition dropdown if too scrolling off the screen
-  $('.dropdown-toggle').on('click', function() {
+  jQuery('.dropdown-toggle').on('click', function() {
     // if page width is small, no-operation
-    if ($(document).width() < 992 ) {
+    if (jQuery(document).width() < 992) {
       return;
     }
     // otherwise add pull-right
-    var target = $(this).nextAll('.dropdown-menu');
-    var dropleft = $(this).offset().left;
+    var target = jQuery(this).nextAll('.dropdown-menu');
+    var dropleft = jQuery(this).offset().left;
     var dropwidth = target.width();
-    var left = $(window).width();
+    var left = jQuery(window).width();
     var offright = (dropleft + dropwidth > left);
     if (offright) {
       target.addClass('pull-right');
@@ -253,28 +256,35 @@ $(window).load(function() {
 
 });
 
-$(window).resize(function() {
+jQuery(window).resize(function() {
   // set short month date
-  if ($('#calendar').length){ shortenDate();}
+  if (jQuery('#calendar').length){ shortenDate();}
 });
 
 
 /* ------------------------------------------------------------------------- */
-/* HTML5 dialog elements                                                     */
+/* Dialog elements                                                           */
 
-function getDialog(id) {
-  var dialog = document.getElementById(id);
-  // register polyfill for new dialog element
-  dialogPolyfill.registerDialog(dialog);
-  return dialog;
-}
+jQuery(function() {
+  // set up dialog element
+  jQuery(".dialog").dialog({
+    autoOpen: false,
+    draggable: false,
+    height: 0.8 * jQuery(window).height(),
+    width: 0.9 * jQuery(window).width(),
+    modal: true,
+    show: true,
+    hide: true
+  });
 
-function showDialog(id) {
-  var dialog = getDialog(id);
-  dialog.showModal();
-}
+  // click outside to close dialog
+  jQuery("body").on('click', '.ui-widget-overlay', function() {
+    jQuery('.dialog').dialog('close');
+  });
 
-function closeDialog(id) {
-  var dialog = getDialog(id);
-  dialog.close();
-}
+  // open dialog
+  jQuery(".btn-open").click(function() {
+    var id = jQuery(this).data('id')
+    jQuery(id).dialog('open');
+  });
+});

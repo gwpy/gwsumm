@@ -2,39 +2,12 @@
  * gwsumm.scss - CSS extensions for bootstrap-ligo.css and gwdetchar.scss
  */
 
-dialog {
-	background-color: #fff;
-	border: 1px solid rgba(0, 0, 0, 0.3);
-	border-radius: 6px;
-	box-shadow: 0 3px 7px rgba(0, 0, 0, 0.8);
-	max-height: 80%;
-	max-width: 80%;
-	min-width: 60%;
-	overflow-y: scroll;
-	position: fixed;
-	top: 50%;
-	-ms-transform: translateY(-50%);
-	transform: translateY(-50%);
+.fancybox-bg {
+		background: #fff;
 }
 
-// native dialog
-dialog::backdrop {
-	background-color: rgba(0, 0, 0, 0.6);
-	bottom: 0;
-	left: 0;
-	position: fixed;
-	right: 0;
-	top: 0;
-}
-
-// polyfill dialog
-dialog+.backdrop {
-	background-color: rgba(0, 0, 0, 0.6);
-	bottom: 0;
-	left: 0;
-	position: fixed;
-	right: 0;
-	top: 0;
+.fancybox-is-open .fancybox-bg {
+		opacity: 1;
 }
 
 .footer {
@@ -91,6 +64,17 @@ dialog+.backdrop {
 	}
 }
 
+.ui-dialog {
+		position: fixed;
+		box-shadow: 0 3px 7px rgba(0, 0, 0, 0.8);
+		font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+		font-weight: 300;
+		h1, h2, h3, h4, h5, h6 {
+				font-family: 'Roboto', sans-serif;
+				font-weight: 400;
+		}
+}
+
 // detchar stuff
 #idq img,
 #upv img {
@@ -121,9 +105,7 @@ dialog+.backdrop {
 
 // help button
 #help-btn {
-	@media(min-width:992px) {
-		bottom: 80px;
-		padding-left: 16px;
-		padding-right: 16px;
-	}
+		@media(min-width:992px) {
+				bottom: 80px;
+		}
 }

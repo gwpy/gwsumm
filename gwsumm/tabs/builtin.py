@@ -423,7 +423,7 @@ class PlotTab(Tab):
         self.plots.append(plot)
 
     def scaffold_plots(self, plots=None, state=None, layout=None,
-                       aclass='fancybox plot', **fancyboxargs):
+                       aclass='fancybox', **fbkw):
         """Build a grid of plots using bootstrap's scaffolding.
 
         Returns
@@ -457,7 +457,9 @@ class PlotTab(Tab):
         while sum(list(zip(*layout))[0]) < len(plots):
             layout.append(layout[-1])
         k = i = 0
-        fancyboxargs.setdefault('data-fancybox-group', 1)
+        fbkw.setdefault('rel', 'fancybox')
+        fbkw.setdefault('target', '_blank')
+        fbkw.setdefault('data-fancybox-group', 'images')
 
         for j, plot in enumerate(plots):
             # start new row
@@ -478,19 +480,15 @@ class PlotTab(Tab):
                 colwidth = 12 // int(layout[k][0])
                 page.div(class_='col-md-%d' % colwidth)
             if plot.src.endswith('svg'):
-                fbkw = fancyboxargs.copy()
                 fbkw['data-fancybox-type'] = 'iframe'
                 page.a(href='%s?iframe' % plot.href.replace('.svg', '.html'),
                        class_=aclass, **fbkw)
             else:
-                fbkw = fancyboxargs.copy()
                 fbkw['title'] = plot.caption
                 page.a(href=plot.href, class_=aclass, **fbkw)
-            if plot.src.endswith('.pdf'):
-                page.img(class_='img-responsive',
-                         src=plot.src.replace('.pdf', '.png'))
-            else:
-                page.img(class_='img-responsive', src=plot.src)
+            src = plot.src.replace('.pdf', '.png') if (
+                plot.src.endswith('.pdf')) else plot.src
+            page.img(class_='img-responsive', src=src, alt=plot.src)
             page.a.close()
             page.div.close()
             # detect end of row

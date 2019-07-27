@@ -154,6 +154,5 @@ def test_dialog_box(tmpdir):
     with open(mdfile, 'w') as f:
         f.write(CONTENTS)
     box = html5.dialog_box(mdfile, 'Test', 'id', 'T')
-    print(box)
     assert parse_html(str(box)) == parse_html(DIALOG)
     shutil.rmtree(str(tmpdir), ignore_errors=True)

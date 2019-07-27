@@ -216,6 +216,7 @@ jQuery(window).load(function() {
 
   // load the fancybox
   jQuery(".fancybox").fancybox({
+    selector: '[data-fancybox-group="images"]',
     nextEffect: 'none',
     prevEffect: 'none',
     width: 1200,
@@ -236,6 +237,11 @@ jQuery(window).load(function() {
     href: jQuery(this).attr('href'),
     type: 'iframe'
   });
+
+  // custom tooltips
+  jQuery(".fancybox").tooltip();
+  jQuery(".fancybox-stamp").tooltip();
+  jQuery(".btn-float").tooltip();
 
   // reposition dropdown if too scrolling off the screen
   jQuery('.dropdown-toggle').on('click', function() {

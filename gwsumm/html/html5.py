@@ -75,7 +75,7 @@ def load_state(url):
     page = markup.page()
     page.script()
     page.add('if (location.hash.length <= 1) {')
-    page.add('    $("#state_%s").load_state("%s");' % (id_, url))
+    page.add('    jQuery("#state_%s").load_state("%s");' % (id_, url))
     page.add('}')
     page.script.close()
     return page
@@ -87,7 +87,7 @@ def load(url, id_='main', error=False, success=None):
     """
     ps = urlparse(url)
     if not ps.netloc and not error:
-        return markup.given_oneliner.script('$("#%s").load("%s");'
+        return markup.given_oneliner.script('jQuery("#%s").load("%s");'
                                             % (id_, url))
     elif ps.netloc and not error:
         error = ('alert("Cannot load content from %r, use browser console '
@@ -95,13 +95,13 @@ def load(url, id_='main', error=False, success=None):
     else:
         if not isinstance(error, (str, markup.page)):
             error = 'Failed to load content from %r' % url
-        error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
+        error = ('jQuery("#%s").html("<div class=\'alert alert-warning\'>'
                  '<p>%s</p></div>");' % (id_, error))
     if success is None:
-        success = '$("#%s").html(data);' % id_
+        success = 'jQuery("#%s").html(data);' % id_
     url = _expand_path(url)
     return markup.given_oneliner.script("""
-    $.ajax({
+    jQuery.ajax({
         url : '%s',
         type : 'GET',
         success: function(data, statusText, jqhxr){%s},

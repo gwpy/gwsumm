@@ -75,32 +75,6 @@ function stepDate(step) {
   }
 }
 
-// Load a given 'state'
-jQuery.fn.load_state = function loadState(page) {
-  if (jQuery(this).attr('id') == undefined) {
-    return;
-  }
-  jQuery('#main').load(page);
-  jQuery(this).set_state();
-}
-
-// Set a given state in the menu
-jQuery.fn.set_state = function setState() {
-  if (jQuery(this).attr('id') == undefined) {
-    return;
-  }
-  var id = jQuery(this).attr('id').substring(6);
-  jQuery('#states').html(jQuery(this).attr('title') + ' <b class="caret"></b>');
-  jQuery('.state').removeClass('open');
-  jQuery(this).toggleClass('open');
-  window.location.hash = '#' + id;
-  jQuery('a.ifo-switch').each(function() {
-    var oldurl = jQuery(this).attr('href');
-    var oldhash = oldurl.split('#')[1];
-    jQuery(this).attr('href', oldurl.replace(oldhash, id));
-  });
-}
-
 // Move to the date selected
 function move_to_date(ev) {
   var url = window.location.href;
@@ -134,10 +108,23 @@ function move_to_date(ev) {
   window.location = newurl;
 }
 
-// fix width of fixed navbar
-function reset_width_on_resize() {
-  jQuery('#nav').width(jQuery("#nav").width());
+// shorten date in calendar if very small screen
+function shortenDate() {
+  var $calendar = jQuery('#calendar');
+  var date_ = moment($calendar.data('date'),
+                     $calendar.data('date-format').toUpperCase());
+  if ($calendar.html().startsWith('Calendar')) {  // don't break non-dates
+    return;
+  }
+  if (jQuery(document).width() < 400 ) {  // print shortened month name
+    $calendar.html(date_.format('MMM D YYYY'));
+  } else {  // print full month name
+    $calendar.html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
+  }
 }
+
+/* ------------------------------------------------------------------------- */
+/* Fancybox images                                                           */
 
 // resize fancybox iframe to 'normal' proportions
 function resizeFancyboxIframe() {
@@ -155,23 +142,42 @@ function resizeFancyboxIframe() {
   jQuery(".fancybox-wrap").height(parseInt(jQuery(".fancybox-wrap").width() * 0.5));
 }
 
-// shorten date in calendar if very small screen
-function shortenDate() {
-  var jQuerycalendar = jQuery('#calendar');
-  var date_ = moment(jQuerycalendar.data('date'),
-                     jQuerycalendar.data('date-format').toUpperCase());
-  if (jQuerycalendar.html().startsWith('Calendar')) {  // don't break non-dates
+/* ------------------------------------------------------------------------- */
+/* Navbar actions                                                            */
+
+// Load a given 'state'
+jQuery.fn.load_state = function loadState(page) {
+  if (jQuery(this).attr('id') == undefined) {
     return;
   }
-  if (jQuery(document).width() < 400 ) {  // print shortened month name
-    jQuerycalendar.html(date_.format('MMM D YYYY'));
-  } else {  // print full month name
-    jQuerycalendar.html(' ' + date_.format('MMMM D YYYY') + ' <b class="caret"></b>');
+  jQuery('#main').load(page);
+  jQuery(this).set_state();
+}
+
+// Set a given state in the menu
+jQuery.fn.set_state = function setState() {
+  if (jQuery(this).attr('id') == undefined) {
+    return;
   }
+  var id = jQuery(this).attr('id').substring(6);
+  jQuery('#states').html(jQuery(this).attr('title') + ' <b class="caret"></b>');
+  jQuery('.state').removeClass('open');
+  jQuery(this).toggleClass('open');
+  window.location.hash = '#' + id;
+  jQuery('a.ifo-switch').each(function() {
+    var oldurl = jQuery(this).attr('href');
+    var oldhash = oldurl.split('#')[1];
+    jQuery(this).attr('href', oldurl.replace(oldhash, id));
+  });
+}
+
+// Fix width of fixed navbar
+function reset_width_on_resize() {
+  jQuery('#nav').width(jQuery("#nav").width());
 }
 
 /* ------------------------------------------------------------------------- */
-/* Document ready and loaded                                                  */
+/* Document ready and loaded                                                 */
 
 // When document is ready, run this stuff:
 jQuery(window).load(function() {
@@ -243,7 +249,7 @@ jQuery(window).load(function() {
   jQuery(".fancybox-stamp").tooltip();
   jQuery(".btn-float").tooltip();
 
-  // reposition dropdown if too scrolling off the screen
+  // reposition dropdown if scrolling off the screen
   jQuery('.dropdown-toggle').on('click', function() {
     // if page width is small, no-operation
     if (jQuery(document).width() < 992) {
@@ -260,18 +266,6 @@ jQuery(window).load(function() {
     }
   });
 
-});
-
-jQuery(window).resize(function() {
-  // set short month date
-  if (jQuery('#calendar').length){ shortenDate();}
-});
-
-
-/* ------------------------------------------------------------------------- */
-/* Dialog elements                                                           */
-
-jQuery(function() {
   // set up dialog element
   jQuery(".dialog").dialog({
     autoOpen: false,
@@ -293,4 +287,10 @@ jQuery(function() {
     var id = jQuery(this).data('id')
     jQuery(id).dialog('open');
   });
+
+});
+
+jQuery(window).resize(function() {
+  // set short month date
+  if (jQuery('#calendar').length){ shortenDate();}
 });

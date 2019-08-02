@@ -79,6 +79,10 @@ DIALOG = ('<dialog id="id">\n<a title="Close" '
 
 # test utilities
 
+def test_expand_path(tmpdir):
+    assert html5._expand_path(URL) == URL
+
+
 def test_load_state():
     state = html5.load_state('test')
     assert parse_html(str(state)) == parse_html(

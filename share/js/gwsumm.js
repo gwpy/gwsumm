@@ -187,18 +187,16 @@ $(window).load(function() {
   });
 
   // set 'today' location
-  Site.Calendar = function() {
-    $.datepicker._gotoToday = function(id) {
-      var dateformat = findDateFormat();
-      var tday = moment().utc();
-      if (dateformat == 'day') {
-        move_to_date({type: 'changeDate', date: tday});
-      } else if (dateformat == 'month') {
-        move_to_date({type: 'changeMonth', date: tday});
-      } else if (dateformat == 'year') {
-        move_to_date({type: 'changeYear', date: tday});
-      }
-    };
+  $.datepicker._gotoToday = function(id) {
+    var dateformat = findDateFormat();
+    var tday = moment().utc();
+    if (dateformat == 'day') {
+      move_to_date({type: 'changeDate', date: tday});
+    } else if (dateformat == 'month') {
+      move_to_date({type: 'changeMonth', date: tday});
+    } else if (dateformat == 'year') {
+      move_to_date({type: 'changeYear', date: tday});
+    }
   };
 
   // define the calendar

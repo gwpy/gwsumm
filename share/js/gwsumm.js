@@ -176,6 +176,9 @@ function shortenDate() {
 // When document is ready, run this stuff:
 $(window).load(function() {
 
+  // set default timezone
+  moment.tz.setDefault('Etc/UTC');
+
   // shorten the date
   if ($('#calendar').length){ shortenDate();}
 
@@ -188,7 +191,7 @@ $(window).load(function() {
 
   // define the calendar
   $('#calendar').datepicker({
-    weekStart: 1,
+    weekStart: 0,
     endDate: moment().utc().format('DD/MM/YYYY'),
     todayHighlight: true,
     todayBtn: "linked"

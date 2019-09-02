@@ -177,7 +177,7 @@ function shortenDate() {
 $(window).load(function() {
 
   // shorten the date
-  if ($('#calendar').length){ shortenDate();}
+  if ($('#calendar').length){shortenDate();}
 
   // define inter-IFO links
   var thisbase = document.getElementsByTagName('base')[0].href;
@@ -186,9 +186,21 @@ $(window).load(function() {
     $(this).attr('href', window.location.href.replace(thisbase, newbase));
   });
 
+  // set 'today' location
+  $.datepicker._gotoToday = function(id) {
+    var dateformat = findDateFormat();
+    var tday = moment().utc();
+    if (dateformat == 'day') {
+      move_to_date({type: 'changeDate', date: tday});
+    } else if (dateformat == 'month') {
+      move_to_date({type: 'changeMonth', date: tday});
+    } else if (dateformat == 'year') {
+      move_to_date({type: 'changeYear', date: tday});
+    }
+  };
+
   // define the calendar
   $('#calendar').datepicker({
-    weekStart: 1,
     endDate: moment().utc().format('DD/MM/YYYY'),
     todayHighlight: true,
     todayBtn: "linked"

@@ -40,7 +40,7 @@ JS = OrderedDict((
     ('bootstrap', JS_FILES[1]),
     ('fancybox', JS_FILES[2]),
     ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-                   '1.6.0/js/bootstrap-datepicker.min.js'),
+                   '1.9.0/js/bootstrap-datepicker.min.js'),
     ('bootstrap-ligo', JS_FILES[3]),
     ('gwdetchar', JS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
@@ -54,7 +54,7 @@ CSS = OrderedDict((
     ('fancybox', CSS_FILES[1]),
     ('google-fonts', CSS_FILES[2]),
     ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-                   '1.6.0/css/bootstrap-datepicker.min.css'),
+                   '1.9.0/css/bootstrap-datepicker.min.css'),
     ('bootstrap-ligo', CSS_FILES[3]),
     ('gwdetchar', CSS_FILES[4]),
     ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),

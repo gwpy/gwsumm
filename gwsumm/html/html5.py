@@ -24,7 +24,7 @@ import os.path
 try:
     from pathlib2 import Path
 except ImportError:  # python >= 3.6
-    # NOTE: we do it this was around because pathlib exists for py35,
+    # NOTE: we do it this way around because pathlib exists for py35,
     #       but doesn't work very well
     from pathlib import Path
 

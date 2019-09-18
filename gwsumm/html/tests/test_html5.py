@@ -79,7 +79,7 @@ DIALOG = ('<dialog id="id">\n<a title="Close" '
 
 # test utilities
 
-def test_expand_path(tmpdir):
+def test_expand_path():
     assert html5._expand_path(URL) == URL
 
 

@@ -19,7 +19,14 @@
 """HTML5 specific extensions
 """
 
+import re
 import os.path
+try:
+    from pathlib2 import Path
+except ImportError:  # python >= 3.6
+    # NOTE: we do it this way around because pathlib exists for py35,
+    #       but doesn't work very well
+    from pathlib import Path
 
 from urllib.parse import urlparse
 
@@ -27,6 +34,15 @@ from MarkupPy import markup
 from markdown import markdown
 
 DOCTYPE = '<!DOCTYPE html>'
+
+
+def _expand_path(path):
+    """Expand a server path that may contain symbolic links
+    """
+    subbed = Path(re.sub(r'^/\~(.*?)/', r'/home/\1/public_html/', path))
+    resolved = subbed.resolve() if subbed.exists() else subbed
+    return re.sub(r'^/home/(.*?)/public_html/', r'/~\1/',
+                  str(resolved) if resolved.exists() else path)
 
 
 def load_state(url):
@@ -73,6 +89,7 @@ def load(url, id_='main', error=False, success=None):
                  '<p>%s</p></div>");' % (id_, error))
     if success is None:
         success = '$("#%s").html(data);' % id_
+    url = _expand_path(url)
     return markup.given_oneliner.script("""
     $.ajax({
         url : '%s',

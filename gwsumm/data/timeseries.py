@@ -87,7 +87,7 @@ FRAMETYPE_REGEX = {
 }
 
 # list of GWF frametypes that contain only ADC channels
-#     allows big memory/time savings when reading with frameCPP
+# (allows big memory/time savings when reading with frameCPP)
 try:
     GWF_API = get_default_gwf_api()
 except ImportError:
@@ -99,6 +99,7 @@ ADC_TYPES = {
     'T', 'M',  # old LIGO trend types
     'H1_R', 'H1_C', 'L1_R', 'L1_C',  # new LIGO raw and commissioning types
     'H1_T', 'H1_M', 'L1_T', 'L1_M',  # new LIGO trend types
+    'K1_R', 'K1_C', 'K1_T', 'K1_M',  # KAGRA commissioning and trend types
     'raw',  # Virgo raw type
 }
 

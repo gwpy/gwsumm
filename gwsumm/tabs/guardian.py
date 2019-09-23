@@ -308,6 +308,8 @@ class GuardianTab(DataTab):
                 localzone = tz.gettz('America/Los_Angeles')
             elif self.ifo in ['L1']:
                 localzone = tz.gettz('America/Chicago')
+            elif self.ifo in ['K1']:
+                localzone = tz.gettz('Asia/Tokyo')
             else:
                 localzone = tz.gettz('Europe/Berlin')
             for t, from_, to_ in self.transitions[bit]:

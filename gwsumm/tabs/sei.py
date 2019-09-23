@@ -346,6 +346,8 @@ class SEIWatchDogTab(base):
             localzone = tz.gettz('America/Los_Angeles')
         elif self.ifo in ['L1']:
             localzone = tz.gettz('America/Chicago')
+        elif self.ifo in ['K1']:
+            localzone = tz.gettz('Asia/Tokyo')
         else:
             localzone = tz.gettz('Europe/Berlin')
         headers = ['GPS time', 'UTC time', 'Local time', 'Chamber', 'Trigger',

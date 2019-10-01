@@ -465,7 +465,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
     """
     # separate channels by type
     if query:
-        if frametype is not None or cache is not None:
+        if frametype is not None:
             frametypes = {(None, frametype): channels}
         else:
             frametypes = dict()
@@ -475,7 +475,8 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
             for channel in allchannels:
                 channel = get_channel(channel)
                 ifo = channel.ifo
-                ftype = find_frame_type(channel)
+                ftype = (None if cache and not channel.frametype
+                         else find_frame_type(channel))
                 id_ = (ifo, ftype)
                 if id_ in frametypes:
                     frametypes[id_].append(channel)

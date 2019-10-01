@@ -181,12 +181,14 @@ class GraceDbTab(get_tab('default')):
                     )[:-3])
                     continue
                 elif col.lower() == 'dqr' and 'superevent_id' in event:
+                    page.td()
                     sid = event['superevent_id']
                     href = ('{0}/apiweb/superevents/{1}/files/'
                             'dqr.html'.format(self.url, sid))
                     title = 'Data-quality report for {}'.format(sid)
                     page.a('DQR', title=title, href=href, target='_blank',
                            rel='external', class_='btn btn-info btn-xs')
+                    page.td.close()
                     continue
                 try:
                     v = event[col]
@@ -220,7 +222,7 @@ class GraceDbTab(get_tab('default')):
         else:
             page.button(
                 'Export to CSV', class_='btn btn-default btn-table',
-                onclick='exportTableToCSV('{name}.csv', '{name}')'.format(
+                onclick="exportTableToCSV('{name}.csv', '{name}')".format(
                     name='gracedb'))
         page.div.close()  # scaffold well
 

@@ -476,7 +476,7 @@ def get_timeseries_dict(channels, segments, config=GWSummConfigParser(),
                 channel = get_channel(channel)
                 ifo = channel.ifo
                 ftype = (None if cache and not channel.frametype
-                        else find_frame_type(channel))
+                         else find_frame_type(channel))
                 id_ = (ifo, ftype)
                 if id_ in frametypes:
                     frametypes[id_].append(channel)

@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>
 
-"""Custom `SummaryTab` for the output of the FScan algorithm.
+"""Custom `SummaryTab` to display events queried from the Gravitational-wave
+Candidate Event Database (GraceDb)
 """
 
 from collections import OrderedDict
@@ -61,7 +62,7 @@ class GraceDbTab(get_tab('default')):
                  **kwargs):
         super(GraceDbTab, self).__init__(name, **kwargs)
         self.url = url
-        self.query = "{} {} .. {}".format(
+        self.query = '{} {} .. {}'.format(
             query,
             int(self.start),
             int(self.end),
@@ -102,30 +103,31 @@ class GraceDbTab(get_tab('default')):
             raise
         # query gracedb
         service_url = '%s/api/' % self.url
-        connection = GraceDb(service_url=service_url)
-        vprint("Connected to gracedb at %s\n" % service_url)
+        self.connection = GraceDb(service_url=service_url)
+        self.exception = HTTPError
+        vprint('Connected to gracedb at %s\n' % service_url)
         try:
-            self.events[None] = list(connection.superevents(self.query))
-            self._query_type = "S"
-        except HTTPError:
-            self.events[None] = list(connection.events(self.query))
-            event_method = connection.event
-            eventid_name = "graceid"
-            self._query_type = "E"
+            self.events[None] = list(self.connection.superevents(self.query))
+            self._query_type = 'S'
+        except self.exception:
+            self.events[None] = list(self.connection.events(self.query))
+            event_method = self.connection.event
+            eventid_name = 'graceid'
+            self._query_type = 'E'
         else:
-            event_method = connection.superevent
-            eventid_name = "superevent_id"
+            event_method = self.connection.superevent
+            eventid_name = 'superevent_id'
             for event in self.events[None]:  # get preferred event parameters
-                event.update(connection.event(
-                    event["preferred_event"],
+                event.update(self.connection.event(
+                    event['preferred_event'],
                 ).json())
-        vprint("Recovered %d events for query %r\n"
+        vprint('Recovered %d events for query %r\n'
                % (len(self.events[None]), self.query))
         if 'labels' in self.columns:
             for e in self.events[None]:
                 e['labels'] = ', '.join(event_method(
                     e[eventid_name]).json()['labels'])
-            vprint("Downloaded labels\n")
+            vprint('Downloaded labels\n')
         return super(GraceDbTab, self).process(config=config, **kwargs)
 
     def process_state(self, state, **kwargs):
@@ -135,7 +137,7 @@ class GraceDbTab(get_tab('default')):
         reverse = self.rank not in ['gpstime', 'far']
         self.events[str(state)].sort(key=lambda x: x[self.rank],
                                      reverse=reverse)
-        vprint("    Selected %d events\n" % len(self.events[str(state)]))
+        vprint('    Selected %d events\n' % len(self.events[str(state)]))
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `GraceDbTab`.
@@ -164,7 +166,7 @@ class GraceDbTab(get_tab('default')):
             else:
                 for ctx, labels in LABELS.items():
                     if (
-                            ctx == "success" and labs.union(labels) == labs or
+                            ctx == 'success' and labs.union(labels) == labs or
                             labs.intersection(labels)
                     ):
                         context = ctx
@@ -180,6 +182,26 @@ class GraceDbTab(get_tab('default')):
                         '%B %d %Y %H:%M:%S.%f',
                     )[:-3])
                     continue
+                elif col.lower() == 'dqr' and 'superevent_id' in event:
+                    page.td()
+                    sid = event['superevent_id']
+                    href = ('{0}/apiweb/superevents/{1}/files/'
+                            'dqr.html'.format(self.url, sid))
+                    try:
+                        self.connection.get(href)
+                    except self.exception:
+                        page.p('&mdash;')
+                    else:
+                        title = 'Data-quality report for {}'.format(sid)
+                        page.a('DQR', title=title, href=href, target='_blank',
+                               rel='external', class_='btn btn-info btn-xs')
+                    page.td.close()
+                    continue
+                elif col.lower() == 'dqr':
+                    page.td()
+                    page.p('&mdash;')
+                    page.td.close()
+                    continue
                 try:
                     v = event[col]
                 except KeyError:
@@ -189,25 +211,26 @@ class GraceDbTab(get_tab('default')):
                     except (KeyError, AssertionError):
                         page.td('-')
                         continue
-                if col in ("graceid", "superevent_id", "preferred_event"):
+                if col in ('graceid', 'superevent_id', 'preferred_event'):
                     page.td()
-                    tag = "superevents" if col == "superevent_id" else "events"
+                    tag = 'superevents' if col == 'superevent_id' else 'events'
                     href = '{}/{}/view/{}'.format(self.url, tag, v)
-                    title = "GraceDB {} page for {}".format(tag[:-1], v)
+                    title = 'GraceDB {} page for {}'.format(tag[:-1], v)
                     page.a(v, title=title, href=href, target='_blank',
-                           rel='external', class_="btn btn-info btn-xs")
+                           rel='external', class_='btn btn-info btn-xs')
                     page.td.close()
-                elif col not in ("gpstime", "t_0") and isinstance(v, float):
+                elif col not in ('gpstime', 't_0') and isinstance(v, float):
                     page.td('%.3g' % v)
-                elif col == "labels":
-                    page.td(", ".join(['<samp>%s</samp>' % l for l in sorted(labs)]))
+                elif col == 'labels':
+                    page.td(', '.join(
+                        ['<samp>%s</samp>' % l for l in sorted(labs)]))
                 else:
                     page.td(str(v))
             page.tr.close()
         page.tbody.close()
         page.table.close()
         if len(self.events[str(state)]) == 0:
-            page.p("No events were recovered for this state.")
+            page.p('No events were recovered for this state.')
         else:
             page.button(
                 'Export to CSV', class_='btn btn-default btn-table',
@@ -216,26 +239,26 @@ class GraceDbTab(get_tab('default')):
         page.div.close()  # scaffold well
 
         # query doc
-        qurl = "{}/search/?query={}&query_type={}&results_format=S".format(
+        qurl = '{}/search/?query={}&query_type={}&results_format=S'.format(
             self.url,
-            self.query.replace(" ", "+"),
-            getattr(self, "_query_type", "E"),
+            self.query.replace(' ', '+'),
+            getattr(self, '_query_type', 'E'),
         )
         qlink = markup.oneliner.a(
-            "here",
+            'here',
             href=qurl,
-            target="_blank",
+            target='_blank',
         )
-        page.p("The above table was generated from a query to {} with the "
-               "form <code>{}</code>. To view the results of the same query "
-               "via the GraceDB web interface, click {}.".format(
+        page.p('The above table was generated from a query to {} with the '
+               'form <code>{}</code>. To view the results of the same query '
+               'via the GraceDB web interface, click {}.'.format(
                    self.url, self.query, qlink),
         )
 
         # reference the labelling
-        page.h4("Labelling reference")
-        page.p("Events in the above table may have a context based on "
-               "its labels as follows:")
+        page.h4('Labelling reference')
+        page.p('Events in the above table may have a context based on '
+               'its labels as follows:')
         for c, labels in LABELS.items():
             labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
             page.p(labstr, class_='bg-%s' % c, style='width: auto;')

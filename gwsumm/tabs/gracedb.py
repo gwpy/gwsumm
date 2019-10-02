@@ -102,21 +102,21 @@ class GraceDbTab(get_tab('default')):
             raise
         # query gracedb
         service_url = '%s/api/' % self.url
-        connection = GraceDb(service_url=service_url)
+        self.connection = GraceDb(service_url=service_url)
         vprint('Connected to gracedb at %s\n' % service_url)
         try:
-            self.events[None] = list(connection.superevents(self.query))
+            self.events[None] = list(self.connection.superevents(self.query))
             self._query_type = 'S'
         except HTTPError:
-            self.events[None] = list(connection.events(self.query))
-            event_method = connection.event
+            self.events[None] = list(self.connection.events(self.query))
+            event_method = self.connection.event
             eventid_name = 'graceid'
             self._query_type = 'E'
         else:
-            event_method = connection.superevent
+            event_method = self.connection.superevent
             eventid_name = 'superevent_id'
             for event in self.events[None]:  # get preferred event parameters
-                event.update(connection.event(
+                event.update(self.connection.event(
                     event['preferred_event'],
                 ).json())
         vprint('Recovered %d events for query %r\n'
@@ -185,9 +185,19 @@ class GraceDbTab(get_tab('default')):
                     sid = event['superevent_id']
                     href = ('{0}/apiweb/superevents/{1}/files/'
                             'dqr.html'.format(self.url, sid))
-                    title = 'Data-quality report for {}'.format(sid)
-                    page.a('DQR', title=title, href=href, target='_blank',
-                           rel='external', class_='btn btn-info btn-xs')
+                    try:
+                        self.connection.get(href)
+                    except HTTPError:
+                        page.p('&mdash;')
+                    else:
+                        title = 'Data-quality report for {}'.format(sid)
+                        page.a('DQR', title=title, href=href, target='_blank',
+                               rel='external', class_='btn btn-info btn-xs')
+                    page.td.close()
+                    continue
+                elif col.lower() == 'dqr':
+                    page.td()
+                    page.p('&mdash;')
                     page.td.close()
                     continue
                 try:

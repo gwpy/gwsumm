@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with GWSumm.  If not, see <http://www.gnu.org/licenses/>
 
-"""Custom `SummaryTab` for the output of the FScan algorithm.
+"""Custom `SummaryTab` to display events queried from the Gravitational-wave
+Candidate Event Database (GraceDb)
 """
 
 from collections import OrderedDict
@@ -103,11 +104,12 @@ class GraceDbTab(get_tab('default')):
         # query gracedb
         service_url = '%s/api/' % self.url
         self.connection = GraceDb(service_url=service_url)
+        self.exception = HTTPError
         vprint('Connected to gracedb at %s\n' % service_url)
         try:
             self.events[None] = list(self.connection.superevents(self.query))
             self._query_type = 'S'
-        except HTTPError:
+        except self.exception:
             self.events[None] = list(self.connection.events(self.query))
             event_method = self.connection.event
             eventid_name = 'graceid'
@@ -187,7 +189,7 @@ class GraceDbTab(get_tab('default')):
                             'dqr.html'.format(self.url, sid))
                     try:
                         self.connection.get(href)
-                    except HTTPError:
+                    except self.exception:
                         page.p('&mdash;')
                     else:
                         title = 'Data-quality report for {}'.format(sid)

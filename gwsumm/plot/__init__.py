@@ -47,14 +47,12 @@ from .registry import (
     get_plot,
 )
 from .utils import (
-    rcParams,
     get_column_label,
     get_column_string,
     usetex_tex,
     hash,
 )
 from .core import (
-    rcParams,
     format_label,
     SummaryPlot,
     DataPlot,
@@ -75,7 +73,6 @@ from .builtin import (
     RayleighSpectrumDataPlot,
 )
 from .segments import (
-    rcParams,
     tint_hex,
     common_limits,
     SegmentDataPlot,

@@ -69,7 +69,7 @@ And that's it.
 
  ### Testing
 
- GWSumm has a fairly complete test suite, covering over 90% of the codebase.
+ GWSumm has a relatively incomplete test suite, covering less than 40% of the codebase.
  All code contributions should be accompanied by (unit) tests to be executed with
  [`pytest`](https://docs.pytest.org/en/latest/), and should cover
  all new or modified lines.

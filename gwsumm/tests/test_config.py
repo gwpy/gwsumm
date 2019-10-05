@@ -126,8 +126,6 @@ class TestGWSummConfigParser(object):
         TEST_CONFIG.seek(0)
         copy = self.PARSER.from_configparser(cp)
         assert isinstance(copy, self.PARSER)
-        print(list(copy.sections()))
-        print(list(cnfg.sections()))
         assert_configparser_equal(copy, cnfg)
 
     def test_interpolate_section_names(self, cnfg):
@@ -247,7 +245,6 @@ class TestGWSummConfigParser(object):
         cp.add_section('html')
         cp.set('html', 'bootstrap-css', 'test.css')
         css = cp.get_css()
-        print(css)
         assert 'test.css' in css
         assert html.get_css()['bootstrap'] not in css
 

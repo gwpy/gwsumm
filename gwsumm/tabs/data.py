@@ -48,11 +48,11 @@ from gwpy.utils.mp import multiprocess_with_queues
 from gwdetchar.io import html as gwhtml
 
 from .. import (globalv, html)
-from ..channels import (re_channel,
+from ..channels import (re_channel, get_channel,
                         split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
 from ..mode import (Mode, get_mode)
-from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
+from ..data import (get_timeseries_dict, get_spectrograms,
                     get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
 from ..data.utils import get_fftparams
 from ..plot import (rcParams, get_plot)

@@ -33,7 +33,7 @@ from .html5 import (
     load_state,
     load,
     comments_box,
-    ldvw_scan,
+    ldvw_qscan,
     dialog_box,
 )
 from .bootstrap import (

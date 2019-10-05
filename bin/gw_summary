@@ -34,8 +34,8 @@ options acceptable for each mode.
 from gwpy import time
 from gwpy.time import _tconvert
 from glue.lal import LIGOTimeGPS
-time.LIGOTimeGPS = LIGOTimeGPS
-_tconvert.LIGOTimeGPS = LIGOTimeGPS
+time.LIGOTimeGPS = LIGOTimeGPS  # noqa
+_tconvert.LIGOTimeGPS = LIGOTimeGPS  # noqa
 
 import argparse
 import calendar
@@ -55,7 +55,7 @@ from dateutil.relativedelta import relativedelta
 
 # set matplotlib backend
 from matplotlib import use
-use('Agg')
+use('Agg')  # noqa
 
 from glue.lal import Cache
 
@@ -236,6 +236,7 @@ popts.add_argument('--segment-cache', action='append', default=[],
                    help='path to LAL-format cache of state or data-quality '
                         'segment files')
 
+
 # ----------------------------------------------------------------------------
 # Define sub-parsers
 
@@ -287,6 +288,7 @@ def add_archive_options(parser_):
                         "used, if given with no file tag, a default of "
                         "'%(const)s' will be used.")
 
+
 # define sub-parser handler
 subparsers = parser.add_subparsers(
     dest='mode', title='Modes',
@@ -315,8 +317,8 @@ darchopts = subparser['day'].add_argument_group('Archive options',
                                                 'archive data from this run')
 darchopts.add_argument('-a', '--archive', metavar='FILE_TAG',
                        default=False, const='GW_SUMMARY_ARCHIVE', nargs='?',
-                       help="Read archived data from, and write processed data "
-                            "to, an HDF archive file written with the "
+                       help="Read archived data from, and write processed "
+                            "data to, an HDF archive file written with the "
                             "FILE_TAG. If not given, no archive will be used, "
                             "if given with no file tag, a default of "
                             "'%(const)s' will be used.")
@@ -357,8 +359,8 @@ garchopts = subparser['gps'].add_argument_group('Archive options',
                                                 'archive data from this run')
 garchopts.add_argument('-a', '--archive', metavar='FILE_TAG',
                        default=False, const='GW_SUMMARY_ARCHIVE', nargs='?',
-                       help="Read archived data from, and write processed data "
-                            "to, an HDF archive file written with the "
+                       help="Read archived data from, and write processed "
+                            "data to, an HDF archive file written with the "
                             "FILE_TAG. If not given, no archive will be used, "
                             "if given with no file tag, a default of "
                             "'%(const)s' will be used.")
@@ -375,14 +377,13 @@ if opts.debug:
 
 # set verbose output options
 globalv.VERBOSE = opts.verbose
-#globalv.PROFILE = opts.verbose
 
 # find all config files
 opts.config_file = [os.path.expanduser(fp) for csv in opts.config_file for
                     fp in csv.split(',')]
 
 # check segdb option
-if not opts.on_segdb_error in ['raise', 'warn', 'ignore']:
+if opts.on_segdb_error not in ['raise', 'warn', 'ignore']:
     parser.error("Invalid option --on-segdb-error='%s'" % opts.on_segdb_error)
 
 # read configuration file
@@ -439,11 +440,11 @@ except ValueError:
 # set LAL FFT plan wisdom level
 duration = min(globalv.NOW, opts.gpsend) - opts.gpsstart
 if duration > 200000:
-     fft_lal.LAL_FFTPLAN_LEVEL = 3
+    fft_lal.LAL_FFTPLAN_LEVEL = 3
 elif duration > 40000:
-     fft_lal.LAL_FFTPLAN_LEVEL = 2
+    fft_lal.LAL_FFTPLAN_LEVEL = 2
 else:
-     fft_lal.LAL_FFTPLAN_LEVEL = 1
+    fft_lal.LAL_FFTPLAN_LEVEL = 1
 
 # set global html only flag
 if opts.html_only:
@@ -528,7 +529,7 @@ if opts.archive:
     mkdir(archivedir)
     opts.archive = os.path.join(archivedir, '%s-%s-%d-%d.h5'
                                 % (ifo, opts.archive, opts.gpsstart,
-                                        opts.gpsend - opts.gpsstart))
+                                   opts.gpsend - opts.gpsstart))
     if os.path.isfile(opts.archive):
         archives.append(opts.archive)
     else:
@@ -594,7 +595,7 @@ else:
 # get link to issues report page
 try:
     issues = config.get('html', 'issues')
-except:
+except KeyError:
     issues = True
 
 # write 404 error page

@@ -35,6 +35,16 @@ from markdown import markdown
 
 DOCTYPE = '<!DOCTYPE html>'
 
+COMMENTS_JS = """
+        (function() {
+            var dsq = document.createElement('script');
+            dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] ||
+             document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+"""
+
 
 def _expand_path(path):
     """Expand a server path that may contain symbolic links
@@ -112,15 +122,7 @@ def comments_box(name, identifier=None, title=None, url=None):
         page.add('    var disqus_title = "%s";' % title)
     if url:
         page.add('    var disqus_url = "%s";' % url)
-    page.add("""
-        (function() {
-            var dsq = document.createElement('script');
-            dsq.type = 'text/javascript'; dsq.async = true;
-            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-            (document.getElementsByTagName('head')[0] ||
-             document.getElementsByTagName('body')[0]).appendChild(dsq);
-        })();
-    """)
+    page.add(COMMENTS_JS)
     page.script.close()
     page.noscript("Please enable JavaScript to view the")
     page.a("comments powered by Disqus",

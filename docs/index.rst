@@ -46,7 +46,7 @@ Contributing
 ============
 
 All code should follow the Python Style Guide outlined in `PEP 0008`_;
-users can use the `pep8`_ package to check their code for style issues
+users can use the `flake8`_ package to check their code for style issues
 before submitting.
 
 See `the contributions guide`_ for the recommended procedure for
@@ -81,7 +81,7 @@ GWSumm is distributed under the `GNU General Public License`_.
    api/index
 
 .. _PEP 0008: https://www.python.org/dev/peps/pep-0008/
-.. _pep8: https://pypi.python.org/pypi/pep8
+.. _flake8: http://flake8.pycqa.org
 .. _the contributions guide: https://github.com/gwpy/gwsumm/blob/master/CONTRIBUTING.md
 .. _conda: https://conda.io
 .. _pip: https://pip.pypa.io/en/stable/

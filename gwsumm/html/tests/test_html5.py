@@ -56,7 +56,7 @@ BOX = """<div id="disqus_thread">
             (document.getElementsByTagName('head')[0] ||
              document.getElementsByTagName('body')[0]).appendChild(dsq);
         })();
-    
+
 </script>
 <noscript>Please enable JavaScript to view the</noscript>
 <a href="https://disqus.com/?ref_noscript">comments powered by Disqus</a>

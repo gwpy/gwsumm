@@ -27,7 +27,6 @@ a workflow to be submitted via the HTCondor scheduler
 import argparse
 import os
 import shutil
-from multiprocessing import cpu_count
 
 from gwdatafind.utils import find_credential
 
@@ -110,6 +109,7 @@ class GWHelpFormatter(argparse.HelpFormatter):
         kwargs.setdefault('indent_increment', 4)
         super(GWHelpFormatter, self).__init__(*args, **kwargs)
 
+
 usage = ('%s --global-config defaults.ini --config-file myconfig.ini '
          '[--config-file myconfig2.ini] [options]'
          % os.path.basename(__file__))
@@ -143,9 +143,10 @@ bopts.add_argument('-t', '--file-tag', action='store', type=str,
                    help="file tag for pipeline files, default: %(default)s")
 
 htcopts = parser.add_argument_group("Condor options")
-htcopts.add_argument('-x','--executable', action='store', type=str,
+htcopts.add_argument('-x', '--executable', action='store', type=str,
                      default=which('gw_summary'),
-                     help="Path to gw_summary executable, default: %(default)s")
+                     help="Path to gw_summary executable, default: "
+                          "%(default)s")
 htcopts.add_argument('-u', '--universe', action='store', type=str,
                      default='vanilla',
                      help="Universe for condor jobs, default: %(default)s")
@@ -154,8 +155,9 @@ htcopts.add_argument('-l', '--log-dir', action='store', type=str,
                      help="Directory path for condor log files, "
                           "default: %(default)s")
 htcopts.add_argument('-m', '--maxjobs', action='store', type=int, default=None,
-                     metavar='N', help="Restrict the DAG to submit only N jobs "
-                                       "at any one time, default: %(default)s")
+                     metavar='N', help="Restrict the DAG to submit only N "
+                                       "jobs at any one time, default: "
+                                       "%(default)s")
 htcopts.add_argument('-T', '--condor-timeout', action='store', type=float,
                      default=None, metavar='T',
                      help='Configure condor to terminate jobs after T hours '
@@ -245,7 +247,7 @@ if N > 1 and not (opts.gps_start_time and opts.gps_end_time):
     raise parser.error("Please give only one of --day, --month, or "
                        "--gps-start-time and --gps-end-time.")
 
-for i,cf in enumerate(opts.config_file):
+for i, cf in enumerate(opts.config_file):
     opts.config_file[i] = ','.join(map(os.path.abspath, cf.split(',')))
 opts.global_config = list(map(
     os.path.abspath,
@@ -330,9 +332,9 @@ if opts.universe != 'local':
                           [os.path.abspath(x509copy), krb5cc]):
         condorenv = '%s=%s' % (env_, val_)
         if ('environment' in condorcmds and
-            env_ not in condorcmds['environment']):
+                env_ not in condorcmds['environment']):
             condorcmds['environment'] += ';%s' % condorenv
-        elif not 'environment' in condorcmds:
+        elif 'environment' not in condorcmds:
             condorcmds['environment'] = condorenv
 
 # ----------------------------------------------------------------------------

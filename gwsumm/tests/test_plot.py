@@ -25,7 +25,7 @@ import os
 from configparser import ConfigParser
 
 from matplotlib import use
-use('agg')  # noqa
+use('Agg')  # noqa
 
 from matplotlib import (rcParams, rc_context)
 

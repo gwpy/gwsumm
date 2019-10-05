@@ -89,7 +89,8 @@ class SeiWatchDogPlot(get_plot('data')):
         self.chanlist = channels
 
         try:
-            self.geometry = list(map(int, config.get(mapsec, 'geometry').split(',')))
+            self.geometry = list(map(
+                int, config.get(mapsec, 'geometry').split(',')))
         except NoOptionError:
             self.geometry = (len(channels), 1)
         if len(self.chanlist) != self.geometry[0] * self.geometry[1]:

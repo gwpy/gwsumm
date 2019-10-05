@@ -28,7 +28,6 @@ from MarkupPy import markup
 from gwpy.time import from_gps
 
 from .registry import (get_tab, register_tab)
-from .. import html
 from ..config import GWSummConfigParser
 from ..utils import (re_quote, vprint)
 
@@ -252,8 +251,7 @@ class GraceDbTab(get_tab('default')):
         page.p('The above table was generated from a query to {} with the '
                'form <code>{}</code>. To view the results of the same query '
                'via the GraceDB web interface, click {}.'.format(
-                   self.url, self.query, qlink),
-        )
+                   self.url, self.query, qlink))
 
         # reference the labelling
         page.h4('Labelling reference')

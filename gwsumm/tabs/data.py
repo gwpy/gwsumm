@@ -41,6 +41,8 @@ from numpy import isclose
 
 from astropy.time import Time
 
+from matplotlib import rcParams
+
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import from_gps
 from gwpy.utils.mp import multiprocess_with_queues
@@ -48,14 +50,15 @@ from gwpy.utils.mp import multiprocess_with_queues
 from gwdetchar.io import html as gwhtml
 
 from .. import (globalv, html)
-from ..channels import (re_channel,
+from ..channels import (re_channel, get_channel,
                         split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
 from ..mode import (Mode, get_mode)
-from ..data import (get_channel, get_timeseries_dict, get_spectrograms,
-                    get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
+from ..data import (get_timeseries_dict, get_spectrograms,
+                    get_coherence_spectrograms, get_spectrum)
+from ..data.timeseries import FRAMETYPE_REGEX
 from ..data.utils import get_fftparams
-from ..plot import (rcParams, get_plot)
+from ..plot import get_plot
 from ..segments import get_segments
 from ..state import (generate_all_state, ALLSTATE, get_state)
 from ..triggers import get_triggers

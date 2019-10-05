@@ -34,7 +34,8 @@ from gwpy.plot.utils import (color_cycle, marker_cycle)
 
 from .. import globalv
 from ..utils import re_cchar
-from ..data import (get_channel, get_timeseries, add_timeseries)
+from ..channels import get_channel
+from ..data import (get_timeseries, add_timeseries)
 from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
 from .utils import (get_column_string, hash, usetex_tex)
@@ -562,9 +563,9 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             labels = labels.split(',')
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []
-            for channel, bin in [(c, b) for c in self.channels for b in bins]:
+            for channel, bin_ in [(c, b) for c in self.channels for b in bins]:
                 labels.append(r' '.join([channel, '$%s$' % opstr,
-                                         str(b)]))
+                                         str(bin_)]))
             self.pargs.setdefault('legend-title', cname)
         elif labels is None and self.column:
             labels = [r' '.join(['$%s$' % opstr, str(b)]) for b in bins]

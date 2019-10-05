@@ -20,6 +20,9 @@ install:
   - python -m pip install --editable .
 
 script:
+  # run flake8
+  - python -m flake8 .
+  - python -m flake8 bin/*
   # run test suite
   - python -m pytest --pyargs gwsumm --cov gwsumm
   # test executables

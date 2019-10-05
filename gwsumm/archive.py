@@ -44,7 +44,8 @@ from gwpy.spectrogram import Spectrogram
 from gwpy.segments import (SegmentList, Segment, DataQualityFlag)
 
 from . import (globalv, mode)
-from .data import (get_channel, add_timeseries, add_spectrogram,
+from .channels import get_channel
+from .data import (add_timeseries, add_spectrogram,
                    add_coherence_component_spectrogram)
 from .triggers import (EventTable, add_triggers)
 

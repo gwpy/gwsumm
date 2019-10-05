@@ -260,9 +260,9 @@ def get_spectrograms(channels, segments, config=None, cache=None, query=True,
     if query:
         # get underlying list of data channels to read
         qchannels = list(map(get_channel,
-                        set([c for group in
-                             map(split_channel_combination, channels)
-                             for c in group])))
+                         set([c for group in
+                              map(split_channel_combination, channels)
+                              for c in group])))
 
         # work out FFT params and storage keys for each data channel
         keys = []

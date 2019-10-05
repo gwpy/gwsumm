@@ -20,8 +20,10 @@
 """
 
 # core
-from .misc import (AboutTab, Error404Tab)
-from .registry import (register_tab, get_tab)
+from .registry import (
+    register_tab,
+    get_tab
+)
 from .core import (
     _MetaTab,
     BaseTab,
@@ -39,17 +41,21 @@ from .builtin import (
     StateTab,
     UrlTab,
 )
+from .misc import (
+    AboutTab,
+    Error404Tab,
+)
 
 # data
 from .data import (ProcessedTab, DataTab)
 
 # application-specific extras
 from .sei import SEIWatchDogTab
-from .guardian import GuardianTab
+from .guardian import (UTC, REQUESTSTUB, NOMINALSTUB, GuardianTab)
 from .stamp import StampPEMTab
 from .management import AccountingTab
 from .etg import EventTriggerTab
 from .fscan import FscanTab
-from .gracedb import GraceDbTab
+from .gracedb import (LABELS, GraceDbTab)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

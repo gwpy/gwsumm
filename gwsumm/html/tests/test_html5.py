@@ -127,6 +127,7 @@ def test_load_custom():
 
 def test_comments_box():
     box = html5.comments_box('Test', identifier='test', title='Test', url=URL)
+    print(str(box), '\n\n', BOX % URL)
     assert parse_html(str(box)) == parse_html(BOX % URL)
 
 

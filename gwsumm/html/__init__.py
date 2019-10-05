@@ -25,6 +25,9 @@ formatted to fit the
 """
 
 from .static import (
+    STATICDIR,
+    CSS,
+    JS,
     get_css,
     get_js,
 )

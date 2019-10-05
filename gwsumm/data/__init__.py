@@ -25,6 +25,7 @@ buffer for each unique data type
 
 # read TimeSeries data
 from .timeseries import (
+    FRAMETYPE_REGEX,
     _urlpath,
     _get_timeseries_dict,
     sieve_cache,

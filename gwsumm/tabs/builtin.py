@@ -455,7 +455,7 @@ class PlotTab(Tab):
                 raise ValueError("Cannot parse layout element '%s'." % item)
         while sum(list(zip(*layout))[0]) < len(plots):
             layout.append(layout[-1])
-        l = i = 0
+        k = i = 0
         fancyboxargs.setdefault('data-fancybox-group', 1)
 
         for j, plot in enumerate(plots):
@@ -463,9 +463,9 @@ class PlotTab(Tab):
             if i == 0:
                 page.div(class_='row')
             # determine relative size
-            if layout[l][1]:
-                colwidth = 12 // int(layout[l][1])
-                remainder = 12 - colwidth * layout[l][0]
+            if layout[k][1]:
+                colwidth = 12 // int(layout[k][1])
+                remainder = 12 - colwidth * layout[k][0]
                 if remainder % 2:
                     raise ValueError("Cannot center column of width %d in a "
                                      "12-column format" % colwidth)
@@ -474,7 +474,7 @@ class PlotTab(Tab):
                 page.div(class_='col-md-%d col-md-offset-%d'
                                 % (colwidth, offset))
             else:
-                colwidth = 12 // int(layout[l][0])
+                colwidth = 12 // int(layout[k][0])
                 page.div(class_='col-md-%d' % colwidth)
             if plot.src.endswith('svg'):
                 fbkw = fancyboxargs.copy()
@@ -493,9 +493,9 @@ class PlotTab(Tab):
             page.a.close()
             page.div.close()
             # detect end of row
-            if (i + 1) == layout[l][0]:
+            if (i + 1) == layout[k][0]:
                 i = 0
-                l += 1
+                k += 1
                 page.div.close()
             # detect last plot
             elif j == (len(plots) - 1):

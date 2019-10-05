@@ -29,12 +29,10 @@ from setuptools import (Command, setup, find_packages)
 from setuptools.command.egg_info import egg_info
 from setuptools.command.build_py import build_py
 
-import versioneer
-
 # set basic metadata
 PACKAGENAME = 'gwsumm'
 DISTNAME = 'gwsumm'
-AUTHOR = 'Duncan Macleod, Alex Urban'
+AUTHOR = 'Alex Urban, Duncan Macleod'
 AUTHOR_EMAIL = 'alexander.urban@ligo.org'
 LICENSE = 'GPLv3'
 
@@ -42,6 +40,7 @@ cmdclass = {}
 
 # -- versioning ---------------------------------------------------------------
 
+import versioneer  # noqa: E402
 __version__ = versioneer.get_version()
 cmdclass.update(versioneer.get_cmdclass())
 

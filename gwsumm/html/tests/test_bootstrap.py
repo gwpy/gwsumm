@@ -35,7 +35,7 @@ CALENDAR = """<a class="navbar-brand step-back" title="Step back" onclick="stepD
 {}
 <b class="caret"></b>
 </a>
-<a class="navbar-brand step-forward" title="Step forwards" onclick="stepDate(1)">&raquo;</a>"""  # nopep8
+<a class="navbar-brand step-forward" title="Step forwards" onclick="stepDate(1)">&raquo;</a>"""  # noqa: E501
 
 
 # test utilities
@@ -50,6 +50,7 @@ def test_banner():
     assert parse_html(str(banner_wclass)) == parse_html(
         '<div class="banner">\n<h1 class=\"test\">Test</h1>\n'
         '<p class=\"subtest\">Subtest</p>\n</div>')
+
 
 @pytest.mark.parametrize('mode, datefmt', [
     ('day', 'April 10 2014'),
@@ -66,7 +67,7 @@ def test_calendar(mode, datefmt):
 def test_calendar_no_mode():
     # test with no Mode
     with pytest.raises(ValueError) as exc:
-        cal = bootstrap.calendar(DATE)
+        bootstrap.calendar(DATE)
     assert str(exc.value).startswith('Cannot generate calendar for Mode')
 
 

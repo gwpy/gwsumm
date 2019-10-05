@@ -24,13 +24,54 @@ buffer for each unique data type
 """
 
 # read TimeSeries data
-from .timeseries import *
+from .timeseries import (
+    _urlpath,
+    _get_timeseries_dict,
+    sieve_cache,
+    find_frames,
+    find_best_frames,
+    find_frame_type,
+    frame_trend_type,
+    get_channel_type,
+    exclude_short_trend_segments,
+    all_adc,
+    get_timeseries_dict,
+    locate_data,
+    get_timeseries,
+    add_timeseries,
+    resample_timeseries_dict,
+    filter_timeseries,
+)
 
 # generate Spectrograms and FrequencySeries
-from .spectral import *
+from .spectral import (
+    _get_spectrum,
+    _get_spectrogram,
+    get_spectrogram,
+    add_spectrogram,
+    get_spectrograms,
+    size_for_spectrogram,
+    apply_transfer_function_series,
+    get_spectrum,
+)
 
 # generate coherence Spectrograms and Spectra
-from .coherence import *
+from .coherence import (
+    _get_from_list,
+    _get_coherence_spectrogram,
+    get_coherence_spectrogram,
+    get_coherence_spectrum,
+    add_coherence_component_spectrogram,
+    get_coherence_spectrograms,
+    complex_percentile,
+)
 
 # generate TimeSeries of sensitive distance (range)
-from .range import *
+from .range import (
+    _metadata,
+    _segments_diff,
+    get_range_channel,
+    get_range,
+    get_range_spectrogram,
+    get_range_spectrum,
+)

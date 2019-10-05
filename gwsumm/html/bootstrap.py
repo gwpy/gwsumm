@@ -19,11 +19,6 @@
 """Helper functions for twitter-bootstrap HTML constructs.
 """
 
-import sys
-import getpass
-import datetime
-import os.path
-
 from MarkupPy import markup
 
 from gwdetchar.io import html
@@ -35,6 +30,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 # set <meta> for bootstrap
 META = {'viewport': 'width=device-width, initial-scale=1.0'}
+
 
 # -----------------------------------------------------------------------------
 # variable HTML constructs

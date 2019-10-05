@@ -447,7 +447,7 @@ def _get_from_list(serieslist, segment):
     for series in serieslist:
         if segment.intersects(series.span):
             outseg = segment & series.span
-            return series.crop(*segment)
+            return series.crop(*outseg)
     raise ValueError("Cannot crop series for segment %s from list"
                      % str(segment))
 

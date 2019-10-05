@@ -562,9 +562,9 @@ class TriggerRateDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             labels = labels.split(',')
         elif labels is None and self.column and len(self.channels) > 1:
             labels = []
-            for channel, bin in [(c, b) for c in self.channels for b in bins]:
+            for channel, bin_ in [(c, b) for c in self.channels for b in bins]:
                 labels.append(r' '.join([channel, '$%s$' % opstr,
-                                         str(b)]))
+                                         str(bin_)]))
             self.pargs.setdefault('legend-title', cname)
         elif labels is None and self.column:
             labels = [r' '.join(['$%s$' % opstr, str(b)]) for b in bins]

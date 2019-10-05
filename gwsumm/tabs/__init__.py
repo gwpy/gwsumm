@@ -20,21 +20,36 @@
 """
 
 # core
-from .registry import *
-from .core import *
-from .builtin import *
-from .misc import *
+from .misc import (AboutTab, Error404Tab)
+from .registry import (register_tab, get_tab)
+from .core import (
+    _MetaTab,
+    BaseTab,
+    StaticTab,
+    GpsTab,
+    IntervalTab,
+    EventTab,
+    Tab,
+    ParentTab,
+    TabList,
+)
+from .builtin import (
+    ExternalTab,
+    PlotTab,
+    StateTab,
+    UrlTab,
+)
 
 # data
-from .data import *
+from .data import (ProcessedTab, DataTab)
 
 # application-specific extras
-from .sei import *
-from .guardian import *
-from .stamp import *
-from .management import *
-from .etg import *
-from .fscan import *
-from .gracedb import *
+from .sei import SEIWatchDogTab
+from .guardian import GuardianTab
+from .stamp import StampPEMTab
+from .management import AccountingTab
+from .etg import EventTriggerTab
+from .fscan import FscanTab
+from .gracedb import GraceDbTab
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'

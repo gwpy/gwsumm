@@ -31,3 +31,4 @@ ligo-gracedb>=2.0.0
 # testing extras
 pytest>=2.8,<3.7
 pytest-cov
+flake8

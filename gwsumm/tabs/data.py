@@ -55,7 +55,8 @@ from ..channels import (re_channel, get_channel,
 from ..config import GWSummConfigParser
 from ..mode import (Mode, get_mode)
 from ..data import (get_timeseries_dict, get_spectrograms,
-                    get_coherence_spectrograms, get_spectrum, FRAMETYPE_REGEX)
+                    get_coherence_spectrograms, get_spectrum)
+from ..data.timeseries import FRAMETYPE_REGEX
 from ..data.utils import get_fftparams
 from ..plot import get_plot
 from ..segments import get_segments

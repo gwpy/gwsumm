@@ -39,6 +39,7 @@ from ..plot import get_plot
 from ..utils import (re_quote, re_cchar)
 from ..config import GWSummConfigParser
 from ..state import (ALLSTATE, SummaryState, get_state)
+from ..html.static import (CSS, JS)
 from .. import html
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -768,8 +769,8 @@ class StateTab(PlotTab):
         return self.frames[idx]
 
     def write_html(self, title=None, subtitle=None, tabs=list(), ifo=None,
-                   ifomap=dict(), brand=None, css=html.CSS, js=html.JS,
-                   about=None, footer=None, **inargs):
+                   ifomap=dict(), brand=None, css=CSS, js=JS, about=None,
+                   footer=None, **inargs):
         """Write the HTML page for this state Tab.
 
         Parameters
@@ -791,8 +792,8 @@ class StateTab(PlotTab):
         brand : `str`, :class:`~MarkupPy.markup.page`, optional
             non-menu content for navigation bar, defaults to calendar
         css : `list`, optional
-            list of resolvable URLs for CSS files. See `gwsumm.html.CSS` for
-            the default list.
+            list of resolvable URLs for CSS files. See `gwsumm.html.static.CSS`
+            for the default list.
         js : `list`, optional
             list of resolvable URLs for javascript files. See
             `gwumm.html.JS` for the default list.

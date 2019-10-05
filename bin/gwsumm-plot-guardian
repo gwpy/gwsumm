@@ -12,7 +12,7 @@ from collections import OrderedDict
 from configparser import DEFAULTSECT
 
 from matplotlib import use
-use('agg')
+use('agg')  # noqa
 
 from gwpy.time import to_gps
 

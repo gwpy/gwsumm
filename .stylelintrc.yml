@@ -1,0 +1,18 @@
+extends:
+  - stylelint-config-sass-guidelines
+
+rules:
+  indentation:
+    - tab
+  max-nesting-depth:
+    - 4
+  number-leading-zero:
+    - null
+  number-no-trailing-zeros:
+    - null
+  property-no-vendor-prefix:
+    - null
+  selector-max-compound-selectors:
+    - 5
+  selector-max-id:
+    - 2

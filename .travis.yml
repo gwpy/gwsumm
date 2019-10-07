@@ -36,7 +36,7 @@ script:
   - python -m coverage run --append $(which gwsumm-plot-triggers) --help
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help
   # test minified javascript
-  - acorn --silent gwsumm/_static/gwsumm.min.js
+  - acorn --silent share/js/gwsumm.js
 
 after_success:
   - python -m pip install ${PIP_FLAGS} codecov

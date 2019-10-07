@@ -36,7 +36,7 @@ script:
   - python -m coverage run --append $(which gwsumm-plot-triggers) --help
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help
   # test CSS and JavaScript
-  - stylelint share/sass/gwsumm.scss
+  - stylelint --quiet share/sass/gwsumm.scss
   - acorn --silent share/js/gwsumm.js
 
 after_success:

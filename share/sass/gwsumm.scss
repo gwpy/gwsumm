@@ -3,128 +3,131 @@
  */
 
 body {
-		background-color: #eee;
+	background-color: #eee;
 }
 
 dialog {
-		top: 50%;
-		-ms-transform: translateY(-50%);
-		transform: translateY(-50%);
-		min-width: 60%;
-		max-width: 80%;
-		max-height: 80%;
-		overflow-y: scroll;
-		position: fixed;
-		border-radius: 6px;
-		background-color: white;
-		border: 1px solid rgba(0, 0, 0, 0.3);
-		box-shadow:0 3px 7px rgba(0, 0, 0, 0.8);
+	background-color: #fff;
+	border: 1px solid rgba(0, 0, 0, 0.3);
+	border-radius: 6px;
+	box-shadow: 0 3px 7px rgba(0, 0, 0, 0.8);
+	max-height: 80%;
+	max-width: 80%;
+	min-width: 60%;
+	overflow-y: scroll;
+	position: fixed;
+	top: 50%;
+	-ms-transform: translateY(-50%);
+	transform: translateY(-50%);
 }
 
 // native dialog
 dialog::backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, 0.6);
+	bottom: 0;
+	left: 0;
+	position: fixed;
+	right: 0;
+	top: 0;
 }
 
 // polyfill dialog
 dialog+.backdrop {
-		position: fixed;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.6);
+	background-color: rgba(0, 0, 0, 0.6);
+	bottom: 0;
+	left: 0;
+	position: fixed;
+	right: 0;
+	top: 0;
 }
 
 .footer {
-		height: 148px;
+	height: 148px;
 }
 
 .navbar {
-		.btn-group {
-				margin-bottom: 0px;
-		}
-		// map page to another IFO
-		.base-map {
-				padding-right: 5px;
-				@media (min-width: 768px) {
-						margin-right: 10px;
-				}
-				.dropdown-menu {
-						min-width: 44px;
-						a {
-								padding-left: 12px;
-								cursor: pointer;
-								&:after {
-										display: block;
-										content: attr(title);
-										font-weight: bold;
-										height: 1px;
-										color: transparent;
-										overflow: hidden;
-										visibility: hidden;
-										margin-bottom: -1px;
-								}
-						}
-						@media (min-width: 768px) {
-								margin-left: -15px;
-								min-width: 52px;
-						}
-				}
+	.btn-group {
+		margin-bottom: 0;
+	}
+	// map page to another IFO
+	.base-map {
+		padding-right: 5px;
+		@media (min-width: 768px) {
+			margin-right: 10px;
 		}
 
-		// state switch
-		.state-switch  {
-				.dropdown-header {
-						padding-left: 20px;
-						padding-right: 20px;
-						white-space: normal;;
+		.dropdown-menu {
+			min-width: 44px;
+
+			a {
+				cursor: pointer;
+				padding-left: 12px;
+
+				&::after {
+					color: transparent;
+					content: attr(title);
+					display: block;
+					font-weight: bold;
+					height: 1px;
+					margin-bottom: -1px;
+					overflow: hidden;
+					visibility: hidden;
 				}
-				@media (min-width: 768px) {
-						position: absolute;
-						right: 0;
-				}
+			}
+			@media (min-width: 768px) {
+				margin-left: -15px;
+				min-width: 52px;
+			}
 		}
+	}
+
+	// state switch
+	.state-switch {
+		.dropdown-header {
+			padding-left: 20px;
+			padding-right: 20px;
+			white-space: normal;;
+		}
+		@media (min-width: 768px) {
+			position: absolute;
+			right: 0;
+		}
+	}
 }
 
 // detchar stuff
 #idq img,
 #upv img {
-		width: auto;
+	width: auto;
 }
 
 #upv font {
-		color: black;
+	color: #000;
 }
 
 #idq > h1:first-of-type,
 #idq > hr:first-of-type,
 #idq > p:first-of-type {
-		display: none;
+	display: none;
 }
 
 #stamp-pem .fancybox-iframe {
-		width: 1800px;
-		height: 1000px;
-		zoom: 1.00;
-		-moz-transform: scale(0.55);
-		-moz-transform-origin: 0 0;
-		-o-transform: scale(0.55);
-		-o-transform-origin: 0 0;
-		-webkit-transform: scale(0.55);
-		-webkit-transform-origin: 0 0;
+	height: 1000px;
+	-moz-transform: scale(0.55);
+	-o-transform: scale(0.55);
+	-webkit-transform: scale(0.55);
+	-moz-transform-origin: 0 0;
+	-o-transform-origin: 0 0;
+	-webkit-transform-origin: 0 0;
+	width: 1800px;
+	zoom: 1.00;
 }
 
 // help button
 #help-btn {
-		@media(min-width:992px) {
-				bottom: 80px;
-				padding-left: 16px;
-				padding-right: 16px;
-		}
+	@media(min-width:992px) {
+		bottom: 80px;
+		padding-left: 16px;
+		padding-right: 16px;
+	}
 }

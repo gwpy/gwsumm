@@ -87,7 +87,9 @@ install_requires = [
 if {'pytest', 'test'}.intersection(sys.argv):
     setup_requires.append('pytest_runner')  # python setup.py test
 tests_require = [
-    'pytest>=2.8'
+    'pytest>=2.8,<3.7',
+    'pytest-cov',
+    'flake8',
 ]
 if sys.version < '3':
     tests_require.append('mock')

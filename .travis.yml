@@ -14,6 +14,7 @@ env:
 before_install:
   - python -m pip install --upgrade pip
   - python -m pip install ${PIP_FLAGS} -r requirements.txt
+  - npm -g install acorn
 
 install:
   # note: need --editable for executable coverage with `which ...` to work
@@ -34,6 +35,8 @@ script:
   - python -m coverage run --append $(which gw_summary_pipe) --help
   - python -m coverage run --append $(which gwsumm-plot-triggers) --help
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help
+  # test minified javascript
+  - acorn --silent gwsumm/_static/gwsumm.min.js
 
 after_success:
   - python -m pip install ${PIP_FLAGS} codecov

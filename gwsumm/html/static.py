@@ -23,7 +23,7 @@ This module mainly declares the resources used by standard on HTML pages
 
 import os.path
 from collections import OrderedDict
-from gwdetchar.io.html import (CSS_FILES, JS_FILES)
+from gwdetchar.io.html import (CSS_FILES, JS_FILES, GWBOOTSTRAP_EXTRA_JS)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -39,25 +39,17 @@ JS = OrderedDict((
                'moment.js/2.24.0/moment.min.js'),
     ('bootstrap', JS_FILES[1]),
     ('fancybox', JS_FILES[2]),
-    ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-                   '1.9.0/js/bootstrap-datepicker.min.js'),
-    ('bootstrap-ligo', JS_FILES[3]),
-    ('gwdetchar', JS_FILES[4]),
-    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
+    ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                   'bootstrap-datepicker/1.9.0/js/'
+                   'bootstrap-datepicker.min.js'),
+    ('gwbootstrap-extra', GWBOOTSTRAP_EXTRA_JS),
 ))
 
 # build list of CSS resources
 CSS = OrderedDict((
-    ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/'
-                  'cupertino/jquery-ui.min.css'),
-    ('bootstrap', CSS_FILES[0]),
-    ('fancybox', CSS_FILES[1]),
-    ('google-fonts', CSS_FILES[2]),
-    ('datepicker', '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-                   '1.9.0/css/bootstrap-datepicker.min.css'),
-    ('bootstrap-ligo', CSS_FILES[3]),
-    ('gwdetchar', CSS_FILES[4]),
-    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
+    ('font-awesome', CSS_FILES[0]),
+    ('font-awesome-solid', CSS_FILES[1]),
+    ('gwbootstrap', CSS_FILES[2]),
 ))
 
 

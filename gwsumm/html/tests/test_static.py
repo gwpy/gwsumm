@@ -37,47 +37,33 @@ def test_get_css():
     css = static.get_css()
     assert isinstance(css, OrderedDict)
     # test dict keys
-    keys = list(css.keys())
-    assert keys == [
-        'jquery-ui',
-        'bootstrap',
-        'fancybox',
-        'google-fonts',
-        'datepicker',
-        'bootstrap-ligo',
-        'gwdetchar',
-        'gwsumm',
+    assert list(css.keys()) == [
+        'font-awesome',
+        'font-awesome-solid',
+        'gwbootstrap',
     ]
     # test list of files
-    css_files = list(css.values())
-    assert len(css_files) == len(GWDETCHAR_CSS_FILES) + 3
-    assert set(GWDETCHAR_CSS_FILES) < set(css_files)
-    assert os.path.basename(css_files[0]) == 'jquery-ui.min.css'
-    assert os.path.basename(css_files[4]) == 'bootstrap-datepicker.min.css'
-    assert os.path.basename(css_files[7]) == 'gwsumm.min.css'
+    assert list(css_files.values()) == GWDETCHAR_CSS_FILES
 
 
 def test_get_js():
     js = static.get_js()
     assert isinstance(js, OrderedDict)
     # test dict keys
-    keys = list(js.keys())
-    assert keys == [
+    assert list(js.keys()) == [
         'jquery',
         'jquery-ui',
         'moment',
         'bootstrap',
         'fancybox',
         'datepicker',
-        'bootstrap-ligo',
-        'gwdetchar',
-        'gwsumm',
+        'gwbootstrap-extra',
     ]
     # test list of files
     js_files = list(js.values())
-    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 4
-    assert set(GWDETCHAR_JS_FILES) < set(js_files)
+    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 3
+    assert not set(js_files).isdisjoint(GWDETCHAR_JS_FILES)
     assert os.path.basename(js_files[1]) == 'jquery-ui.min.js'
     assert os.path.basename(js_files[2]) == 'moment.min.js'
     assert os.path.basename(js_files[5]) == 'bootstrap-datepicker.min.js'
-    assert os.path.basename(js_files[8]) == 'gwsumm.min.js'
+    assert os.path.basename(js_files[6]) == 'gwbootstrap-extra.min.js'

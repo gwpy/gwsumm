@@ -21,12 +21,7 @@
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-import os.path
-
 from collections import OrderedDict
-
-from gwdetchar.io.html import (CSS_FILES as GWDETCHAR_CSS_FILES,
-                               JS_FILES as GWDETCHAR_JS_FILES)
 
 from .. import static
 
@@ -43,7 +38,12 @@ def test_get_css():
         'gwbootstrap',
     ]
     # test list of files
-    assert list(css_files.values()) == GWDETCHAR_CSS_FILES
+    css_files = list(x.split('/')[-1] for x in css.values())
+    assert css_files == [
+        'fontawesome.min.css',
+        'solid.min.css',
+        'gwbootstrap.min.css',
+    ]
 
 
 def test_get_js():
@@ -60,10 +60,13 @@ def test_get_js():
         'gwbootstrap-extra',
     ]
     # test list of files
-    js_files = list(js.values())
-    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 3
-    assert not set(js_files).isdisjoint(GWDETCHAR_JS_FILES)
-    assert os.path.basename(js_files[1]) == 'jquery-ui.min.js'
-    assert os.path.basename(js_files[2]) == 'moment.min.js'
-    assert os.path.basename(js_files[5]) == 'bootstrap-datepicker.min.js'
-    assert os.path.basename(js_files[6]) == 'gwbootstrap-extra.min.js'
+    js_files = list(x.split('/')[-1] for x in js.values())
+    assert js_files == [
+        'jquery-3.4.1.min.js',
+        'jquery-ui.min.js',
+        'moment.min.js',
+        'bootstrap.min.js',
+        'jquery.fancybox.min.js',
+        'bootstrap-datepicker.min.js',
+        'gwbootstrap-extra.min.js',
+    ]

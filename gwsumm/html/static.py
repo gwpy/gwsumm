@@ -23,7 +23,6 @@ This module mainly declares the resources used by standard on HTML pages
 
 import os.path
 from collections import OrderedDict
-from gwdetchar.io.html import (CSS_FILES, JS_FILES, GWBOOTSTRAP_EXTRA_JS)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -33,23 +32,29 @@ STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
 
 # build list of javascript resources
 JS = OrderedDict((
-    ('jquery', JS_FILES[0]),
+    ('jquery', 'https://code.jquery.com/jquery-3.4.1.min.js'),
     ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
                'moment.js/2.24.0/moment.min.js'),
-    ('bootstrap', JS_FILES[1]),
-    ('fancybox', JS_FILES[2]),
+    ('bootstrap', 'https://stackpath.bootstrapcdn.com/bootstrap/'
+                  '3.4.1/js/bootstrap.min.js'),
+    ('fancybox', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                 'fancybox/3.5.7/jquery.fancybox.min.js'),
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap-extra', GWBOOTSTRAP_EXTRA_JS),
+    ('gwbootstrap-extra', 'https://github.com/gwdetchar/gwbootstrap/blob/'
+                          '1.0.0/lib/gwbootstrap-extra.min.js'),
 ))
 
 # build list of CSS resources
 CSS = OrderedDict((
-    ('font-awesome', CSS_FILES[0]),
-    ('font-awesome-solid', CSS_FILES[1]),
-    ('gwbootstrap', CSS_FILES[2]),
+    ('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                     'font-awesome/5.10.2/css/fontawesome.min.css'),
+    ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                           'font-awesome/5.10.2/css/solid.min.css'),
+    ('gwbootstrap', 'https://github.com/gwdetchar/gwbootstrap/blob/'
+                    '1.0.0/lib/gwbootstrap.min.css'),
 ))
 
 

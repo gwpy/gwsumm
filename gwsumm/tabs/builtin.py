@@ -158,11 +158,7 @@ class ExternalTab(Tab):
         """
         if not kwargs.pop('writehtml', True):
             return
-        link = markup.given_oneliner.a('click here to view the original',
-                                       class_='reference',
-                                       href=self.url.split()[0])
-        kwargs.setdefault('footer', 'This page contains data from an external '
-                                    'source, %s.' % link)
+        kwargs.setdefault('footer', self.url.split()[0])
         return super(ExternalTab, self).write_html('', **kwargs)
 
 
@@ -486,9 +482,11 @@ class PlotTab(Tab):
             else:
                 fbkw['title'] = plot.caption
                 page.a(href=plot.href, class_=aclass, **fbkw)
-            src = plot.src.replace('.pdf', '.png') if (
-                plot.src.endswith('.pdf')) else plot.src
-            page.img(class_='img-responsive', src=src)
+            page.img(
+                class_='img-responsive',
+                src=plot.src.replace('.pdf', '.png') if (
+                    plot.src.endswith('.pdf')) else plot.src,
+            )
             page.a.close()
             page.div.close()
             # detect end of row

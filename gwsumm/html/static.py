@@ -23,44 +23,39 @@ This module mainly declares the resources used by standard on HTML pages
 
 import os.path
 from collections import OrderedDict
-from gwdetchar.io.html import (CSS_FILES, JS_FILES)
+from pkg_resources import resource_filename
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 
-STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
+STATICDIR = 'html/static'
 
-# build list of javascript resources
-JS = OrderedDict((
-    ('jquery', JS_FILES[0]),
-    ('moment', JS_FILES[1]),
-    ('bootstrap', JS_FILES[2]),
-    ('fancybox', JS_FILES[3]),
-    ('datepicker', (
-        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-        '1.6.0/js/bootstrap-datepicker.min.js')),
-    ('dialog-polyfill', (
-        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
-        '0.5.0/dialog-polyfill.min.js')),
-    ('bootstrap-ligo', JS_FILES[4]),
-    ('gwdetchar', JS_FILES[5]),
-    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.js')),
+# build collection of CSS resources
+CSS = OrderedDict((
+    ('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                     'font-awesome/5.10.2/css/fontawesome.min.css'),
+    ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                           'font-awesome/5.10.2/css/solid.min.css'),
+    ('gwbootstrap', resource_filename(
+        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap.min.css'))),
 ))
 
-# build list of CSS resources
-CSS = OrderedDict((
-    ('bootstrap', CSS_FILES[0]),
-    ('fancybox', CSS_FILES[1]),
-    ('datepicker', (
-        '//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/'
-        '1.6.0/css/bootstrap-datepicker.min.css')),
-    ('dialog-polyfill', (
-        'https://cdnjs.cloudflare.com/ajax/libs/dialog-polyfill/'
-        '0.5.0/dialog-polyfill.min.css')),
-    ('bootstrap-ligo', CSS_FILES[2]),
-    ('gwdetchar', CSS_FILES[3]),
-    ('gwsumm', os.path.join(STATICDIR, 'gwsumm.min.css')),
+# build collection of javascript resources
+JS = OrderedDict((
+    ('jquery', 'https://code.jquery.com/jquery-3.4.1.min.js'),
+    ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
+    ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
+               'moment.js/2.24.0/moment.min.js'),
+    ('bootstrap', 'https://stackpath.bootstrapcdn.com/bootstrap/'
+                  '3.4.1/js/bootstrap.min.js'),
+    ('fancybox', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                 'fancybox/3.5.7/jquery.fancybox.min.js'),
+    ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
+                   'bootstrap-datepicker/1.9.0/js/'
+                   'bootstrap-datepicker.min.js'),
+    ('gwbootstrap', resource_filename(
+        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap-extra.min.js')))
 ))
 
 

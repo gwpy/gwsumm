@@ -34,7 +34,7 @@ from .. import html5
 
 URL = 'https://github.com/gwpy/gwsumm'
 LOAD = """<script>
-    $.ajax({
+    jQuery.ajax({
         url : '%s',
         type : 'GET',
         success: function(data, statusText, jqhxr){%s},
@@ -70,11 +70,9 @@ This is a test.
 * Bullet 1
 * Bullet 2"""
 
-DIALOG = ('<dialog id="id">\n<a title="Close" '
-          'onclick="closeDialog(&quot;id&quot;)" '
-          'class="btn btn-default pull-right" '
-          'aria-label="Close">&#x2715;</a>\n%s\n'
-          '</dialog>') % markdown(CONTENTS)
+DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open" '
+          'data-id="#id">T</button>\n<div class="dialog" title="Test" '
+          'id="id">\n%s\n</div>') % markdown(CONTENTS)
 
 
 # test utilities
@@ -87,7 +85,7 @@ def test_load_state():
     state = html5.load_state('test')
     assert parse_html(str(state)) == parse_html(
         '<script>\nif (location.hash.length <= 1) {\n'
-        '    $("#state_test").load_state("test");\n}\n'
+        '    jQuery("#state_test").load_state("test");\n}\n'
         '</script>')
 
 
@@ -95,17 +93,17 @@ def test_load():
     # test local url
     content = html5.load('test')
     assert parse_html(content) == parse_html(
-        '<script>$("#main").load("test");</script>')
+        '<script>jQuery("#main").load("test");</script>')
     # test non-local url
-    success = '$(\"#main\").html(data);'
+    success = 'jQuery(\"#main\").html(data);'
     errormsg = ('alert(\"Cannot load content from %r, use '
                 'browser console to inspect failure.\");' % URL)
     content = html5.load(URL)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
     # test with non-string error argument
-    success = '$(\"#main\").html(data);'
+    success = 'jQuery(\"#main\").html(data);'
     error = 'Failed to load content from %r' % URL
-    errormsg = ('$(\"#main\").html(\"<div class=\'alert alert-warning\'>'
+    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning\'>'
                 '<p>%s</p></div>\");' % error)
     content = html5.load(URL, error=1)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
@@ -114,7 +112,7 @@ def test_load():
 def test_load_custom():
     error = 'Error'
     success = 'document.write(\"Success\")'
-    errormsg = ('$(\"#main\").html(\"<div class=\'alert alert-warning\'>'
+    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning\'>'
                 '<p>%s</p></div>\");' % error)
     # test local url
     content = html5.load('test', success=success, error=error)
@@ -155,6 +153,6 @@ def test_dialog_box(tmpdir):
     mdfile = os.path.join(str(tmpdir), 'test.md')
     with open(mdfile, 'w') as f:
         f.write(CONTENTS)
-    box = html5.dialog_box(mdfile, 'id')
+    box = html5.dialog_box(mdfile, 'Test', 'id', 'T')
     assert parse_html(str(box)) == parse_html(DIALOG)
     shutil.rmtree(str(tmpdir), ignore_errors=True)

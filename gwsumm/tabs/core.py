@@ -718,11 +718,9 @@ class BaseTab(object):
 
         # add help button
         if self.notes is not None:
-            self.page.add(str(html.dialog_box(self.notes, id_='help')))
-            self.page.button(
-                markup.oneliner.span('&#63;'), title='Help',
-                onclick="showDialog('help')", class_='btn-float',
-                id_='help-btn')
+            self.page.add(str(html.dialog_box(
+                self.notes, title='Help', id_='help',
+                btntxt=markup.oneliner.span('&#63;'))))
 
         # add #main content
         self.page.add(str(self.html_content(maincontent)))

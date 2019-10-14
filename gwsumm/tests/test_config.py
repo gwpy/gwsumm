@@ -243,10 +243,10 @@ class TestGWSummConfigParser(object):
 
         # check overrides
         cp.add_section('html')
-        cp.set('html', 'bootstrap-css', 'test.css')
+        cp.set('html', 'gwbootstrap-css', 'test.css')
         css = cp.get_css()
         assert 'test.css' in css
-        assert html.get_css()['bootstrap'] not in css
+        assert html.get_css()['gwbootstrap'] not in css
 
         # check custom files
         cp.set('html', 'extra-css', '"extra.css","/static/extra2.css"')
@@ -262,10 +262,10 @@ class TestGWSummConfigParser(object):
 
         # check overrides
         cp.add_section('html')
-        cp.set('html', 'bootstrap-js', 'test.js')
+        cp.set('html', 'gwbootstrap-js', 'test.js')
         js = cp.get_javascript()
         assert 'test.js' in js
-        assert html.get_js()['bootstrap'] not in js
+        assert html.get_js()['gwbootstrap'] not in js
 
         # check custom files
         cp.set('html', 'extra-js', '"extra.js","/static/extra2.js"')

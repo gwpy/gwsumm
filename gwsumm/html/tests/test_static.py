@@ -21,12 +21,7 @@
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-import os.path
-
 from collections import OrderedDict
-
-from gwdetchar.io.html import (CSS_FILES as GWDETCHAR_CSS_FILES,
-                               JS_FILES as GWDETCHAR_JS_FILES)
 
 from .. import static
 
@@ -37,45 +32,41 @@ def test_get_css():
     css = static.get_css()
     assert isinstance(css, OrderedDict)
     # test dict keys
-    keys = list(css.keys())
-    assert keys == [
-        'bootstrap',
-        'fancybox',
-        'datepicker',
-        'dialog-polyfill',
-        'bootstrap-ligo',
-        'gwdetchar',
-        'gwsumm',
+    assert list(css.keys()) == [
+        'font-awesome',
+        'font-awesome-solid',
+        'gwbootstrap',
     ]
     # test list of files
-    css_files = list(css.values())
-    assert len(css_files) == len(GWDETCHAR_CSS_FILES) + 3
-    assert set(GWDETCHAR_CSS_FILES) < set(css_files)
-    assert os.path.basename(css_files[2]) == 'bootstrap-datepicker.min.css'
-    assert os.path.basename(css_files[3]) == 'dialog-polyfill.min.css'
-    assert os.path.basename(css_files[6]) == 'gwsumm.min.css'
+    css_files = list(x.split('/')[-1] for x in css.values())
+    assert css_files == [
+        'fontawesome.min.css',
+        'solid.min.css',
+        'gwbootstrap.min.css',
+    ]
 
 
 def test_get_js():
     js = static.get_js()
     assert isinstance(js, OrderedDict)
     # test dict keys
-    keys = list(js.keys())
-    assert keys == [
+    assert list(js.keys()) == [
         'jquery',
+        'jquery-ui',
         'moment',
         'bootstrap',
         'fancybox',
         'datepicker',
-        'dialog-polyfill',
-        'bootstrap-ligo',
-        'gwdetchar',
-        'gwsumm',
+        'gwbootstrap',
     ]
     # test list of files
-    js_files = list(js.values())
-    assert len(js_files) == len(GWDETCHAR_JS_FILES) + 3
-    assert set(GWDETCHAR_JS_FILES) < set(js_files)
-    assert os.path.basename(js_files[4]) == 'bootstrap-datepicker.min.js'
-    assert os.path.basename(js_files[5]) == 'dialog-polyfill.min.js'
-    assert os.path.basename(js_files[8]) == 'gwsumm.min.js'
+    js_files = list(x.split('/')[-1] for x in js.values())
+    assert js_files == [
+        'jquery-3.4.1.min.js',
+        'jquery-ui.min.js',
+        'moment.min.js',
+        'bootstrap.min.js',
+        'jquery.fancybox.min.js',
+        'bootstrap-datepicker.min.js',
+        'gwbootstrap-extra.min.js',
+    ]

@@ -107,9 +107,15 @@ extras_require = {
 # -- data files ---------------------------------------------------------------
 
 JAVASCRIPT_SOURCES = [
-    f for f in glob.glob(os.path.join('share', 'js', '*.js'))
+    f for f in glob.glob(os.path.join('gwbootstrap', 'js', '*.js'))
     if not f.endswith('.min.js')]
-CSS_SOURCES = glob.glob(os.path.join('share', 'sass', '[!_]*.scss'))
+CSS_SOURCES = glob.glob(os.path.join('gwbootstrap', 'sass', '[!_]*.scss'))
+
+# make sure submodule is not empty
+static = glob.glob(os.path.join('gwbootstrap', '*'))
+if not static:
+    raise ValueError('gwbootstrap submodule is empty, please populate it '
+                     'with `git submodule update --init`')
 
 
 class BuildHtmlFiles(Command):
@@ -142,7 +148,7 @@ class BuildHtmlFiles(Command):
         return self.staticdir.replace(os.path.sep, '.')
 
     def minify_js(self):
-        jsdir = os.path.join('share', 'js')
+        jsdir = os.path.join('gwbootstrap', 'js')
         log.info('minifying js under %s' % jsdir)
         for jsfile in JAVASCRIPT_SOURCES:
             filename = os.path.basename(jsfile)
@@ -158,7 +164,7 @@ class BuildHtmlFiles(Command):
         log.info('minified js written to %s' % target)
 
     def compile_sass(self):
-        sassdir = os.path.join('share', 'sass')
+        sassdir = os.path.join('gwbootstrap', 'sass')
         log.info('compiling SASS under %s to CSS' % sassdir)
         for sassfile in CSS_SOURCES:
             filename = os.path.basename(sassfile)

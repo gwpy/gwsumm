@@ -75,7 +75,7 @@ def load_state(url):
     page = markup.page()
     page.script()
     page.add('if (location.hash.length <= 1) {')
-    page.add('    $("#state_%s").load_state("%s");' % (id_, url))
+    page.add('    jQuery("#state_%s").load_state("%s");' % (id_, url))
     page.add('}')
     page.script.close()
     return page
@@ -87,7 +87,7 @@ def load(url, id_='main', error=False, success=None):
     """
     ps = urlparse(url)
     if not ps.netloc and not error:
-        return markup.given_oneliner.script('$("#%s").load("%s");'
+        return markup.given_oneliner.script('jQuery("#%s").load("%s");'
                                             % (id_, url))
     elif ps.netloc and not error:
         error = ('alert("Cannot load content from %r, use browser console '
@@ -95,13 +95,13 @@ def load(url, id_='main', error=False, success=None):
     else:
         if not isinstance(error, (str, markup.page)):
             error = 'Failed to load content from %r' % url
-        error = ('$("#%s").html("<div class=\'alert alert-warning\'>'
+        error = ('jQuery("#%s").html("<div class=\'alert alert-warning\'>'
                  '<p>%s</p></div>");' % (id_, error))
     if success is None:
-        success = '$("#%s").html(data);' % id_
+        success = 'jQuery("#%s").html(data);' % id_
     url = _expand_path(url)
     return markup.given_oneliner.script("""
-    $.ajax({
+    jQuery.ajax({
         url : '%s',
         type : 'GET',
         success: function(data, statusText, jqhxr){%s},
@@ -154,7 +154,7 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
         class_='btn btn-default btn-xs', title=title)
 
 
-def dialog_box(content, id_):
+def dialog_box(content, title, id_, btntxt):
     """Generate a dialog box to be loaded modal atop the main page
 
     Parameters
@@ -163,21 +163,34 @@ def dialog_box(content, id_):
         either raw markdown text or the path to a file containing markdown,
         this will be rendered in HTML as the contents of the dialog box
 
+    title : `str`
+        title to display atop the dialog box
+
     id_ : `str`
         unique identifier for the dialog box
+
+    btntxt : `str`
+        text (usually a single character) to appear inside a sticky button
+        that opens the dialog box
 
     Returns
     -------
     page : `~MarkupPy.markup.page`
         fully rendered HTML containing the dialog box
     """
+    btnid = '-'.join([id_, 'btn'])
     page = markup.page()
-    page.add('<dialog id="%s">' % id_)  # MarkupPy does not support dialog
-    page.a('&#x2715;', title='Close', onclick="closeDialog('%s')" % id_,
-           class_='btn btn-default pull-right', **{'aria-label': 'Close'})
+    page.button(btntxt, title=title, id_=btnid,
+                class_='btn-float btn-open',
+                **{'data-id': '#' + id_})
+    page.div(
+        class_='dialog',
+        title=title,
+        id_=id_,
+    )
     if os.path.isfile(content):
         with open(content, 'r') as source:
             content = source.read()
     page.add(markdown(str(content)))
-    page.add('</dialog>')
+    page.div.close()
     return page

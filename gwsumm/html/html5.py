@@ -67,7 +67,7 @@ can be compared at once.\
 # -- utilities ----------------------------------------------------------------
 
 def _expand_path(path):
-    """
+    """Expand a server path that may contain symbolic links
     """
     subbed = Path(re.sub(r'^/\~(.*?)/', r'/home/\1/public_html/', path))
     resolved = subbed.resolve() if subbed.exists() else subbed

@@ -72,7 +72,7 @@ This is a test.
 
 DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open" '
           'data-id="#id">T</button>\n<div class="dialog" title="Test" '
-          'id="id">\n%s\n</div>' % markdown(CONTENTS))
+          'id="id">\n%s\n</div>') % markdown(CONTENTS)
 
 
 # test utilities

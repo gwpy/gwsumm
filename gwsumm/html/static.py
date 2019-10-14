@@ -23,12 +23,13 @@ This module mainly declares the resources used by standard on HTML pages
 
 import os.path
 from collections import OrderedDict
+from pkg_resources import resource_filename
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 
-STATICDIR = os.path.join(os.path.dirname(__file__), 'static')
+STATICDIR = 'html/static'
 
 # build collection of CSS resources
 CSS = OrderedDict((
@@ -36,8 +37,8 @@ CSS = OrderedDict((
                      'font-awesome/5.10.2/css/fontawesome.min.css'),
     ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
                            'font-awesome/5.10.2/css/solid.min.css'),
-    ('gwbootstrap', 'https://github.com/gwdetchar/gwbootstrap/blob/'
-                    '1.0.0/lib/gwbootstrap.min.css'),
+    ('gwbootstrap', resource_filename(
+        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap.min.css'))),
 ))
 
 # build collection of javascript resources
@@ -53,8 +54,8 @@ JS = OrderedDict((
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap', 'https://github.com/gwdetchar/gwbootstrap/blob/'
-                    '1.0.0/lib/gwbootstrap-extra.min.js'),
+    ('gwbootstrap', resource_filename(
+        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap-extra.min.js')))
 ))
 
 

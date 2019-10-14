@@ -57,7 +57,7 @@ def test_get_js():
         'bootstrap',
         'fancybox',
         'datepicker',
-        'gwbootstrap-extra',
+        'gwbootstrap',
     ]
     # test list of files
     js_files = list(x.split('/')[-1] for x in js.values())

@@ -384,7 +384,7 @@ class GWSummConfigParser(configparser.ConfigParser):
             except configparser.NoOptionError:
                 continue
         files = list(js.values())
-        # get extra CSS
+        # get extra JS
         try:
             extras = self.get(section, 'extra-js')
         except configparser.NoOptionError:

@@ -35,6 +35,7 @@ from .html5 import (
     comments_box,
     ldvw_qscan,
     dialog_box,
+    overlay_canvas,
 )
 from .bootstrap import (
     banner,

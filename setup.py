@@ -150,15 +150,13 @@ class BuildHtmlFiles(Command):
     def minify_js(self):
         jsdir = os.path.join('gwbootstrap', 'js')
         log.info('minifying js under %s' % jsdir)
-        for jsfile in JAVASCRIPT_SOURCES:
-            filename = os.path.basename(jsfile)
-            target = os.path.join(
-                self.staticdir, '%s.min.js' % os.path.splitext(filename)[0])
-            self.minify(jsfile, target)
+        js = '\n'.join([open(jsfile).read() for jsfile in JAVASCRIPT_SOURCES])
+        target = os.path.join(self.staticdir, 'gwbootstrap-extra.min.js')
+        self.minify(js, target)
 
     def minify(self, source, target):
         import jsmin
-        js = jsmin.jsmin(open(source).read())
+        js = jsmin.jsmin(source)
         with open(target, 'w') as f:
             f.write(js)
         log.info('minified js written to %s' % target)

@@ -62,7 +62,7 @@ def test_get_js():
     # test list of files
     js_files = list(x.split('/')[-1] for x in js.values())
     assert js_files == [
-        'jquery-3.4.1.min.js',
+        'jquery-2.2.4.min.js',
         'jquery-ui.min.js',
         'moment.min.js',
         'bootstrap.min.js',

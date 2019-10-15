@@ -43,7 +43,7 @@ CSS = OrderedDict((
 
 # build collection of javascript resources
 JS = OrderedDict((
-    ('jquery', 'https://code.jquery.com/jquery-2.2.4.min.js'),
+    ('jquery', 'https://code.jquery.com/jquery-3.4.1.min.js'),
     ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
                'moment.js/2.24.0/moment.min.js'),

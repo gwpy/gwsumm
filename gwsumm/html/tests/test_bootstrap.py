@@ -30,12 +30,12 @@ from .. import bootstrap
 
 # global variables
 DATE = datetime.strptime('20140410', '%Y%m%d')
-CALENDAR = """<a class="navbar-brand step-back" title="Step back" onclick="stepDate(-1)">&laquo;</a>
+CALENDAR = """<a class="navbar-brand step-back" title="Step back">&laquo;</a>
 <a id="calendar" class="navbar-brand dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}">
 {}
 <b class="caret"></b>
 </a>
-<a class="navbar-brand step-forward" title="Step forwards" onclick="stepDate(1)">&raquo;</a>"""  # noqa: E501
+<a class="navbar-brand step-forward" title="Step forwards">&raquo;</a>"""  # noqa: E501
 
 
 # test utilities

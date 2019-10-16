@@ -233,8 +233,7 @@ class GraceDbTab(get_tab('default')):
         else:
             page.button(
                 'Export to CSV', class_='btn btn-default btn-table',
-                onclick="exportTableToCSV('{name}.csv', '{name}')".format(
-                    name='gracedb'))
+                **{'data-table-id': 'gracedb', 'data-filename': 'gracedb.csv'})
         page.div.close()  # scaffold well
 
         # query doc

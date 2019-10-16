@@ -101,8 +101,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
     page = markup.page()
-    page.a('&laquo;', class_='navbar-brand step-back', title='Step back',
-           onclick='stepDate(-1)')
+    page.a('&laquo;', class_='navbar-brand step-back', title='Step back')
     page.a(id_=id_, class_=class_, title='Show/hide calendar',
            **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
               'data-viewmode': '%ss' % mode.name})
@@ -110,7 +109,7 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
     page.b('', class_='caret')
     page.a.close()
     page.a('&raquo;', class_='navbar-brand step-forward',
-           title='Step forwards', onclick='stepDate(1)')
+           title='Step forwards')
     return page
 
 

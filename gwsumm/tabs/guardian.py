@@ -275,8 +275,7 @@ class GuardianTab(DataTab):
         page.table.close()
         page.button(
             'Export to CSV', class_='btn btn-default btn-table',
-            onclick="exportTableToCSV('{name}.csv', '{name}')".format(
-                name=id_))
+            **{'data-table-id': id_, 'data-filename': '%s.csv' % id_})
         page.div.close()
         page.div.close()
 

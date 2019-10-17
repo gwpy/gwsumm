@@ -24,6 +24,7 @@ import sys
 import glob
 import os
 from distutils import log
+from shutil import copyfile
 
 from setuptools import (Command, setup, find_packages)
 from setuptools.command.egg_info import egg_info
@@ -56,12 +57,6 @@ else:
 
 # -- dependencies -------------------------------------------------------------
 
-# build requirements
-setup_requires = [
-    'libsass',
-    'jsmin',
-]
-
 # install requirements (module-level imported packages)
 install_requires = [
     'python-dateutil',
@@ -83,9 +78,9 @@ install_requires = [
     'configparser ; python_version < \'3.6\'',
 ]
 
-# testing requirements
-if {'pytest', 'test'}.intersection(sys.argv):
-    setup_requires.append('pytest_runner')  # python setup.py test
+# build and test requirements
+setup_requires = ['pytest_runner'] if {
+    'pytest', 'test'}.intersection(sys.argv) else []
 tests_require = [
     'pytest>=2.8,<3.7',
     'pytest-cov',
@@ -106,28 +101,23 @@ extras_require = {
 
 # -- data files ---------------------------------------------------------------
 
-JAVASCRIPT_SOURCES = [
-    f for f in glob.glob(os.path.join('gwbootstrap', 'js', '*.js'))
-    if not f.endswith('.min.js')]
-CSS_SOURCES = glob.glob(os.path.join('gwbootstrap', 'sass', '[!_]*.scss'))
+SOURCE_FILES = [
+     os.path.join('gwbootstrap', 'lib', 'gwbootstrap.min.css'),
+     os.path.join('gwbootstrap', 'lib', 'gwbootstrap-extra.min.js'),
+]
 
-# make sure submodule is not empty
-static = glob.glob(os.path.join('gwbootstrap', '*'))
-if not static:
+if not SOURCE_FILES:  # make sure submodule is not empty
     raise ValueError('gwbootstrap submodule is empty, please populate it '
                      'with `git submodule update --init`')
 
 
 class BuildHtmlFiles(Command):
-    """Compile SASS sources into CSS and minify javascript
+    """Grab compiled CSS and minified JavaScript
     """
-    description = 'Compile SASS into CSS and minify JS'
-    user_options = [
-        ('output-style=', None, 'CSS output style'),
-    ]
+    description = 'Grab compiled CSS and minified JS'
 
     def initialize_options(self):
-        self.output_style = 'compressed'
+        pass
 
     def finalize_options(self):
         pass
@@ -147,40 +137,16 @@ class BuildHtmlFiles(Command):
     def staticpackage(self):
         return self.staticdir.replace(os.path.sep, '.')
 
-    def minify_js(self):
-        jsdir = os.path.join('gwbootstrap', 'js')
-        log.info('minifying js under %s' % jsdir)
-        js = '\n'.join([open(jsfile).read() for jsfile in JAVASCRIPT_SOURCES])
-        target = os.path.join(self.staticdir, 'gwbootstrap-extra.min.js')
-        self.minify(js, target)
-
-    def minify(self, source, target):
-        import jsmin
-        js = jsmin.jsmin(source)
-        with open(target, 'w') as f:
-            f.write(js)
-        log.info('minified js written to %s' % target)
-
-    def compile_sass(self):
-        sassdir = os.path.join('gwbootstrap', 'sass')
-        log.info('compiling SASS under %s to CSS' % sassdir)
-        for sassfile in CSS_SOURCES:
-            filename = os.path.basename(sassfile)
-            target = os.path.join(
-                self.staticdir, '%s.min.css' % os.path.splitext(filename)[0])
-            self.compile(sassfile, target)
-
-    def compile(self, source, target):
-        import sass
-        print(source, target)
-        css = sass.compile(filename=source, output_style=self.output_style)
-        with open(target, 'w') as f:
-            f.write(css)
-        log.info('%s CSS written to %s' % (self.output_style, target))
+    def build_utils(self):
+         log.info('copying minified elements')
+         for file_ in SOURCE_FILES:
+             filename = os.path.basename(file_)
+             target = os.path.join(self.staticdir, filename)
+             copyfile(file_, target)
+             log.info('minified CSS and JS written to %s' % target)
 
     def run(self):
-        self.compile_sass()
-        self.minify_js()
+        self.build_utils()
         if self.staticpackage not in self.distribution.packages:
             self.distribution.packages.append(self.staticpackage)
             log.info("added %s to package list" % self.staticpackage)
@@ -192,7 +158,7 @@ old_build_py = cmdclass.pop('build_py', build_py)
 
 
 class BuildPyWithHtmlFiles(old_build_py):
-    """Custom build_py that compiles SASS+JS sources as well
+    """Custom build_py that grabs compiled CSS+JS sources as well
     """
     def run(self):
         self.run_command('build_html_files')
@@ -205,7 +171,7 @@ old_egg_info = cmdclass.pop('egg_info', egg_info)
 
 
 class EggInfoWithHtmlFiles(old_egg_info):
-    """Custom egg_info that compiles SASS+JS sources as well
+    """Custom egg_info that grabs compiled CSS+JS sources as well
     """
     def run(self):
         self.run_command('build_html_files')
@@ -217,7 +183,7 @@ cmdclass['egg_info'] = EggInfoWithHtmlFiles
 # configuration files
 data_files = [
     (os.path.join('etc', PACKAGENAME, 'configuration'),
-        glob.glob(os.path.join('share', '*.ini'))),
+     glob.glob(os.path.join('share', '*.ini'))),
 ]
 
 # -- run setup ----------------------------------------------------------------

@@ -138,12 +138,12 @@ class BuildHtmlFiles(Command):
         return self.staticdir.replace(os.path.sep, '.')
 
     def build_utils(self):
-         log.info('copying minified elements')
-         for file_ in SOURCE_FILES:
-             filename = os.path.basename(file_)
-             target = os.path.join(self.staticdir, filename)
-             copyfile(file_, target)
-             log.info('minified CSS and JS written to %s' % target)
+        log.info('copying minified elements')
+        for file_ in SOURCE_FILES:
+            filename = os.path.basename(file_)
+            target = os.path.join(self.staticdir, filename)
+            copyfile(file_, target)
+            log.info('minified CSS and JS written to %s' % target)
 
     def run(self):
         self.build_utils()

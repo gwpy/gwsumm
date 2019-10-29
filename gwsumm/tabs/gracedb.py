@@ -143,8 +143,8 @@ class GraceDbTab(get_tab('default')):
         """
         page = markup.page()
         # build table of events
-        page.div(class_='scaffold well')
-        page.table(class_='table table-condensed table-hover table-striped',
+        page.div(class_='card border-light card-body scaffold shadow-sm')
+        page.table(class_='table table-sm table-hover table-striped',
                    id_='gracedb')
         # thead
         page.thead()
@@ -171,7 +171,7 @@ class GraceDbTab(get_tab('default')):
                         context = ctx
                         break
             if context:
-                page.tr(class_=context)
+                page.tr(class_='table-%s' % context)
             else:
                 page.tr()
             for col in self.columns:
@@ -193,7 +193,7 @@ class GraceDbTab(get_tab('default')):
                     else:
                         title = 'Data-quality report for {}'.format(sid)
                         page.a('DQR', title=title, href=href, target='_blank',
-                               rel='external', class_='btn btn-info btn-xs')
+                               rel='external', class_='btn btn-info btn-sm')
                     page.td.close()
                     continue
                 elif col.lower() == 'dqr':
@@ -216,7 +216,7 @@ class GraceDbTab(get_tab('default')):
                     href = '{}/{}/view/{}'.format(self.url, tag, v)
                     title = 'GraceDB {} page for {}'.format(tag[:-1], v)
                     page.a(v, title=title, href=href, target='_blank',
-                           rel='external', class_='btn btn-info btn-xs')
+                           rel='external', class_='btn btn-info btn-sm')
                     page.td.close()
                 elif col not in ('gpstime', 't_0') and isinstance(v, float):
                     page.td('%.3g' % v)
@@ -232,9 +232,9 @@ class GraceDbTab(get_tab('default')):
             page.p('No events were recovered for this state.')
         else:
             page.button(
-                'Export to CSV', class_='btn btn-default btn-table',
+                'Export to CSV', class_='btn btn-outline-secondary btn-table',
                 **{'data-table-id': 'gracedb', 'data-filename': 'gracedb.csv'})
-        page.div.close()  # scaffold well
+        page.div.close()  # card border-light card-body
 
         # query doc
         qurl = '{}/search/?query={}&query_type={}&results_format=S'.format(

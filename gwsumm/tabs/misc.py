@@ -65,7 +65,7 @@ class Error404Tab(Tab):
             top = kwargs.get('base', self.path)
         kwargs.setdefault('title', '404: Page not found')
         page = markup.page()
-        page.div(class_='alert alert-danger')
+        page.div(class_='alert alert-danger shadow-sm')
         page.p()
         page.strong("The page you are looking for doesn't exist")
         page.p.close()

@@ -19,7 +19,7 @@ pygments
 MarkupPy
 markdown
 gwdetchar>=0.5.1
-gwpy>=0.14.2
+gwpy>=1.0.0
 configparser ; python_version < '3.6'
 
 # optional extras (not module-level imports)

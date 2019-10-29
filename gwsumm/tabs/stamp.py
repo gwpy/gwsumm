@@ -126,7 +126,7 @@ class StampPEMTab(base):
             page.div(class_='btn-group')
             page.a('Click here for the full Stamp PEM results',
                    href=self.url+'/', rel='external', target='_blank',
-                   class_='btn btn-default btn-info btn-xl')
+                   class_='btn btn-outline-secondary btn-info btn-xl')
             page.div.close()
 
         # write to file

@@ -779,19 +779,19 @@ class DataTab(ProcessedTab, ParentTab):
                         "%s seconds." % (pc * 100))))
 
             # print segment lists
-            page.div(class_='panel-group', id="accordion")
+            page.div(id="accordion")
             for i, (flag, padding) in enumerate(allflags):
                 flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})
-                page.div(class_='panel well panel-primary')
-                page.div(class_='panel-heading')
-                page.a(href='#flag%d' % i, **{'data-toggle': 'collapse',
-                                              'data-parent': '#accordion'})
-                page.h4('<samp>%s</samp>' % flag.name, class_='panel-title')
-                page.a.close()
-                page.div.close()
-                page.div(id_='flag%d' % i, class_='panel-collapse collapse')
-                page.div(class_='panel-body')
+                page.div(class_='card border-primary mb-1 shadow-sm')
+                page.div(class_='card-header text-white bg-primary')
+                page.a(flag.name, class_='card-link cis-link collapsed',
+                       href='#flag%d' % i, **{'data-toggle': 'collapse',
+                                              'aria-expanded': 'false'})
+                page.div.close()  # card-header
+                page.div(id_='flag%d' % i, class_='collapse',
+                         **{'data-parent': '#accordion'})
+                page.div(class_='card-body')
                 # write segment summary
                 page.p('This flag was defined and had a known state during '
                        'the following segments:')
@@ -800,10 +800,10 @@ class DataTab(ProcessedTab, ParentTab):
                 page.p('This flag was active during the following segments:')
                 page.add(str(self.print_segments(flag.active)))
 
-                page.div.close()
-                page.div.close()
-                page.div.close()
-            page.div.close()
+                page.div.close()  # card-body
+                page.div.close()  # collapse
+                page.div.close()  # card
+            page.div.close()  # accordion
 
         # write state information
         page.add(str(self.write_state_information(state)))

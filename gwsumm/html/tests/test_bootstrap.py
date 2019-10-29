@@ -80,7 +80,7 @@ def test_wrap_content():
 def test_state_switcher():
     switcher = bootstrap.state_switcher([('Test', '#test')])
     assert parse_html(str(switcher)) == parse_html(
-        '<div class="btn-group pull-right state-switch">\n'
+        '<div class="btn-group float-right state-switch">\n'
         '<a class="navbar-brand dropdown-toggle" href="#" id="states" '
         'title="Show/hide state menu" data-toggle="dropdown">\n'
         'Test\n<b class="caret"></b>\n</a>\n'
@@ -100,7 +100,7 @@ def test_base_map_dropdown():
     # test with bases
     menu_wbases = bootstrap.base_map_dropdown('test', bases={'key': 'value'})
     assert parse_html(str(menu_wbases)) == parse_html(
-        '<div class="btn-group pull-left base-map">\n'
+        '<div class="btn-group base-map">\n'
         '<a href="#" class="navbar-brand dropdown-toggle" '
         'data-toggle="dropdown">\ntest\n<b class="caret"></b>\n</a>\n'
         '<ul class="dropdown-menu">\n<li>\n'

@@ -512,14 +512,14 @@ class BaseTab(object):
             title = self.title.replace('/', ' : ', 1)
         return html.banner(title, subtitle=subtitle)
 
-    def html_navbar(self, brand=None, tabs=list(), ifo=None, ifomap=dict(),
-                    **kwargs):
+    def html_navbar(self, help_=None, calendar=False, tabs=list(),
+                    ifo=None, ifomap=dict(), **kwargs):
         """Build the navigation bar for this tab.
 
         Parameters
         ----------
-        brand : `str`, `~MarkupPy.markup.page`
-            content to place inside `<div class="navbar-brand"></div>`
+        help_ : `str`, `~MarkupPy.markup.page`
+            content to place on the upper-right side of the navbar
 
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
@@ -540,7 +540,7 @@ class BaseTab(object):
         page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
-        class_ = 'navbar navbar-fixed-top'
+        class_ = 'navbar fixed-top navbar-expand-md shadow-sm'
         # build interferometer cross-links
         if ifo is not None:
             brand_ = html.base_map_dropdown(ifo, id_='ifos', bases=ifomap)
@@ -548,11 +548,14 @@ class BaseTab(object):
         else:
             brand_ = markup.page()
         # build HTML brand
-        if brand:
-            brand_.add(str(brand))
+        if help_:
+            brand_ = (brand_, help_)
+        # build tabs and calendar
+        tabs = self._html_navbar_links(tabs)
+        if calendar:
+            tabs.insert(0, calendar)
         # combine and return
-        return gwhtml.navbar(self._html_navbar_links(tabs), class_=class_,
-                             brand=brand_, **kwargs)
+        return gwhtml.navbar(tabs, class_=class_, brand=brand_, **kwargs)
 
     def _html_navbar_links(self, tabs):
         """Construct the ordered list of tabs to write into the navbar
@@ -653,7 +656,7 @@ class BaseTab(object):
         return page
 
     def write_html(self, maincontent, title=None, subtitle=None, tabs=list(),
-                   ifo=None, ifomap=dict(), brand=None, base=None, css=None,
+                   ifo=None, ifomap=dict(), help_=None, base=None, css=None,
                    js=None, about=None, footer=None, issues=True, **inargs):
         """Write the HTML page for this `Tab`.
 
@@ -679,7 +682,7 @@ class BaseTab(object):
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
 
-        brand : `str`, `~MarkupPy.markup.page`, optional
+        help_ : `str`, `~MarkupPy.markup.page`, optional
             non-menu content for navigation bar
 
         css : `list`, optional
@@ -728,7 +731,7 @@ class BaseTab(object):
         # construct navigation
         if tabs:
             navbar = str(self.html_navbar(ifo=ifo, ifomap=ifomap,
-                                          tabs=tabs, brand=brand))
+                                          tabs=tabs, help_=help_))
 
         # initialize page
         self.page = gwhtml.new_bootstrap_page(
@@ -853,7 +856,7 @@ class IntervalTab(GpsTab):
             requiredpath = get_base(date, mode=self.mode)
         except ValueError:
             return markup.oneliner.div('%d-%d' % (self.start, self.end),
-                                       class_='navbar-brand')
+                                       class_='navbar-text')
         if requiredpath not in self.path:
             raise RuntimeError("Tab path %r inconsistent with required "
                                "format including %r for archive calendar"
@@ -861,7 +864,7 @@ class IntervalTab(GpsTab):
         # format calendar
         return html.calendar(date, mode=self.mode)
 
-    def html_navbar(self, brand=None, calendar=True, **kwargs):
+    def html_navbar(self, help_=None, calendar=True, **kwargs):
         """Build the navigation bar for this `Tab`.
 
         The navigation bar will consist of a switch for this page linked
@@ -871,10 +874,12 @@ class IntervalTab(GpsTab):
 
         Parameters
         ----------
-        brand : `str`, `~MarkupPy.markup.page`
-            content for navbar-brand
+        help_ : `str`, `~MarkupPy.markup.page`
+            content for upper-right of navbar
+
         ifo : `str`, optional
             prefix for this IFO.
+
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
@@ -888,16 +893,11 @@ class IntervalTab(GpsTab):
         page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
-        # build interferometer cross-links
-        brand_ = markup.page()
         # add calendar
-        if calendar:
-            brand_.add(str(self.html_calendar()))
-        # build HTML brand
-        if brand:
-            brand_.add(str(brand))
+        calendar = calendar and str(self.html_calendar)
         # combine and return
-        return super(IntervalTab, self).html_navbar(brand=brand_, **kwargs)
+        return super(IntervalTab, self).html_navbar(
+            help_=help_, calendar=calendar, **kwargs)
 
 
 class EventTab(GpsTab):
@@ -948,10 +948,10 @@ class EventTab(GpsTab):
         # create tab and assign properties
         super(EventTab, self).__init__(*args, **kwargs)
 
-    def html_navbar(self, brand=None, **kwargs):
-        if brand is None:
-            brand = str(self.gpstime)
-        super(EventTab, self).html_navbar(brand=brand, **kwargs)
+    def html_navbar(self, calendar=None, **kwargs):
+        if calendar is None:
+            calendar = str(self.gpstime)
+        super(EventTab, self).html_navbar(help_=help_, **kwargs)
     html_navbar.__doc__ = GpsTab.html_navbar.__doc__
 
 

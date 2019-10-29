@@ -65,7 +65,7 @@ def test_get_js():
         'jquery-3.4.1.min.js',
         'jquery-ui.min.js',
         'moment.min.js',
-        'bootstrap.min.js',
+        'bootstrap.bundle.min.js',
         'jquery.fancybox.min.js',
         'bootstrap-datepicker.min.js',
         'gwbootstrap-extra.min.js',

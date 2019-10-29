@@ -70,25 +70,25 @@ This is a test.
 * Bullet 1
 * Bullet 2"""
 
-DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open" '
+DIALOG = ('<button title="Test" id="id-btn" class="btn-float btn-open shadow" '
           'data-id="#id">T</button>\n<div class="dialog" title="Test" '
           'id="id">\n%s\n</div>') % markdown(CONTENTS)
 
 OVERLAY = (
     '<button title="Overlay figures" id="overlay-btn" class="btn-float '
-    'btn-open" data-id="#overlay"><i class="fas fa-layer-group"></i></button>'
-    '\n<div class="dialog" title="Overlay figures" id="overlay">\n'
+    'btn-open shadow" data-id="#overlay"><i class="fas fa-layer-group"></i>'
+    '</button>\n<div class="dialog" title="Overlay figures" id="overlay">\n'
     '<h1>Overlay figures for easy comparison</h1>\n\n<p><hr '
     'class="row-divider" />\n<div class="row" id="overlay-outer">\n'
-    '<div class="col-md-4">\n<div class="scaffold well" id="overlay-info">\n'
-    '<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div class="col-md-8">\n'
-    '<div class="center-text">\n<a title="Overlay all selected figures" '
-    'class="btn btn-default" id="overlay-figures">Overlay</a>\n'
-    '<a title="Download overlay figure" class="btn btn-default" '
-    'id="download-overlay">Download</a>\n<a title="Clear all figure '
-    'selections" class="btn btn-default" id="clear-figures">Clear</a>\n'
-    '</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div></p>\n'
-    '</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
+    '<div class="col-md-4">\n<div class="card card-body shadow-sm" '
+    'id="overlay-info">\n<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div '
+    'class="col-md-8">\n<div class="center-text">\n<a title="Overlay all '
+    'selected figures" class="btn btn-outline-secondary" id="overlay-figures">'
+    'Overlay</a>\n<a title="Download overlay figure" class="btn btn-outline-'
+    'secondary" id="download-overlay">Download</a>\n<a title="Clear all figure'
+    ' selections" class="btn btn-outline-secondary" id="clear-figures">Clear'
+    '</a>\n</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div></p>'
+    '\n</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
 
 
 # test utilities
@@ -119,8 +119,8 @@ def test_load():
     # test with non-string error argument
     success = 'jQuery(\"#main\").html(data);'
     error = 'Failed to load content from %r' % URL
-    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning\'>'
-                '<p>%s</p></div>\");' % error)
+    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning '
+                'shadow-sm\'><p>%s</p></div>\");' % error)
     content = html5.load(URL, error=1)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
 
@@ -128,8 +128,8 @@ def test_load():
 def test_load_custom():
     error = 'Error'
     success = 'document.write(\"Success\")'
-    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning\'>'
-                '<p>%s</p></div>\");' % error)
+    errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning '
+                'shadow-sm\'><p>%s</p></div>\");' % error)
     # test local url
     content = html5.load('test', success=success, error=error)
     assert parse_html(content) == parse_html(
@@ -151,8 +151,8 @@ def test_ldvw_qscan_single():
         'chanName=X1:TEST&amp;doQxfrm=yes&amp;strtTime=0&amp;&amp;'
         'qxfrm_pltfrq=10 inf&amp;qxfrm_srchqrng=4 100&amp;'
         'qxfrm_plttimes=0.5 2 8" target="_blank" rel="external" '
-        'class="btn btn-default btn-xs" title="Q-scan X1:TEST at 0 via LDVW">'
-        'Q-scan</a>')
+        'class="btn btn-outline-secondary btn-sm" title="Q-scan X1:TEST at 0 '
+        'via LDVW">Q-scan</a>')
 
 
 def test_ldvw_qscan_batch():
@@ -161,8 +161,8 @@ def test_ldvw_qscan_batch():
         '<a href="https://ldvw.ligo.caltech.edu/ldvw/Wdq?submitAct=go&amp;'
         'wdq_ifo=X1&amp;wdq_cmap=viridis&amp;wdq_gps=0&amp;wdq_prog=py-Omega&'
         'amp;goBtn=goBtn" target="_blank" rel="external" class="btn '
-        'btn-default btn-xs" title="Batch-process omega scans of the loudest '
-        'triggers via LDVW">Launch omega scans</a>')
+        'btn-outline-secondary btn-sm" title="Batch-process omega scans of '
+        'the loudest triggers via LDVW">Launch omega scans</a>')
 
 
 def test_dialog_box(tmpdir):

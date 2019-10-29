@@ -428,7 +428,7 @@ class PlotTab(Tab):
             formatted markup with grid of plots
         """
         page = markup.page()
-        page.div(class_='scaffold well')
+        page.div(class_='card border-light card-body scaffold shadow-sm')
 
         if plots is None:
             if state:
@@ -471,7 +471,7 @@ class PlotTab(Tab):
                                      "12-column format" % colwidth)
                 else:
                     offset = remainder / 2
-                page.div(class_='col-md-%d col-md-offset-%d'
+                page.div(class_='col-md-%d offset-md-%d'
                                 % (colwidth, offset))
             else:
                 colwidth = 12 // int(layout[k][0])
@@ -482,11 +482,12 @@ class PlotTab(Tab):
                        class_=aclass, **fbkw)
             else:
                 fbkw['title'] = plot.caption
+                fbkw['data-caption'] = plot.caption
                 page.a(href=plot.href, class_=aclass, **fbkw)
             page.img(
-                class_='img-responsive',
-                src=plot.src.replace('.pdf', '.png') if (
-                    plot.src.endswith('.pdf')) else plot.src,
+                class_='img-fluid w-100 lazy',
+                **{'data-src': plot.src.replace('.pdf', '.png') if (
+                    plot.src.endswith('.pdf')) else plot.src},
             )
             page.a.close()
             page.div.close()
@@ -694,7 +695,7 @@ class StateTab(PlotTab):
     # ------------------------------------------------------------------------
     # HTML methods
 
-    def html_navbar(self, brand='', **kwargs):
+    def html_navbar(self, help_=None, **kwargs):
         """Build the navigation bar for this `Tab`.
 
         The navigation bar will consist of a switch for this page linked
@@ -704,10 +705,12 @@ class StateTab(PlotTab):
 
         Parameters
         ----------
-        brand : `str`, :class:`~MarkupPy.markup.page`
-            content for navbar-brand
+        help_ : `str`, :class:`~MarkupPy.markup.page`
+            content for upper-right of navbar
+
         ifo : `str`, optional
             prefix for this IFO.
+
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
@@ -721,17 +724,11 @@ class StateTab(PlotTab):
         page : `~MarkupPy.markup.page`
             a markup page containing the navigation bar.
         """
-        brand_ = markup.page()
-        # build state switch
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             default = self.states.index(self.defaultstate)
-            brand_.add(str(html.state_switcher(
+            help_ = str(html.state_switcher(
                 list(zip(self.states, self.frames)), default)))
-        # build HTML brand
-        if brand:
-            brand_.add(str(brand))
-        # combine and return
-        return super(StateTab, self).html_navbar(brand=brand_, **kwargs)
+        return super(StateTab, self).html_navbar(help_=help_, **kwargs)
 
     @staticmethod
     def html_content(frame):
@@ -766,7 +763,7 @@ class StateTab(PlotTab):
         return self.frames[idx]
 
     def write_html(self, title=None, subtitle=None, tabs=list(), ifo=None,
-                   ifomap=dict(), brand=None, css=CSS, js=JS, about=None,
+                   ifomap=dict(), help_=None, css=CSS, js=JS, about=None,
                    footer=None, **inargs):
         """Write the HTML page for this state Tab.
 
@@ -775,29 +772,40 @@ class StateTab(PlotTab):
         maincontent : `str`, :class:`~MarkupPy.markup.page`
             simple string content, or a structured `page` of markup to
             embed as the content of the #main div.
+
         title : `str`, optional, default: {parent.name}
             level 1 heading for this `Tab`.
+
         subtitle : `str`, optional, default: {self.name}
             level 2 heading for this `Tab`.
+
         tabs: `list`, optional
             list of top-level tabs (with children) to populate navbar
+
         ifo : `str`, optional
             prefix for this IFO.
+
         ifomap : `dict`, optional
             `dict` of (ifo, {base url}) pairs to map to summary pages for
             other IFOs.
-        brand : `str`, :class:`~MarkupPy.markup.page`, optional
+
+        help_ : `str`, :class:`~MarkupPy.markup.page`, optional
             non-menu content for navigation bar, defaults to calendar
+
         css : `list`, optional
             list of resolvable URLs for CSS files. See `gwsumm.html.static.CSS`
             for the default list.
+
         js : `list`, optional
             list of resolvable URLs for javascript files. See
             `gwumm.html.JS` for the default list.
+
         about : `str`, optional
             href for the 'About' page
+
         footer : `str`, `~MarkupPy.markup.page`
             user-defined content for the footer (placed below everything else)
+
         **inargs
             other keyword arguments to pass to the
             :meth:`~Tab.build_inner_html` method
@@ -805,7 +813,7 @@ class StateTab(PlotTab):
         default = self.states.index(self.defaultstate)
         return super(PlotTab, self).write_html(
             self.frames[default], title=title, subtitle=subtitle,
-            tabs=tabs, ifo=ifo, ifomap=ifomap, brand=brand, css=css, js=js,
+            tabs=tabs, ifo=ifo, ifomap=ifomap, help_=help_, css=css, js=js,
             about=about, footer=footer, **inargs)
 
 

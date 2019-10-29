@@ -115,8 +115,8 @@ def load(url, id_='main', error=False, success=None):
     else:
         if not isinstance(error, (str, markup.page)):
             error = 'Failed to load content from %r' % url
-        error = ('jQuery("#%s").html("<div class=\'alert alert-warning\'>'
-                 '<p>%s</p></div>");' % (id_, error))
+        error = ('jQuery("#%s").html("<div class=\'alert alert-warning '
+                 'shadow-sm\'><p>%s</p></div>");' % (id_, error))
     if success is None:
         success = 'jQuery("#%s").html(data);' % id_
     url = _expand_path(url)
@@ -171,7 +171,7 @@ def ldvw_qscan(channel, time, fmin=10, fmax='inf', qmin=4, qmax=100):
     uri = 'https://ldvw.ligo.caltech.edu/ldvw/{0}'.format(query)
     return markup.oneliner.a(
         label, href=uri, target='_blank', rel='external',
-        class_='btn btn-default btn-xs', title=title)
+        class_='btn btn-outline-secondary btn-sm', title=title)
 
 
 def dialog_box(content, title, id_, btntxt):
@@ -201,7 +201,7 @@ def dialog_box(content, title, id_, btntxt):
     btnargs = {
         'title': title,
         'id_': '-'.join([id_, 'btn']),
-        'class_': 'btn-float btn-open',
+        'class_': 'btn-float btn-open shadow',
         'data-id': '#' + id_,
     }
     page = markup.page()
@@ -232,19 +232,19 @@ def overlay_canvas():
     page.hr(class_='row-divider')
     page.div(class_='row', id_='overlay-outer')
     page.div(class_='col-md-4')
-    page.div(class_='scaffold well', id_='overlay-info')
+    page.div(class_='card card-body shadow-sm', id_='overlay-info')
     page.h4('Instructions')
     page.add(markdown(OVERLAY_INSTRUCTIONS))
-    page.div.close()  # scaffold well
+    page.div.close()  # card card-body shadow-sm
     page.div.close()  # col-md-4
     page.div(class_='col-md-8')
     page.div(class_='center-text')
     page.a('Overlay', title='Overlay all selected figures',
-           class_='btn btn-default', id_='overlay-figures')
+           class_='btn btn-outline-secondary', id_='overlay-figures')
     page.a('Download', title='Download overlay figure',
-           class_='btn btn-default', id_='download-overlay')
+           class_='btn btn-outline-secondary', id_='download-overlay')
     page.a('Clear', title='Clear all figure selections',
-           class_='btn btn-default', id_='clear-figures')
+           class_='btn btn-outline-secondary', id_='clear-figures')
     page.div.close()  # center-text
     page.br()
     page.add(markup.oneliner.canvas(id_='overlay-canvas'))

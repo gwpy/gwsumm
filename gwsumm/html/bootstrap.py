@@ -145,18 +145,21 @@ def state_switcher(states, default=0):
     current, chref = states[default]
     page = markup.page()
     page.ul(class_='nav navbar-nav')
-    page.li(class_='nav-item dropdown state-switch')
+    page.li(class_='nav-item dropdown')
     page.a(str(current), class_='nav-link dropdown-toggle', href='#',
            id_='states', role='button', title='Show/hide state menu',
            **{'data-toggle': 'dropdown'})
-    page.div(class_='dropdown-menu dropdown-menu-right', id_='statemenu')
-    page.h6('Select an option below to view these data in another state '
-            '(different time segments).', class_='dropdown-header')
+    page.div(
+        class_='dropdown-menu dropdown-menu-right state-switch',
+        id_='statemenu',
+    )
+    page.h6('Select below to view these data in another state (different'
+            'time segments).', class_='dropdown-header')
     page.div('', class_='dropdown-divider')
     for i, (state, href) in enumerate(states):
         page.a(str(state), class_='dropdown-item state', title=str(state),
                id_='state_%s' % re_cchar.sub('_', str(state)).lower(),
-               onclick='$(this).load_state(\'%s\');' % href)
+               onclick='jQuery(this).load_state(\'%s\');' % href)
     page.div.close()  # dropdown-menu dropdown-menu-right
     page.li.close()  # nav-item dropdown state-switch
     page.ul.close()  # nav navbar-nav
@@ -180,7 +183,11 @@ def base_map_dropdown(this, class_='navbar-brand dropdown base-map',
     page = markup.page()
     if baselinks:
         page.div(class_=class_, **id_)
-        page.add(str(html.dropdown(this, baselinks)))
+        page.add(str(html.dropdown(
+            this,
+            baselinks,
+            class_='nav-link border border-white rounded dropdown-toggle',
+        )))
         page.div.close()
     else:
         page.div(

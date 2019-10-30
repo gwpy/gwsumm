@@ -485,9 +485,9 @@ class PlotTab(Tab):
                 fbkw['data-caption'] = plot.caption
                 page.a(href=plot.href, class_=aclass, **fbkw)
             page.img(
-                class_='img-fluid w-100 lazy',
-                **{'data-src': plot.src.replace('.pdf', '.png') if (
-                    plot.src.endswith('.pdf')) else plot.src},
+                class_='img-fluid w-100',
+                src=plot.src.replace('.pdf', '.png') if (
+                    plot.src.endswith('.pdf')) else plot.src,
             )
             page.a.close()
             page.div.close()
@@ -727,7 +727,7 @@ class StateTab(PlotTab):
         if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
             default = self.states.index(self.defaultstate)
             help_ = str(html.state_switcher(
-                list(zip(self.states, self.frames)), default)))
+                list(zip(self.states, self.frames)), default))
         return super(StateTab, self).html_navbar(help_=help_, **kwargs)
 
     @staticmethod

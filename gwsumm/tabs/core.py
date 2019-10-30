@@ -894,7 +894,7 @@ class IntervalTab(GpsTab):
             a markup page containing the navigation bar.
         """
         # add calendar
-        calendar = calendar and str(self.html_calendar)
+        calendar = calendar and str(self.html_calendar())
         # combine and return
         return super(IntervalTab, self).html_navbar(
             help_=help_, calendar=calendar, **kwargs)
@@ -951,7 +951,7 @@ class EventTab(GpsTab):
     def html_navbar(self, calendar=None, **kwargs):
         if calendar is None:
             calendar = str(self.gpstime)
-        super(EventTab, self).html_navbar(help_=help_, **kwargs)
+        super(EventTab, self).html_navbar(calendar=calendar, **kwargs)
     html_navbar.__doc__ = GpsTab.html_navbar.__doc__
 
 

@@ -177,8 +177,9 @@ def base_map_dropdown(this, class_='navbar-brand dropdown base-map',
     else:
         id_ = dict()
     # format links
-    baselinks = [markup.oneliner.a(key, title=key, **{'data-new-base': val})
-                 for (key, val) in bases.items() if key != this]
+    baselinks = [markup.oneliner.a(
+        key, title=key, class_='dropdown-item', **{'data-new-base': val}
+    ) for (key, val) in bases.items() if key != this]
     # slam it all together
     page = markup.page()
     if baselinks:

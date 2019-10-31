@@ -361,8 +361,7 @@ class EventTriggerTab(get_tab('default')):
                     )))
 
             if self.subplots:
-                page.hr(class_='row-divider')
-                page.h1('Sub-plots')
+                page.h1('Sub-plots', class_='mt-4')
                 layout = get_mode() == Mode.week and [7] or [4]
                 plist = [p for p in self.subplots if p.state in [state, None]]
                 page.add(str(self.scaffold_plots(plots=plist, state=state,

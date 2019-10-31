@@ -150,10 +150,10 @@ def state_switcher(states, default=0):
            id_='states', role='button', title='Show/hide state menu',
            **{'data-toggle': 'dropdown'})
     page.div(
-        class_='dropdown-menu dropdown-menu-right state-switch',
+        class_='dropdown-menu dropdown-menu-right state-switch shadow',
         id_='statemenu',
     )
-    page.h6('Select below to view these data in another state (different'
+    page.h6('Select below to view these data in another state (different '
             'time segments).', class_='dropdown-header')
     page.div('', class_='dropdown-divider')
     for i, (state, href) in enumerate(states):

@@ -256,7 +256,7 @@ class SEIWatchDogTab(base):
         page = markup.page()
 
         # build summary table
-        page.div(class_='well')
+        page.div(class_='card card-body border-light shadow-sm')
         chambertype = self.chambers[0][:-1]
         id_ = '{}-{}'.format(self.ifo.lower(), chambertype.lower())
         page.table(
@@ -338,8 +338,8 @@ class SEIWatchDogTab(base):
                 groups[j] = []
 
         # build trip table
-        page.h1('Trip list')
-        page.div(class_='well')
+        page.h1('Trip list', class_='mt-4')
+        page.div(class_='card card-body border-light shadow-sm')
 
         utc = tz.gettz('UTC')
         if self.ifo in ['H1', 'C1', 'P1']:

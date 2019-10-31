@@ -285,9 +285,9 @@ class GuardianTab(DataTab):
         page.div(id='accordion')
         for i, bit in enumerate(self.grdstates):
             name = self.grdstates[bit].strip('*')
-            page.div(class_='card border-primary mb-1 shadow-sm', id=str(bit))
+            page.div(class_='card border-info mb-1 shadow-sm', id=str(bit))
             # heading
-            page.div(class_='card-header text-white bg-primary')
+            page.div(class_='card-header text-white bg-info')
             page.a('%s [%d]' % (name, bit), href='#collapse-%d' % bit,
                    class_='card-link cis-link collapsed',
                    **{'data-toggle': 'collapse', 'aria-expandedt': 'false'})

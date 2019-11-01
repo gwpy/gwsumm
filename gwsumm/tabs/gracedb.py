@@ -250,15 +250,16 @@ class GraceDbTab(get_tab('default')):
         page.p('The above table was generated from a query to {} with the '
                'form <code>{}</code>. To view the results of the same query '
                'via the GraceDB web interface, click {}.'.format(
-                   self.url, self.query, qlink))
+                   self.url, self.query, qlink), class_='mt-2')
 
         # reference the labelling
         page.h4('Labelling reference')
         page.p('Events in the above table may have a context based on '
                'its labels as follows:')
         for c, labels in LABELS.items():
+            c = (c if c == 'warning' else '%s text-white' % c)
             labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
-            page.p(labstr, class_='bg-%s' % c, style='width: auto;')
+            page.p(labstr, class_='bg-%s pl-2' % c, style='width: auto;')
 
         # write to file
         idx = self.states.index(state)

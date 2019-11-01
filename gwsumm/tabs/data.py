@@ -776,7 +776,7 @@ class DataTab(ProcessedTab, ParentTab):
                         "%s seconds." % (pc * 100))))
 
             # print segment lists
-            page.div(id="accordion")
+            page.div(class_='mt-2', id='accordion')
             for i, (flag, padding) in enumerate(allflags):
                 flag = get_segments(flag, [self.span], query=False,
                                     padding={flag: padding})

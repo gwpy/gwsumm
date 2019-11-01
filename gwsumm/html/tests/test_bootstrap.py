@@ -30,12 +30,9 @@ from .. import bootstrap
 
 # global variables
 DATE = datetime.strptime('20140410', '%Y%m%d')
-CALENDAR = """<a class="navbar-brand step-back" title="Step back">&laquo;</a>
-<a id="calendar" class="navbar-brand dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}">
-{}
-<b class="caret"></b>
-</a>
-<a class="navbar-brand step-forward" title="Step forwards">&raquo;</a>"""  # noqa: E501
+CALENDAR = """<a class="nav-link step-back" title="Step backward">&laquo;</a>
+<a id="calendar" class="nav-link dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}">{}</a>
+<a class="nav-link step-forward" title="Step forward">&raquo;</a>"""  # noqa: E501
 
 
 # test utilities
@@ -74,34 +71,33 @@ def test_calendar_no_mode():
 def test_wrap_content():
     content = bootstrap.wrap_content('test')
     assert parse_html(str(content)) == parse_html(
-        '<div class="container" id="main">\ntest\n</div>')
+        '<div class="container-fluid" id="main">\ntest\n</div>')
 
 
 def test_state_switcher():
     switcher = bootstrap.state_switcher([('Test', '#test')])
     assert parse_html(str(switcher)) == parse_html(
-        '<div class="btn-group float-right state-switch">\n'
-        '<a class="navbar-brand dropdown-toggle" href="#" id="states" '
-        'title="Show/hide state menu" data-toggle="dropdown">\n'
-        'Test\n<b class="caret"></b>\n</a>\n'
-        '<ul class="dropdown-menu" id="statemenu">\n'
-        '<li class="dropdown-header">Select an option below to view '
-        'these data in another state (different time segments).</li>\n'
-        '<li class="divider"></li>\n<li>\n'
-        '<a class="state" title="Test" id="state_test" '
-        'onclick="$(this).load_state(&quot;#test&quot;);">Test</a>\n'
-        '</li>\n</ul>\n</div>')
+        '<ul class="nav navbar-nav">\n<li class="nav-item dropdown">\n'
+        '<a class="nav-link dropdown-toggle" href="#" id="states" role='
+        '"button" title="Show/hide state menu" data-toggle="dropdown">Test</a>'
+        '\n<div class="dropdown-menu dropdown-menu-right state-switch shadow" '
+        'id="statemenu">\n<h6 class="dropdown-header">Select below to view '
+        'this page in another state (different time segments).</h6>\n<div '
+        'class="dropdown-divider"></div>\n<a class="dropdown-item state" '
+        'title="Test" id="state_test" onclick="jQuery(this).load_state'
+        '(&quot;#test&quot;);">Test</a>\n</div>\n</li>\n</ul>')
 
 
 def test_base_map_dropdown():
     menu = bootstrap.base_map_dropdown('test', id_='id')
     assert parse_html(str(menu)) == parse_html(
-        '<div class=\"navbar-brand\" id=\"id\">test</div>')
+        '<div class="navbar-brand border border-white '
+        'rounded" id="id">test</div>')
     # test with bases
     menu_wbases = bootstrap.base_map_dropdown('test', bases={'key': 'value'})
     assert parse_html(str(menu_wbases)) == parse_html(
-        '<div class="btn-group base-map">\n'
-        '<a href="#" class="navbar-brand dropdown-toggle" '
-        'data-toggle="dropdown">\ntest\n<b class="caret"></b>\n</a>\n'
-        '<ul class="dropdown-menu">\n<li>\n'
-        '<a title="key" data-new-base="value">key</a>\n</li>\n</ul>\n</div>')
+        '<div class="dropdown base-map">\n<a href="#" class="navbar-brand '
+        'nav-link border border-white rounded dropdown-toggle" data-toggle='
+        '"dropdown">\ntest\n<b class="caret"></b>\n</a>\n<ul class="dropdown-'
+        'menu">\n<li>\n<a title="key" class="dropdown-item" data-new-base='
+        '"value">key</a>\n</li>\n</ul>\n</div>')

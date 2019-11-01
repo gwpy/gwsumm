@@ -153,7 +153,7 @@ def state_switcher(states, default=0):
         class_='dropdown-menu dropdown-menu-right state-switch shadow',
         id_='statemenu',
     )
-    page.h6('Select below to view these data in another state (different '
+    page.h6('Select below to view this page in another state (different '
             'time segments).', class_='dropdown-header')
     page.div('', class_='dropdown-divider')
     for i, (state, href) in enumerate(states):
@@ -166,8 +166,7 @@ def state_switcher(states, default=0):
     return page
 
 
-def base_map_dropdown(this, class_='navbar-brand dropdown base-map',
-                      id_=None, bases=dict()):
+def base_map_dropdown(this, id_=None, bases=dict()):
     """Construct a dropdown menu that links to a version of the current
     page on another server, based on a new base.
     """
@@ -183,11 +182,12 @@ def base_map_dropdown(this, class_='navbar-brand dropdown base-map',
     # slam it all together
     page = markup.page()
     if baselinks:
-        page.div(class_=class_, **id_)
+        page.div(class_='dropdown base-map', **id_)
         page.add(str(html.dropdown(
             this,
             baselinks,
-            class_='nav-link border border-white rounded dropdown-toggle',
+            class_='navbar-brand nav-link border border-white '
+                   'rounded dropdown-toggle',
         )))
         page.div.close()
     else:

@@ -143,8 +143,7 @@ class GraceDbTab(get_tab('default')):
         """
         page = markup.page()
         # build table of events
-        page.div(class_='card border-light card-body scaffold shadow-sm')
-        page.table(class_='table table-sm table-hover table-striped',
+        page.table(class_='table table-sm table-hover table-striped mt-2',
                    id_='gracedb')
         # thead
         page.thead()
@@ -232,9 +231,9 @@ class GraceDbTab(get_tab('default')):
             page.p('No events were recovered for this state.')
         else:
             page.button(
-                'Export to CSV', class_='btn btn-outline-secondary btn-table',
+                'Export to CSV',
+                class_='btn btn-outline-secondary btn-table mt-2',
                 **{'data-table-id': 'gracedb', 'data-filename': 'gracedb.csv'})
-        page.div.close()  # card border-light card-body
 
         # query doc
         qurl = '{}/search/?query={}&query_type={}&results_format=S'.format(

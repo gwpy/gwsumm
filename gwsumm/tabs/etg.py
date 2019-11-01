@@ -298,7 +298,7 @@ class EventTriggerTab(get_tab('default')):
                 page.div(class_='btn-group')
                 page.a('Click here for the full %s results' % self.name,
                        href=self.url, rel='external', target='_blank',
-                       class_='btn btn-outline-secondary btn-info btn-xl')
+                       class_='btn btn-info btn-xl')
                 page.div.close()
                 page.hr(class_='row-divider')
 
@@ -373,7 +373,7 @@ class EventTriggerTab(get_tab('default')):
                     page.div(class_='btn-group')
                     page.a('Click here for the full %s results' % self.name,
                            href=self.url, rel='external', target='_blank',
-                           class_='btn btn-outline-secondary btn-info btn-xl')
+                           class_='btn btn-info btn-xl')
                     page.div.close()
                     page.hr(class_='row-divider')
 

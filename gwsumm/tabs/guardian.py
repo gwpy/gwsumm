@@ -273,7 +273,7 @@ class GuardianTab(DataTab):
         page.tbody.close()
         page.table.close()
         page.button(
-            'Export to CSV', class_='btn btn-outline-secondary btn-table',
+            'Export to CSV', class_='btn btn-outline-secondary btn-table mt-2',
             **{'data-table-id': id_, 'data-filename': '%s.csv' % id_})
         page.div.close()
         page.div.close()

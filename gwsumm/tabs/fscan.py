@@ -154,7 +154,7 @@ class FscanTab(base):
             page.div(class_='btn-group')
             page.a('Full Fscan results for %s' % date,
                    href=index, rel='external', target='_blank',
-                   class_='btn btn-outline-secondary btn-info btn-xl')
+                   class_='btn btn-info btn-xl')
             page.div.close()
 
         if self.navigation:

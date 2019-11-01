@@ -83,10 +83,10 @@ OVERLAY = (
     '<div class="col-md-4">\n<div class="card card-body shadow-sm" '
     'id="overlay-info">\n<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div '
     'class="col-md-8">\n<div class="text-center">\n<a title="Overlay all '
-    'selected figures" class="btn btn-outline-secondary" id="overlay-figures">'
-    'Overlay</a>\n<a title="Download overlay figure" class="btn btn-outline-'
-    'secondary" id="download-overlay">Download</a>\n<a title="Clear all figure'
-    ' selections" class="btn btn-outline-secondary" id="clear-figures">Clear'
+    'selected figures" class="btn btn-light shadow-sm" id="overlay-figures">'
+    'Overlay</a>\n<a title="Download overlay figure" class="btn btn-light '
+    'shadow-sm" id="download-overlay">Download</a>\n<a title="Clear all figure'
+    ' selections" class="btn btn-light shadow-sm" id="clear-figures">Clear'
     '</a>\n</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div></p>'
     '\n</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
 

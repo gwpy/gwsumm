@@ -240,11 +240,11 @@ def overlay_canvas():
     page.div(class_='col-md-8')
     page.div(class_='text-center')
     page.a('Overlay', title='Overlay all selected figures',
-           class_='btn btn-outline-secondary', id_='overlay-figures')
+           class_='btn btn-light shadow-sm', id_='overlay-figures')
     page.a('Download', title='Download overlay figure',
-           class_='btn btn-outline-secondary', id_='download-overlay')
+           class_='btn btn-light shadow-sm', id_='download-overlay')
     page.a('Clear', title='Clear all figure selections',
-           class_='btn btn-outline-secondary', id_='clear-figures')
+           class_='btn btn-light shadow-sm', id_='clear-figures')
     page.div.close()  # text-center
     page.br()
     page.add(markup.oneliner.canvas(id_='overlay-canvas'))

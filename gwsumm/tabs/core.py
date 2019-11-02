@@ -512,7 +512,7 @@ class BaseTab(object):
             title = self.title.replace('/', ' : ', 1)
         return html.banner(title, subtitle=subtitle)
 
-    def html_navbar(self, help_=None, calendar=False, tabs=list(),
+    def html_navbar(self, help_=None, calendar=[], tabs=list(),
                     ifo=None, ifomap=dict(), **kwargs):
         """Build the navigation bar for this tab.
 
@@ -520,6 +520,9 @@ class BaseTab(object):
         ----------
         help_ : `str`, `~MarkupPy.markup.page`
             content to place on the upper-right side of the navbar
+
+        calendar : `list`, optional
+            datepicker calendar objects for navigation
 
         tabs : `list`, optional
             list of parent tabs (each with a list of children) to include
@@ -553,7 +556,7 @@ class BaseTab(object):
         # build tabs and calendar
         tabs = self._html_navbar_links(tabs)
         if calendar:
-            tabs.insert(0, calendar)
+            tabs = list(calendar) + tabs
         # combine and return
         return gwhtml.navbar(tabs, class_=class_, brand=brand_, **kwargs)
 
@@ -948,8 +951,8 @@ class EventTab(GpsTab):
         # create tab and assign properties
         super(EventTab, self).__init__(*args, **kwargs)
 
-    def html_navbar(self, calendar=None, **kwargs):
-        if calendar is None:
+    def html_navbar(self, calendar=[], **kwargs):
+        if not calendar:
             calendar = str(self.gpstime)
         super(EventTab, self).html_navbar(calendar=calendar, **kwargs)
     html_navbar.__doc__ = GpsTab.html_navbar.__doc__

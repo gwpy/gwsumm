@@ -30,9 +30,11 @@ from .. import bootstrap
 
 # global variables
 DATE = datetime.strptime('20140410', '%Y%m%d')
-CALENDAR = """<a class="nav-link step-back" title="Step backward">&laquo;</a>
-<a id="calendar" class="nav-link dropdown-toggle" title="Show/hide calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" data-viewmode="{}">{}</a>
-<a class="nav-link step-forward" title="Step forward">&raquo;</a>"""  # noqa: E501
+BACKWARD = '<a class="nav-link step-back" title="Step backward">&laquo;</a>'
+CAL = ('<a id="calendar" class="nav-link dropdown-toggle" title="Show/hide '
+       'calendar" data-date="10-04-2014" data-date-format="dd-mm-yyyy" '
+       'data-viewmode="{}">{}</a>')
+FORWARD = '<a class="nav-link step-forward" title="Step forward">&raquo;</a>'
 
 
 # test utilities
@@ -56,9 +58,11 @@ def test_banner():
     ('year', '2014'),
 ])
 def test_calendar(mode, datefmt):
-    cal = bootstrap.calendar(DATE, mode=mode)
-    assert parse_html(str(cal)) == parse_html(CALENDAR.format(
-        '%ss' % mode, datefmt))
+    backward, cal, forward = bootstrap.calendar(DATE, mode=mode)
+    assert parse_html(str(backward)) == parse_html(str(BACKWARD))
+    assert parse_html(str(cal)) == parse_html(
+        CAL.format('%ss' % mode, datefmt))
+    assert parse_html(str(forward)) == parse_html(str(FORWARD))
 
 
 def test_calendar_no_mode():

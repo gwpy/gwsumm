@@ -100,15 +100,16 @@ def calendar(date, tag='a', class_='nav-link dropdown-toggle',
             raise ValueError("Cannot generate calendar for Mode %s" % mode)
     datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
+    # initialize page objects
+    backward = markup.page()
+    cal = markup.page()
+    forward = markup.page()
     # get navigation objects
-    backward = markup.oneliner.a(
-        '&laquo;', class_='nav-link step-back', title='Step backward')
-    cal = markup.oneliner.a(
-        datestring, id_=id_, class_=class_, title='Show/hide calendar',
-        **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-           'data-viewmode': '%ss' % mode.name})
-    forward = markup.oneliner.a(
-        '&raquo;', class_='nav-link step-forward', title='Step forward')
+    backward.a('&laquo;', class_='nav-link step-back', title='Step backward')
+    cal.a(datestring, id_=id_, class_=class_, title='Show/hide calendar',
+          **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
+             'data-viewmode': '%ss' % mode.name})
+    forward.a('&raquo;', class_='nav-link step-forward', title='Step forward')
     return [backward, cal, forward]
 
 

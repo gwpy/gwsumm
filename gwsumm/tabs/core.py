@@ -897,7 +897,7 @@ class IntervalTab(GpsTab):
             a markup page containing the navigation bar.
         """
         # add calendar
-        calendar = calendar and str(self.html_calendar())
+        calendar = calendar and self.html_calendar()
         # combine and return
         return super(IntervalTab, self).html_navbar(
             help_=help_, calendar=calendar, **kwargs)

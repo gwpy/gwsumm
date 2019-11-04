@@ -23,12 +23,8 @@
 import sys
 import glob
 import os
-from distutils import log
-from shutil import copyfile
 
-from setuptools import (Command, setup, find_packages)
-from setuptools.command.egg_info import egg_info
-from setuptools.command.build_py import build_py
+from setuptools import (setup, find_packages)
 
 # set basic metadata
 PACKAGENAME = 'gwsumm'
@@ -74,7 +70,7 @@ install_requires = [
     'pygments',
     'MarkupPy',
     'markdown',
-    'gwdetchar>=0.5.1',
+    'gwdetchar>=1.0.0',
     'configparser ; python_version < \'3.6\'',
 ]
 
@@ -84,6 +80,7 @@ setup_requires = ['pytest_runner'] if {
 tests_require = [
     'pytest>=2.8,<3.7',
     'pytest-cov',
+    'coverage',
     'flake8',
 ]
 if sys.version < '3':
@@ -101,85 +98,6 @@ extras_require = {
 
 # -- data files ---------------------------------------------------------------
 
-SOURCE_FILES = [
-     os.path.join('gwbootstrap', 'lib', 'gwbootstrap.min.css'),
-     os.path.join('gwbootstrap', 'lib', 'gwbootstrap-extra.min.js'),
-]
-
-if not SOURCE_FILES:  # make sure submodule is not empty
-    raise ValueError('gwbootstrap submodule is empty, please populate it '
-                     'with `git submodule update --init`')
-
-
-class BuildHtmlFiles(Command):
-    """Grab compiled CSS and minified JavaScript
-    """
-    description = 'Grab compiled CSS and minified JS'
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    @property
-    def staticdir(self):
-        try:
-            return self._static
-        except AttributeError:
-            self._static = os.path.join(PACKAGENAME, 'html', 'static')
-            if not os.path.isdir(self._static):
-                os.makedirs(self._static)
-                log.info('created static dir in %s' % self._static)
-        return self._static
-
-    @property
-    def staticpackage(self):
-        return self.staticdir.replace(os.path.sep, '.')
-
-    def build_utils(self):
-        log.info('copying minified elements')
-        for file_ in SOURCE_FILES:
-            filename = os.path.basename(file_)
-            target = os.path.join(self.staticdir, filename)
-            copyfile(file_, target)
-            log.info('minified CSS and JS written to %s' % target)
-
-    def run(self):
-        self.build_utils()
-        if self.staticpackage not in self.distribution.packages:
-            self.distribution.packages.append(self.staticpackage)
-            log.info("added %s to package list" % self.staticpackage)
-
-
-cmdclass['build_html_files'] = BuildHtmlFiles
-
-old_build_py = cmdclass.pop('build_py', build_py)
-
-
-class BuildPyWithHtmlFiles(old_build_py):
-    """Custom build_py that grabs compiled CSS+JS sources as well
-    """
-    def run(self):
-        self.run_command('build_html_files')
-        old_build_py.run(self)
-
-
-cmdclass['build_py'] = BuildPyWithHtmlFiles
-
-old_egg_info = cmdclass.pop('egg_info', egg_info)
-
-
-class EggInfoWithHtmlFiles(old_egg_info):
-    """Custom egg_info that grabs compiled CSS+JS sources as well
-    """
-    def run(self):
-        self.run_command('build_html_files')
-        old_egg_info.run(self)
-
-
-cmdclass['egg_info'] = EggInfoWithHtmlFiles
-
 # configuration files
 data_files = [
     (os.path.join('etc', PACKAGENAME, 'configuration'),
@@ -195,43 +113,44 @@ scripts = glob.glob(os.path.join('bin', '*'))
 with open('README.rst', 'rb') as f:
     longdesc = f.read().decode().strip()
 
-setup(name=DISTNAME,
-      provides=[PACKAGENAME],
-      version=__version__,
-      description=("A python toolbox used by the LIGO Scientific "
-                   "Collaboration for detector characterisation"),
-      long_description=longdesc,
-      author=AUTHOR,
-      author_email=AUTHOR_EMAIL,
-      license=LICENSE,
-      url='https://github.com/gwpy/gwsumm',
-      packages=packagenames,
-      include_package_data=True,
-      cmdclass=cmdclass,
-      scripts=scripts,
-      setup_requires=setup_requires,
-      install_requires=install_requires,
-      tests_require=tests_require,
-      extras_require=extras_require,
-      data_files=data_files,
-      use_2to3=False,
-      classifiers=[
-          'Programming Language :: Python',
-          'Development Status :: 3 - Alpha',
-          'Programming Language :: Python',
-          'Programming Language :: Python :: 3.5',
-          'Programming Language :: Python :: 3.6',
-          'Programming Language :: Python :: 3.7',
-          'Intended Audience :: Science/Research',
-          'Intended Audience :: End Users/Desktop',
-          'Intended Audience :: Developers',
-          'Natural Language :: English',
-          'Topic :: Scientific/Engineering',
-          'Topic :: Scientific/Engineering :: Astronomy',
-          'Topic :: Scientific/Engineering :: Physics',
-          'Operating System :: POSIX',
-          'Operating System :: Unix',
-          'Operating System :: MacOS',
-          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-      ],
-      )
+setup(
+    name=DISTNAME,
+    provides=[PACKAGENAME],
+    version=__version__,
+    description=("A python toolbox used by the LIGO Scientific "
+                 "Collaboration for detector characterisation"),
+    long_description=longdesc,
+    author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
+    license=LICENSE,
+    url='https://github.com/gwpy/gwsumm',
+    packages=packagenames,
+    include_package_data=True,
+    cmdclass=cmdclass,
+    scripts=scripts,
+    setup_requires=setup_requires,
+    install_requires=install_requires,
+    tests_require=tests_require,
+    extras_require=extras_require,
+    data_files=data_files,
+    use_2to3=False,
+    classifiers=[
+        'Programming Language :: Python',
+        'Development Status :: 3 - Alpha',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Intended Audience :: Science/Research',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'Natural Language :: English',
+        'Topic :: Scientific/Engineering',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Operating System :: POSIX',
+        'Operating System :: Unix',
+        'Operating System :: MacOS',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+    ],
+)

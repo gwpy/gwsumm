@@ -117,7 +117,7 @@ def test_archive_load_table():
     empty = EventTable(names=['a', 'b'])
     try:
         fname = tempfile.mktemp(suffix='.h5', prefix='gwsumm-tests-')
-        h5file = h5py.File(fname, mode='r')
+        h5file = h5py.File(fname, mode='a')
         # check table gets archived and read transparently
         archive.archive_table(t, 'test-table', h5file)
         t2 = archive.load_table(h5file['test-table'])

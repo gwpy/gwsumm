@@ -25,9 +25,10 @@ import numpy
 
 from gwpy.segments import SegmentList
 
+from gwdetchar.plot import texify
+
 from ..data import get_spectrum
 from .registry import (get_plot, register_plot)
-from .utils import usetex_tex
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -78,7 +79,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')
@@ -179,7 +180,7 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
             self.pargs.setdefault(
                 'suptitle',
                 '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        usetex_tex(str(self.state))))
+                                        texify(str(self.state))))
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')

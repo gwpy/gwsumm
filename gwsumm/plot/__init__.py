@@ -49,7 +49,6 @@ from .registry import (
 from .utils import (
     get_column_label,
     get_column_string,
-    usetex_tex,
     hash,
 )
 from .core import (

@@ -32,13 +32,15 @@ from gwpy.segments import SegmentList
 from gwpy.plot.gps import GPSTransform
 from gwpy.plot.utils import (color_cycle, marker_cycle)
 
+from gwdetchar.plot import texify
+
 from .. import globalv
 from ..utils import re_cchar
 from ..channels import get_channel
 from ..data import (get_timeseries, add_timeseries)
 from ..triggers import (get_triggers, get_time_column)
 from .registry import (get_plot, register_plot)
-from .utils import (get_column_string, hash, usetex_tex)
+from .utils import (get_column_string, hash)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -106,7 +108,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
     def __init__(self, channels, start, end, state=None, outdir='.',
                  etg=None, **kwargs):
         if (len(channels) == 1) and ('title' not in kwargs):
-            kwargs['title'] = usetex_tex('%s (%s)' % (str(channels[0]), etg))
+            kwargs['title'] = texify('%s (%s)' % (str(channels[0]), etg))
         super(TriggerDataPlot, self).__init__(channels, start, end,
                                               state=state, outdir=outdir,
                                               **kwargs)
@@ -225,6 +227,9 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
+        if len(self.channels) == 1:
+            self.pargs.setdefault('title', texify(
+                '%s (%s)' % (str(self.channels[0]), self.etg)))
         for axis in ('x', 'y'):  # prevent zeros on log scale
             scale = getattr(ax, 'get_{0}scale'.format(axis))()
             lim = getattr(ax, 'get_{0}lim'.format(axis))()
@@ -347,7 +352,7 @@ class TriggerTimeSeriesDataPlot(TimeSeriesDataPlot):
 
         # add data
         for label, channel in zip(labels, self.channels):
-            label = usetex_tex(label)
+            label = texify(label)
             if self.state and not self.all_data:
                 valid = self.state.active
             else:

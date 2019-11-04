@@ -35,6 +35,8 @@ from gwpy.segments import Segment
 from gwpy.detector import ChannelList
 from gwpy.plot import Plot
 
+from gwdetchar.plot import texify
+
 from ..channels import (get_channel, split as split_channels,
                         split_combination as split_channel_combination)
 from ..config import GWSummConfigParser
@@ -58,7 +60,7 @@ NON_PLOT_PARAMS = set(putils.FIGURE_PARAMS + putils.AXES_PARAMS)
 def format_label(label):
     label = str(label).strip('\n ')
     label = re_quote.sub('', label)
-    return putils.usetex_tex(label)
+    return texify(label)
 
 
 # -- basic Plot object --------------------------------------------------------
@@ -418,11 +420,11 @@ class DataPlot(SummaryPlot):
         out = []
         for c in all_:
             if c.ifo == 'G1' and re.search(r'-(av|min|max)\Z', c.name):
-                name = putils.usetex_tex(c.name.rsplit('-', 1)[0])
+                name = texify(c.name.rsplit('-', 1)[0])
             else:
-                name = putils.usetex_tex(c.name.rsplit('.', 1)[0])
+                name = texify(c.name.rsplit('.', 1)[0])
             if ' ' in c.name:
-                out.append((putils.usetex_tex(c.name), [c]))
+                out.append((texify(c.name), [c]))
             else:
                 try:
                     id_ = list(zip(*out))[0].index(name)
@@ -723,7 +725,7 @@ class DataPlot(SummaryPlot):
                 continue
             # escape text for TeX
             if key in ('title', 'xlabel', 'ylabel'):
-                kwargs[key] = putils.usetex_tex(kwargs[key])
+                kwargs[key] = texify(kwargs[key])
 
         # create figure
         self.plot = FigureClass(*data, geometry=geometry,

@@ -30,8 +30,10 @@ from matplotlib.ticker import MaxNLocator
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
+from gwdetchar.plot import texify
+
 from .registry import (get_plot, register_plot)
-from .utils import (hash, usetex_tex)
+from .utils import hash
 from ..data import (get_range_channel, get_range,
                     get_range_spectrogram, get_timeseries)
 from ..segments import get_segments
@@ -341,7 +343,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # customise plot
         self.apply_parameters(ax, **self.pargs)
         if (len(self.channels) > 1 or plotargs[0].get('label', None) in
-                [usetex_tex(str(self.channels[0])), None]):
+                [texify(str(self.channels[0])), None]):
             ax.legend(**legendargs)
 
         # add extra axes and finalise

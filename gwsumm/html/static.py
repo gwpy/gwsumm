@@ -21,9 +21,7 @@
 This module mainly declares the resources used by standard on HTML pages
 """
 
-import os.path
 from collections import OrderedDict
-from pkg_resources import resource_filename
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'

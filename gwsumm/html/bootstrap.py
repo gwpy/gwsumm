@@ -69,7 +69,7 @@ def banner(title, subtitle=None, titleclass=None, subtitleclass=None):
     return page
 
 
-def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
+def calendar(date, tag='a', class_='nav-link dropdown-toggle',
              id_='calendar', dateformat=None, mode=None):
     """Construct a bootstrap-datepicker calendar.
 
@@ -82,9 +82,9 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
 
     Returns
     -------
-    calendar : `str`
-        a onliner string of HTML containing the calendar text and a
-        triggering dropdown
+    calendar : `list`
+        a list of three oneliner strings of HTML containing the calendar
+        text and a triggering dropdown
     """
     mode = get_mode(mode)
     if dateformat is None:
@@ -100,17 +100,16 @@ def calendar(date, tag='a', class_='navbar-brand dropdown-toggle',
             raise ValueError("Cannot generate calendar for Mode %s" % mode)
     datestring = date.strftime(dateformat).replace(' 0', ' ')
     data_date = date.strftime('%d-%m-%Y')
-    page = markup.page()
-    page.a('&laquo;', class_='navbar-brand step-back', title='Step back')
-    page.a(id_=id_, class_=class_, title='Show/hide calendar',
-           **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
-              'data-viewmode': '%ss' % mode.name})
-    page.add(datestring)
-    page.b('', class_='caret')
-    page.a.close()
-    page.a('&raquo;', class_='navbar-brand step-forward',
-           title='Step forwards')
-    return page
+    # get navigation objects
+    backward = markup.oneliner.a(
+        '&laquo;', class_='nav-link step-back', title='Step backward')
+    cal = markup.oneliner.a(
+        datestring, id_=id_, class_=class_, title='Show/hide calendar',
+        **{'data-date': data_date, 'data-date-format': 'dd-mm-yyyy',
+           'data-viewmode': '%ss' % mode.name})
+    forward = markup.oneliner.a(
+        '&raquo;', class_='nav-link step-forward', title='Step forward')
+    return [backward, cal, forward]
 
 
 def wrap_content(page):
@@ -135,7 +134,7 @@ def wrap_content(page):
             </div>
     """
     out = markup.page()
-    out.div(class_='container', id_='main')
+    out.div(class_='container-fluid', id_='main')
     out.add(str(page))
     out.div.close()
     return out
@@ -147,29 +146,29 @@ def state_switcher(states, default=0):
     """
     current, chref = states[default]
     page = markup.page()
-    page.div(class_="btn-group pull-right state-switch")
-    page.a(class_='navbar-brand dropdown-toggle', href='#', id_='states',
-           title="Show/hide state menu", **{'data-toggle': 'dropdown'})
-    page.add(str(current))
-    page.b('', class_='caret')
-    page.a.close()
-    page.ul(class_='dropdown-menu', id_='statemenu')
-    page.li("Select an option below to view these data in another state "
-            "(different time segments).", class_="dropdown-header")
-    page.li('', class_="divider")
+    page.ul(class_='nav navbar-nav')
+    page.li(class_='nav-item dropdown')
+    page.a(str(current), class_='nav-link dropdown-toggle', href='#',
+           id_='states', role='button', title='Show/hide state menu',
+           **{'data-toggle': 'dropdown'})
+    page.div(
+        class_='dropdown-menu dropdown-menu-right state-switch shadow',
+        id_='statemenu',
+    )
+    page.h6('Select below to view this page in another state (different '
+            'time segments).', class_='dropdown-header')
+    page.div('', class_='dropdown-divider')
     for i, (state, href) in enumerate(states):
-        page.li()
-        page.a(str(state), class_='state', title=str(state),
+        page.a(str(state), class_='dropdown-item state', title=str(state),
                id_='state_%s' % re_cchar.sub('_', str(state)).lower(),
-               onclick='$(this).load_state(\'%s\');' % href)
-        page.li.close()
-    page.ul.close()
-    page.div.close()  # btn-group
+               onclick='jQuery(this).load_state(\'%s\');' % href)
+    page.div.close()  # dropdown-menu dropdown-menu-right
+    page.li.close()  # nav-item dropdown state-switch
+    page.ul.close()  # nav navbar-nav
     return page
 
 
-def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
-                      bases=dict()):
+def base_map_dropdown(this, id_=None, bases=dict()):
     """Construct a dropdown menu that links to a version of the current
     page on another server, based on a new base.
     """
@@ -179,15 +178,24 @@ def base_map_dropdown(this, class_='btn-group pull-left base-map', id_=None,
     else:
         id_ = dict()
     # format links
-    baselinks = [markup.oneliner.a(key, title=key, **{'data-new-base': val})
-                 for (key, val) in bases.items() if key != this]
+    baselinks = [markup.oneliner.a(
+        key, title=key, class_='dropdown-item', **{'data-new-base': val}
+    ) for (key, val) in bases.items() if key != this]
     # slam it all together
     page = markup.page()
     if baselinks:
-        page.div(class_=class_, **id_)
-        page.add(str(html.dropdown(this, baselinks,
-                                   class_='navbar-brand dropdown-toggle')))
+        page.div(class_='dropdown base-map', **id_)
+        page.add(str(html.dropdown(
+            this,
+            baselinks,
+            class_='navbar-brand nav-link border border-white '
+                   'rounded dropdown-toggle',
+        )))
         page.div.close()
     else:
-        page.div(str(this), class_='navbar-brand', **id_)
+        page.div(
+            str(this),
+            class_='navbar-brand border border-white rounded',
+            **id_,
+        )
     return page

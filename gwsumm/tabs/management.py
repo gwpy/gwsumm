@@ -203,7 +203,7 @@ class AccountingTab(ParentTab):
                 [groups, modes],
                 ['Top-level mode information', 'Detailed mode information'],
                 ['%s-top-level-mode' % prefix, '%s-detailed-mode' % prefix]):
-            page.h1(title)
+            page.h1(title, class_='mt-4')
             data = []
             pc = float(abs(state.active) / 100.)
             tots = 0

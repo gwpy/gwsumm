@@ -102,9 +102,6 @@ class TestData(object):
         channel = Channel('H1:TEST-CHANNEL.rms,m-trend')
         assert data.find_frame_type(channel) == 'H1_M'
 
-        channel = Channel('H1:TEST-CHANNEL.rms,reduced')
-        assert data.find_frame_type(channel) == 'H1_LDAS_C02_L2'
-
         channel = Channel('H1:TEST-CHANNEL.rms,online')
         assert data.find_frame_type(channel) == 'H1_lldetchar'
 

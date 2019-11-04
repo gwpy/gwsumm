@@ -143,8 +143,7 @@ class GraceDbTab(get_tab('default')):
         """
         page = markup.page()
         # build table of events
-        page.div(class_='scaffold well')
-        page.table(class_='table table-condensed table-hover table-striped',
+        page.table(class_='table table-sm table-hover table-striped mt-2',
                    id_='gracedb')
         # thead
         page.thead()
@@ -171,7 +170,7 @@ class GraceDbTab(get_tab('default')):
                         context = ctx
                         break
             if context:
-                page.tr(class_=context)
+                page.tr(class_='table-%s' % context)
             else:
                 page.tr()
             for col in self.columns:
@@ -193,7 +192,7 @@ class GraceDbTab(get_tab('default')):
                     else:
                         title = 'Data-quality report for {}'.format(sid)
                         page.a('DQR', title=title, href=href, target='_blank',
-                               rel='external', class_='btn btn-info btn-xs')
+                               rel='external', class_='btn btn-info btn-sm')
                     page.td.close()
                     continue
                 elif col.lower() == 'dqr':
@@ -216,7 +215,7 @@ class GraceDbTab(get_tab('default')):
                     href = '{}/{}/view/{}'.format(self.url, tag, v)
                     title = 'GraceDB {} page for {}'.format(tag[:-1], v)
                     page.a(v, title=title, href=href, target='_blank',
-                           rel='external', class_='btn btn-info btn-xs')
+                           rel='external', class_='btn btn-info btn-sm')
                     page.td.close()
                 elif col not in ('gpstime', 't_0') and isinstance(v, float):
                     page.td('%.3g' % v)
@@ -232,9 +231,9 @@ class GraceDbTab(get_tab('default')):
             page.p('No events were recovered for this state.')
         else:
             page.button(
-                'Export to CSV', class_='btn btn-default btn-table',
+                'Export to CSV',
+                class_='btn btn-outline-secondary btn-table mt-2',
                 **{'data-table-id': 'gracedb', 'data-filename': 'gracedb.csv'})
-        page.div.close()  # scaffold well
 
         # query doc
         qurl = '{}/search/?query={}&query_type={}&results_format=S'.format(
@@ -250,15 +249,16 @@ class GraceDbTab(get_tab('default')):
         page.p('The above table was generated from a query to {} with the '
                'form <code>{}</code>. To view the results of the same query '
                'via the GraceDB web interface, click {}.'.format(
-                   self.url, self.query, qlink))
+                   self.url, self.query, qlink), class_='mt-2')
 
         # reference the labelling
         page.h4('Labelling reference')
         page.p('Events in the above table may have a context based on '
                'its labels as follows:')
         for c, labels in LABELS.items():
+            c = (c if c == 'warning' else '%s text-white' % c)
             labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
-            page.p(labstr, class_='bg-%s' % c, style='width: auto;')
+            page.p(labstr, class_='bg-%s pl-2' % c, style='width: auto;')
 
         # write to file
         idx = self.states.index(state)

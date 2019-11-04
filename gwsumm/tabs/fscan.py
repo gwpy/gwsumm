@@ -154,11 +154,11 @@ class FscanTab(base):
             page.div(class_='btn-group')
             page.a('Full Fscan results for %s' % date,
                    href=index, rel='external', target='_blank',
-                   class_='btn btn-default btn-info btn-xl')
+                   class_='btn btn-info btn-xl')
             page.div.close()
 
         if self.navigation:
-            page.h2('Fscan links:')
+            page.h2('Fscan links:', class_='mt-4 mb-2')
         for i, (key, url) in enumerate(sorted(self.navigation,
                                               key=lambda x: x[0])):
             if not i % 4:
@@ -166,7 +166,7 @@ class FscanTab(base):
             if i + 4 > len(self.navigation):
                 page.div(class_='col-sm-3')
             else:
-                page.div(class_='col-sm-3', style='margin-bottom: 10px;')
+                page.div(class_='col-sm-3 mb-10')
             page.a(key, href=url, rel='external', target='_blank',
                    class_='btn btn-success btn-lg btn-block')
             page.div.close()
@@ -175,7 +175,7 @@ class FscanTab(base):
 
         if self.plots:
             page.hr(class_='row-divider')
-            page.div(class_='scaffold well')
+            page.div(class_='card border-light card-body scaffold shadow-sm')
             # parse frequencies
             freqs = [list(map(float, os.path.basename(p.href).split('_')[1:3]))
                      for p in self.plots[::2]]
@@ -189,7 +189,7 @@ class FscanTab(base):
                 if i % ncols == 0:
                     page.div(class_='row', style="margin-bottom: 10px;")
                 if offset and i % ncols == 0:
-                    page.div(class_="col-md-%d col-md-offset-%d"
+                    page.div(class_="col-md-%d offset-md-%d"
                                     % (linksize, offset))
                 else:
                     page.div(class_="col-md-%d" % linksize)
@@ -214,7 +214,7 @@ class FscanTab(base):
                     page.div(class_="col-md-6")
                     page.a(href=p.href, class_="fancybox plot",
                            **{'data-fancybox-group': 1})
-                    page.img(class_='img-responsive', src=p.href)
+                    page.img(class_='img-fluid w-100', src=p.href)
                     page.a.close()
                     page.div.close()
                 page.div.close()

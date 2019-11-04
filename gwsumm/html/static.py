@@ -48,7 +48,7 @@ JS = OrderedDict((
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
                'moment.js/2.24.0/moment.min.js'),
     ('bootstrap', 'https://stackpath.bootstrapcdn.com/bootstrap/'
-                  '3.4.1/js/bootstrap.min.js'),
+                  '4.3.1/js/bootstrap.bundle.min.js'),
     ('fancybox', 'https://cdnjs.cloudflare.com/ajax/libs/'
                  'fancybox/3.5.7/jquery.fancybox.min.js'),
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'

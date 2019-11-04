@@ -239,10 +239,9 @@ class GuardianTab(DataTab):
         page.div(class_='col-md-12')
 
         # draw table
-        page.h2('%s state transitions' % self.node)
+        page.h2('%s state transitions' % self.node, class_='mt-4 mb-4')
         id_ = '{}-state-transitions'.format(self.ifo.lower())
-        page.table(class_='table table-condensed table-hover '
-                          'table-responsive transitions', id_=id_)
+        page.table(class_='table table-sm table-hover transitions', id_=id_)
         page.caption("Transitions into each state (row) from each other "
                      "state (column). Only those states named in the "
                      "configuration are shown, but the 'Total' includes "
@@ -274,7 +273,7 @@ class GuardianTab(DataTab):
         page.tbody.close()
         page.table.close()
         page.button(
-            'Export to CSV', class_='btn btn-default btn-table',
+            'Export to CSV', class_='btn btn-outline-secondary btn-table mt-2',
             **{'data-table-id': id_, 'data-filename': '%s.csv' % id_})
         page.div.close()
         page.div.close()
@@ -282,22 +281,22 @@ class GuardianTab(DataTab):
         # summarise each state
         page.div(class_='row')
         page.div(class_='col-md-12')
-        page.h2('State details')
-        page.div(class_='panel-group', id='accordion')
+        page.h2('State details', class_='mt-4 mb-2')
+        page.div(id='accordion')
         for i, bit in enumerate(self.grdstates):
             name = self.grdstates[bit].strip('*')
-            page.div(class_='panel well panel-primary', id=str(bit))
+            page.div(class_='card border-info mb-1 shadow-sm', id=str(bit))
             # heading
-            page.div(class_='panel-heading')
-            page.a(href='#collapse-%d' % bit,
-                   **{'data-toggle': 'collapse', 'data-parent': '#accordion'})
-            page.h4('%s [%d]' % (name, bit), class_='panel-title')
-            page.a.close()
-            page.div.close()
+            page.div(class_='card-header text-white bg-info')
+            page.a('%s [%d]' % (name, bit), href='#collapse-%d' % bit,
+                   class_='card-link cis-link collapsed',
+                   **{'data-toggle': 'collapse', 'aria-expandedt': 'false'})
+            page.div.close()  # card-header
 
             # body
-            page.div(id='collapse-%d' % bit, class_='panel-collapse collapse')
-            page.div(class_='panel-body')
+            page.div(id='collapse-%d' % bit, class_='collapse',
+                     **{'data-parent': '#accordion'})
+            page.div(class_='card-body')
 
             # print transitions
             headers = ['Transition GPS time', 'UTC time', 'Local time',
@@ -336,12 +335,12 @@ class GuardianTab(DataTab):
             page.p('This state was active for %.2f seconds (%.2f%%) during '
                    'the following segments:' % (livetime, duty))
             page.add(str(self.print_segments(flag)))
-            page.div.close()  # panel-body
-            page.div.close()  # panel-collapse
-            page.div.close()  # panel
-        page.div.close()
-        page.div.close()
-        page.div.close()
+            page.div.close()  # card-body
+            page.div.close()  # collapse
+            page.div.close()  # card
+        page.div.close()  # accordion
+        page.div.close()  # col-md-12
+        page.div.close()  # row
 
         return super(DataTab, self).write_state_html(state, plots=False,
                                                      pre=page)

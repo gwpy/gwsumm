@@ -298,7 +298,7 @@ class EventTriggerTab(get_tab('default')):
                 page.div(class_='btn-group')
                 page.a('Click here for the full %s results' % self.name,
                        href=self.url, rel='external', target='_blank',
-                       class_='btn btn-default btn-info btn-xl')
+                       class_='btn btn-info btn-xl')
                 page.div.close()
                 page.hr(class_='row-divider')
 
@@ -323,7 +323,8 @@ class EventTriggerTab(get_tab('default')):
                         rankstr = self.loudest['labels'][columns.index(rank)]
                     except ValueError:
                         rankstr = repr(rank)
-                    page.h2('Loudest events by %s' % rankstr)
+                    page.h2('Loudest events by %s' % rankstr,
+                            class_='mt-4 mb-4')
                     rank = table[rank].argsort()[::-1]
                     loudest = []
                     i = 0
@@ -360,8 +361,7 @@ class EventTriggerTab(get_tab('default')):
                     )))
 
             if self.subplots:
-                page.hr(class_='row-divider')
-                page.h1('Sub-plots')
+                page.h1('Sub-plots', class_='mt-4')
                 layout = get_mode() == Mode.week and [7] or [4]
                 plist = [p for p in self.subplots if p.state in [state, None]]
                 page.add(str(self.scaffold_plots(plots=plist, state=state,
@@ -373,7 +373,7 @@ class EventTriggerTab(get_tab('default')):
                     page.div(class_='btn-group')
                     page.a('Click here for the full %s results' % self.name,
                            href=self.url, rel='external', target='_blank',
-                           class_='btn btn-default btn-info btn-xl')
+                           class_='btn btn-info btn-xl')
                     page.div.close()
                     page.hr(class_='row-divider')
 

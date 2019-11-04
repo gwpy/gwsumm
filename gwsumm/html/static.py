@@ -37,8 +37,8 @@ CSS = OrderedDict((
                      'font-awesome/5.10.2/css/fontawesome.min.css'),
     ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
                            'font-awesome/5.10.2/css/solid.min.css'),
-    ('gwbootstrap', resource_filename(
-        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap.min.css'))),
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.1.1/'
+                    'lib/gwbootstrap.min.css'),
 ))
 
 # build collection of javascript resources
@@ -54,8 +54,8 @@ JS = OrderedDict((
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap', resource_filename(
-        'gwsumm', os.path.join(STATICDIR, 'gwbootstrap-extra.min.js')))
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.1.1/'
+                    'lib/gwbootstrap-extra.min.js'),
 ))
 
 

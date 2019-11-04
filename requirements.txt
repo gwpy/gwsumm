@@ -1,7 +1,5 @@
 # build requirements
 setuptools
-libsass
-jsmin
 
 # core requirements
 python-dateutil
@@ -18,7 +16,7 @@ ligo-segments
 pygments
 MarkupPy
 markdown
-gwdetchar>=0.5.1
+gwdetchar>=1.0.0
 gwpy>=1.0.0
 configparser ; python_version < '3.6'
 
@@ -31,4 +29,5 @@ ligo-gracedb>=2.0.0
 # testing extras
 pytest>=2.8,<3.7
 pytest-cov
+coverage
 flake8

@@ -101,7 +101,7 @@ def test_base_map_dropdown():
     menu_wbases = bootstrap.base_map_dropdown('test', bases={'key': 'value'})
     assert parse_html(str(menu_wbases)) == parse_html(
         '<div class="dropdown base-map">\n<a href="#" class="navbar-brand '
-        'nav-link border border-white rounded dropdown-toggle" data-toggle='
-        '"dropdown">\ntest\n<b class="caret"></b>\n</a>\n<ul class="dropdown-'
-        'menu">\n<li>\n<a title="key" class="dropdown-item" data-new-base='
-        '"value">key</a>\n</li>\n</ul>\n</div>')
+        'nav-link border border-white rounded dropdown-toggle" role="button" '
+        'data-toggle="dropdown">test</a>\n<div class="dropdown-menu '
+        'dropdown-1-col shadow">\n<a title="key" class="dropdown-item" '
+        'data-new-base="value">key</a>\n</div>\n</div>')

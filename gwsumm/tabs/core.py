@@ -858,8 +858,7 @@ class IntervalTab(GpsTab):
         try:
             requiredpath = get_base(date, mode=self.mode)
         except ValueError:
-            return markup.oneliner.div('%d-%d' % (self.start, self.end),
-                                       class_='navbar-text')
+            return ['%d-%d' % (self.start, self.end)]
         if requiredpath not in self.path:
             raise RuntimeError("Tab path %r inconsistent with required "
                                "format including %r for archive calendar"

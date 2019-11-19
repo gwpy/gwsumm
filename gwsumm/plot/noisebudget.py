@@ -122,6 +122,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         # reshape noises if required
         n = max(x.size for x in sumdata)
         for i, d in enumerate(sumdata):
+            d.override_unit(darmdata.unit)  # enforce consistent units
             if d.size < n:
                 sumdata[i] = numpy.resize(
                     numpy.require(d, requirements=['O']), (n,))
@@ -215,6 +216,7 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
             # reshape noises if required
             n = target.size
             for i, d in enumerate(sumdata):
+                d.override_unit(sumdata[0].unit)  # enforce consistent units
                 if d.size < n:
                     sumdata[i] = numpy.resize(
                         numpy.require(d, requirements=['O']), (n,))

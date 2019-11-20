@@ -122,15 +122,15 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         # reshape noises if required
         n = max(x.size for x in sumdata)
         for i, d in enumerate(sumdata):
-            d.override_unit(darmdata.unit)  # enforce consistent units
             if d.size < n:
                 sumdata[i] = numpy.resize(
                     numpy.require(d, requirements=['O']), (n,))
 
         # plot sum of noises
         sumargs = self.parse_sum_params()
-        sum_ = sumdata[0] ** 2
-        for d in sumdata[1:]:
+        sum_ = numpy.zeros_like(darmdata ** 2)
+        for d in sumdata:
+            d.override_unit(darmdata.unit)  # enforce consistent units
             sum_ += d ** 2
         ax.plot(sum_ ** (1/2.), zorder=1, **sumargs)
         ax.lines.insert(1, ax.lines.pop(-1))
@@ -216,14 +216,14 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
             # reshape noises if required
             n = target.size
             for i, d in enumerate(sumdata):
-                d.override_unit(sumdata[0].unit)  # enforce consistent units
                 if d.size < n:
                     sumdata[i] = numpy.resize(
                         numpy.require(d, requirements=['O']), (n,))
 
             # calculate sum of noises
-            sum_ = sumdata[0] ** 2
-            for d in sumdata[1:]:
+            sum_ = numpy.zeros_like(sumdata[0] ** 2)
+            for d in sumdata:
+                d.override_unit(sumdata[0].unit)  # enforce consistent units
                 sum_ += d ** 2
             sum_ **= (1/2.)
 

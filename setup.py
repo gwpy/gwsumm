@@ -31,7 +31,7 @@ PACKAGENAME = 'gwsumm'
 DISTNAME = 'gwsumm'
 AUTHOR = 'Alex Urban, Duncan Macleod'
 AUTHOR_EMAIL = 'alexander.urban@ligo.org'
-LICENSE = 'GPLv3'
+LICENSE = 'GPL-3.0-or-later'
 
 cmdclass = {}
 
@@ -123,7 +123,13 @@ setup(
     author=AUTHOR,
     author_email=AUTHOR_EMAIL,
     license=LICENSE,
-    url='https://github.com/gwpy/gwsumm',
+    url='https://gwsumm.readthedocs.io',
+    project_urls={
+         "Bug Tracker": "https://github.com/gwpy/gwsumm/issues",
+         "Discussion Forum": "https://gwdetchar.slack.com",
+         "Documentation": "https://gwsumm.readthedocs.io",
+         "Source Code": "https://github.com/gwpy/gwsumm",
+     },
     packages=packagenames,
     include_package_data=True,
     cmdclass=cmdclass,
@@ -136,21 +142,17 @@ setup(
     use_2to3=False,
     classifiers=[
         'Programming Language :: Python',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        ('License :: OSI Approved :: '
+         'GNU General Public License v3 or later (GPLv3+)'),
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
-        'Intended Audience :: Science/Research',
-        'Intended Audience :: End Users/Desktop',
-        'Intended Audience :: Developers',
-        'Natural Language :: English',
-        'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics',
-        'Operating System :: POSIX',
-        'Operating System :: Unix',
-        'Operating System :: MacOS',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
     ],
 )

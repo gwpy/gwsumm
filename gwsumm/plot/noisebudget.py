@@ -128,7 +128,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
 
         # plot sum of noises
         sumargs = self.parse_sum_params()
-        sum_ = numpy.zeros_like(darmdata ** 2)
+        sum_ = numpy.zeros_like(darmdata ** 2, shape=(n,))
         for d in sumdata:
             d.override_unit(darmdata.unit)  # enforce consistent units
             sum_ += d ** 2
@@ -221,7 +221,7 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
                         numpy.require(d, requirements=['O']), (n,))
 
             # calculate sum of noises
-            sum_ = numpy.zeros_like(sumdata[0] ** 2)
+            sum_ = numpy.zeros_like(sumdata[0] ** 2, shape=(n,))
             for d in sumdata:
                 d.override_unit(sumdata[0].unit)  # enforce consistent units
                 sum_ += d ** 2

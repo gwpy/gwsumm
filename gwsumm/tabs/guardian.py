@@ -228,25 +228,28 @@ class GuardianTab(DataTab):
         """Write the HTML for the given state of this `GuardianTab`
         """
         page = self.scaffold_plots(state=state)
+
+        page.div(class_='row')
+        page.div(class_='col-md-12')
+        page.h2('%s state transitions' % self.node, class_='mt-4 mb-4')
         page.add(html.alert(  # add dismissable alert
             'For all of the following data, "Unknown" simply labels any '
             'state in this node that was not chosen for display, and does '
             'not mean that the state was unrecognised by the Guardian '
             'system. Transitions from an "Unkown" state are not listed in '
-            'the below table, but are included in the totals.'))
-
-        page.div(class_='row')
-        page.div(class_='col-md-12')
+            'the table below, but are included in the totals.'),
+            context=self.ifo.lower())
 
         # draw table
-        page.h2('%s state transitions' % self.node, class_='mt-4 mb-4')
         id_ = '{}-state-transitions'.format(self.ifo.lower())
-        page.table(class_='table table-sm table-hover transitions', id_=id_)
-        page.caption("Transitions into each state (row) from each other "
-                     "state (column). Only those states named in the "
-                     "configuration are shown, but the 'Total' includes "
-                     "transitions from any and all states. '-' indicates no "
-                     "transitions from that state.")
+        page.table(class_='table table-sm table-hover transitions mt-2',
+                   id_=id_)
+        page.caption('Transitions into each state (row) from each other '
+                     'state (column). Only those states named in the '
+                     'configuration are shown, but the \'Total\' includes '
+                     'transitions from any and all states. A dash '
+                     '(\'&mdash;\') indicates no transitions from '
+                     'the given state.')
         page.thead()
         page.tr()
         for th in ['State'] + list(self.grdstates.values()) + ['Total']:
@@ -260,14 +263,14 @@ class GuardianTab(DataTab):
             page.th(name)
             for j, bit2 in enumerate(self.grdstates):
                 if i == j:
-                    page.td('-', class_='ignore')
+                    page.td('&mdash;', class_='ignore')
                     continue
                 count = len([t for t in self.transitions[bit] if
                              t[1] == bit2])
                 if count:
                     page.td(str(count))
                 else:
-                    page.td('-')
+                    page.td('&mdash;')
             page.th(str(len(self.transitions[bit])))
             page.tr.close()
         page.tbody.close()
@@ -275,8 +278,8 @@ class GuardianTab(DataTab):
         page.button(
             'Export to CSV', class_='btn btn-outline-secondary btn-table mt-2',
             **{'data-table-id': id_, 'data-filename': '%s.csv' % id_})
-        page.div.close()
-        page.div.close()
+        page.div.close()  # col-md-12
+        page.div.close()  # row
 
         # summarise each state
         page.div(class_='row')

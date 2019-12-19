@@ -120,7 +120,7 @@ def test_load():
     success = 'jQuery(\"#main\").html(data);'
     error = 'Failed to load content from %r' % URL
     errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning '
-                'shadow-sm\'><p>%s</p></div>\");' % error)
+                'text-justify shadow-sm\'><p>%s</p></div>\");' % error)
     content = html5.load(URL, error=1)
     assert parse_html(content) == parse_html(LOAD % (URL, success, errormsg))
 
@@ -129,7 +129,7 @@ def test_load_custom():
     error = 'Error'
     success = 'document.write(\"Success\")'
     errormsg = ('jQuery(\"#main\").html(\"<div class=\'alert alert-warning '
-                'shadow-sm\'><p>%s</p></div>\");' % error)
+                'text-justify shadow-sm\'><p>%s</p></div>\");' % error)
     # test local url
     content = html5.load('test', success=success, error=error)
     assert parse_html(content) == parse_html(

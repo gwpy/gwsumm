@@ -32,10 +32,10 @@ STATICDIR = 'html/static'
 # build collection of CSS resources
 CSS = OrderedDict((
     ('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/'
-                     'font-awesome/5.10.2/css/fontawesome.min.css'),
+                     'font-awesome/5.11.2/css/fontawesome.min.css'),
     ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
-                           'font-awesome/5.10.2/css/solid.min.css'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.1.1/'
+                           'font-awesome/5.11.2/css/solid.min.css'),
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.2.0/'
                     'lib/gwbootstrap.min.css'),
 ))
 
@@ -46,13 +46,13 @@ JS = OrderedDict((
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
                'moment.js/2.24.0/moment.min.js'),
     ('bootstrap', 'https://stackpath.bootstrapcdn.com/bootstrap/'
-                  '4.3.1/js/bootstrap.bundle.min.js'),
+                  '4.4.1/js/bootstrap.bundle.min.js'),
     ('fancybox', 'https://cdnjs.cloudflare.com/ajax/libs/'
                  'fancybox/3.5.7/jquery.fancybox.min.js'),
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.1.1/'
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.2.0/'
                     'lib/gwbootstrap-extra.min.js'),
 ))
 

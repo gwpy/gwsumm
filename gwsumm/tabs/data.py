@@ -642,10 +642,6 @@ class DataTab(ProcessedTab, ParentTab):
     def write_state_placeholder(self, state):
         """Write a placeholder '#main' content for this tab
         """
-        def bootstrap_context(sname):
-            ifos = re.findall('[A-Z]1', sname, flags=re.IGNORECASE)
-            return (ifos[0].lower() if len(ifos) == 1 else 'network')
-
         email = markup.oneliner.a(
             'the DetChar group', class_='alert-link',
             href='mailto:detchar+code@ligo.org')
@@ -656,7 +652,6 @@ class DataTab(ProcessedTab, ParentTab):
             ('Data have not been generated yet, please check back later.',
              'If this state persists for more than three or four hours, '
              'please contact %s.' % email),
-            context=bootstrap_context(state.name),
             dismiss=False,
         ))
         page.div.close()

@@ -237,8 +237,8 @@ class GuardianTab(DataTab):
             'state in this node that was not chosen for display, and does '
             'not mean that the state was unrecognised by the Guardian '
             'system. Transitions from an "Unkown" state are not listed in '
-            'the table below, but are included in the totals.'),
-            context=self.ifo.lower())
+            'the table below, but are included in the totals.',
+            context=self.ifo.lower()))
 
         # draw table
         id_ = '{}-state-transitions'.format(self.ifo.lower())

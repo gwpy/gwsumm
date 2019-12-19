@@ -116,7 +116,7 @@ def load(url, id_='main', error=False, success=None):
         if not isinstance(error, (str, markup.page)):
             error = 'Failed to load content from %r' % url
         error = ('jQuery("#%s").html("<div class=\'alert alert-warning '
-                 'shadow-sm\'><p>%s</p></div>");' % (id_, error))
+                 'text-justify shadow-sm\'><p>%s</p></div>");' % (id_, error))
     if success is None:
         success = 'jQuery("#%s").html(data);' % id_
     url = _expand_path(url)

@@ -65,15 +65,15 @@ class Error404Tab(Tab):
             top = kwargs.get('base', self.path)
         kwargs.setdefault('title', '404: Page not found')
         page = markup.page()
-        page.div(class_='alert alert-danger shadow-sm')
+        page.div(class_='alert alert-danger text-justify shadow-sm')
         page.p()
-        page.strong("The page you are looking for doesn't exist")
+        page.strong("The page you are looking for does not exist.")
         page.p.close()
         page.p("This could be because the times for which you are looking "
-               "were never processed (or haven't even happened yet), or "
-               "because no page exists for the specific data products you "
-               "want. Either way, if you think this is in error, please "
-               "contact <a class=\"alert-link\" "
+               "were never processed (or have not happened yet), or because "
+               "no page exists for the specific data products you want. "
+               "Either way, if you think this is in error, please contact "
+               "<a class=\"alert-link\" "
                "href=\"mailto:detchar+code@ligo.org\">the DetChar group</a>.")
         page.p("Otherwise, you might be interested in one of the following:")
         page.div(style="padding-top: 10px;")
@@ -85,7 +85,7 @@ class Error404Tab(Tab):
         page.a("Take me to the top level", role="button",
                class_="btn btn-lg btn-success", title="Top", href=top)
         page.div.close()
-        page.div.close()
+        page.div.close()  # alert alert-danger
         page.script("""
   function linkUp() {
     var url = window.location.href;

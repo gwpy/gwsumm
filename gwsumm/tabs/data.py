@@ -642,16 +642,18 @@ class DataTab(ProcessedTab, ParentTab):
     def write_state_placeholder(self, state):
         """Write a placeholder '#main' content for this tab
         """
-        email = markup.oneliner.a('the DetChar group',
-                                  class_='alert-link',
-                                  href='mailto:detchar+code@ligo.org')
+        email = markup.oneliner.a(
+            'the DetChar group', class_='alert-link',
+            href='mailto:detchar+code@ligo.org')
         page = markup.page()
         page.div(class_='row')
         page.div(class_='col-md-12')
-        page.add(gwhtml.alert((
-            "These data have not been generated yet, please check back later.",
-            "If this state persists for more than three or four hours, "
-            "please contact %s." % email), dismiss=False))
+        page.add(gwhtml.alert(
+            ('Data have not been generated yet, please check back later.',
+             'If this state persists for more than three or four hours, '
+             'please contact %s.' % email),
+            dismiss=False,
+        ))
         page.div.close()
         page.div.close()
 

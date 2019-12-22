@@ -287,10 +287,15 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
 
         # set ylabel
         if cumulative:
-            self.pargs.setdefault('ylabel',
-                                  'Cumulative time-volume [Mpc$^3$ kyr]')
+            self.pargs.setdefault(
+                'ylabel',
+                'Cumulative time-volume [Mpc$^3$ kyr]',
+            )
         else:
-            self.pargs.setdefault('ylabel', 'Time-volume [Mpc$^3$ kyr]')
+            self.pargs.setdefault(
+                'ylabel',
+                'Time-volume [Mpc$^3$ kyr]',
+            )
 
         # get data
         allsegs, allranges = ([], [])
@@ -299,7 +304,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
             if self.state and not self.all_data:
                 valid = self.state.active
                 pad = numpy.nan
-            elif channel.sample_rate:
+            elif channel.sample_rate.value:
                 valid = SegmentList([self.span.protract(
                     1/channel.sample_rate.value)])
             else:

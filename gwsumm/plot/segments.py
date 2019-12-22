@@ -31,7 +31,6 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
-from matplotlib.cbook import iterable
 from matplotlib.colors import (rgb2hex, is_color_like)
 from matplotlib.patches import Rectangle
 
@@ -85,7 +84,7 @@ def common_limits(datasets, default_min=0, default_max=0):
     (min, max) : `float`
         2-tuple of common minimum and maximum over all datasets.
     """
-    if isinstance(datasets, numpy.ndarray) or not iterable(datasets[0]):
+    if isinstance(datasets, numpy.ndarray) or not numpy.iterable(datasets[0]):
         datasets = [datasets]
     max_stat = max(list(iterutils.flatten(datasets)) + [-numpy.inf])
     min_stat = min(list(iterutils.flatten(datasets)) + [numpy.inf])

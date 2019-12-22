@@ -60,7 +60,7 @@ use('Agg')  # noqa
 from glue.lal import Cache
 
 from gwpy.segments import (Segment, SegmentList)
-from gwpy.signal.fft import lal as fft_lal
+from gwpy.signal.spectral import _lal as fft_lal
 from gwpy.time import (tconvert, to_gps, Time)
 
 from gwsumm import (

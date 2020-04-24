@@ -202,6 +202,8 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             read_kw['ifo'] = get_channel(channel).ifo
         if etg.lower() in ['kw', 'kleinewelle']:
             read_kw['selection'].append('channel == "%s"' % channel)
+        if etg.lower() in ['cwb'] and 'root' not in read_kw['format']:
+            read_kw.pop('treename')
 
         # filter on segments
         if 'timecolumn' in read_kw:

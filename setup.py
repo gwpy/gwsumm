@@ -21,6 +21,7 @@
 """
 
 import glob
+import os
 import versioneer
 
 from setuptools import setup
@@ -37,7 +38,7 @@ else:
 
 # configuration files
 data_files = [
-    (os.path.join('etc', PACKAGENAME, 'configuration'),
+    (os.path.join('etc', 'gwsumm', 'configuration'),
      glob.glob(os.path.join('share', '*.ini'))),
 ]
 

@@ -80,8 +80,8 @@ use('Agg')
 
 # XXX HACK XXX
 # plots don't work with multiprocessing with lal.LIGOTimeGPS
-time.LIGOTimeGPS = LIGOTimeGPS  # noqa
-_tconvert.LIGOTimeGPS = LIGOTimeGPS  # noqa
+time.LIGOTimeGPS = LIGOTimeGPS
+_tconvert.LIGOTimeGPS = LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

@@ -39,7 +39,7 @@ from astropy import units
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
-from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
+from .channels import (get_channels, split as split_channels,
                        update_channel_params)
 from .html import (get_css, get_js)
 from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)

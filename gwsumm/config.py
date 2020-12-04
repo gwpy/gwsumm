@@ -19,17 +19,18 @@
 """Thin wrapper around configparser
 """
 
+import configparser
 import re
 import os.path
-import configparser
-from io import StringIO
-from collections import OrderedDict
-from importlib import import_module
-from http.client import HTTPException
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
 import numpy  # noqa: F401
+
+from collections import OrderedDict
+from importlib import import_module
+from io import StringIO
+from http.client import HTTPException
 
 from matplotlib import rcParams
 
@@ -38,10 +39,10 @@ from astropy import units
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
+from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
+                       update_channel_params)
 from .html import (get_css, get_js)
 from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
-from .channels import (get_channels, split as split_channels,
-                       update_channel_params)
 
 __all__ = [
     'GWSummConfigParser',
@@ -61,12 +62,6 @@ class GWSummConfigParser(configparser.ConfigParser):
         kwargs.setdefault('dict_type', OrderedDict)
         configparser.ConfigParser.__init__(self, *args, **kwargs)
     __init__.__doc__ = configparser.ConfigParser.__init__.__doc__
-
-    def read_file(self, *args, **kwargs):
-        try:
-            return configparser.ConfigParser.read_file(self, *args, **kwargs)
-        except AttributeError:  # python < 3
-            return self.readfp(*args, **kwargs)
 
     def ndoptions(self, section, **kwargs):
         options = configparser.ConfigParser.options(self, section, **kwargs)

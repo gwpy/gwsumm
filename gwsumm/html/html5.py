@@ -21,13 +21,8 @@
 
 import re
 import os.path
-try:
-    from pathlib2 import Path
-except ImportError:  # python >= 3.6
-    # NOTE: we do it this way around because pathlib exists for py35,
-    #       but doesn't work very well
-    from pathlib import Path
 
+from pathlib import Path
 from urllib.parse import urlparse
 
 from MarkupPy import markup

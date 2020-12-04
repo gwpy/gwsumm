@@ -221,7 +221,8 @@ class GraceDbTab(get_tab('default')):
                     page.td('%.3g' % v)
                 elif col == 'labels':
                     page.td(', '.join(
-                        ['<samp>%s</samp>' % l for l in sorted(labs)]))
+                        ['<samp>%s</samp>' % iterable
+                         for iterable in sorted(labs)]))
                 else:
                     page.td(str(v))
             page.tr.close()
@@ -257,7 +258,8 @@ class GraceDbTab(get_tab('default')):
                'its labels as follows:')
         for c, labels in LABELS.items():
             c = (c if c == 'warning' else '%s text-white' % c)
-            labstr = ', '.join(['<samp>%s</samp>' % l for l in sorted(labels)])
+            labstr = ', '.join(['<samp>%s</samp>' % item
+                                for item in sorted(labels)])
             page.p(labstr, class_='bg-%s pl-2' % c, style='width: auto;')
 
         # write to file

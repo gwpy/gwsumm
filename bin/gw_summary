@@ -29,14 +29,6 @@ Run 'gw_summary <mode> --help' for details of the specific arguments and
 options acceptable for each mode.
 """
 
-# XXX HACK XXX
-# plots don't work with multiprocessing with lal.LIGOTimeGPS
-from gwpy import time
-from gwpy.time import _tconvert
-from glue.lal import LIGOTimeGPS
-time.LIGOTimeGPS = LIGOTimeGPS  # noqa
-_tconvert.LIGOTimeGPS = LIGOTimeGPS  # noqa
-
 import argparse
 import calendar
 import datetime
@@ -44,24 +36,18 @@ import getpass
 import os
 import re
 import warnings
+
 from collections import OrderedDict
 from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
-try:
-    from urllib.parse import urlparse
-except ImportError:  # python < 3
-    from urlparse import urlparse
-
 from dateutil.relativedelta import relativedelta
+from urllib.parse import urlparse
 
-# set matplotlib backend
-from matplotlib import use
-use('Agg')  # noqa
+from glue.lal import (Cache, LIGOTimeGPS)
 
-from glue.lal import Cache
-
+from gwpy import time
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.signal.spectral import _lal as fft_lal
-from gwpy.time import (tconvert, to_gps, Time)
+from gwpy.time import (Time, _tconvert, tconvert, to_gps)
 
 from gwsumm import (
     __version__,
@@ -87,6 +73,15 @@ from gwsumm.utils import (
     vprint,
 )
 from gwsumm.data import get_timeseries_dict
+
+# set matplotlib backend
+from matplotlib import use
+use('Agg')
+
+# XXX HACK XXX
+# plots don't work with multiprocessing with lal.LIGOTimeGPS
+time.LIGOTimeGPS = LIGOTimeGPS  # noqa
+_tconvert.LIGOTimeGPS = LIGOTimeGPS  # noqa
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -123,6 +118,7 @@ class GWHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
 # define actions for formatting dates
 class DateAction(argparse.Action):
     TIMESCALE = {'days': 1}
+
     @staticmethod
     def set_gps_times(namespace, startdate, enddate):
         setattr(namespace, 'gpsstart', to_gps(startdate))

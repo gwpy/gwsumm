@@ -52,7 +52,7 @@ And that's it.
 
  ### Python compatibility
 
- **GWSumm code must be compatible with Python versions >=3.5.**
+ **GWSumm code must be compatible with Python versions >=3.6.**
 
  ### Style
 

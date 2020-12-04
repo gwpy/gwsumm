@@ -1,30 +1,54 @@
-language: python
+language: minimal
 
-dist: xenial
-
-python:
-  - '3.5'
-  - '3.6'
-  - '3.7'
+os: linux
 
 env:
-  - PIP_FLAGS=""
-  - PIP_FLAGS="--upgrade --pre"
+  global:
+    - COVERAGE_STORAGE="json"
+    - CONDA_PKGS_DIRS="${HOME}/.cache/conda/pkgs"
+
+matrix:
+  fast_finish: true
+
+  include:
+    # conda builds
+    - name: "conda:3.6"
+      env: PYTHON_VERSION="3.6"
+    - name: "conda:3.7"
+      env: PYTHON_VERSION="3.7"
+    - name: "conda:3.8"
+      env: PYTHON_VERSION="3.8"
+    - name: "conda:3.9"
+      env: PYTHON_VERSION="3.9"
 
 before_install:
-  - python -m pip install --upgrade pip
-  - python -m pip install ${PIP_FLAGS} -r requirements.txt
+  - curl -LO https://raw.githubusercontent.com/gwpy/gwpy/master/ci/parse-conda-requirements.py
+  - curl -o miniconda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+  - bash miniconda.sh -b -p ${HOME}/miniconda
+  - source "${HOME}/miniconda/etc/profile.d/conda.sh"
+  - conda config --set always_yes yes --set changeps1 no
+  - conda config --add channels conda-forge
+  - travis_retry conda update --quiet --yes conda
+  # Useful for debugging any issues with conda
+  - conda info --all
 
 install:
-  # note: need --editable for executable coverage with `which ...` to work
+  # create a conda environment
+  - travis_retry conda create --quiet --yes --name gwsummci python=${PYTHON_VERSION} pip setuptools
+  - travis_retry conda activate gwsummci
+  - travis_retry python ./parse-conda-requirements.py requirements.txt -o conda-reqs.txt
+  - travis_retry conda install --quiet --yes --update-all --name gwsummci --file conda-reqs.txt
+  # clean up
+  - rm -f conda-reqs.txt parse-conda-requirements.py
+  # install this version
+  # note: need --editable for coverage with `which ...` to work
   - python -m pip install --editable .
 
 script:
   # run flake8
-  - python -m flake8 .
-  - python -m flake8 bin/*
+  - python -m flake8 . bin/*
   # run test suite
-  - python -m pytest --pyargs gwsumm --cov gwsumm
+  - python -m pytest --verbose --cov --pyargs gwsumm
   # test executables
   - python -m coverage run --append $(which gw_summary) --help
   - python -m coverage run --append $(which gw_summary) day --help
@@ -36,10 +60,14 @@ script:
   - python -m coverage run --append $(which gwsumm-plot-guardian) --help
 
 after_success:
-  - python -m pip install ${PIP_FLAGS} codecov
-  - python -m codecov --flags $(uname) python${TRAVIS_PYTHON_VERSION/./}
+  - travis_retry conda install --quiet --yes --name gwsummci codecov
+  - python -m coverage report
+  - python -m codecov --flags $(uname) python${PYTHON_VERSION/./}
 
+before_cache:
+  - travis_retry conda clean --quiet --yes --all
+  - rm -f $HOME/.cache/pip/log/debug.log
 cache:
   pip: true
-before_cache:
-  - rm -f $HOME/.cache/pip/log/debug.log
+  directories:
+    - ${HOME}/.cache/conda/pkgs

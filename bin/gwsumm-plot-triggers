@@ -8,21 +8,23 @@ from collections import OrderedDict
 
 from numpy import ndarray
 
-from matplotlib import use
-use('Agg')  # noqa
-
-from matplotlib.artist import setp
-from matplotlib.colors import LogNorm
-
 from glue.lal import Cache
 
 from gwpy.segments import Segment
 from gwpy.time import to_gps
 
-from gwsumm.plot import get_plot
 from gwsumm.segments import get_segments
 from gwsumm.triggers import (get_triggers, keep_in_segments)
 from gwsumm.utils import safe_eval
+
+# set matplotlib backend
+from matplotlib import use
+use('Agg')
+
+# backend-dependent imports
+from matplotlib.artist import setp  # noqa: E402
+from matplotlib.colors import LogNorm  # noqa: E402
+from gwsumm.plot import get_plot  # noqa: E402
 
 # default columns for plot
 DEFAULT_COLUMNS = ['time', 'frequency', 'snr']

@@ -8,11 +8,9 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 import argparse
 import os
 import re
+
 from collections import OrderedDict
 from configparser import DEFAULTSECT
-
-from matplotlib import use
-use('Agg')  # noqa
 
 from gwpy.time import to_gps
 
@@ -22,6 +20,10 @@ from gwsumm.config import GWSummConfigParser
 from gwsumm.data import get_timeseries
 from gwsumm.state import generate_all_state
 from gwsumm.tabs import GuardianTab
+
+# set matplotlib backend
+from matplotlib import use
+use('Agg')
 
 GWSummConfigParser.OPTCRE = re.compile(
     r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')

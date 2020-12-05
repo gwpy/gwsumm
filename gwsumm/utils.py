@@ -86,12 +86,12 @@ def mkdir(*paths):
             os.makedirs(path)
 
 
-def nat_sorted(l, key=None):
+def nat_sorted(iterable, key=None):
     """Sorted a list in the way that humans expect.
 
     Parameters
     ----------
-    l : `iterable`
+    iterable : `iterable`
         iterable to sort
     key : `callable`
         sorting key
@@ -101,7 +101,7 @@ def nat_sorted(l, key=None):
     lsorted : `list`
         sorted() version of input ``l``
     """
-    k = key and list(map(key, l)) or l
+    k = key and list(map(key, iterable)) or iterable
 
     def convert(text):
         if text.isdigit():
@@ -110,9 +110,10 @@ def nat_sorted(l, key=None):
             return text
 
     def alphanum_key(key):
-        return [convert(c) for c in re.split('([0-9]+)', k[l.index(key)])]
+        return [convert(c) for c in re.split(
+            '([0-9]+)', k[iterable.index(key)])]
 
-    return sorted(l, key=alphanum_key)
+    return sorted(iterable, key=alphanum_key)
 
 
 def which(program):

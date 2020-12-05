@@ -21,15 +21,9 @@
 """
 
 import os
+import pytest
 
 from configparser import ConfigParser
-
-from matplotlib import use
-use('Agg')  # noqa
-
-from matplotlib import (rcParams, rc_context)
-
-import pytest
 
 from gwpy.detector import ChannelList
 from gwpy.plot import Plot
@@ -38,6 +32,12 @@ from gwpy.segments import Segment
 
 from gwsumm import plot as gwsumm_plot
 from gwsumm.channels import get_channel
+
+from matplotlib import use
+use('Agg')
+
+# backend-dependent imports
+from matplotlib import (rcParams, rc_context)  # noqa: E402
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

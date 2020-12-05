@@ -78,17 +78,17 @@ OVERLAY = (
     '<button title="Overlay figures" id="overlay-btn" class="btn-float '
     'btn-open shadow" data-id="#overlay"><i class="fas fa-layer-group"></i>'
     '</button>\n<div class="dialog" title="Overlay figures" id="overlay">\n'
-    '<h1>Overlay figures for easy comparison</h1>\n\n<p><hr '
-    'class="row-divider" />\n<div class="row" id="overlay-outer">\n'
-    '<div class="col-md-4">\n<div class="card card-body shadow-sm" '
-    'id="overlay-info">\n<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div '
-    'class="col-md-8">\n<div class="text-center">\n<a title="Overlay all '
-    'selected figures" class="btn btn-light shadow-sm" id="overlay-figures">'
-    'Overlay</a>\n<a title="Download overlay figure" class="btn btn-light '
-    'shadow-sm" id="download-overlay">Download</a>\n<a title="Clear all figure'
-    ' selections" class="btn btn-light shadow-sm" id="clear-figures">Clear'
-    '</a>\n</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div></p>'
-    '\n</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
+    '<h1>Overlay figures for easy comparison</h1>\n<hr class="row-divider" />'
+    '\n<div class="row" id="overlay-outer">\n<div class="col-md-4">\n'
+    '<div class="card card-body shadow-sm" id="overlay-info">\n'
+    '<h4>Instructions</h4>\n%s\n</div>\n</div>\n<div class="col-md-8">\n'
+    '<div class="text-center">\n<a title="Overlay all selected figures" '
+    'class="btn btn-light shadow-sm" id="overlay-figures">Overlay</a>\n'
+    '<a title="Download overlay figure" class="btn btn-light shadow-sm" '
+    'id="download-overlay">Download</a>\n<a title="Clear all figure '
+    'selections" class="btn btn-light shadow-sm" id="clear-figures">Clear</a>'
+    '\n</div>\n<br />\n<canvas id="overlay-canvas" />\n</div>\n</div>\n'
+    '</div>') % markdown(html5.OVERLAY_INSTRUCTIONS)
 
 
 # test utilities

@@ -21,16 +21,16 @@
 
 from collections import OrderedDict
 
-from gwpy.segments import (Segment, SegmentList)
 from gwpy.plot.colors import tint
 from gwpy.plot.segments import SegmentRectangle
+from gwpy.segments import (Segment, SegmentList)
 
 from gwdetchar.plot import texify
 
-from ..data import get_timeseries
-from ..segments import get_segments
-from ..utils import re_quote
-from .registry import (get_plot, register_plot)
+from ...data import get_timeseries
+from ...segments import get_segments
+from ...utils import re_quote
+from ..registry import (get_plot, register_plot)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

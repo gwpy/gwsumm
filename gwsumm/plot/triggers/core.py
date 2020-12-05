@@ -28,19 +28,19 @@ from numpy import isinf
 from astropy.units import Quantity
 
 from gwpy.detector import (Channel, ChannelList)
-from gwpy.segments import SegmentList
 from gwpy.plot.gps import GPSTransform
 from gwpy.plot.utils import (color_cycle, marker_cycle)
+from gwpy.segments import SegmentList
 
 from gwdetchar.plot import texify
 
-from .. import globalv
-from ..utils import re_cchar
-from ..channels import get_channel
-from ..data import (get_timeseries, add_timeseries)
-from ..triggers import (get_triggers, get_time_column)
-from .registry import (get_plot, register_plot)
-from .utils import (get_column_string, hash)
+from ... import globalv
+from ...channels import get_channel
+from ...data import (get_timeseries, add_timeseries)
+from ..registry import (get_plot, register_plot)
+from ...triggers import (get_triggers, get_time_column)
+from ...utils import re_cchar
+from ..utils import (get_column_string, hash)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

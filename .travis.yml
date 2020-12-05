@@ -41,23 +41,22 @@ install:
   # clean up
   - rm -f conda-reqs.txt parse-conda-requirements.py
   # install this version
-  # note: need --editable for coverage with `which ...` to work
-  - python -m pip install --editable .
+  - python -m pip install .
 
 script:
   # run flake8
-  - python -m flake8 . bin/*
+  - python -m flake8 .
   # run test suite
   - python -m pytest --verbose --cov --pyargs gwsumm
   # test executables
-  - python -m coverage run --append $(which gw_summary) --help
-  - python -m coverage run --append $(which gw_summary) day --help
-  - python -m coverage run --append $(which gw_summary) week --help
-  - python -m coverage run --append $(which gw_summary) month --help
-  - python -m coverage run --append $(which gw_summary) gps --help
-  - python -m coverage run --append $(which gw_summary_pipe) --help
-  - python -m coverage run --append $(which gwsumm-plot-triggers) --help
-  - python -m coverage run --append $(which gwsumm-plot-guardian) --help
+  - python -m coverage run --append --source gwsumm -m gwsumm --help
+  - python -m coverage run --append --source gwsumm -m gwsumm day --help
+  - python -m coverage run --append --source gwsumm -m gwsumm week --help
+  - python -m coverage run --append --source gwsumm -m gwsumm month --help
+  - python -m coverage run --append --source gwsumm -m gwsumm gps --help
+  - python -m coverage run --append --source gwsumm -m gwsumm.batch --help
+  - python -m coverage run --append --source gwsumm -m gwsumm.plot.triggers --help
+  - python -m coverage run --append --source gwsumm -m gwsumm.plot.guardian --help
 
 after_success:
   - travis_retry conda install --quiet --yes --name gwsummci codecov

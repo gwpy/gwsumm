@@ -38,7 +38,7 @@ def _get_inputs():
     indir = os.getcwd()
     inputs = (
         os.path.join(indir, "global.ini"),
-        os.path.join(indir, "k1test.ini"),
+        os.path.join(indir, "k1-test.ini"),
         os.path.join(indir, "x509.cert"),
     )
     # write empty input files
@@ -66,6 +66,7 @@ def test_main(krb, x509, tmpdir, caplog):
         '--ifo', 'K1',
         '--maxjobs', '5',
         '--condor-timeout', '3',
+        '--condor-command', 'notification=false',
         '--config-file', k1test,
         '--global-config', global_,
         '--nds',

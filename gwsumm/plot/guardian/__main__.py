@@ -83,28 +83,28 @@ def create_parser():
         '-i',
         '--ifo',
         type=str,
-        default='L1',
+        default="L1",
     )
     parser.add_argument(
         '-s',
         '--section',
         type=str,
-        help='suffix of INI tab section to read, e.g. give '
-             '--section=\'ISC_LOCK\' to read [tab-ISC_LOCK] '
-             'section, defaults to {node}',
+        help="suffix of INI tab section to read, e.g. give "
+             "--section='ISC_LOCK' to read [tab-ISC_LOCK] "
+             "section, defaults to {node}",
     )
     parser.add_argument(
         '-t',
         '--epoch',
         type=to_gps,
-        help='Zero-time for plot, defaults to GPSSTART',
+        help="Zero-time for plot, defaults to GPSSTART",
     )
     parser.add_argument(
         '-p',
         '--plot-params',
         action='append',
         default=[],
-        help='extra plotting keyword argument',
+        help="extra plotting keyword argument",
     )
     parser.add_argument(
         '-m',
@@ -112,37 +112,37 @@ def create_parser():
         type=int,
         default=1,
         dest='nproc',
-        help='number of processes to use, default: %(default)s',
+        help="number of processes to use, default: %(default)s",
     )
     parser.add_argument(
         '-o',
         '--output-file',
-        default='guardian.png',
-        help='output file name, default: %(default)s',
+        default="guardian.png",
+        help="output file name, default: %(default)s",
     )
     parser.add_argument(
         '-v',
         '--verbose',
         action='store_true',
-        help='print verbose output, default: False',
+        help="print verbose output, default: False",
     )
     parser.add_argument(
         '-P',
         '--profile',
         action='store_true',
-        help='print timing output, default: False',
+        help="print timing output, default: False",
     )
 
     # archive options
     archopts.add_argument(
         '-a',
         '--archive',
-        help='full path of HDF archive for data',
+        help="full path of HDF archive for data",
     )
     archopts.add_argument(
         '-r',
         '--read-only-archive',
-        help='full path of HDF archive for data, does not write',
+        help="full path of HDF archive for data, does not write",
     )
 
     # return the argument parser
@@ -157,10 +157,9 @@ def main(args=None):
     parser = create_parser()
     args = parser.parse_args(args=args)
 
-    if args.epoch is None:
-        args.epoch = args.gpsstart
     globalv.VERBOSE = args.verbose
     globalv.PROFILE = args.profile
+    args.epoch = args.epoch or args.gpsstart
     state = generate_all_state(args.gpsstart, args.gpsend)
 
     # format params
@@ -175,7 +174,7 @@ def main(args=None):
     config.set(DEFAULTSECT, 'gps-start-time', str(int(args.gpsstart)))
     config.set(DEFAULTSECT, 'gps-end-time', str(int(args.gpsend)))
     config.set(DEFAULTSECT, 'IFO', args.ifo)
-    sec = 'tab-%s' % (args.section or args.node)
+    sec = 'tab-{}'.format(args.section or args.node)
 
     # read archive
     if args.archive and not args.read_only_archive:
@@ -196,7 +195,7 @@ def main(args=None):
     tab.process(nproc=args.nproc)
     plotfile = tab.plots[0].outputfile
     os.rename(plotfile, args.output_file)
-    LOGGER.info('Plot saved to {0.output_file}'.format(args))
+    LOGGER.info("Plot saved to {0.output_file}".format(args))
 
     # crop and save archive
     if args.archive:

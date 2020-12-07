@@ -235,13 +235,11 @@ def main(args=None):
         plot = trigs.tile(args.x_column, args.y_column,
                           'duration', 'bandwidth', color=args.color,
                           edgecolor=params.pop('edgecolor', 'face'),
-                          linewidth=params.pop('linewidth', .8),
-                          **plot_kw)
+                          linewidth=params.pop('linewidth', .8), **plot_kw)
     else:
         plot = trigs.scatter(args.x_column, args.y_column, color=args.color,
                              edgecolor=params.pop('edgecolor', 'none'),
-                             s=params.pop('s', 12),
-                             **plot_kw)
+                             s=params.pop('s', 12), **plot_kw)
     ax = plot.gca()
     mappable = ax.collections[0]
 

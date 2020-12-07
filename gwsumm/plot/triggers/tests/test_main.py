@@ -96,6 +96,7 @@ def test_main_with_cache_and_tiles(tmpdir, caplog):
         '0', '3600',
         '--cache-file', cache,
         '--snr', '1',
+        '--plot-params', 'legend-loc="upper right"',
         '--tiles',
         '--output-file', plot,
     ]

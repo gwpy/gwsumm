@@ -90,6 +90,7 @@ def test_main(tmpdir, caplog):
         'ISC_LOCK',
         '0', '3600',
         ini,
+        '--plot-params', 'title="Test figure"',
         '--output-file', plot,
         '--verbose',
         '--archive', archive,

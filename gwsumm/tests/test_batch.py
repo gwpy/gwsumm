@@ -23,7 +23,6 @@ import os
 import pytest
 import shutil
 
-from numpy import testing as nptest
 from unittest import mock
 
 from .. import batch
@@ -87,25 +86,20 @@ def test_main(krb, x509, tmpdir, caplog):
     assert "Setup complete, DAG written to: {}".format(
         os.path.join(outdir, "gw_summary_pipe.dag")) in caplog.text
     # test file output
-    nptest.assert_array_equal(
-        os.listdir(outdir),
-        ["etc",
-         "gw_summary_pipe_local.sub",
-         "gw_summary_pipe.dag",
-         "logs",
-         "gw_summary_pipe.sub",
-         "gw_summary_pipe.sh"]
-    )
-    nptest.assert_array_equal(
-        os.listdir(os.path.join(outdir, "etc")),
-        [os.path.basename(k1test),
-         os.path.basename(x509cert),
-         os.path.basename(global_)]
-    )
-    nptest.assert_array_equal(
-        os.listdir(os.path.join(outdir, "logs")),
-        [],
-    )
+    assert set(os.listdir(outdir)) == {
+        "etc",
+        "gw_summary_pipe_local.sub",
+        "gw_summary_pipe.dag",
+        "logs",
+        "gw_summary_pipe.sub",
+        "gw_summary_pipe.sh",
+    }
+    assert set(os.listdir(os.path.join(outdir, "etc"))) == {
+        os.path.basename(k1test),
+        os.path.basename(x509cert),
+        os.path.basename(global_),
+    }
+    assert set(os.listdir(os.path.join(outdir, "logs"))) == set()
     # clean up
     for filename in (global_, k1test, x509cert):
         os.remove(filename)

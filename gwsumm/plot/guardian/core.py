@@ -64,8 +64,8 @@ class GuardianStatePlot(get_plot('segments')):
         return list(self.ifos)[0]
 
     def draw(self):
-        from ..tabs.guardian import (REQUESTSTUB, NOMINALSTUB,
-                                     re_guardian_index)
+        from ...tabs.guardian import (REQUESTSTUB, NOMINALSTUB,
+                                      re_guardian_index)
 
         plot = self.init_plot()
         ax = plot.gca()

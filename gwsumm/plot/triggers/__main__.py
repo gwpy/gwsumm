@@ -73,32 +73,32 @@ def create_parser():
         '-e',
         '--etg',
         default='omicron',
-        help='name of ETG (default: %(default)s)',
+        help="name of ETG (default: %(default)s)",
     )
     trigopts.add_argument(
         '-l',
         '--cache-file',
-        help='cache file containing event trigger file references',
+        help="cache file containing event trigger file references",
     )
     trigopts.add_argument(
         '-C',
         '--columns',
         type=lambda x: x.split(','),
-        help='(comma-separated) list of columns to read from '
-             'files: (default: {0})'.format(','.join(DEFAULT_COLUMNS)),
+        help="comma-separated list of columns to read from "
+             "files (default: {0})".format(','.join(DEFAULT_COLUMNS)),
     )
     trigopts.add_argument(
         '-s',
         '--snr',
         default=0,
         type=float,
-        help='minimum SNR (default: %(default)s)',
+        help="minimum SNR (default: %(default)s)",
     )
     trigopts.add_argument(
         '-a',
         '--state',
         metavar='FLAG',
-        help='restrict triggers to active times for flag',
+        help="restrict triggers to active times for flag",
     )
 
     # options for output plot
@@ -106,48 +106,48 @@ def create_parser():
         '-t',
         '--epoch',
         type=to_gps,
-        help='Zero-time for plot, (default: gpsstart)',
+        help="Zero-time for plot (default: gpsstart)",
     )
     popts.add_argument(
         '-x',
         '--x-column',
-        help='column for X-axis, (default: first --column)',
+        help="column for X-axis (default: first --column)",
     )
     popts.add_argument(
         '-f',
         '--y-column',
-        help='column for Y-axis, (default: second --column)',
+        help="column for Y-axis (default: second --column)",
     )
     popts.add_argument(
         '-c',
         '--color',
-        help='column for colour, (default: third --column)',
+        help="column for colour (default: third --column)",
     )
     popts.add_argument(
         '-p',
         '--plot-params',
         action='append',
         metavar='"{arg}={param}"',
-        help='extra plotting keyword arguments, '
-             'can be given multiple times',
+        help="extra plotting keyword arguments, "
+             "can be given multiple times",
     )
     popts.add_argument(
         '--tiles',
         action='store_true',
         default=False,
-        help='plot tiles instead of dots (default: %(default)s), '
-             'if selected \'duration\' and \'bandwidth\' will be '
-             'automatically added to --columns',
+        help="plot tiles instead of dots (default: %(default)s), "
+             "if selected 'duration' and 'bandwidth' will be "
+             "automatically added to --columns",
     )
     popts.add_argument(
         '--state-label',
-        help='label for state segments (default: --state)',
+        help="label for state segments (default: --state)",
     )
     popts.add_argument(
         '-o',
         '--output-file',
-        default='trigs.png',
-        help='output file name (default: %(default)s)',
+        default='triggers.png',
+        help="output file name (default: %(default)s)",
     )
 
     # return the argument parser
@@ -162,17 +162,13 @@ def main(args=None):
     parser = create_parser()
     args = parser.parse_args(args=args)
 
-    if args.epoch is None:
-        args.epoch = args.gpsstart
-    if not args.columns:
-        args.columns = DEFAULT_COLUMNS
+    args.epoch = args.epoch or args.gpsstart
+    args.columns = args.columns or DEFAULT_COLUMNS
     if len(args.columns) < 2:
-        parser.error('--columns must receive at least two columns, '
-                     'got {0}'.format(len(args.columns)))
-    if not args.x_column:
-        args.x_column = args.columns[0]
-    if not args.y_column:
-        args.y_column = args.columns[1]
+        parser.error("--columns must receive at least two columns, "
+                     "got {0}".format(len(args.columns)))
+    args.x_column = args.x_column or args.columns[0]
+    args.y_column = args.y_column or args.columns[1]
     if not args.color and len(args.columns) >= 3:
         args.color = args.columns[2]
 
@@ -239,13 +235,11 @@ def main(args=None):
         plot = trigs.tile(args.x_column, args.y_column,
                           'duration', 'bandwidth', color=args.color,
                           edgecolor=params.pop('edgecolor', 'face'),
-                          linewidth=params.pop('linewidth', .8),
-                          **plot_kw)
+                          linewidth=params.pop('linewidth', .8), **plot_kw)
     else:
         plot = trigs.scatter(args.x_column, args.y_column, color=args.color,
                              edgecolor=params.pop('edgecolor', 'none'),
-                             s=params.pop('s', 12),
-                             **plot_kw)
+                             s=params.pop('s', 12), **plot_kw)
     ax = plot.gca()
     mappable = ax.collections[0]
 
@@ -282,7 +276,7 @@ def main(args=None):
 
     # save and exit
     plot.save(args.output_file)
-    LOGGER.info('Plot saved to {0.output_file}'.format(args))
+    LOGGER.info("Plot saved to {0.output_file}".format(args))
 
 
 # -- run from command-line ----------------------------------------------------

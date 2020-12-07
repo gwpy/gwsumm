@@ -117,8 +117,11 @@ def create_parser():
     usage = ('%s --global-config defaults.ini --config-file myconfig.ini '
              '[--config-file myconfig2.ini] [options]'
              % os.path.basename(__file__))
-    parser = argparse.ArgumentParser(usage=usage, description=__doc__,
-                                     formatter_class=GWHelpFormatter)
+    parser = argparse.ArgumentParser(
+        usage=usage,
+        description=__doc__,
+        formatter_class=GWHelpFormatter,
+    )
     bopts = parser.add_argument_group("Basic options")
     htcopts = parser.add_argument_group("Condor options")
     copts = parser.add_argument_group(
@@ -418,6 +421,7 @@ def main(args=None):
     parser = create_parser()
     args = parser.parse_args(args=args)
 
+    # initialize logger
     logger = cli.logger(
         name='gwsumm.batch',
         level='DEBUG' if args.verbose else 'INFO',
@@ -430,7 +434,7 @@ def main(args=None):
         raise parser.error("Please give only one of --day, --month, or "
                            "--gps-start-time and --gps-end-time.")
 
-    for i, cf in enumerate(args.config_file):
+    for (i, cf) in enumerate(args.config_file):
         args.config_file[i] = ','.join(map(os.path.abspath, cf.split(',')))
     args.global_config = list(map(
         os.path.abspath,
@@ -440,28 +444,26 @@ def main(args=None):
     # -- build workflow directories -----------------
 
     # move to output directory
+    indir = os.getcwd()
     mkdir(args.output_dir)
     os.chdir(args.output_dir)
     outdir = os.curdir
 
     # set node log path, and condor log path
     logdir = os.path.join(outdir, 'logs')
-    if args.log_dir:
-        htclogdir = args.log_dir
-    else:
-        htclogdir = logdir
+    htclogdir = args.log_dir or logdir
     mkdir(logdir, htclogdir)
 
     # set config directory and copy config files
     etcdir = os.path.join(outdir, 'etc')
     mkdir(etcdir)
 
-    for i, fp in enumerate(args.global_config):
+    for (i, fp) in enumerate(args.global_config):
         inicopy = os.path.join(etcdir, os.path.basename(fp))
         if not os.path.isfile(inicopy) or not os.path.samefile(fp, inicopy):
             shutil.copyfile(fp, inicopy)
         args.global_config[i] = os.path.abspath(inicopy)
-    for i, csv in enumerate(args.config_file):
+    for (i, csv) in enumerate(args.config_file):
         inicopy = []
         for fp in csv.split(','):
             fp2 = os.path.join(etcdir, os.path.basename(fp))
@@ -469,13 +471,13 @@ def main(args=None):
                 shutil.copyfile(fp, fp2)
             inicopy.append(os.path.abspath(fp2))
         args.config_file[i] = ','.join(inicopy)
-    logger.debug("Copied all INI configuration files to %s." % etcdir)
+    logger.debug("Copied all INI configuration files to %s" % etcdir)
 
     # -- configure X509 and kerberos for condor -----
 
     if args.universe != 'local':
         # copy X509 grid certificate into local location
-        x509cert, x509key = find_credential()
+        (x509cert, _) = find_credential()
         x509copy = os.path.join(etcdir, os.path.basename(x509cert))
         shutil.copyfile(x509cert, x509copy)
 
@@ -483,7 +485,7 @@ def main(args=None):
         krb5cc = os.path.abspath(os.path.join(etcdir, 'krb5cc.krb5'))
         gwkerberos.kinit(krb5ccname=krb5cc)
         logger.debug("Configured Condor and Kerberos "
-                     "for NFS-shared credentials.")
+                     "for NFS-shared credentials")
 
     # -- build DAG ----------------------------------
 
@@ -503,12 +505,12 @@ def main(args=None):
             (3600 * args.condor_timeout)
         )
     for cmd_ in args.condor_command:
-        key, value = cmd_.split('=', 1)
+        (key, value) = cmd_.split('=', 1)
         condorcmds[key.rstrip().lower()] = value.strip()
 
     if args.universe != 'local':
         # add X509 to environment
-        for env_, val_ in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
+        for (env_, val_) in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
                               [os.path.abspath(x509copy), krb5cc]):
             condorenv = '%s=%s' % (env_, val_)
             if ('environment' in condorcmds and
@@ -566,7 +568,7 @@ def main(args=None):
         job.add_opt('on-segdb-error', args.on_segdb_error)
         job.add_opt('on-datafind-error', args.on_datafind_error)
         job.add_opt('output-dir', outdir)
-        for opt, fplist in zip(
+        for (opt, fplist) in zip(
                 ['--data-cache', '--event-cache', '--segment-cache'],
                 [args.data_cache, args.event_cache, args.segment_cache]):
             if fplist:
@@ -594,7 +596,7 @@ def main(args=None):
         if args.archive:
             datajob.add_condor_cmd('+SummaryNodeType', '"$(macroarchive)"')
         # configure each data node
-        for i, configfile in enumerate(args.config_file):
+        for (i, configfile) in enumerate(args.config_file):
             node = GWSummaryDAGNode(datajob)
             node.add_var_arg('--config-file %s' % ','.join(
                 [globalconfig, configfile]).strip(','))
@@ -628,6 +630,9 @@ def main(args=None):
     dag.write_script()
     logger.debug("Setup complete, DAG written to: {}".format(
             os.path.abspath(dag.get_dag_file())))
+
+    # return to original directory
+    os.chdir(indir)
 
 
 # -- run from command-line ----------------------------------------------------

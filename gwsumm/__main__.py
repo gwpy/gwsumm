@@ -648,7 +648,7 @@ def main(args=None):
 
     # read caches
     cache = {}
-    for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
+    for (key, var) in zip(['datacache', 'trigcache', 'segmentcache'],
                         [args.data_cache, args.event_cache,
                          args.segment_cache]):
         if var:

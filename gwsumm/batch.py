@@ -511,7 +511,7 @@ def main(args=None):
     if args.universe != 'local':
         # add X509 to environment
         for (env_, val_) in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
-                              [os.path.abspath(x509copy), krb5cc]):
+                                [os.path.abspath(x509copy), krb5cc]):
             condorenv = '%s=%s' % (env_, val_)
             if ('environment' in condorcmds and
                     env_ not in condorcmds['environment']):

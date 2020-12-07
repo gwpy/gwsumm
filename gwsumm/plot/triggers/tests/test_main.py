@@ -100,7 +100,7 @@ def test_main_with_cache_and_tiles(tmpdir, caplog):
         '--tiles',
         '--output-file', plot,
     ]
-    # reset global variables and write an empty cache file
+    # write an empty cache file
     with open(cache, 'w') as f:
         f.write("")
     # test output

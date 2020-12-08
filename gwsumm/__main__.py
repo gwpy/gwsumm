@@ -648,9 +648,9 @@ def main(args=None):
 
     # read caches
     cache = {}
-    for key, var in zip(['datacache', 'trigcache', 'segmentcache'],
-                        [args.data_cache, args.event_cache,
-                         args.segment_cache]):
+    for (key, var) in zip(['datacache', 'trigcache', 'segmentcache'],
+                          [args.data_cache, args.event_cache,
+                           args.segment_cache]):
         if var:
             LOGGER.info("Reading %s from %d files... " % (key, len(var)))
             cache[key] = Cache()

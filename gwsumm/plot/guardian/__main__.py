@@ -22,6 +22,7 @@
 import argparse
 import os
 import re
+import sys
 
 from collections import OrderedDict
 from configparser import DEFAULTSECT
@@ -44,7 +45,9 @@ use('Agg')
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-LOGGER = logger(name='gwsumm.plot.guardian')
+PROG = ('python -m gwsumm.plot.guardian' if sys.argv[0].endswith('.py')
+        else sys.argv[0])
+LOGGER = logger(name=PROG.split('python -m ').pop())
 
 GWSummConfigParser.OPTCRE = re.compile(
     r'(?P<option>[^=\s][^=]*)\s*(?P<vi>[=])\s*(?P<value>.*)$')
@@ -69,7 +72,10 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     # initialize argument parser
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        prog=PROG,
+        description=__doc__,
+    )
     archopts = parser.add_mutually_exclusive_group()
 
     # positional arguments

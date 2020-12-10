@@ -20,8 +20,9 @@
 """
 
 import configparser
+import os
 import re
-import os.path
+import sys
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
@@ -48,6 +49,10 @@ __all__ = [
     'GWSummConfigParser',
 ]
 
+CONFIGDIR = os.path.join(sys.prefix, 'etc', 'gwsumm', 'configuration')
+
+
+# -- class definitions --------------------------------------------------------
 
 class GWSummConfigParser(configparser.ConfigParser):
     # preserve case in options

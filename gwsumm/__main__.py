@@ -97,7 +97,7 @@ except ValueError:
 
 # initialize logger
 PROG = ('python -m gwsumm' if sys.argv[0].endswith('.py')
-        else sys.argv[0])
+        else os.path.basename(sys.argv[0]))
 LOGGER = logger(name=PROG.split('python -m ').pop())
 
 # find today's date

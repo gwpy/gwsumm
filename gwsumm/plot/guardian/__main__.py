@@ -46,7 +46,7 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 PROG = ('python -m gwsumm.plot.guardian' if sys.argv[0].endswith('.py')
-        else sys.argv[0])
+        else os.path.basename(sys.argv[0]))
 LOGGER = logger(name=PROG.split('python -m ').pop())
 
 GWSummConfigParser.OPTCRE = re.compile(

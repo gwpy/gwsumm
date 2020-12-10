@@ -118,8 +118,8 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     # initialize argument parser
-    usage = ('%(prog)s --global-config defaults.ini --config-file myconfig.ini '
-             '[--config-file myconfig2.ini] [options]')
+    usage = ('%(prog)s --global-config defaults.ini --config-file '
+             'myconfig.ini [--config-file myconfig2.ini] [options]')
     parser = argparse.ArgumentParser(
         prog=PROG,
         usage=usage,

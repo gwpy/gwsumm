@@ -20,8 +20,10 @@
 """
 
 import argparse
-from collections import OrderedDict
+import os
+import sys
 
+from collections import OrderedDict
 from numpy import ndarray
 
 from glue.lal import Cache
@@ -47,7 +49,9 @@ from ...plot import get_plot  # noqa: E402
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
-LOGGER = logger(name='gwsumm.plot.triggers')
+PROG = ('python -m gwsumm.plot.triggers' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = logger(name=PROG.split('python -m ').pop())
 
 # default columns for plot
 DEFAULT_COLUMNS = ['time', 'frequency', 'snr']
@@ -59,7 +63,10 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     # initialize argument parser
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        prog=PROG,
+        description=__doc__,
+    )
     trigopts = parser.add_argument_group('trigger options')
     popts = parser.add_argument_group('plot options')
 

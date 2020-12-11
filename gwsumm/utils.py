@@ -20,8 +20,8 @@
 """
 
 import os
-import sys
 import re
+import sys
 from socket import getfqdn
 
 # import filter evals

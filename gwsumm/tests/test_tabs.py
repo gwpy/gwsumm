@@ -24,8 +24,8 @@ import os.path
 
 import pytest
 
-from gwsumm import tabs
-from gwsumm.plot import SummaryPlot
+from .. import tabs
+from ..plot import SummaryPlot
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

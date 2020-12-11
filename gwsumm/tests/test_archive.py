@@ -34,7 +34,7 @@ from gwpy.timeseries import (TimeSeries, StateVector)
 from gwpy.spectrogram import Spectrogram
 from gwpy.segments import (Segment, SegmentList)
 
-from gwsumm import (archive, data, globalv, channels, triggers)
+from .. import (archive, data, globalv, channels, triggers)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

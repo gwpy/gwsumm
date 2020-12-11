@@ -26,20 +26,24 @@ a workflow to be submitted via the HTCondor scheduler.
 import argparse
 import os
 import shutil
+import sys
 
 from glue import pipeline
 
 from gwdatafind.utils import find_credential
 
-from gwdetchar import cli
-
 from gwpy.io import kerberos as gwkerberos
+
+from gwdetchar import cli
 
 from . import __version__
 from .utils import (mkdir, which)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+
+PROG = ('python -m gwsumm.batch' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
 
 
 # -- utilities ----------------------------------------------------------------
@@ -114,10 +118,10 @@ def create_parser():
     """Create a command-line parser for this entry point
     """
     # initialize argument parser
-    usage = ('%s --global-config defaults.ini --config-file myconfig.ini '
-             '[--config-file myconfig2.ini] [options]'
-             % os.path.basename(__file__))
+    usage = ('%(prog)s --global-config defaults.ini --config-file '
+             'myconfig.ini [--config-file myconfig2.ini] [options]')
     parser = argparse.ArgumentParser(
+        prog=PROG,
         usage=usage,
         description=__doc__,
         formatter_class=GWHelpFormatter,
@@ -423,7 +427,7 @@ def main(args=None):
 
     # initialize logger
     logger = cli.logger(
-        name='gwsumm.batch',
+        name=PROG.split('python -m ').pop(),
         level='DEBUG' if args.verbose else 'INFO',
     )
 

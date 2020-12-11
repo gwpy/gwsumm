@@ -25,7 +25,7 @@ allowing generation of detector summary information.
 Select a <mode> to run over a calendar amount of time ('day', 'week',
 or 'month'), or an arbitrary GPS (semi-open) interval.
 
-Run 'python -m gwsumm <mode> --help' for details of the specific arguments and
+Run '%(prog)s <mode> --help' for details of the specific arguments and
 options available for each mode.
 """
 
@@ -35,6 +35,7 @@ import datetime
 import getpass
 import os
 import re
+import sys
 import warnings
 
 from collections import OrderedDict
@@ -95,7 +96,9 @@ except ValueError:
     DEFAULT_IFO = None
 
 # initialize logger
-LOGGER = logger(name='gwsumm')
+PROG = ('python -m gwsumm' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = logger(name=PROG.split('python -m ').pop())
 
 # find today's date
 TODAY = datetime.datetime.utcnow().strftime('%Y%m%d')
@@ -249,11 +252,12 @@ def create_parser():
     # initialize top-level argument parser
     parser = GWArgumentParser(
         formatter_class=GWHelpFormatter,
+        prog=PROG,
         description=__doc__,
-        fromfile_prefix_chars='@',
-        epilog="Arguments and options may be written into files and passed to "
-               "%(prog)s as positional arguments prepended with '@', e.g. "
-               "'%(prog)s @args.txt'. In this format, options must be give as "
+        fromfile_prefix_chars="@",
+        epilog="Arguments and options may be written into files and passed as "
+               "positional arguments prepended with '@', e.g. '%(prog)s "
+               "@args.txt'. In this format, options must be give as "
                "'--argument=value', and not '--argument value'.",
     )
 

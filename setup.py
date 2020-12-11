@@ -21,10 +21,13 @@
 """
 
 import glob
-import os
+import os.path
+import sys
 import versioneer
 
 from setuptools import setup
+
+from gwsumm.config import CONFIGDIR
 
 version = versioneer.get_version()
 cmdclass = versioneer.get_cmdclass()
@@ -38,7 +41,7 @@ else:
 
 # configuration files
 data_files = [
-    (os.path.join('etc', 'gwsumm', 'configuration'),
+    (CONFIGDIR.split(sys.prefix + os.path.sep).pop(),
      glob.glob(os.path.join('share', '*.ini'))),
 ]
 

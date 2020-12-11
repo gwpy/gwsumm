@@ -24,7 +24,7 @@ import datetime
 
 import pytest
 
-from gwsumm import (globalv, mode)
+from .. import (globalv, mode)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

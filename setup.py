@@ -21,7 +21,7 @@
 """
 
 import glob
-import os
+import os.path
 import sys
 import versioneer
 
@@ -41,7 +41,7 @@ else:
 
 # configuration files
 data_files = [
-    (CONFIGDIR.split(sys.prefix).pop(),
+    (CONFIGDIR.split(sys.prefix + os.path.sep).pop(),
      glob.glob(os.path.join('share', '*.ini'))),
 ]
 

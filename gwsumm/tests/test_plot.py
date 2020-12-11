@@ -30,8 +30,8 @@ from gwpy.plot import Plot
 from gwpy.plot.tex import HAS_TEX
 from gwpy.segments import Segment
 
-from gwsumm import plot as gwsumm_plot
-from gwsumm.channels import get_channel
+from .. import plot as gwsumm_plot
+from ..channels import get_channel
 
 from matplotlib import use
 use('Agg')

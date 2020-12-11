@@ -21,7 +21,7 @@
 
 from functools import wraps
 
-from gwsumm import globalv
+from .. import globalv
 
 
 # -- test decorators ----------------------------------------------------------

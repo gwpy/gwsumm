@@ -34,7 +34,7 @@ try:
 except ImportError:
     import mock
 
-from gwsumm import (utils, globalv)
+from .. import (utils, globalv)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

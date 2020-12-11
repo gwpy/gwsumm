@@ -39,8 +39,8 @@ from gwpy.timeseries import TimeSeries
 from gwpy.detector import Channel
 from gwpy.segments import (Segment, SegmentList)
 
-from gwsumm import (data, globalv)
-from gwsumm.data import (utils, mathutils)
+from .. import (data, globalv)
+from ..data import (utils, mathutils)
 
 from .common import empty_globalv_CHANNELS
 

@@ -26,8 +26,8 @@ from astropy import units
 
 from gwpy.detector import ChannelList
 
-from gwsumm import (globalv, channels)
-from gwsumm.mode import (get_mode, set_mode)
+from .. import (globalv, channels)
+from ..mode import (get_mode, set_mode)
 
 from gwpy.detector import Channel
 

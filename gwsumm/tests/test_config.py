@@ -19,7 +19,7 @@
 """Tests for :mod:`gwsumm.config`
 """
 
-import os.path
+import os
 import tempfile
 from io import StringIO
 from collections import OrderedDict
@@ -31,8 +31,8 @@ from matplotlib import rcParams
 
 from astropy import units
 
-from gwsumm import (state, config, html)
-from gwsumm.channels import get_channel
+from .. import (state, config, html)
+from ..channels import get_channel
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
@@ -84,6 +84,12 @@ class TestGWSummConfigParser(object):
         cp = self.new()
         assert cp.optionxform is str
         assert cp._dict is OrderedDict
+
+    def test_configdir(self):
+        assert set(os.listdir(config.CONFIGDIR)) == {
+            'defaults.ini',
+            'matplotlib.ini',
+        }
 
     # -- test methods ---------------------------
 

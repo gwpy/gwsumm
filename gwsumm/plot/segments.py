@@ -1029,7 +1029,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             data.append(float(abs(segs.active)))
 
         # handle missing or future data
-        total = sum(data)
+        total = float(sum(data))
         if future or (total < alltime):
             data.append(alltime - total)
             if 'labels' in plotargs:
@@ -1058,7 +1058,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 pclabels.append(label)
             else:
                 try:
-                    pc = d / alltime * 100
+                    pc = d / (total if future else alltime) * 100
                 except ZeroDivisionError:
                     pc = 0.0
                 pclabels.append(texify(

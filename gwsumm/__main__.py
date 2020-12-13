@@ -772,8 +772,8 @@ def main(args=None):
         mkdir(about.path)
         about.write_html(
             css=css, js=javascript, tabs=tabs, config=config.files,
-            ifo=ifo, ifomap=ifobases, about=about.index, base=base,
-            issues=issues, writedata=not args.html_only,
+            prog=PROG, ifo=ifo, ifomap=ifobases, about=about.index,
+            base=base, issues=issues, writedata=not args.html_only,
             writehtml=not args.no_html)
 
     # -- read bulk data -----------------------------

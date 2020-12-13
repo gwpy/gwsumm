@@ -42,9 +42,9 @@ class AboutTab(Tab):
     def __init__(self, name='About', **kwargs):
         super(AboutTab, self).__init__(name, **kwargs)
 
-    def write_html(self, config=list(), **kwargs):
+    def write_html(self, config=list(), prog=None, **kwargs):
         return super(AboutTab, self).write_html(
-            html.about_this_page(config=config), **kwargs)
+            html.about_this_page(config=config, prog=prog), **kwargs)
 
 
 register_tab(AboutTab)

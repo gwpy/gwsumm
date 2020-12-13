@@ -31,8 +31,6 @@ before_install:
   - travis_retry conda update --quiet --yes conda
   # Useful for debugging any issues with conda
   - conda info --all
-  # install this version
-  - python -m pip install .
 
 install:
   # create a conda environment
@@ -42,6 +40,8 @@ install:
   - travis_retry conda install --quiet --yes --update-all --name gwsummci --file conda-reqs.txt
   # clean up
   - rm -f conda-reqs.txt parse-conda-requirements.py
+  # install this version
+  - python -m pip install .
 
 script:
   # run flake8

@@ -4,7 +4,7 @@ setuptools
 # core requirements
 astropy>=3.0.0
 gwdatafind
-gwdetchar>=1.1.0
+gwdetchar>=2.0.0
 gwpy>=2.0.0
 gwtrigfind
 lalsuite
@@ -20,11 +20,11 @@ python-dateutil
 scipy>=1.2.0
 
 # optional extras (not module-level imports)
-pykerberos
 h5py
 ligo-gracedb>=2.0.0
+pykerberos
 
 # testing extras
+flake8
 pytest>=3.3.0
 pytest-cov>2.4.0
-flake8

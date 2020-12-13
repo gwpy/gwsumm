@@ -27,32 +27,30 @@ __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 
-STATICDIR = 'html/static'
-
 # build collection of CSS resources
 CSS = OrderedDict((
     ('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/'
-                     'font-awesome/5.11.2/css/fontawesome.min.css'),
+                     'font-awesome/5.15.1/css/fontawesome.min.css'),
     ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
-                           'font-awesome/5.11.2/css/solid.min.css'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.2.1/'
+                           'font-awesome/5.15.1/css/solid.min.css'),
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.1/'
                     'lib/gwbootstrap.min.css'),
 ))
 
 # build collection of javascript resources
 JS = OrderedDict((
-    ('jquery', 'https://code.jquery.com/jquery-3.4.1.min.js'),
+    ('jquery', 'https://code.jquery.com/jquery-3.5.1.min.js'),
     ('jquery-ui', 'https://code.jquery.com/ui/1.12.1/jquery-ui.min.js'),
     ('moment', 'https://cdnjs.cloudflare.com/ajax/libs/'
-               'moment.js/2.24.0/moment.min.js'),
-    ('bootstrap', 'https://stackpath.bootstrapcdn.com/bootstrap/'
-                  '4.4.1/js/bootstrap.bundle.min.js'),
+               'moment.js/2.29.1/moment.min.js'),
+    ('bootstrap', 'https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/'
+                  'dist/js/bootstrap.bundle.min.js'),
     ('fancybox', 'https://cdnjs.cloudflare.com/ajax/libs/'
                  'fancybox/3.5.7/jquery.fancybox.min.js'),
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.2.1/'
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.1/'
                     'lib/gwbootstrap-extra.min.js'),
 ))
 

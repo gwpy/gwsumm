@@ -31,6 +31,8 @@ before_install:
   - travis_retry conda update --quiet --yes conda
   # Useful for debugging any issues with conda
   - conda info --all
+  # install this version
+  - python -m pip install .
 
 install:
   # create a conda environment

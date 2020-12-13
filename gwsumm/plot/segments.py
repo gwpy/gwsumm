@@ -1018,6 +1018,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
 
         # get segments
         data = []
+        alltime = float(abs(self.span))
         for flag in self.flags:
             if self.state and not self.all_data:
                 valid = self.state.active
@@ -1026,10 +1027,11 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             segs = get_segments(flag, validity=valid, query=False,
                                 padding=self.padding).coalesce()
             data.append(float(abs(segs.active)))
-        if future:
-            total = sum(data)
-            alltime = abs(self.span)
-            data.append(alltime-total)
+
+        # handle missing or future data
+        total = float(sum(data))
+        if future or (total < alltime):
+            data.append(alltime - total)
             if 'labels' in plotargs:
                 plotargs['labels'] = list(plotargs['labels']) + [' ']
             if 'colors' in plotargs:
@@ -1050,14 +1052,13 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         ax.set_title('')
         legth = legendargs.pop('threshold', 0)
         legsort = legendargs.pop('sorted', False)
-        tot = float(sum(data))
         pclabels = []
         for d, label in zip(data, labels):
             if not label or label == ' ':
                 pclabels.append(label)
             else:
                 try:
-                    pc = d/tot * 100
+                    pc = d / (total if future else alltime) * 100
                 except ZeroDivisionError:
                     pc = 0.0
                 pclabels.append(texify(

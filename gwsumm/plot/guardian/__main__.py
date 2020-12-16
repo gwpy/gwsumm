@@ -22,6 +22,7 @@
 import argparse
 import os
 import re
+import shutil
 import sys
 
 from collections import OrderedDict
@@ -200,7 +201,8 @@ def main(args=None):
     LOGGER.info("Processing:")
     tab.process(nproc=args.nproc)
     plotfile = tab.plots[0].outputfile
-    os.rename(plotfile, args.output_file)
+    shutil.copy(plotfile, args.output_file)
+    os.remove(plotfile)
     LOGGER.info("Plot saved to {0.output_file}".format(args))
 
     # crop and save archive

@@ -22,12 +22,9 @@
 
 import glob
 import os.path
-import sys
 import versioneer
 
 from setuptools import setup
-
-from gwsumm.config import CONFIGDIR
 
 version = versioneer.get_version()
 cmdclass = versioneer.get_cmdclass()
@@ -37,12 +34,12 @@ try:
 except ImportError:
     pass
 else:
-    cmdclass['build_sphinx'] = BuildDoc
+    cmdclass["build_sphinx"] = BuildDoc
 
 # configuration files
 data_files = [
-    (CONFIGDIR.split(sys.prefix + os.path.sep).pop(),
-     glob.glob(os.path.join('share', '*.ini'))),
+    ("etc/gwsumm/configuration",
+     glob.glob(os.path.join("share", "*.ini"))),
 ]
 
 # run setup

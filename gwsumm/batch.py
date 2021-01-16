@@ -37,7 +37,7 @@ from gwpy.io import kerberos as gwkerberos
 from gwdetchar import cli
 
 from . import __version__
-from .utils import (mkdir, which)
+from .utils import mkdir
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -53,9 +53,9 @@ class GWSummaryJob(pipeline.CondorDAGJob):
     """
     logtag = '$(cluster)-$(process)'
 
-    def __init__(self, universe, executable, tag='gw_summary',
+    def __init__(self, universe, tag='gw_summary',
                  subdir=None, logdir=None, **cmds):
-        pipeline.CondorDAGJob.__init__(self, universe, executable)
+        pipeline.CondorDAGJob.__init__(self, universe, sys.executable)
         if subdir:
             subdir = os.path.abspath(subdir)
             self.set_sub_file(os.path.join(subdir, '%s.sub' % (tag)))
@@ -73,37 +73,42 @@ class GWSummaryJob(pipeline.CondorDAGJob):
                 getattr(self, 'set_%s' % key.lower())(val)
             else:
                 self.add_condor_cmd(key, val)
-        # add sub-command option
-        self._command = None
+        # add python module sub-command
+        self._command = ' '.join(['-m', __package__])
 
     def add_opt(self, opt, value=''):
         pipeline.CondorDAGJob.add_opt(self, opt, str(value))
     add_opt.__doc__ = pipeline.CondorDAGJob.add_opt.__doc__
 
     def set_command(self, command):
-        self._command = command
+        self._command = ' '.join([
+            self._command,
+            command,
+        ])
 
     def get_command(self):
         return self._command
 
     def write_sub_file(self):
         pipeline.CondorDAGJob.write_sub_file(self)
-        if self.get_command():
-            with open(self.get_sub_file(), 'r') as f:
-                sub = f.read()
-            sub = sub.replace('arguments = "', 'arguments = " %s'
-                              % self.get_command())
-            with open(self.get_sub_file(), 'w') as f:
-                f.write(sub)
+        # insert positional arguments in the right place
+        with open(self.get_sub_file(), 'r') as f:
+            sub = f.read()
+        sub = sub.replace(
+            'arguments = "',
+            'arguments = " {0}'.format(self.get_command()),
+        )
+        with open(self.get_sub_file(), 'w') as f:
+            f.write(sub)
 
 
 class GWSummaryDAGNode(pipeline.CondorDAGNode):
     def get_cmd_line(self):
-        cmd = pipeline.CondorDAGNode.get_cmd_line(self)
-        if self.job().get_command():
-            return '%s %s' % (self.job().get_command(), cmd)
-        else:
-            return cmd
+        # merge positional arguments with options
+        return ' '.join([
+            self.job().get_command(),
+            pipeline.CondorDAGNode.get_cmd_line(self),
+        ])
 
 
 # -- parse command-line -------------------------------------------------------
@@ -196,14 +201,6 @@ def create_parser():
     )
 
     # HTCondor options
-    htcopts.add_argument(
-        '-x',
-        '--executable',
-        action='store',
-        type=str,
-        default=which('gw_summary'),
-        help="Path to gw_summary executable, default: %(default)s",
-    )
     htcopts.add_argument(
         '-u',
         '--universe',
@@ -497,7 +494,6 @@ def main(args=None):
     dag.set_dag_file(os.path.join(outdir, args.file_tag))
 
     universe = args.universe
-    executable = args.executable
 
     # -- parse condor commands ----------------------
 
@@ -530,12 +526,12 @@ def main(args=None):
     jobs = []
     if not args.skip_html_wrapper:
         htmljob = GWSummaryJob(
-            'local', executable, subdir=outdir, logdir=logdir,
+            'local', subdir=outdir, logdir=logdir,
             tag='%s_local' % args.file_tag, **condorcmds)
         jobs.append(htmljob)
     if not args.html_wrapper_only:
         datajob = GWSummaryJob(
-            universe, executable, subdir=outdir, logdir=logdir,
+            universe, subdir=outdir, logdir=logdir,
             tag=args.file_tag, **condorcmds)
         jobs.append(datajob)
 

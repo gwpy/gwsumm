@@ -116,22 +116,6 @@ def nat_sorted(iterable, key=None):
     return sorted(iterable, key=alphanum_key)
 
 
-def which(program):
-    """Find full path of executable program
-    """
-    def is_exe(fpath):
-        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-    fpath, fname = os.path.split(program)
-    if fpath:
-        if is_exe(program):
-            return program
-    else:
-        for path in os.environ["PATH"].split(os.pathsep):
-            exe_file = os.path.join(path, program)
-            if is_exe(exe_file):
-                return exe_file
-
-
 _re_odc = re.compile('(OUTMON|OUT_DQ|LATCH)')
 
 

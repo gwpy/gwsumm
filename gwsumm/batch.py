@@ -37,7 +37,7 @@ from gwpy.io import kerberos as gwkerberos
 from gwdetchar import cli
 
 from . import __version__
-from .utils import (mkdir, which)
+from .utils import mkdir
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
@@ -96,7 +96,7 @@ class GWSummaryJob(pipeline.CondorDAGJob):
             sub = f.read()
         sub = sub.replace(
             'arguments = "',
-            'arguments = " {0}'.format(cmd),
+            'arguments = " {0}'.format(self.get_command()),
         )
         with open(self.get_sub_file(), 'w') as f:
             f.write(sub)

@@ -29,11 +29,6 @@ from math import pi
 
 import pytest
 
-try:
-    from unittest import mock
-except ImportError:
-    import mock
-
 from .. import (utils, globalv)
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -78,20 +73,6 @@ def test_nat_sorted():
     # sorted strings numerically
     assert utils.nat_sorted(['1', '10', '2', 'a', 'B']) == [
         '1', '2', '10', 'B', 'a']
-
-
-def test_which():
-    environ = os.environ.copy()
-    os.environ['PATH'] = '/usr/bin:/bin'
-    try:
-        with mock.patch('os.path.isfile', return_value=True), \
-                mock.patch('os.access', return_value=True):
-            assert utils.which('/bin/bash') == '/bin/bash'
-            assert utils.which('bash') == '/usr/bin/bash'
-        with mock.patch('os.path.isfile', return_value=False):
-            assert utils.which('blah') is None
-    finally:
-        os.environ = environ
 
 
 @pytest.mark.parametrize('chan, mask', [

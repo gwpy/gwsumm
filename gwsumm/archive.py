@@ -293,7 +293,7 @@ def _write_object(data, *args, **kwargs):
     """
     try:
         return data.write(*args, **kwargs)
-    except ValueError as e:
+    except (TypeError, ValueError) as e:
         warnings.warn(str(e))
     except RuntimeError as e:
         if 'name already exists' in str(e).lower():

@@ -246,7 +246,8 @@ def main(args=None):
     else:
         plot = trigs.scatter(args.x_column, args.y_column, color=args.color,
                              edgecolor=params.pop('edgecolor', 'none'),
-                             s=params.pop('s', 12), **plot_kw)
+                             s=params.pop('s', 12), sortbycolor=True,
+                             **plot_kw)
     ax = plot.gca()
     mappable = ax.collections[0]
 

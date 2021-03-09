@@ -223,7 +223,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
             ax.scatter(table[xcolumn], table[ycolumn],
                        c=table[ccolumn] if ccolumn else None,
-                       label=label, **pargs)
+                       label=label, sortbycolor=True, **pargs)
 
         # customise plot
         legendargs = self.parse_legend_kwargs(markerscale=3)
@@ -245,7 +245,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # add colorbar
         if ccolumn:
             if not ntrigs:
-                ax.scatter([1], [1], c=[1], visible=False)
+                ax.scatter([1], [1], c=[1], visible=False, sortbycolor=True)
             ax.colorbar(cmap=cmap, clim=clim, norm=cnorm, label=clabel)
 
         if len(self.channels) == 1 and len(table) and not no_loudest:
@@ -287,7 +287,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # mark loudest row with star
         coll = ax.scatter([x1], [y1], marker='*', zorder=1000,
                           facecolor=facecolor, edgecolor='black',
-                          s=200, clip_on=clipon)
+                          s=200, clip_on=clipon, sortbycolor=True)
 
         # get text
         txt = []

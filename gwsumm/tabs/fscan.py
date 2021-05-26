@@ -86,6 +86,7 @@ class FscanTab(base):
     def process(self, config=GWSummConfigParser(), **kwargs):
         # find all plots
         self.plots = []
+        self.line_count_plots = []
         if isinstance(self.directory, str):
             plots = sorted(
                 glob.glob(os.path.join(self.directory, 'spec_*.png')),
@@ -93,8 +94,16 @@ class FscanTab(base):
             for p in plots:
                 home_, postbase = p.split('/public_html/', 1)
                 user = os.path.split(home_)[1]
-                self.plots.append(SummaryPlot(
-                    href='/~%s/%s' % (user, postbase)))
+                if 'line_count' not in p:
+                    self.plots.append(SummaryPlot(
+                        href='/~%s/%s' % (user, postbase)))
+                else:
+                    self.line_count_plots.append(SummaryPlot(
+                        href='/~%s/%s' % (user, postbase)))
+                if ('line_count' not in p and '0.00_100.00' in p and
+                    '_2.png' in p):
+                    self.line_count_plots.append(SummaryPlot(
+                        href='/~%s/%s' % (user, postbase)))
 
     def write_state_html(self, state):
         """Write the '#main' HTML content for this `FscanTab`.
@@ -157,10 +166,28 @@ class FscanTab(base):
                    class_='btn btn-info btn-xl')
             page.div.close()
 
+        if self.line_count_plots:
+            page.h2('', class_='mt-4 mb-2')
+            page.div(class_='card border-light card-body scaffold shadow-sm')
+            plt1 = self.line_count_plots[::3]
+            plt2 = self.line_count_plots[1::3]
+            plt3 = self.line_count_plots[2::3]
+            page.p('Line count figure of merit (0 - 100 Hz):')
+            for triple in list(zip(plt1, plt2, plt3)):
+                page.div(class_='row')
+                for p in triple:
+                    page.div(class_="col-sm-4 mb-10")
+                    page.a(href=p.href, class_="fancybox plot",
+                           **{'data-fancybox-group': 1})
+                    page.img(class_='img-fluid w-100', src=p.href)
+                    page.a.close()
+                    page.div.close()
+                page.div.close()
+            page.div.close()
+
         if self.navigation:
             page.h2('Fscan links:', class_='mt-4 mb-2')
-        for i, (key, url) in enumerate(sorted(self.navigation,
-                                              key=lambda x: x[0])):
+        for i, (key, url) in enumerate(self.navigation):
             if not i % 4:
                 page.div(class_="row")
             if i + 4 > len(self.navigation):

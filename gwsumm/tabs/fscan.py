@@ -100,8 +100,9 @@ class FscanTab(base):
                 else:
                     self.line_count_plots.append(SummaryPlot(
                         href='/~%s/%s' % (user, postbase)))
-                if ('line_count' not in p and '0.00_100.00' in p and
-                    '_2.png' in p):
+                if ('line_count' not in p and
+                        '0.00_100.00' in p and
+                        '_2.png' in p):
                     self.line_count_plots.append(SummaryPlot(
                         href='/~%s/%s' % (user, postbase)))
 

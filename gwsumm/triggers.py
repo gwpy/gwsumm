@@ -102,7 +102,7 @@ for name in lsctables.TableByName:
     ETG_READ_KW[name] = {
         'format': 'ligolw',
         'tablename': name,
-        'use_numpy_dtype': True,
+        'use_numpy_dtypes': True,
     }
 
 

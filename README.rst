@@ -55,8 +55,8 @@ proposing additions/changes.
    :target: https://choosealicense.com/licenses/gpl-3.0/
 .. |Supported Python versions| image:: https://img.shields.io/pypi/pyversions/gwsumm.svg
    :target: https://pypi.org/project/gwsumm/
-.. |Build Status| image:: https://travis-ci.org/gwpy/gwsumm.svg?branch=master
-   :target: https://travis-ci.org/gwpy/gwsumm
+.. |Build Status| image:: https://github.com/gwpy/gwsumm/actions/workflows/build.yml/badge.svg?branch=master
+   :target: https://github.com/gwpy/gwsumm/actions/workflows/build.yml
 .. |Coverage Status| image:: https://codecov.io/gh/gwpy/gwsumm/branch/master/graph/badge.svg
    :target: https://codecov.io/gh/gwpy/gwsumm
 .. |Code Climate| image:: https://codeclimate.com/github/gwpy/gwsumm/badges/gpa.svg

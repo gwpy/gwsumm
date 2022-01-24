@@ -1,0 +1,127 @@
+# -----------------------
+#
+# Run a full build-and-test from the git repo
+# using a combination of conda and pip to install
+# all optional dependencies.
+#
+# This is the 'full' test suite.
+#
+# -----------------------
+
+name: Build and test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - release/**
+  pull_request:
+    branches:
+      - main
+      - master
+      - release/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conda:
+    name: Python ${{ matrix.python-version }} (${{ matrix.os }})
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - macOS
+          - Ubuntu
+        python-version:
+          - "3.7"
+          - "3.8"
+          - "3.9"
+          - "3.10"
+    runs-on: ${{ matrix.os }}-latest
+
+    # this is needed for conda environments to activate automatically
+    defaults:
+      run:
+        shell: bash -el {0}
+
+    steps:
+    - name: Get source code
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Cache conda packages
+      uses: actions/cache@v2
+      env:
+        # increment to reset cache
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
+        restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
+
+    - name: Configure conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        activate-environment: test
+        miniforge-variant: Mambaforge
+        python-version: ${{ matrix.python-version }}
+        use-mamba: true
+        # this is needed for caching to work properly:
+        use-only-tar-bz2: true
+
+    - name: Conda info
+      run: conda info --all
+
+    - name: Install dependencies
+      run: |
+        python3 -c "
+        import configparser;
+        conf = configparser.ConfigParser();
+        conf.read('setup.cfg');
+        for opt in ('setup_requires', 'install_requires', 'tests_require'):
+            print(conf['options'].get(opt, '').strip().lower())
+        for opt in ('options.extras_require'):
+            print(conf['options'].get(opt, '').strip().lower())
+        " | sort -u > _requirements.txt
+        mamba install --quiet --yes --name test --file _requirements.txt
+
+    - name: Install GWSumm
+      run: python -m pip install . --no-build-isolation -vv
+
+    - name: Package list
+      run: conda list --name test
+
+    - name: Run test suite
+      run: python -m pytest -ra --color yes --cov gwsumm --pyargs gwsumm --cov-report=xml --junitxml=pytest.xml
+
+    - name: Test command-line interfaces
+      run: |
+        python -m coverage run --append --source gwsumm -m gwsumm --help
+        python -m coverage run --append --source gwsumm -m gwsumm day --help
+        python -m coverage run --append --source gwsumm -m gwsumm week --help
+        python -m coverage run --append --source gwsumm -m gwsumm month --help
+        python -m coverage run --append --source gwsumm -m gwsumm gps --help
+        python -m coverage run --append --source gwsumm -m gwsumm.batch --help
+        python -m coverage run --append --source gwsumm -m gwsumm.plot.triggers --help
+        python -m coverage run --append --source gwsumm -m gwsumm.plot.guardian --help
+
+    - name: Coverage report
+      run: python -m coverage report --show-missing
+
+    - name: Publish coverage to Codecov
+      uses: codecov/codecov-action@v1.2.1
+      with:
+        files: coverage.xml
+        flags: ${{ runner.os }},python${{ matrix.python-version }}
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v2
+      with:
+        name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
+        path: pytest.xml

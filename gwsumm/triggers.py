@@ -26,8 +26,9 @@ from astropy.table import vstack as vstack_tables
 
 from lal.utils import CacheEntry
 
+from ligo.lw import lsctables
+
 from glue.lal import Cache
-from glue.ligolw import lsctables
 
 from gwpy.io.cache import cache_segments
 from gwpy.table import (EventTable, filters as table_filters)
@@ -101,7 +102,7 @@ for name in lsctables.TableByName:
     ETG_READ_KW[name] = {
         'format': 'ligolw',
         'tablename': name,
-        'use_numpy_dtype': True,
+        'use_numpy_dtypes': True,
     }
 
 
@@ -115,7 +116,7 @@ def get_etg_table(etg):
 
     Returns
     -------
-    table : `~gwpy.table.Table`
+    table : `type`, subclass of `~ligo.lw.table.Table`
         LIGO_LW table registered to the given ETG
 
     Raises

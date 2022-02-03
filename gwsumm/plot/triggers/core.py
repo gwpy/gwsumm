@@ -166,7 +166,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             plotargs.append(dict())
         # get plot arguments
         for key in ['vmin', 'vmax', 'edgecolor', 'facecolor', 'cmap', 's',
-                    'marker', 'rasterized']:
+                    'marker', 'rasterized', 'sortbycolor']:
             try:
                 val = self.pargs.pop(key)
             except KeyError:

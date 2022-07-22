@@ -589,11 +589,13 @@ def main(args=None):
     endtime = Time(float(args.gpsend), format='gps')
 
     # set mode and output directory
+    # This will set the output directory to be day/YYYYMMDD, week/YYYYMMDD,
+    # month/YYYYMM, or gps/<gps start>-<gps end>.
     mode.set_mode(args.mode)
     try:
         path = mode.get_base(utc)
     except ValueError:
-        path = os.path.join('%d-%d' % (args.gpsstart, args.gpsend))
+        path = os.path.join('gps', f'{args.gpsstart}-{args.gpsend}')
 
     # set LAL FFT plan wisdom level
     duration = min(globalv.NOW, args.gpsend) - args.gpsstart

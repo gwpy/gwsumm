@@ -1,4 +1,0 @@
-numpydoc
-sphinx_bootstrap_theme
-sphinxcontrib-programoutput
-sphinx-automodapi

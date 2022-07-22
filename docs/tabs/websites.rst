@@ -5,7 +5,7 @@
 Generating Websites
 ===================
 
-`As we have seen <index>`_, generating standalone pages is trivial using GWSumm. What would be more useful would be to generate linked sets of pages, aka a website.
+:ref:`As we have seen <tabs>`, generating standalone pages is trivial using GWSumm. What would be more useful would be to generate linked sets of pages, aka a website.
 
 Navigation
 ----------

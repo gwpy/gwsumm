@@ -125,7 +125,8 @@ class SummaryState(DataQualityFlag):
 
     @property
     def definition(self):
-        r"""The combination of data-quality flags that define this `SummaryState`
+        r"""The combination of data-quality flags that define this
+        `SummaryState`
 
         For example::
 

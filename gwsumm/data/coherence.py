@@ -298,8 +298,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
 def get_coherence_spectrum(channel_pair, segments, config=None,
                            cache=None, query=True, nds=None, return_=True,
                            **fftparams):
-    """Retrieve the time-series and generate a coherence spectrogram of the given
-    channel
+    """Retrieve the time-series and generate a coherence spectrogram of the
+    given channel
     """
 
     channel1 = get_channel(channel_pair[0])

@@ -94,7 +94,7 @@ class StampPEMTab(base):
         a = markup.oneliner.a('analysis', href=self.url+'/',
                               class_='alert-link', rel='external',
                               target='_blank')
-        if not (os.path.isdir(self.directory)):
+        if not os.path.isdir(self.directory):
             page.add(html.alert((
                 "No %s was performed for this period, "
                 "please try again later." % a,

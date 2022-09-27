@@ -186,14 +186,11 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     """
     vprint('    Finding %s-%s frames for [%d, %d)...'
            % (ifo[0], frametype, int(gpsstart), int(gpsend)))
-    # find datafind host:port
+    # find datafind host
     try:
         host = config.get('datafind', 'server')
     except (NoOptionError, NoSectionError):
         host = None
-        port = None
-    else:
-        port = config.getint('datafind', 'port')
 
     # XXX HACK: LLO changed frame types on Dec 6 2013:
     LLOCHANGE = 1070291904
@@ -216,7 +213,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
     def _query():
         return gwdatafind.find_urls(ifo[0].upper(), frametype, gpsstart,
                                     gpsend, urltype=urltype, on_gaps=gaps,
-                                    match=match, host=host, port=port)
+                                    match=match, host=host)
     try:
         cache = _query()
     except RuntimeError as e:
@@ -242,7 +239,7 @@ def find_frames(ifo, frametype, gpsstart, gpsend, config=GWSummConfigParser(),
         if start < gpsend:
             cache.extend(gwdatafind.find_urls(
                 ifo[0].upper(), 'L1_%s' % frametype, start, gpsend,
-                urltype=urltype, on_gaps=gaps, host=host, port=port)[1:])
+                urltype=urltype, on_gaps=gaps, host=host)[1:])
 
     # extend cache beyond datafind's knowledge to reduce latency
     try:

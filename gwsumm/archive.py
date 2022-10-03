@@ -183,13 +183,14 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
         remove the source HDF5 file if there was an OSError when opening the
         file
     """
-
     # Check that the HDF5 source file is able to be opened.
     # A common failure mode is that the HDF5 file is corrupted and this brings
     # down the whole workflow, requiring manual intervention. Here, we attempt
     # to automatically catch a common failure
     try:
         h5file = File(sourcefile, 'r')
+    except FileNotFoundError:
+        raise
     except OSError as exc:  # file is corrupt, so we remove it to start fresh
         if not rm_source_on_fail:
             raise

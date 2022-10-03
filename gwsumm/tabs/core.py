@@ -735,6 +735,8 @@ class BaseTab(object):
         if tabs:
             navbar = str(self.html_navbar(ifo=ifo, ifomap=ifomap,
                                           tabs=tabs, help_=help_))
+        else:
+            navbar = None
 
         # initialize page
         self.page = gwhtml.new_bootstrap_page(

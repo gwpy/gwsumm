@@ -35,6 +35,7 @@ import datetime
 import os
 
 from numpy import (unicode_, ndarray)
+from h5py import File
 
 from astropy.table import Table
 
@@ -75,7 +76,6 @@ def write_data_archive(outfile, channels=True, timeseries=True,
     triggers : `bool`, optional
         include `EventTable` data in archive
     """
-    from h5py import File
 
     # backup existing file, in case something fails
     backup = backup_existing_archive(outfile)
@@ -168,7 +168,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
             os.remove(backup)
 
 
-def read_data_archive(sourcefile):
+def read_data_archive(sourcefile, rm_source_on_fail=True):
     """Read archived data from an HDF5 archive source
 
     This method reads all found data into the data containers defined by
@@ -178,8 +178,25 @@ def read_data_archive(sourcefile):
     ----------
     sourcefile : `str`
         path to source HDF5 file
+
+    rm_source_on_fail : `bool`, optional
+        remove the source HDF5 file if there was an OSError when opening the
+        file
     """
-    from h5py import File
+    # Check that the HDF5 source file is able to be opened.
+    # A common failure mode is that the HDF5 file is corrupted and this brings
+    # down the whole workflow, requiring manual intervention. Here, we attempt
+    # to automatically catch a common failure
+    try:
+        h5file = File(sourcefile, 'r')
+    except FileNotFoundError:
+        raise
+    except OSError as exc:  # file is corrupt, so we remove it to start fresh
+        if not rm_source_on_fail:
+            raise
+        warnings.warn(f"failed to read {sourcefile} [{exc}], removing...")
+        os.remove(sourcefile)
+        return
 
     with File(sourcefile, 'r') as h5file:
 

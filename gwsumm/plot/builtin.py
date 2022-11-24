@@ -389,8 +389,8 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
 
         # add colorbar
         if len(specgrams) == 0:
-            ax.pcolormesh([1, 10], [1, 10], [[1, 10]], visible=False,
-                          **plotargs)
+            ax.pcolormesh([1, 10], [1, 10], [[1, 10], [1, 10]],
+                          visible=False, **plotargs)
         ax.colorbar(label=clabel)
 
         # customise and finalise

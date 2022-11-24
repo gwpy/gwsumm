@@ -22,7 +22,6 @@
 import configparser
 import os
 import re
-import sys
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
@@ -49,7 +48,7 @@ __all__ = [
     'GWSummConfigParser',
 ]
 
-CONFIGDIR = os.path.join(sys.prefix, 'etc', 'gwsumm', 'configuration')
+CONFIGDIR = os.path.join(os.path.dirname(__file__), '..', 'share')
 
 
 # -- class definitions --------------------------------------------------------

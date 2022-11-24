@@ -49,10 +49,21 @@ from .. import html
 from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
 from .registry import (get_tab, register_tab)
-from .._version import get_versions
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __all__ = ['BaseTab', 'Tab', 'TabList']
+
+
+def get_version():
+    try:
+        from ._version import version as __version__
+    except ModuleNotFoundError:
+        try:
+            import setuptools_scm
+            __version__ = setuptools_scm.get_version(fallback_version='?.?.?')
+        except (ModuleNotFoundError, TypeError, LookupError):
+            __version__ = '?.?.?'
+    return __version__
 
 
 # -- BaseTab ------------------------------------------------------------------
@@ -761,13 +772,12 @@ class BaseTab(object):
         self.page.add(str(self.html_content(maincontent)))
 
         # format custom footer
-        version = get_versions()['version']
-        commit = get_versions()['full-revisionid']
-        url = 'https://github.com/gwpy/gwsumm/tree/{}'.format(commit)
+        version = get_version()
+        url = f'https://github.com/gwpy/gwsumm/releases/tag/{version}'
 
         # close page and write
         gwhtml.close_page(self.page, self.index, about=about,
-                          link=('gwsumm-%s' % version, url, 'GitHub'),
+                          link=(f'gwsumm-{version}', url, 'GitHub'),
                           issues=issues, external=footer)
         return
 

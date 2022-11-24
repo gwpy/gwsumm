@@ -1,0 +1,10 @@
+[flake8]
+exclude =
+	__pycache__,
+	.eggs/,
+	.git/,
+	build/,
+	docs/,
+	gwsumm/_version.py,
+per-file-ignores =
+	__init__.py:F401,

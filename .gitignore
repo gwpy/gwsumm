@@ -4,7 +4,7 @@
 /gwsumm.egg-info
 .DS_store
 *.pyc
-/gwsumm/version.py
+/gwsumm/_version.py
 /docs/_build
 /docs/_generated
 /docs/api/modules.rst

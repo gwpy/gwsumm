@@ -1,0 +1,33 @@
+name: gwsumm
+channels:
+  - conda-forge
+dependencies:
+  # build
+  - pip
+  - setuptools
+  - setuptools-scm
+  - wheel
+  # install
+  - astropy >=3.0.0
+  - gwdatafind >=1.1.1
+  - gwdetchar >=2.0.0
+  - gwpy >=3.0.0
+  - gwtrigfind
+  - lalsuite
+  - ligo-segments
+  - lscsoft-glue >=1.60.0
+  - lxml
+  - markdown
+  - MarkupPy
+  - matplotlib >=3.1
+  - numpy >=1.16
+  - pygments >=2.7.0
+  - python-dateutil
+  - python-ligo-lw
+  - scipy >=1.2.0
+  # docs
+  - numpydoc
+  - sphinx
+  - sphinx-automodapi
+  - sphinx_bootstrap_theme
+  - sphinxcontrib-programoutput

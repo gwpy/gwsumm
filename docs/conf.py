@@ -46,6 +46,7 @@ numpydoc_show_class_members = False
 autosummary_generate = True
 autoclass_content = 'class'
 autodoc_default_flags = ['show-inheritance', 'members']
+primary_domain = 'gwsumm'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -325,7 +326,6 @@ def run_apidoc(_):
 html_css_files = [
     'css/custom.css',
 ]
-
 
 # -- setup --------------------------------------------------------------------
 

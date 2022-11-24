@@ -296,18 +296,17 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             colstr = get_column_string(col)
             # format row value
             try:
-                valstr = '{0:.2f}'.format(row[col]).rstrip('.0')
+                valstr = f"{row[col]:.2f}".rstrip('.0')
             except ValueError:  # not float()able
                 valstr = str(row[col])
-            txt.append('{col} = {val}'.format(col=colstr, val=valstr))
+            txt.append(f'{colstr} = {valstr}')
 
         # get position for new text
         try:
             pos = kwargs.pop('position')
-        except KeyError:  # user didn't specify, set default and shunt title
-            pos = [0.5, 1.00]
+        except KeyError:  # user didn't specify, set default above title
             tpos = ax.title.get_position()
-            ax.title.set_position((tpos[0], tpos[1] + 0.05))
+            pos = [tpos[0], tpos[1]+0.09]
 
         # parse text kwargs
         text_kw = {  # defaults
@@ -323,7 +322,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
 
         # add text
         text = ax.text(pos[0], pos[1],
-                       'Loudest event: {0}'.format(', '.join(txt)),
+                       f"Loudest event: {', '.join(txt)}",
                        **text_kw)
 
         return coll, text

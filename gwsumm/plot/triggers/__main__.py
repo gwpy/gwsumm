@@ -196,6 +196,7 @@ def main(args=None):
         'cmap': get_plot('triggers').defaults.get('cmap', 'YlGnBu'),
         'clim': (3, 50),
         'colorlabel': 'Signal-to-noise ratio (SNR)',
+        'sortbycolor': True,
     }
 
     # update with user params
@@ -234,8 +235,16 @@ def main(args=None):
 
     # format keywords for plot creation
     plot_kw = OrderedDict(
-        (key, params.pop(key)) for
-        key in ('xscale', 'xlim', 'epoch', 'yscale', 'ylabel'))
+        (key, params.pop(key))
+        for key in (
+            'xscale',
+            'xlim',
+            'epoch',
+            'yscale',
+            'ylabel',
+            'sortbycolor',
+        )
+    )
 
     # create plot
     if args.tiles:

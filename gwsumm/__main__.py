@@ -749,7 +749,7 @@ def main(args=None):
     # get link to issues report page
     try:
         issues = config.get('html', 'issues')
-    except KeyError:
+    except (NoSectionError, KeyError):
         issues = True
 
     # write 404 error page

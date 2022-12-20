@@ -120,10 +120,9 @@ class SeiWatchDogPlot(get_plot('data')):
         if self.use_nds:
             data = TimeSeriesDict.fetch(self.chanlist, start, end)
         else:
-            from glue.datafind import GWDataFindHTTPConnection
-            conn = GWDataFindHTTPConnection()
-            cache = conn.find_frame_urls(self.ifo[0], '%s_R' % self.ifo,
-                                         self.start, self.end, urltype='file')
+            from gwdatafind import find_urls
+            cache = find_urls(self.ifo[0], f'{self.ifo}_R',
+                              self.start, self.end, urltype='file')
             if len(cache) == 0:
                 data = {}
             else:

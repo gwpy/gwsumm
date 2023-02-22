@@ -432,6 +432,16 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     if etg == 'pycbc_live':  # remove empty HDF5 files
         cache = filter_pycbc_live_files(cache, ifo=kwargs['ifo'])
 
+    # Currently the EventTable.read() method fails if there are zero
+    # length trigger files in addition to non-zero length trigger files.
+    # Here, we read trigger files one-by-one and remove any with zero length
+    # from the cache list.
+    for idx, this_trigger_file in enumerate(cache):
+        this_table = EventTable.read(this_trigger_file, **kwargs)
+        if len(this_table) == 0:
+            cache.remove(this_trigger_file)
+            continue
+
     if len(cache) == 0:
         return
 

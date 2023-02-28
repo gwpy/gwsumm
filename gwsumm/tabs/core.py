@@ -45,6 +45,7 @@ from gwpy.segments import Segment
 
 from gwdetchar.io import html as gwhtml
 
+from .. import __version__
 from .. import html
 from ..mode import (Mode, get_mode, get_base)
 from ..utils import (re_quote, re_cchar)
@@ -55,14 +56,6 @@ __all__ = ['BaseTab', 'Tab', 'TabList']
 
 
 def get_version():
-    try:
-        from ._version import version as __version__
-    except ModuleNotFoundError:
-        try:
-            import setuptools_scm
-            __version__ = setuptools_scm.get_version(fallback_version='?.?.?')
-        except (ModuleNotFoundError, TypeError, LookupError):
-            __version__ = '?.?.?'
     return __version__
 
 

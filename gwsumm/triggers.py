@@ -436,11 +436,8 @@ def read_cache(cache, segments, etg, nproc=1, timecolumn=None, **kwargs):
     # length trigger files in addition to non-zero length trigger files.
     # Here, we read trigger files one-by-one and remove any with zero length
     # from the cache list.
-    for idx, this_trigger_file in enumerate(cache):
-        this_table = EventTable.read(this_trigger_file, **kwargs)
-        if len(this_table) == 0:
-            cache.remove(this_trigger_file)
-            continue
+    cache = [this_trigger_file for this_trigger_file in cache if
+             len(EventTable.read(this_trigger_file, **kwargs)) != 0]
 
     if len(cache) == 0:
         return

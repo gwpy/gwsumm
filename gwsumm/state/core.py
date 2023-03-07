@@ -323,7 +323,7 @@ class SummaryState(DataQualityFlag):
             segs_ = SegmentList()
             # get start day
             d = Time(float(self.start), format='gps', scale='utc').datetime
-            d.replace(hour=0, minute=0, second=0, microsecond=0)
+            d = d.replace(hour=0, minute=0, second=0, microsecond=0)
             end_ = Time(float(self.end), format='gps', scale='utc').datetime
             while d < end_:
                 # get GPS of day

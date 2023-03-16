@@ -41,7 +41,7 @@ from ..utils import re_cchar
 from ..data import (get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_range_spectrogram,
                     get_spectrum, get_coherence_spectrum, get_range_spectrum)
-from ..state import ALLSTATE
+from ..state import ALLSTATE, SummaryMetaState
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
 
@@ -507,6 +507,10 @@ class SpectrumDataPlot(DataPlot):
                 valid = self.state
             else:
                 valid = SegmentList([self.span])
+
+            if isinstance(valid, SummaryMetaState):
+                valid = globalv.STATES[
+                    f'{channel.ifo}-{valid.uses[0][3:]}'.lower()]
 
             if self.type == 'coherence-spectrum':
                 data = get_coherence_spectrum(

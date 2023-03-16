@@ -349,3 +349,45 @@ class SummaryState(DataQualityFlag):
 
     def __str__(self):
         return self.name
+
+
+class SummaryMetaState(SummaryState):
+    """A meta state where different states may be used"""
+
+    def __init__(self, name, known=SegmentList(), active=SegmentList(),
+                 description=None, definition=None, hours=None, key=None,
+                 filename=None, url=None, uses=[]):
+
+        super(SummaryMetaState, self).__init__(
+            name=name, known=known, active=active,
+            description=description, definition=definition, hours=hours,
+            key=key, filename=filename, url=url)
+
+        self.uses = uses
+
+    @classmethod
+    def from_ini(cls, config, section):
+        config = GWSummConfigParser.from_configparser(config)
+        # get parameters
+        params = dict(config.nditems(section))
+        # parse name
+        name = params.pop('name', section)
+        if re.match(r'metastate[-\s]', name):
+            name = section[10:]
+        # list states this uses
+        uses = params.pop('uses', section).split(',')
+
+        # generate metastate
+        return cls(name=name, uses=uses, **params)
+
+    def fetch(self, config=GWSummConfigParser(),
+              segmentcache=None, segdb_error='raise',
+              datacache=None, datafind_error='raise', nproc=1, nds=None,
+              **kwargs):
+
+        for idx, state in enumerate(self.uses):
+            globalv.STATES[state.lower()].fetch(
+                config=config, segmentcache=segmentcache,
+                segdb_error=segdb_error, datacache=datacache,
+                datafind_error=datafind_error, nproc=nproc, nds=nds,
+                **kwargs)

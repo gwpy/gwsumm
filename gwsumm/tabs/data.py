@@ -60,7 +60,8 @@ from ..data.timeseries import FRAMETYPE_REGEX
 from ..data.utils import get_fftparams
 from ..plot import get_plot
 from ..segments import get_segments
-from ..state import (generate_all_state, ALLSTATE, get_state)
+from ..state import (generate_all_state, ALLSTATE, get_state,
+                     SummaryMetaState)
 from ..triggers import get_triggers
 from ..utils import (re_flagdiv, vprint, safe_eval)
 
@@ -357,11 +358,22 @@ class DataTab(ProcessedTab, ParentTab):
             nproc=nproc, nds=stateargs.get('nds', None))
         vprint("States finalised [%d total]\n" % len(self.states))
         for state in self.states:
-            vprint("    {0.name}: {1} segments | {2} seconds".format(
-                state, len(state.active), abs(state.active)))
+            if isinstance(state, SummaryMetaState):
+                vprint(
+                    f"Metastate {state.key} has {len(state.uses)} states")
+            else:
+                vprint("    {0.name}: {1} segments | {2} seconds".format(
+                    state, len(state.active), abs(state.active)))
             if state is self.defaultstate:
                 vprint(" [DEFAULT]")
             vprint('\n')
+            if isinstance(state, SummaryMetaState):
+                for idx, this_state in enumerate(state.uses):
+                    vprint(f"    {this_state}: ")
+                    vprint(f"{len(globalv.STATES[this_state.lower()].active)} "
+                           "segments | ")
+                    vprint(f"{abs(globalv.STATES[this_state.lower()].active)} "
+                           "seconds\n")
 
         # pre-process requests for 'all-data' plots
         all_data = any([(p.all_data & p.new) for p in self.plots])

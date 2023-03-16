@@ -305,7 +305,7 @@ class GWSummConfigParser(configparser.ConfigParser):
         """Read and format a list of `SummaryState` definitions from the
         given :class:`~configparser.ConfigParser`
         """
-        from .state import (register_state, SummaryState,
+        from .state import (register_state, SummaryState, SummaryMetaState,
                             ALLSTATE, generate_all_state, get_state)
         # parse the [states] section into individual state definitions
         try:
@@ -327,6 +327,9 @@ class GWSummConfigParser(configparser.ConfigParser):
             if re.match(r'state[-\s]', section):
                 states.append(register_state(
                     SummaryState.from_ini(self, section)))
+            elif re.match(r'metastate[-\s]', section):
+                states.append(register_state(
+                    SummaryMetaState.from_ini(self, section)))
 
         # register All state
         start = self.getint(section, 'gps-start-time')

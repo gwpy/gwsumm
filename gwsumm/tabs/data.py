@@ -357,6 +357,8 @@ class DataTab(ProcessedTab, ParentTab):
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
         vprint("States finalised [%d total]\n" % len(self.states))
+
+        # loop over states for this tab and print out information
         for state in self.states:
             if isinstance(state, SummaryMetaState):
                 vprint(

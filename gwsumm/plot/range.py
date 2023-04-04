@@ -27,6 +27,7 @@ import numpy
 
 from matplotlib.ticker import (LogLocator, MaxNLocator)
 
+import gwpy.astro
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
@@ -44,6 +45,15 @@ __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
 
 # -- utils --------------------------------------------------------------------
+
+RAN_DICT = {
+        'sensemon_range': gwpy.astro.sensemon_range,
+        'sensemon_range_psd': gwpy.astro.sensemon_range_psd,
+        'inspiral_range': gwpy.astro.inspiral_range,
+        'inspiral_range_psd': gwpy.astro.inspiral_range_psd,
+        'burst_range': gwpy.astro.burst_range,
+        'burst_range_psd': gwpy.astro.burst_range_spectrum,
+}
 
 def _get_params(keys, pargs, nchans=1):
     """Return a `dict` of `list` of plot arguments for every channel
@@ -79,7 +89,7 @@ class RangePlotMixin(object):
             ['stride', 'fftlength', 'overlap'],
             self.pargs, nchans=len(self.channels))
         self.rangeparams = _get_params(
-            ['mass1', 'mass2', 'snr', 'energy', 'fmin', 'fmax'],
+            ['mass1', 'mass2', 'snr', 'energy', 'fmin', 'fmax', 'range_func'],
             self.pargs, nchans=len(self.channels))
         self.range_func = (get_range_spectrogram if
                            'spec' in self.type else get_range)
@@ -100,6 +110,9 @@ class RangePlotMixin(object):
                 valid = self.state.active
             else:
                 valid = SegmentList([self.span])
+            # replace range_func arg with correct method
+            if 'range_func' in rangekwargs.keys():
+                rangekwargs['range_func'] = RAN_DICT[rangekwargs['range_func']]
             rlist = self.range_func(channel, valid, query=self.read,
                                     **fftkwargs, **rangekwargs)
             try:

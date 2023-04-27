@@ -104,8 +104,8 @@ ADC_TYPES = {
 }
 
 SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
-    'H1_HOFT_C00': 'H1_DMT_C00',
-    'L1_HOFT_C00': 'L1_DMT_C00',
+    'H1_HOFT_C00': 'H1_llhoft',
+    'L1_HOFT_C00': 'L1_llhoft',
     'V1Online': 'V1_llhoft',
 }
 

@@ -114,7 +114,6 @@ class RangePlotMixin(object):
             # replace range_func arg with correct method
             if 'range_func' in rangekwargs.keys():
                 rangekwargs['range_func'] = RAN_DICT[rangekwargs['range_func']]
-                print(rangekwargs['range_func'])
             rlist = self.range_func(channel, valid, query=self.read,
                                     **fftkwargs, **rangekwargs)
             try:

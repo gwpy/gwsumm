@@ -200,6 +200,19 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
     with File(sourcefile, 'r') as h5file:
 
+        # Make sure that each part of the archive file is not corrupted by
+        # trying to read the data. If any part is broken, delete the file and
+        # return without loading anything into the gwsumm.globalv variables
+        try:
+            # simple lambda function here to do nothing but visit each item
+            h5file.visititems(lambda name, obj: None)
+        except RuntimeError as exc:
+            if not rm_source_on_fail:
+                raise
+            warnings.warn(f"failed to read {sourcefile} [{exc}], removing...")
+            os.remove(sourcefile)
+            return
+
         # -- channels ---------------------------
 
         try:

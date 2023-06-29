@@ -33,6 +33,7 @@ import warnings
 import re
 import datetime
 import os
+import sys
 
 from numpy import (unicode_, ndarray)
 from h5py import File
@@ -50,10 +51,16 @@ from .data import (add_timeseries, add_spectrogram,
                    add_coherence_component_spectrogram)
 from .triggers import (EventTable, add_triggers)
 
+from gwdetchar.cli import logger
+
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
 re_rate = re.compile('_EVENT_RATE_')
 
+# initialize logger
+PROG = ('python -m gwsumm' if sys.argv[0].endswith('.py')
+        else os.path.basename(sys.argv[0]))
+LOGGER = logger(name=PROG.split('python -m ').pop())
 
 def write_data_archive(outfile, channels=True, timeseries=True,
                        spectrogram=True, segments=True, triggers=True):
@@ -163,6 +170,22 @@ def write_data_archive(outfile, channels=True, timeseries=True,
         if backup:
             restore_backup(backup, outfile)
         raise
+
+    # Make sure that the saved file is not corrupted by trying to read
+    # all the items in the data. In case the file is corrupted, reinstate
+    # the backup
+    try:
+        with File(outfile, 'r') as h5file:
+            # simple lambda function here to do nothing but visit each item
+            h5file.visititems(lambda name, obj: None)
+    except:
+        if backup:
+            restore_backup(backup, outfile)
+            LOGGER.warning(f"Failed to write the {outfile}, restoring the backup...")
+        else:
+            LOGGER.warning(f"Error occurred during file creation and no backup file is available.")
+            os.remove(outfile)
+
     finally:  # remove the backup regardless of what happens
         if backup is not None and os.path.isfile(backup):
             os.remove(backup)
@@ -194,7 +217,7 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
     except OSError as exc:  # file is corrupt, so we remove it to start fresh
         if not rm_source_on_fail:
             raise
-        warnings.warn(f"failed to read {sourcefile} [{exc}], removing...")
+        LOGGER.warning(f"failed to read {sourcefile} [{exc}], removing...")
         os.remove(sourcefile)
         return
 
@@ -209,7 +232,7 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
         except RuntimeError as exc:
             if not rm_source_on_fail:
                 raise
-            warnings.warn(f"failed to read {sourcefile} [{exc}], removing...")
+            LOGGER.warning(f"failed to read {sourcefile} [{exc}], removing...")
             os.remove(sourcefile)
             return
 

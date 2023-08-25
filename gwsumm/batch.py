@@ -42,6 +42,28 @@ from .utils import mkdir
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = 'Alex Urban <alexander.urban@ligo.org>'
 
+# environment variables to pass to data-processing jobs
+GETENV_VARIABLES = [
+    # -- IGWN resources
+    # address of dqsegdb server
+    "DEFAULT_SEGMENT_SERVER",
+    # address of gwdatafind server
+    "GWDATAFIND_SERVER",
+    # address of NDS2 server
+    "NDSSERVER",
+    # -- software stuff
+    # GWpy customisations
+    "GWPY*",
+    # -- Auth handling
+    # Kerberos
+    "KRB5*",
+    # SciTokens
+    "BEARER_TOKEN*",
+    "SCITOKEN*",
+    # X.509
+    "X509*",
+]
+
 PROG = ('python -m gwsumm.batch' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
 
@@ -67,7 +89,6 @@ class GWSummaryJob(pipeline.CondorDAGJob):
                 logdir, '%s-%s.err' % (tag, self.logtag)))
             self.set_stdout_file(os.path.join(
                 logdir, '%s-%s.out' % (tag, self.logtag)))
-        cmds.setdefault('getenv', 'True')
         for key, val in cmds.items():
             if hasattr(self, 'set_%s' % key.lower()):
                 getattr(self, 'set_%s' % key.lower())(val)
@@ -524,15 +545,25 @@ def main(args=None):
     globalconfig = ','.join(args.global_config)
 
     jobs = []
+    job_kw = {
+        "subdir": outdir,
+        "logdir": logdir,
+        **condorcmds,
+    }
     if not args.skip_html_wrapper:
         htmljob = GWSummaryJob(
-            'local', subdir=outdir, logdir=logdir,
-            tag='%s_local' % args.file_tag, **condorcmds)
+            'local',
+            tag='%s_local' % args.file_tag,
+            **job_kw,
+        )
         jobs.append(htmljob)
     if not args.html_wrapper_only:
         datajob = GWSummaryJob(
-            universe, subdir=outdir, logdir=logdir,
-            tag=args.file_tag, **condorcmds)
+            universe,
+            tag=args.file_tag,
+            getenv=" ".join(GETENV_VARIABLES),
+            **job_kw,
+        )
         jobs.append(datajob)
 
     # add common command-line options

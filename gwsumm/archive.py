@@ -179,6 +179,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
         if temp_outfile is not None and os.path.isfile(temp_outfile):
             os.remove(temp_outfile)
 
+
 def read_data_archive(sourcefile, rm_source_on_fail=True):
     """Read archived data from an HDF5 archive source
 

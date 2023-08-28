@@ -854,8 +854,8 @@ def main(args=None):
                 issues=issues, writedata=not args.html_only,
                 writehtml=not args.no_html)
 
-        # archive this tab
-        if args.archive:
+        # archive this tab, skip home tab
+        if args.archive and name != "_Home":
             LOGGER.info("Writing data to archive")
             archive.write_data_archive(args.archive)
             LOGGER.debug("Archive written to {}".format(

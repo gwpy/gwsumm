@@ -170,7 +170,7 @@ def write_data_archive(outfile, channels=True, timeseries=True,
         shutil.move(temp_outfile, outfile)
         
     except Exception:  # if it fails for any reason, print a warn and continue
-        warnings.warn(f"failed to save {sourcefile} [{exc}], backup was kept.")        
+        warnings.warn(f"failed to save {outfile}, backup was kept.")        
         pass
 
     finally:

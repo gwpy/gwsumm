@@ -79,8 +79,8 @@ def write_data_archive(outfile, channels=True, timeseries=True,
 
     try:
         # create a temporary file, this avoids overwrite the existing backup
-        temp_outfile = tempfile.mktemp(
-            suffix=".h5", prefix="gw_summary_archive_", dir=None)
+        temp_outfile = tempfile.mkstemp(
+            suffix=".h5", prefix="gw_summary_archive_", dir=None)[1]
 
         with File(temp_outfile, 'w') as h5file:
 
@@ -170,9 +170,9 @@ def write_data_archive(outfile, channels=True, timeseries=True,
         # moves the new file to the backup directory
         shutil.move(temp_outfile, outfile)
 
-    except Exception:  # if it fails for any reason, print a warn and continue
-        warnings.warn(f"failed to save {outfile}, backup was kept.")
-        pass
+    except Exception:
+        # if it fails for any reason, raise and continue
+        raise
 
     finally:
         # Delete the temporary file if saving encountered an error and

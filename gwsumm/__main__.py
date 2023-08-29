@@ -857,7 +857,10 @@ def main(args=None):
         # archive this tab, skip home tab
         if args.archive and name != "_Home":
             LOGGER.info("Writing data to archive")
-            archive.write_data_archive(args.archive)
+            try:
+                archive.write_data_archive(args.archive)
+            except:
+                LOGGER.warning("New data archiving failed. Previous backup preserved.")
             LOGGER.debug("Archive written to {}".format(
                 os.path.abspath(args.archive)))
         LOGGER.debug("%s complete" % (name))

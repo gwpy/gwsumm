@@ -860,8 +860,8 @@ def main(args=None):
             try:
                 archive.write_data_archive(args.archive)
             except Exception:
-                LOGGER.warning("New data archiving failed. "
-                    "Previous backup preserved.")
+                LOGGER.warning(
+                    "New data archiving failed. Previous backup preserved.")
             LOGGER.debug("Archive written to {}".format(
                 os.path.abspath(args.archive)))
         LOGGER.debug("%s complete" % (name))

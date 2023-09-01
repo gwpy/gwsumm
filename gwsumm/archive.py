@@ -76,14 +76,14 @@ def write_data_archive(outfile, channels=True, timeseries=True,
     triggers : `bool`, optional
         include `EventTable` data in archive
     """
-    # Initialize 'temp_outfile' with None to prevent potential 
+    # Initialize 'temp_outfile' with None to prevent potential
     # deletion errors in case of a temporary file creation failure.
     temp_outfile = None
 
     try:
         # Create a temporary file that won't be automatically deleted
         # as this is opened again with the hdf5 file handler.
-        # Creating a temporary file for the archive data avoids 
+        # Creating a temporary file for the archive data avoids
         # overwriting the existing backup.
         with tempfile.NamedTemporaryFile(prefix="gw_summary_archive_",
                                          delete=False, dir=None,

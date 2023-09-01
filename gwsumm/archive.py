@@ -76,11 +76,19 @@ def write_data_archive(outfile, channels=True, timeseries=True,
     triggers : `bool`, optional
         include `EventTable` data in archive
     """
+    # Initialize 'temp_outfile' with None to prevent potential 
+    # deletion errors in case of a temporary file creation failure.
+    temp_outfile = None
 
     try:
-        # create a temporary file, this avoids overwrite the existing backup
-        temp_outfile = tempfile.mkstemp(
-            suffix=".h5", prefix="gw_summary_archive_", dir=None)[1]
+        # Create a temporary file that won't be automatically deleted
+        # as this is opened again with the hdf5 file handler.
+        # Creating a temporary file for the archive data avoids 
+        # overwriting the existing backup.
+        with tempfile.NamedTemporaryFile(prefix="gw_summary_archive_",
+                                         delete=False, dir=None,
+                                         suffix=".h5", ) as temp_file:
+            temp_outfile = temp_file.name
 
         with File(temp_outfile, 'w') as h5file:
 
@@ -161,7 +169,6 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                     archive_table(globalv.TRIGGERS[key], key, group)
 
             # -- file corruption check ----------
-
             # Make sure that the saved file is not corrupted by trying to read
             # all the items in the data.
             # simple lambda function here to do nothing but visit each item.

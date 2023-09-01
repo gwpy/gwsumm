@@ -859,11 +859,11 @@ def main(args=None):
             LOGGER.info("Writing data to archive")
             try:
                 archive.write_data_archive(args.archive)
+                LOGGER.debug(
+                    f"Archive written to {os.path.abspath(args.archive)}")
             except Exception:
                 LOGGER.warning(
-                    "New data archiving failed. Previous backup preserved.")
-            LOGGER.debug("Archive written to {}".format(
-                os.path.abspath(args.archive)))
+                    "New data archiving failed. Previous archive preserved.")
         LOGGER.debug("%s complete" % (name))
 
     LOGGER.info("-- Data products written, all done --")

@@ -107,6 +107,7 @@ SHORT_HOFT_TYPES = {  # map aggregated h(t) type to short h(t) type
     'H1_HOFT_C00': 'H1_DMT_C00',
     'L1_HOFT_C00': 'L1_DMT_C00',
     'HoftOnline': 'V1_llhoft',
+    'V1Online': 'V1_llhoft',
     'H1_HOFT_TEST': 'H1_DMT_TEST',
     'L1_HOFT_TEST': 'L1_DMT_TEST',
 }

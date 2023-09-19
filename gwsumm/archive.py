@@ -76,12 +76,21 @@ def write_data_archive(outfile, channels=True, timeseries=True,
     triggers : `bool`, optional
         include `EventTable` data in archive
     """
-
-    # backup existing file, in case something fails
-    backup = backup_existing_archive(outfile)
+    # Initialize 'temp_outfile' with None to prevent potential
+    # deletion errors in case of a temporary file creation failure.
+    temp_outfile = None
 
     try:
-        with File(outfile, 'w') as h5file:
+        # Create a temporary file that won't be automatically deleted
+        # as this is opened again with the hdf5 file handler.
+        # Creating a temporary file for the archive data avoids
+        # overwriting the existing backup.
+        with tempfile.NamedTemporaryFile(prefix="gw_summary_archive_",
+                                         delete=False, dir=None,
+                                         suffix=".h5", ) as temp_file:
+            temp_outfile = temp_file.name
+
+        with File(temp_outfile, 'w') as h5file:
 
             # -- channels -----------------------
 
@@ -159,13 +168,24 @@ def write_data_archive(outfile, channels=True, timeseries=True,
                 for key in globalv.TRIGGERS:
                     archive_table(globalv.TRIGGERS[key], key, group)
 
-    except Exception:  # if it fails for any reason, reinstate the backup
-        if backup:
-            restore_backup(backup, outfile)
+            # -- file corruption check ----------
+            # Make sure that the saved file is not corrupted by trying to read
+            # all the items in the data.
+            # simple lambda function here to do nothing but visit each item.
+            h5file.visititems(lambda name, obj: None)
+
+        # moves the new file to the backup directory
+        shutil.move(temp_outfile, outfile)
+
+    except Exception:
+        # if it fails for any reason, raise and continue
         raise
-    finally:  # remove the backup regardless of what happens
-        if backup is not None and os.path.isfile(backup):
-            os.remove(backup)
+
+    finally:
+        # Delete the temporary file if saving encountered an error and
+        # it wasn't moved
+        if temp_outfile is not None and os.path.isfile(temp_outfile):
+            os.remove(temp_outfile)
 
 
 def read_data_archive(sourcefile, rm_source_on_fail=True):
@@ -276,25 +296,6 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
         for dataset in h5file.get('triggers', {}).values():
             load_table(dataset)
-
-
-def backup_existing_archive(filename, suffix='.h5',
-                            prefix='gw_summary_archive_', dir=None):
-    """Create a copy of an existing archive.
-    """
-    backup = tempfile.mktemp(suffix=suffix, prefix=prefix, dir=dir)
-    try:
-        shutil.move(filename, backup)
-    except IOError:
-        return None
-    else:
-        return backup
-
-
-def restore_backup(backup, target):
-    """Reinstate a backup copy of the archive.
-    """
-    shutil.move(backup, target)
 
 
 def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):

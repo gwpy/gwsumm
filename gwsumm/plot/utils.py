@@ -50,7 +50,7 @@ IMAGE_PARAMS = [
 HIST_PARAMS = [
     'bins', 'range', 'normed', 'weights', 'cumulative', 'bottom',
     'histtype', 'align', 'orientation', 'rwidth', 'log', 'color',
-    'label', 'stacked', 'logbins',
+    'label', 'stacked', 'logbins', 'density',
 ]
 LEGEND_PARAMS = [
     'loc', 'borderaxespad', 'ncol',

@@ -271,7 +271,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         min_x0 = min([r.x0.value for r in allranges])
         for i, r in enumerate(allranges):
             if r.x0.value > min_x0:
-                missing = int( (r.x0.value - min_x0) / r.dx.value)
+                missing = int((r.x0.value - min_x0) / r.dx.value)
                 allranges[i] = r.pad((missing, 0))
         try:
             combined_range = TimeSeries(numpy.zeros(allranges[0].size),

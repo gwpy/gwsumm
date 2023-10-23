@@ -264,6 +264,15 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         return (4/3. * pi * ts * range ** 3).to('Mpc^3 kyr')
 
     def combined_time_volume(self, allsegments, allranges):
+        empty = [i for i, r in enumerate(allranges) if not len(r.value)]
+        for i in empty[-1:]:
+            allsegments.pop(i)
+            allranges.pop(i)
+        min_x0 = min([r.x0.value for r in allranges])
+        for i, r in enumerate(allranges):
+            if r.x0.value > min_x0:
+                missing = int( (r.x0.value - min_x0) / r.dx.value)
+                allranges[i] = r.pad((missing, 0))
         try:
             combined_range = TimeSeries(numpy.zeros(allranges[0].size),
                                         xindex=allranges[0].times, unit='Mpc')

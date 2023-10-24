@@ -265,7 +265,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
 
     def combined_time_volume(self, allsegments, allranges):
         empty = [i for i, r in enumerate(allranges) if not len(r.value)]
-        for i in empty[-1:]:
+        for i in empty[::-1]:
             allsegments.pop(i)
             allranges.pop(i)
         min_x0 = min([r.x0.value for r in allranges])

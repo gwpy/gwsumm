@@ -272,7 +272,7 @@ class SimpleTimeVolumeDataPlot(get_plot('segments')):
         # find the earliest time we have any data
         min_x0 = min([r.x0.value for r in allranges])
         for i, r in enumerate(allranges):
-            # pad all range time series that don't start at min_x0 
+            # pad all range time series that don't start at min_x0
             # so that all time series have the same start time
             if r.x0.value > min_x0:
                 missing = int((r.x0.value - min_x0) / r.dx.value)

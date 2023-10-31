@@ -791,7 +791,7 @@ class DataPlot(SummaryPlot):
 
     def _apply_grid_params(self, ax, val):
         if val in ('major', 'minor'):
-            ax.grid(True, which=val)
+            ax.grid(visible=True, which=val)
         else:
             ax.grid(val)
 

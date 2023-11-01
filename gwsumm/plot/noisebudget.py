@@ -73,7 +73,7 @@ class NoiseBudgetPlot(get_plot('spectrum')):
         """
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(b=True, axis='both', which='both')
+        ax.grid(visible=True, axis='both', which='both')
 
         if self.state:
             self.pargs.setdefault(
@@ -175,7 +175,7 @@ class RelativeNoiseBudgetPlot(get_plot('spectrum')):
         """
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(b=True, axis='both', which='both')
+        ax.grid(visible=True, axis='both', which='both')
 
         if self.state:
             self.pargs.setdefault(

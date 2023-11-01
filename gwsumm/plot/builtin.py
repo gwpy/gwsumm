@@ -143,7 +143,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
                 ax.set_epoch(float(epoch if epoch is not None else self.start))
                 if ax.get_autoscalex_on():
                     ax.set_xlim(float(self.start), float(self.end))
-            ax.grid(True, which='both')
+            ax.grid(visible=True, which='both')
         return plot
 
     # -- main draw method -----------------------
@@ -319,7 +319,7 @@ class SpectrogramDataPlot(TimeSeriesDataPlot):
         # initialise
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(b=True, axis='y', which='major')
+        ax.grid(visible=True, axis='y', which='major')
         channel = self.channels[0]
 
         # parse data arguments
@@ -463,7 +463,7 @@ class SpectrumDataPlot(DataPlot):
         """
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(b=True, axis='both', which='both')
+        ax.grid(visible=True, axis='both', which='both')
 
         if self.state:
             self.pargs.setdefault(
@@ -661,7 +661,7 @@ class TimeSeriesHistogramPlot(DataPlot):
         plot = super(TimeSeriesHistogramPlot, self).init_plot(
             geometry=geometry, **kwargs)
         for ax in plot.axes:
-            ax.grid(True, which='both')
+            ax.grid(visible=True, which='both')
         return plot
 
     def parse_plot_kwargs(self, **defaults):
@@ -982,7 +982,7 @@ class SpectralVarianceDataPlot(SpectrumDataPlot):
         # customise
         self.add_hvlines()
         self.apply_parameters(ax, **self.pargs)
-        ax.grid(b=True, axis='both', which='both')
+        ax.grid(visible=True, axis='both', which='both')
 
         return self.finalize()
 

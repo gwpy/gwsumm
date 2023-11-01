@@ -144,7 +144,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
         # initialise figure
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(True, which='both')
+        ax.grid(visible=True, which='both')
 
         # work out labels
         labels = self.pargs.pop('labels', self.channels)

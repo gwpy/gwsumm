@@ -847,7 +847,7 @@ class ODCDataPlot(SegmentLabelSvgMixin, StateVectorDataPlot):
         # make figure
         plot = self.init_plot()
         ax = plot.gca()
-        ax.grid(False, which='both', axis='y')
+        ax.grid(visible=False, which='both', axis='y')
 
         # extract plotting arguments
         nosummary = self.pargs.pop('no_summary_bit', False)
@@ -1272,7 +1272,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
                            rotation_mode='anchor', ha='right', fontsize=13)
         ax.tick_params(axis='x', pad=2)
         ax.xaxis.labelpad = 2
-        ax.xaxis.grid(False)
+        ax.xaxis.grid(visible=False)
         self.pargs.setdefault('xlim', (-.5, len(data)-.5))
 
         # customise plot

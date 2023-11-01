@@ -4,9 +4,6 @@ engines:
     config:
       languages:
       - python
-      - javascript
-  eslint:
-    enabled: true
   fixme:
     enabled: true
     config:
@@ -17,19 +14,12 @@ engines:
     enabled: true
   radon:
     enabled: true
-  scss-lint:
-    enabled: true
 
 ratings:
   paths:
   - "**.py"
-  - "share/js/*.js"
-  - "share/sass/*.scss"
 
 exclude_paths:
-  - ez_setup.py
-  - versioneer.py
   - gwsumm/_version.py
   - docs/*
   - gwsumm/tests/*
-  - gwsumm/html/markup.py

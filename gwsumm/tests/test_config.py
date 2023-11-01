@@ -86,7 +86,7 @@ class TestGWSummConfigParser(object):
         assert cp._dict is OrderedDict
 
     def test_configdir(self):
-        assert set(os.listdir(config.CONFIGDIR)) == {
+        assert set(os.listdir(config.CONFIGDIR)) >= {
             'defaults.ini',
             'matplotlib.ini',
         }

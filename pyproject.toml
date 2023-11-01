@@ -1,0 +1,121 @@
+[build-system]
+requires = [
+  "setuptools>=61",
+  "setuptools_scm[toml]>=3.4.3",
+  "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gwsumm"
+description = "A python toolbox used by the LIGO Scientific Collaboration for detector characterisation"
+readme = "README.rst"
+requires-python = ">=3.9"
+authors = [
+  { name = "Alex Urban", email = "alex.urban@ligo.org" },
+  { name = "Duncan Macleod", email = "duncan.macleod@ligo.org" },
+]
+maintainers = [
+  { name = "Evan Goetz", email = "evan.goetz@ligo.org" },
+]
+license = { text = "GPL-3.0-or-later" }
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Astronomy",
+  "Topic :: Scientific/Engineering :: Physics",
+]
+
+dependencies = [
+  "astropy >=3.0.0",
+  "gwdatafind >=1.1.1",
+  "gwdetchar >=2.0.0",
+  "gwpy >=2.0.0",
+  "gwtrigfind",
+  "lalsuite",
+  "ligo-segments",
+  "lscsoft-glue >=1.60.0",
+  "lxml",
+  "markdown",
+  "MarkupPy",
+  "matplotlib >=3.1",
+  "numpy >=1.16",
+  "pygments >=2.7.0",
+  "python-dateutil",
+  "python-ligo-lw",
+  "scipy >=1.2.0",
+]
+
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+  "flake8",
+  "pytest >=3.3.0",
+  "pytest-cov >=2.4.0",
+]
+dev = [
+  "h5py",
+  "ligo-gracedb >= 2.0.0",
+  "pykerberos",
+]
+doc = [
+  "numpydoc",
+  "sphinx",
+  "sphinx-automodapi",
+  "sphinx_bootstrap_theme",
+  "sphinxcontrib-programoutput",
+]
+
+[project.scripts]
+gw_summary = "gwsumm.__main__:main"
+gw_summary_pipe = "gwsumm.batch:main"
+gwsumm-plot-guardian = "gwsumm.plot.guardian.__main__:main"
+gwsumm-plot-triggers = "gwsumm.plot.triggers.__main__:main"
+
+[project.urls]
+"Documentation" = "https://gwsumm.readthedocs.io"
+"Source Code" = "https://github.com/gwpy/gwsumm"
+"Bug Tracker" = "https://github.com/gwpy/gwsumm/issues"
+"Discussion Forum" = "https://gwdetchar.slack.com"
+
+[tool.setuptools]
+license-files = [ "LICENSE" ]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = [ "gwsumm*" ]
+
+[tool.setuptools_scm]
+write_to = "gwsumm/_version.py"
+
+[tool.coverage.run]
+source = [ "gwsumm" ]
+omit = [
+  # don't report coverage for _version.py
+  # (generated automatically by setuptools-scm)
+  "*/_version.py",
+  "gwsumm/tests/*",
+  "gwsumm/html/tests/*",
+  # omit scripts for now, will be done in a future PR
+  "gwsumm/__main__.py",
+]
+
+[tool.coverage.report]
+# print report with one decimal point
+precision = 1
+
+[tool.pytest.ini_options]
+addopts = "-r a"
+
+

@@ -22,7 +22,6 @@
 import configparser
 import os
 import re
-import sys
 
 # import these for evaluating lambda expressions in the configuration file
 import math  # noqa: F401
@@ -40,16 +39,17 @@ from astropy import units
 from gwpy.detector import (Channel, ChannelList)
 from gwpy.time import tconvert
 
-from .channels import (get_channels, split as split_channels,
-                       update_channel_params)
-from .html import (get_css, get_js)
-from .utils import (nat_sorted, re_cchar, re_quote, safe_eval, OBSERVATORY_MAP)
+from ..channels import (get_channels, split as split_channels,
+                        update_channel_params)
+from ..html import (get_css, get_js)
+from ..utils import (nat_sorted, re_cchar, re_quote, safe_eval,
+                     OBSERVATORY_MAP)
 
 __all__ = [
     'GWSummConfigParser',
 ]
 
-CONFIGDIR = os.path.join(sys.prefix, 'etc', 'gwsumm', 'configuration')
+CONFIGDIR = os.path.dirname(__file__)
 
 
 # -- class definitions --------------------------------------------------------
@@ -305,8 +305,8 @@ class GWSummConfigParser(configparser.ConfigParser):
         """Read and format a list of `SummaryState` definitions from the
         given :class:`~configparser.ConfigParser`
         """
-        from .state import (register_state, SummaryState,
-                            ALLSTATE, generate_all_state, get_state)
+        from ..state import (register_state, SummaryState,
+                             ALLSTATE, generate_all_state, get_state)
         # parse the [states] section into individual state definitions
         try:
             states = dict(self.nditems(section))

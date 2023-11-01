@@ -186,6 +186,18 @@ class TestGWSummConfigParser(object):
         assert states['locked'].definition == 'X1:TEST-STATE:1'
         assert state.ALLSTATE in states
 
+    def test_load_state_metastate(self):
+        cp = self.new()
+        cp.set_date_options(0, 100)
+        cp.add_section('metastate-test')
+        cp.set('metastate-test', 'uses', 'locked')
+        cp.set('metastate-test', 'name', 'meta')
+        cp.load_states()
+        states = state.get_states()
+        assert len(states) == 3
+        assert 'meta' in states
+        assert states['meta'].uses == ['locked']
+
     def test_load_plugins(self, cnfg):
         # check that empty section doesn't cause havoc
         cp = self.PARSER()

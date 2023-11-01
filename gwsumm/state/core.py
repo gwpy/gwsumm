@@ -349,3 +349,95 @@ class SummaryState(DataQualityFlag):
 
     def __str__(self):
         return self.name
+
+
+class SummaryMetaState(SummaryState):
+    """A meta state where different states may be used when processing a
+    `~gwsumm.tabs.DataTab`.
+
+    An example use ase is when one wants to plot two different state times on
+    the same plot. This currently has limitations as it expects the states to
+    be from different detectors. So when using this metastate, each value in
+    "uses" needs to be prefixed by "<IFO>"
+
+    Parameters
+    ----------
+    name : `str`
+        name for this state
+    uses : `list`
+        list of strings for which states to use. Ex.: ['H1-quiet', 'L1-quiet']
+    known : `~gwpy.segments.SegmentList`, optional
+        list of known segments
+    active : `~gwpy.segments.SegmentList`, optional
+        list of active segments
+    description : `str`, optional
+        text describing what this state means
+    definition : `str`, optional
+        logical combination of flags that define known and active segments
+        for this state (see :attr:`documentation <SummaryState.definition>`
+        for details)
+    hours : `str`, optional
+        a string of the form "<start>-<end>,<IFO|utc|local>"
+    key : `str`, optional
+        registry key for this state, defaults to :attr:`~SummaryState.name`
+    filename : `str`, optional
+        path to filename with segments
+    url : `str`, optional
+        URL to read the segments
+    """
+
+    def __init__(self, name, uses, known=SegmentList(), active=SegmentList(),
+                 description=None, definition=None, hours=None, key=None,
+                 filename=None, url=None):
+
+        super(SummaryMetaState, self).__init__(
+            name=name, known=known, active=active,
+            description=description, definition=definition, hours=hours,
+            key=key, filename=filename, url=url)
+
+        self.uses = uses
+
+    @classmethod
+    def from_ini(cls, config, section):
+        """Create a new `SummaryMetaState` from a section in a `ConfigParser`.
+
+        Parameters
+        ----------
+        config : :class:`~gwsumm.config.GWConfigParser`
+            customised configuration parser containing given section
+        section : `str`
+            name of section to parse
+
+        Returns
+        -------
+        `SummaryMetaState`
+            a new state, with attributes set from the options in the
+            configuration
+        """
+        config = GWSummConfigParser.from_configparser(config)
+        # get parameters
+        params = dict(config.nditems(section))
+        # parse name
+        name = params.pop('name', section)
+        if re.match(r'metastate[-\s]', name):
+            name = section[10:]
+        # list states this uses
+        uses = params.pop('uses', section).split(',')
+
+        # generate metastate
+        return cls(name=name, uses=uses, **params)
+
+    def fetch(self, config=GWSummConfigParser(),
+              segmentcache=None, segdb_error='raise',
+              datacache=None, datafind_error='raise', nproc=1, nds=None,
+              **kwargs):
+        """Finalise this state by fetching the states this metastate uses,
+        either from global memory, or from the segment database
+        """
+
+        for idx, state in enumerate(self.uses):
+            globalv.STATES[state.lower()].fetch(
+                config=config, segmentcache=segmentcache,
+                segdb_error=segdb_error, datacache=datacache,
+                datafind_error=datafind_error, nproc=nproc, nds=nds,
+                **kwargs)

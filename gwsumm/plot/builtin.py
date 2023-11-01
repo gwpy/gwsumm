@@ -20,6 +20,7 @@
 """
 
 import os.path
+import re
 import warnings
 from itertools import cycle
 
@@ -41,7 +42,7 @@ from ..utils import re_cchar
 from ..data import (get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_range_spectrogram,
                     get_spectrum, get_coherence_spectrum, get_range_spectrum)
-from ..state import ALLSTATE
+from ..state import ALLSTATE, SummaryMetaState
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
 
@@ -498,15 +499,31 @@ class SpectrumDataPlot(DataPlot):
         else:
             iterator = list(zip(self.channels, plotargs))
 
+        # loop over the channels
         for chantuple in iterator:
             channel = chantuple[0]
             channel2 = chantuple[1]
             pargs = chantuple[-1]
 
+            # get the state or segment
             if self.state and not self.all_data:
                 valid = self.state
             else:
                 valid = SegmentList([self.span])
+
+            # If the state is a metastate, then get the corresponding IFO-
+            # specific state from the global variables list
+            if isinstance(valid, SummaryMetaState):
+                reg = re.compile(channel.ifo)
+                matching = list(filter(reg.match, valid.uses))
+                assert len(matching) == 1, (
+                    f"Failed to find a unique state for {valid.name} "
+                    f"metastate. Found {len(matching)} matching states in "
+                    f"{valid.uses} for {channel.ifo}")
+                try:
+                    valid = globalv.STATES[matching[0].lower()]
+                except KeyError:
+                    raise
 
             if self.type == 'coherence-spectrum':
                 data = get_coherence_spectrum(

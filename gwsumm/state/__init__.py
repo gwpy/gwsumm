@@ -55,9 +55,9 @@ API reference
 
 """
 
-from .core import SummaryState
+from .core import (SummaryState, SummaryMetaState)
 from .registry import (get_state, get_states, register_state)
 from .all import (ALLSTATE, generate_all_state)
 
 __all__ = ['ALLSTATE', 'SummaryState', 'get_state', 'get_states',
-           'register_state', 'generate_all_state']
+           'register_state', 'generate_all_state', 'SummaryMetaState']

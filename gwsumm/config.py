@@ -305,28 +305,40 @@ class GWSummConfigParser(configparser.ConfigParser):
         """Read and format a list of `SummaryState` definitions from the
         given :class:`~configparser.ConfigParser`
         """
-        from .state import (register_state, SummaryState,
+        from .state import (register_state, SummaryState, SummaryMetaState,
                             ALLSTATE, generate_all_state, get_state)
-        # parse the [states] section into individual state definitions
+        # Parse the [states] section into individual state definitions.
+        # Each state definition is amended to the GWSummConfigParser as a new
+        # section with name and definition key-value pairs.
         try:
             states = dict(self.nditems(section))
         except configparser.NoSectionError:
             self.add_section(section)
             states = {}
         for state in states:
-            if not (self.has_section('state-%s' % state) or
-                    self.has_section('state %s' % state)):
-                section = 'state-%s' % state
+            if not (self.has_section(f'state-{state}') or
+                    self.has_section(f'state {state}')):
+                section = f'state-{state}'
                 self.add_section(section)
                 self.set(section, 'name', state)
                 self.set(section, 'definition', states[state])
 
-        # parse each state section into a new state
+        # Parse each state section into a new state.
+        # Here we reset the states variable to an empty list because the
+        # previous code block added all of the states section into their own
+        # sections [state-<state>]. We register those states and metastates,
+        # appending them also to the states list. Metastates are states that
+        # use another state definition, where they look for the key name. If
+        # key is not defined, then name is used instead. The key or name is
+        # expected to have an 'H1-' or 'L1-' prefix.
         states = []
         for section in self.sections():
             if re.match(r'state[-\s]', section):
                 states.append(register_state(
                     SummaryState.from_ini(self, section)))
+            elif re.match(r'metastate[-\s]', section):
+                states.append(register_state(
+                    SummaryMetaState.from_ini(self, section)))
 
         # register All state
         start = self.getint(section, 'gps-start-time')

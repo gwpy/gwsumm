@@ -322,22 +322,12 @@ def run_apidoc(_):
 
 # -- add static files----------------------------------------------------------
 
-def setup_static_content(app):
-    # configure stylesheets
-    for sdir in html_static_path:
-        # add stylesheets
-        cssdir = os.path.join(sdir, 'css')
-        for cssf in glob.glob(os.path.join(cssdir, '*.css')):
-            app.add_stylesheet(cssf.split(os.path.sep, 1)[1])
-
-        # add custom javascript
-        jsdir = os.path.join(sdir, 'js')
-        for jsf in glob.glob(os.path.join(jsdir, '*.js')):
-            app.add_javascript(jsf.split(os.path.sep, 1)[1])
+html_css_files = [
+    'css/custom.css',
+]
 
 
 # -- setup --------------------------------------------------------------------
 
 def setup(app):
-    setup_static_content(app)
     app.connect('builder-inited', run_apidoc)

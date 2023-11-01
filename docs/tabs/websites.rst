@@ -14,6 +14,7 @@ The key difference between standalone pages and a website is the ability to navi
 
 .. code-block:: python
 
+   from gwsumm.tabs import Tab
    tab1 = Tab('Tab 1')
    tab2 = Tab('Tab 2')
    tabs = [tab1, tab2]
@@ -43,4 +44,16 @@ Here we have set a `parent` tab for 2A, and used the same for 2B, which creates 
 Tab groups
 ----------
 
-For even larger websites, sets of tabs under a single parent can be further separated into `groups <Tab.group>`.
+For even larger websites, sets of tabs under a single parent can be
+further separated into `groups <Tab.group>`. For example, to put 2A
+into group `1` and 2B into group `2`, we can write:
+
+.. code-block:: python
+
+   tab1 = Tab('Tab 1')
+   tab2a = Tab('A', parent='Tab 2', group='1')
+   tab2b = Tab('B', parent=tab2a.parent, group='2')
+   tabs = [tab1, tab2a, tab2b]
+   tab1.write_html('This is tab 1', tabs=tabs)
+   tab2a.write_html('This is tab 2A', tabs=tabs)
+   tab2b.write_html('This is tab 2B', tabs=tabs)

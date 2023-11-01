@@ -9,7 +9,7 @@
 In its simplest form, the `Tab` is essentially a blank canvas on which to write whatever you want.
 However, the original mandate for GWSumm was to provide a framework in which to generate automatic summaries of LIGO data, over a given timescale.
 
-To handle data processing, rather than static HTML generation, each `Tab` has a flavour, based on its relation to any interval in time
+To handle data processing, rather than static HTML generation, each `Tab` has a type, based on its relation to any interval in time
 
 .. currentmodule:: gwsumm.tabs.core
 
@@ -21,14 +21,13 @@ To handle data processing, rather than static HTML generation, each `Tab` has a 
    IntervalTab
    EventTab
 
-The 'flavour' of a `Tab` is set automatically when it is created based on the value of the :attr:`~Tab.mode` attribute, so you don't need to remember the above objects.
+The type of a `Tab` is set automatically when it is created based on the value of the :attr:`~Tab.mode` attribute, so you don't need to remember the above objects.
 
 =====
 Modes
 =====
 
-All tabs have a :attr:`~Tab.mode`, loosely based around the time interval of interest.
-GWSumm support seven modes:
+GWSumm currently support seven different `Tab` modes:
 
 ==========  ====  =============================================================
 Mode        Enum  Description
@@ -46,9 +45,16 @@ Mode        Enum  Description
 Assigning modes
 ===============
 
-Each `Tab` must be assigned a mode, which can either be done locally, by passing the `~Tab.mode` keyword argument when creating a `Tab`, or globally, by using the :meth:`gwsumm.mode.set_mode`; this sets the default mode for all tabs created in this session.
+Each `Tab` will be assigned a mode (unless specified as follows, the default mode
+is ``STATIC``). The assignment can be done on a per-tab basis by
+passing the `~Tab.mode` keyword argument when creating a `Tab`, or
+globally, by using the :meth:`gwsumm.mode.set_mode`. The latter sets
+the default mode for all subsequent tabs created in this session.
 
-If a :attr:`~Tab.mode` is given that assocaites with a GPS time or times, these must be given via the `~IntervalTab.span` or `~EventTab.gpstime` keyword arguments, otherwise a `TypeError` will be raised.
+If a :attr:`~Tab.mode` is given that associates with a GPS time or
+times, these must be given via the `~IntervalTab.span` or
+`~EventTab.gpstime` keyword arguments, otherwise a `TypeError` will be
+raised. The `span` tuple is the ``(GPS start time, GPS end time)``
 
 .. code-block:: python
 

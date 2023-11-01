@@ -1,3 +1,5 @@
+.. _cli-page:
+
 ######################
 Command-line interface
 ######################
@@ -19,28 +21,28 @@ Day mode
 
 To run in daily summary mode, the following command-line options are available:
 
-.. command-output:: python ../bin/gw_summary day --help
+.. command-output:: python gw_summary day --help
 
 Week mode
 ---------
 
 The arguments in weekly mode are as follows:
 
-.. command-output:: python ../bin/gw_summary week --help
+.. command-output:: python gw_summary week --help
 
 Month mode
 ----------
 
 In monthly mode:
 
-.. command-output:: python ../bin/gw_summary month --help
+.. command-output:: python gw_summary month --help
 
 GPS mode
 --------
 
 To run within a specific (but arbitrary) range of GPS seconds:
 
-.. command-output:: python ../bin/gw_summary gps --help
+.. command-output:: python gw_summary gps --help
 
 Batch mode
 ==========
@@ -54,4 +56,4 @@ and run jobs in parallel.
 To see all the available arguments and options for this tool, you can run
 with `--help` as usual:
 
-.. command-output:: python ../bin/gw_summary_pipe --help
+.. command-output:: python gw_summary_pipe --help

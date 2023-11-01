@@ -71,7 +71,6 @@ GWSumm is distributed under the `GNU General Public License`_.
    cli
    automation
    tabs/index
-   tabs/flavour
    tabs/websites
    tabs/modes
    tabs/api

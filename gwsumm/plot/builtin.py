@@ -711,7 +711,9 @@ class TimeSeriesHistogramPlot(DataPlot):
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
             # set range if not given
-            if pargs.get('range') is None:
+            # but leave is as None in the cumulative histogram, this avoids
+            # the histogram to extend to x > y(x) = 1
+            if pargs.get('range') is None and self.type != 'range-cumulative-histogram':
                 pargs['range'] = self._get_range(
                     data,
                     # use range from first dataset if already calculated

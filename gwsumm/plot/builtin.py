@@ -730,11 +730,6 @@ class TimeSeriesHistogramPlot(DataPlot):
             if pargs.get('range')[1] == 'max':
                 pargs['range'] = (pargs['range'][0], arr.max().value)
 
-            # Remove data with range smaller than 1 Mpc for cumulative plot
-            if self.type == 'range-cumulative-histogram':
-                arr = numpy.array(arr)
-                arr = arr[arr>=1]
-
             # plot histogram
             _, _, patches = ax.hist(arr, **pargs)
 

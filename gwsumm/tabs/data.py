@@ -266,7 +266,7 @@ class DataTab(ProcessedTab, ParentTab):
             if cp.has_section(pdef):
                 type_ = cp.get(pdef, 'type')
                 PlotClass = get_plot(type_)
-            elif (pdef not in ['range-histogram', 'segment-histogram', 
+            elif (pdef not in ['range-histogram', 'segment-histogram',
                                'range-cumulative-histogram'] and
                     pdef.endswith('-histogram')):
                 type_ = None

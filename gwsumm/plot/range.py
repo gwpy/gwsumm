@@ -152,6 +152,7 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
 
 register_plot(RangeDataHistogramPlot)
 
+
 class RangeCumulativeHistogramPlot(RangePlotMixin, get_plot('histogram')):
     type = 'range-cumulative-histogram'
     defaults = get_plot('histogram').defaults.copy()
@@ -167,6 +168,7 @@ class RangeCumulativeHistogramPlot(RangePlotMixin, get_plot('histogram')):
 
 
 register_plot(RangeCumulativeHistogramPlot)
+
 
 class RangeSpectrogramDataPlot(RangePlotMixin, get_plot('spectrogram')):
     type = 'range-spectrogram'

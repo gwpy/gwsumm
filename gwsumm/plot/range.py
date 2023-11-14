@@ -162,11 +162,11 @@ class RangeCumulativeHistogramPlot(RangePlotMixin, get_plot('histogram')):
         'log': False,
         'cumulative': True,
         'density': True,
+        'range': (1, 'max'),
     })
 
 
 register_plot(RangeCumulativeHistogramPlot)
-
 
 class RangeSpectrogramDataPlot(RangePlotMixin, get_plot('spectrogram')):
     type = 'range-spectrogram'

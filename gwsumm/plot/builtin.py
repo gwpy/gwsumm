@@ -723,12 +723,16 @@ class TimeSeriesHistogramPlot(DataPlot):
             # Add the option to enable autoscaling
             if pargs.get('range') == 'autoscaling':
                 pargs['range'] = None
-            # Add option to set the minimum range based on the data
-            if pargs.get('range')[0] == 'min':
-                pargs['range'] = (arr.min().value, pargs['range'][1])
-            # Add option to set the maximum range based on the data
-            if pargs.get('range')[1] == 'max':
-                pargs['range'] = (pargs['range'][0], arr.max().value)
+            if arr.size:
+                # Add option to set the minimum range based on the data
+                if pargs.get('range')[0] == 'min':
+                    pargs['range'] = (arr.min().value, pargs['range'][1])
+                # Add option to set the maximum range based on the data
+                if pargs.get('range')[1] == 'max':
+                    pargs['range'] = (pargs['range'][0], arr.max().value)
+            else:
+                # If arr is empty reset the range parameter
+                pargs['range'] = None
 
             # plot histogram
             _, _, patches = ax.hist(arr, **pargs)

@@ -1194,6 +1194,8 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     _single_call = True
     defaults = {
         'scale': 'percent',
+        'color': GREEN,
+        'edgecolor': 'green',
         'alpha': .6,
     }
     SCALE_UNIT = {
@@ -1306,12 +1308,12 @@ class NetworkDutyBarPlot(SegmentBarPlot):
         'H1V1': '#ffbb33',
     })
     defaults = SegmentBarPlot.defaults.copy()
-    defaults.update({
-        'legend-fontsize': 24,
-    })
+    # remove SegmentBarPlot default colors as they overwrite
+    # the ones defined later.
+    defaults.pop('color')
+    defaults.pop('edgecolor')
 
     def draw(self):
-
         # get segments
         if self.state and not self.all_data:
             valid = self.state.active
@@ -1361,6 +1363,7 @@ class NetworkDutyBarPlot(SegmentBarPlot):
                 # select a random color when it is not defined
                 colors.append(numpy.random.rand(3,))
         self.pargs.setdefault('colors', colors)
+        self.pargs.setdefault('edgecolor', colors)
         self.pargs.setdefault('labels', labels)
         self.pargs.setdefault('title', 'Network duty factor')
 

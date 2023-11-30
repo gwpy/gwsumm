@@ -1319,9 +1319,9 @@ class NetworkDutyBarPlot(SegmentBarPlot):
             valid = self.state.active
         else:
             valid = SegmentList([self.span])
+
         # construct compound flags for each network size
         flags = dict((f[:2], f) for f in self.flags)
-
         # construct all possible network combinations
         networks = {}
         for size in range(1, len(flags) + 1):
@@ -1343,11 +1343,13 @@ class NetworkDutyBarPlot(SegmentBarPlot):
                 flag = flags[network]
             else:
                 flag = f'{network}:{name}'
+
             networksegs = DataQualityFlag(flag, known=valid)
             if not ifoset:
                 compound = f"!{'!'.join(list(flags.values()))}"
             else:
                 compound = '&'.join(flags[ifo] for ifo in ifoset)
+
             segs = get_segments(compound, validity=valid, query=False,
                                 padding=self.padding).coalesce()
             networksegs += segs
@@ -1355,13 +1357,14 @@ class NetworkDutyBarPlot(SegmentBarPlot):
             combined_flag = flag.split(':')[0]
             if flag.startswith(tuple(networks.keys())):
                 networkflags.append(flag)
-            labels.append(combined_flag)
 
+            labels.append(combined_flag)
             if self.NETWORK_COLOR.get(combined_flag) is not None:
                 colors.append(self.NETWORK_COLOR.get(combined_flag))
             else:
                 # select a random color when it is not defined
                 colors.append(numpy.random.rand(3,))
+
         self.pargs.setdefault('colors', colors)
         self.pargs.setdefault('edgecolor', colors)
         self.pargs.setdefault('labels', labels)
@@ -1377,7 +1380,6 @@ class NetworkDutyBarPlot(SegmentBarPlot):
 
 
 register_plot(NetworkDutyBarPlot)
-
 
 
 class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):

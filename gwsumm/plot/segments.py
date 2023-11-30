@@ -1207,6 +1207,13 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     }
 
     def draw(self, outputfile=None):
+        # Check if ylabel has been previously defined 
+        # to avoid overwriting it
+        if 'ylabel' in self.pargs:
+            set_ylabel = False
+        else:
+            set_ylabel = True
+
         plot = self.init_plot(projection='rectilinear')
         ax = plot.gca()
 
@@ -1227,11 +1234,13 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
             self.pargs.setdefault('ylim', (0, 100))
         elif isinstance(scale, (int, float)):
             self.pargs.setdefault('ylim', (0, abs(self.span) / scale))
-        try:
-            self.pargs.setdefault('ylabel',
-                                  f'Livetime [{self.SCALE_UNIT[scale]}]')
-        except KeyError:
-            self.pargs.setdefault('ylabel', 'Livetime')
+
+        if set_ylabel:
+            try:
+                self.pargs.setdefault('ylabel',
+                                    f'Livetime [{self.SCALE_UNIT[scale]}]')
+            except KeyError:
+                self.pargs.setdefault('ylabel', 'Livetime')
 
         # extract plotting arguments
         sort = self.pargs.pop('sorted', False)
@@ -1312,6 +1321,10 @@ class NetworkDutyBarPlot(SegmentBarPlot):
     # the ones defined later.
     defaults.pop('color')
     defaults.pop('edgecolor')
+    defaults.update({
+        'title': 'Network duty factord sad adas ',
+        'ylabel': 'Duty factor [%]',
+    })
 
     def draw(self):
         # get segments
@@ -1368,7 +1381,6 @@ class NetworkDutyBarPlot(SegmentBarPlot):
         self.pargs.setdefault('colors', colors)
         self.pargs.setdefault('edgecolor', colors)
         self.pargs.setdefault('labels', labels)
-        self.pargs.setdefault('title', 'Network duty factor')
 
         # reset flags and generate plot
         flags_ = self.flags

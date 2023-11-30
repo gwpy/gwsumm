@@ -1207,7 +1207,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     }
 
     def draw(self, outputfile=None):
-        # Check if ylabel has been previously defined 
+        # Check if ylabel has been previously defined
         # to avoid overwriting it
         if 'ylabel' in self.pargs:
             set_ylabel = False
@@ -1238,7 +1238,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         if set_ylabel:
             try:
                 self.pargs.setdefault('ylabel',
-                                    f'Livetime [{self.SCALE_UNIT[scale]}]')
+                                      f'Livetime [{self.SCALE_UNIT[scale]}]')
             except KeyError:
                 self.pargs.setdefault('ylabel', 'Livetime')
 

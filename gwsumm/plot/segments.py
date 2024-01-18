@@ -1029,11 +1029,31 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             data.append(float(abs(segs.active)))
 
         # handle missing or future data
+        # TODO: There is something messed up about "labels" and
+        #       "label" that should be cleaned up
         total = float(sum(data))
-        if future or (total < alltime):
-            data.append(alltime - total)
+        current_alltime = globalv.NOW - int(self.span[0])
+        future_time = int(self.span[1]) - globalv.NOW
+        if ((future_time > 0 and total < current_alltime) or
+                (future_time <= 0 and total < alltime)):
+            if future_time > 0 and total < current_alltime:
+                data.append(current_alltime - total)
+            else:
+                data.append(alltime - total)
+            if 'labels' in plotargs:
+                plotargs['labels'] = (
+                    list(plotargs['labels']) + ['Missing segments'])
+            elif 'label' in plotargs:
+                plotargs['label'] = (
+                    list(plotargs['label']) + ['Missing segments'])
+            if 'colors' in plotargs:
+                plotargs['colors'] = list(plotargs['colors']) + ['red']
+        if future:
+            data.append(future_time)
             if 'labels' in plotargs:
                 plotargs['labels'] = list(plotargs['labels']) + [' ']
+            elif 'label' in plotargs:
+                plotargs['label'] = list(plotargs['label']) + [' ']
             if 'colors' in plotargs:
                 plotargs['colors'] = list(plotargs['colors']) + ['white']
 

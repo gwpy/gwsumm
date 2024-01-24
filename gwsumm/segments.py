@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
+#               Evan Goetz (2023)
 #
 # This file is part of GWSumm.
 #
@@ -22,7 +23,6 @@
 import sys
 import operator
 import warnings
-from functools import reduce
 from collections import OrderedDict
 from configparser import (
     DEFAULTSECT,
@@ -34,7 +34,7 @@ from configparser import (
 from astropy.io.registry import IORegistryError
 
 from gwpy.segments import (DataQualityFlag, DataQualityDict,
-                           SegmentList, Segment)
+                           SegmentListDict, SegmentList, Segment)
 
 from . import globalv
 from .utils import (
@@ -56,7 +56,8 @@ SEGDB_URLS = [
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                  query=True, return_=True, coalesce=True, padding=None,
-                 segdb_error='raise', url=None, **read_kw):
+                 ignore_undefined=False, segdb_error='raise', url=None,
+                 **read_kw):
     """Retrieve the segments for a given flag
 
     Segments will be loaded from global memory if already defined,
@@ -96,6 +97,11 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     padding : `tuple`, or `dict` of `tuples`, optional
         `(start, end)` padding with which to pad segments that are
         downloaded/read
+
+    ignore_undefined : `bool`, optional, default: `False`
+        Special case needed for network calculation compound flags so that
+        when this is True, DataQualityFlag.known values are set to the same
+        value as ``validity``
 
     segdb_error : `str`, optional, default: ``'raise'``
         how to handle errors returned from the segment database, one of
@@ -168,11 +174,12 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
     for f in allflags:
         globalv.SEGMENTS.setdefault(f, DataQualityFlag(f))
 
-    # read segments from global memory and get the union of needed times
+    # read segments from global memory and get the intersection of needed times
     try:
-        old = reduce(
-            operator.and_,
-            (globalv.SEGMENTS.get(f, DataQualityFlag(f)).known for f in flags))
+        old = SegmentListDict()
+        for f in flags:
+            old[f] = globalv.SEGMENTS.get(f, DataQualityFlag(f)).known
+        old = SegmentList(old.intersection(flags))
     except TypeError:
         old = SegmentList()
     newsegs = validity - old
@@ -260,15 +267,17 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
         for compound in flags:
             union, intersection, exclude, notequal = split_compound_flag(
                 compound)
-            if len(union + intersection) == 1:
-                out[compound].description = globalv.SEGMENTS[f].description
-                out[compound].padding = padding.get(f, (0, 0))
+            if len(f := (union + intersection)) == 1:
+                out[compound].description = globalv.SEGMENTS[f[0]].description
+                out[compound].padding = padding.get(f[0], (0, 0))
             for flist, op in zip([exclude, intersection, union, notequal],
                                  [operator.sub, operator.and_, operator.or_,
                                   not_equal]):
                 for f in flist:
                     pad = padding.get(f, (0, 0))
                     segs = globalv.SEGMENTS[f].copy()
+                    if ignore_undefined:
+                        segs.known = validity
                     if isinstance(pad, (float, int)):
                         segs = segs.pad(pad, pad)
                     elif pad is not None:

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
+#               Evan Goetz (2023)
 #
 # This file is part of GWSumm.
 #
@@ -1006,15 +1007,45 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
 
-        # use state to generate suptitle with GPS span
-        if self.state:
-            self.pargs.setdefault(
-                'suptitle',
-                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        texify(str(self.state))))
+        # Are we currently running before, during, or after?
+        before = during = after = False
+        if globalv.NOW < int(self.span[0]):
+            before = True
+        elif globalv.NOW >= int(self.span[1]):
+            after = True
         else:
-            self.pargs.setdefault(
-                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+            during = True
+
+        # use state to generate suptitle with GPS span
+        # this will be different depending on if `include_future` is given
+        # as an option or whether running before, during, or after the time
+        # interval requested
+        if self.state:
+            if future or after:
+                self.pargs.setdefault(
+                    'suptitle',
+                    (f'[{self.span[0]}-{self.span[1]}, ',
+                     f'state: {texify(str(self.state))}]'))
+            elif before:
+                self.pargs.setdefault(
+                    'suptitle',
+                    (f'[{self.span[0]}-{self.span[0]}, ',
+                     f'state: {texify(str(self.state))}]'))
+            else:
+                self.pargs.setdefault(
+                    'suptitle',
+                    (f'[{self.span[0]}-{globalv.NOW}, ',
+                     f'state: {texify(str(self.state))}]'))
+        else:
+            if future or after:
+                self.pargs.setdefault(
+                    'suptitle', f'[{self.span[0]}-{self.span[1]}]')
+            elif before:
+                self.pargs.setdefault(
+                    'suptitle', f'[{self.span[0]}-{self.span[0]}]')
+            else:
+                self.pargs.setdefault(
+                    'suptitle', f'[{self.span[0]}-{globalv.NOW}]')
 
         # get segments
         data = []
@@ -1028,28 +1059,35 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                                 padding=self.padding).coalesce()
             data.append(float(abs(segs.active)))
 
-        # handle missing or future data
+        # handle missing (undefined) segments
+        # if running before then all the time is future because segments
+        # haven't been generated
+        # if running after then some segments may not cover the whole time
+        # if during, it is somewhere in between
+        total = float(sum(data))
+        undefined = future_seg = 0
+        if before:
+            future_seg = alltime
+        elif after:
+            undefined = alltime - total
+        elif during:
+            future_seg = int(self.span[1]) - globalv.NOW
+            undefined = alltime - future_seg - total
+            current_total = globalv.NOW - int(self.span[0])
+
+        # figure out the extra pieces to include in the pie chart and labels
         # TODO: There is something messed up about "labels" and
         #       "label" that should be cleaned up
-        total = float(sum(data))
-        current_alltime = globalv.NOW - int(self.span[0])
-        future_time = int(self.span[1]) - globalv.NOW
-        if ((future_time > 0 and total < current_alltime) or
-                (future_time <= 0 and total < alltime)):
-            if future_time > 0 and total < current_alltime:
-                data.append(current_alltime - total)
-            else:
-                data.append(alltime - total)
+        if undefined > 0:
+            data.append(undefined)
             if 'labels' in plotargs:
-                plotargs['labels'] = (
-                    list(plotargs['labels']) + ['Missing segments'])
+                plotargs['labels'] = list(plotargs['labels']) + ['Undefined']
             elif 'label' in plotargs:
-                plotargs['label'] = (
-                    list(plotargs['label']) + ['Missing segments'])
+                plotargs['label'] = list(plotargs['label']) + ['Undefined']
             if 'colors' in plotargs:
-                plotargs['colors'] = list(plotargs['colors']) + ['red']
+                plotargs['colors'] = list(plotargs['colors']) + ['black']
         if future:
-            data.append(future_time)
+            data.append(future_seg)
             if 'labels' in plotargs:
                 plotargs['labels'] = list(plotargs['labels']) + [' ']
             elif 'label' in plotargs:
@@ -1078,7 +1116,12 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 pclabels.append(label)
             else:
                 try:
-                    pc = d / (total if future else alltime) * 100
+                    if future or after:
+                        pc = d / alltime * 100
+                    elif during:
+                        pc = d / current_total * 100
+                    else:
+                        pc = 0.0
                 except ZeroDivisionError:
                     pc = 0.0
                 pclabels.append(texify(
@@ -1170,28 +1213,37 @@ class NetworkDutyPiePlot(SegmentPiePlot):
         # construct compound flags for each network size
         flags = dict((f[:2], f) for f in self.flags)
         network = ''.join(sorted(set(flags)))
-        self.pargs.setdefault('title', '%s network duty factor' % network)
+        self.pargs.setdefault('title', f'{network} network duty factor')
         networkflags = []
         colors = []
         labels = []
+        # define an exclude DQ flag so that each subsequent time through
+        # We exclude triple time from double time and double time from single
+        # time
         exclude = DataQualityFlag()
         for i in list(range(len(flags)+1))[::-1]:
             name = self.NETWORK_NAME[i]
-            flag = '%s:%s' % (network, name)
+            flag = f'{network}:{name}'
             networksegs = DataQualityFlag(flag, known=valid)
+            # loop over the possible combinations inserting the flag to the
+            # network segments dictionary
             for ifoset in combinations(flags, i):
                 if not ifoset:
-                    compound = '!%s' % '!'.join(list(flags.values()))
+                    compound = f"!{'!'.join(list(flags.values()))}"
                 else:
                     compound = '&'.join(flags[ifo] for ifo in ifoset)
-                segs = get_segments(compound, validity=valid, query=False,
-                                    padding=self.padding).coalesce()
+                segs = get_segments(
+                    compound, validity=valid, query=False,
+                    padding=self.padding, ignore_undefined=True).coalesce()
                 networksegs += segs
+            # insert this flag into the segments global variable and exclude
+            # any of the previous network (more detectors) time from this time
             globalv.SEGMENTS[flag] = networksegs.copy()
             globalv.SEGMENTS[flag].active -= exclude.active
+            # update the segements of times to exclude
             exclude = networksegs
             networkflags.append(flag)
-            labels.append('%s interferometer' % name.title())
+            labels.append(f'{name.title()} interferometer')
             colors.append(self.NETWORK_COLOR.get(name))
 
         self.pargs.setdefault('colors', colors)

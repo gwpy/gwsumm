@@ -1007,7 +1007,16 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
         wedgeargs = self.parse_wedge_kwargs()
         plotargs = self.parse_plot_kwargs()
 
-        # Are we currently running before, during, or after?
+        # Boolean logic flags to determine if this code is currently running:
+        # - before the span of interest (current time the code is running <
+        #   start of span)
+        # - after the span of interest (current time the code is running >= end
+        #   of span)
+        # - during the span of interest (any other time)
+        # The flag is set to True for the appropriate noun (before, during, or
+        # after).
+        # These flags are then used to set plot titles and labels and determine
+        # if there is any missing data.
         before = during = after = False
         if globalv.NOW < int(self.span[0]):
             before = True
@@ -1024,17 +1033,17 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
             if future or after:
                 self.pargs.setdefault(
                     'suptitle',
-                    (f'[{self.span[0]}-{self.span[1]}, ',
+                    (f'[{self.span[0]}-{self.span[1]}, '
                      f'state: {texify(str(self.state))}]'))
             elif before:
                 self.pargs.setdefault(
                     'suptitle',
-                    (f'[{self.span[0]}-{self.span[0]}, ',
+                    (f'[{self.span[0]}-{self.span[0]}, '
                      f'state: {texify(str(self.state))}]'))
             else:
                 self.pargs.setdefault(
                     'suptitle',
-                    (f'[{self.span[0]}-{globalv.NOW}, ',
+                    (f'[{self.span[0]}-{globalv.NOW}, '
                      f'state: {texify(str(self.state))}]'))
         else:
             if future or after:
@@ -1086,7 +1095,7 @@ class SegmentPiePlot(PiePlot, SegmentDataPlot):
                 plotargs['label'] = list(plotargs['label']) + ['Undefined']
             if 'colors' in plotargs:
                 plotargs['colors'] = list(plotargs['colors']) + ['black']
-        if future:
+        if future or before:
             data.append(future_seg)
             if 'labels' in plotargs:
                 plotargs['labels'] = list(plotargs['labels']) + [' ']
@@ -1236,6 +1245,14 @@ class NetworkDutyPiePlot(SegmentPiePlot):
                     compound, validity=valid, query=False,
                     padding=self.padding, ignore_undefined=True).coalesce()
                 networksegs += segs
+            # Final step in the loop for no detectors: if not wanting to plot
+            # future times, then exclude the time from now to the end of the
+            # span from the no detector network
+            if (i == 0 and
+                    not self.pargs.get('include_future', False) and
+                    globalv.NOW < self.span[1]):
+                exclude.active += SegmentList(
+                    [Segment(globalv.NOW, self.span[1])])
             # insert this flag into the segments global variable and exclude
             # any of the previous network (more detectors) time from this time
             globalv.SEGMENTS[flag] = networksegs.copy()

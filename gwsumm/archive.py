@@ -176,6 +176,8 @@ def write_data_archive(outfile, channels=True, timeseries=True,
 
         # moves the new file to the backup directory
         shutil.move(temp_outfile, outfile)
+        # Changes permission to allow reading from any user
+        os.chmod(outfile, 0o664)
 
     except Exception:
         # if it fails for any reason, raise and continue

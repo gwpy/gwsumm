@@ -27,7 +27,7 @@ from configparser import ConfigParser
 
 from gwpy.detector import ChannelList
 from gwpy.plot import Plot
-from gwpy.plot.tex import HAS_TEX
+from gwpy.plot.tex import has_tex
 from gwpy.segments import Segment
 
 from .. import plot as gwsumm_plot
@@ -281,7 +281,7 @@ class TestDataPlot(TestSummaryPlot):
         pytest.param(
             True,
             [{'label': r'TEST\_WITH\_UNDERSCORE'}, {'label': r'TEST\_QUOTED'}],
-            marks=pytest.mark.skipif(not HAS_TEX,
+            marks=pytest.mark.skipif(not has_tex(),
                                      reason='TeX is not available'),
         ),
     ])

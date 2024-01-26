@@ -32,7 +32,7 @@ from .utils import re_quote
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 
-NDS2_TYPES = Nds2ChannelType.names()
+NDS2_TYPES = Nds2ChannelType.nds2names()
 CIS_URL = 'https://cis.ligo.org'
 re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
                         r'(?:[-_][a-zA-Z0-9_]+)?'  # underscore-delimited parts

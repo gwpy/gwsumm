@@ -1386,7 +1386,7 @@ register_plot(SegmentBarPlot)
 
 class NetworkDutyBarPlot(SegmentBarPlot):
 
-    """Special case of the `SegmentPiePlot` for network duty factors
+    """Special case of the `SegmentPiePlot` for network duty factors.
     """
     type = 'network-duty-segment-bar'
     NETWORK_NAME = {
@@ -1440,7 +1440,7 @@ class NetworkDutyBarPlot(SegmentBarPlot):
             ifoset = values[1]
             name = self.NETWORK_NAME[i]
             if i == 1:
-                # this avoid haveing a redundant X1:single
+                # this avoid having a redundant X1:single
                 # in the Segment information table
                 flag = flags[network]
             else:

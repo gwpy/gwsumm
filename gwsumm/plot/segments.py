@@ -1443,19 +1443,20 @@ class NetworkDutyBarPlot(SegmentBarPlot):
                 # this avoid having a redundant X1:single
                 # in the Segment information table
                 flag = flags[network]
+
             else:
                 flag = f'{network}:{name}'
 
-            networksegs = DataQualityFlag(flag, known=valid)
-            if not ifoset:
-                compound = f"!{'!'.join(list(flags.values()))}"
-            else:
-                compound = '&'.join(flags[ifo] for ifo in ifoset)
+                networksegs = DataQualityFlag(flag, known=valid)
+                if not ifoset:
+                    compound = f"!{'!'.join(list(flags.values()))}"
+                else:
+                    compound = '&'.join(flags[ifo] for ifo in ifoset)
 
-            segs = get_segments(compound, validity=valid, query=False,
-                                padding=self.padding).coalesce()
-            networksegs += segs
-            globalv.SEGMENTS[flag] = networksegs.copy()
+                segs = get_segments(compound, validity=valid, query=False,
+                                    padding=self.padding).coalesce()
+                networksegs += segs
+                globalv.SEGMENTS[flag] = networksegs.copy()
             combined_flag = flag.split(':')[0]
             if flag.startswith(tuple(networks.keys())):
                 networkflags.append(flag)

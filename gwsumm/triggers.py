@@ -243,6 +243,24 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 else:
                     trigs = read_cache(segcache, SegmentList([segment]), etg,
                                        nproc=nproc, **read_kw)
+
+                # extend columns if possible to include bandwidth, central
+                # frequency, and duration
+                if trigs is not None:
+                    if 'fstart' in columns and 'fend' in columns:
+                        if 'bandwidth' not in columns:
+                            trigs.add_column(trigs['fend'] - trigs['fstart'],
+                                             name='bandwidth')
+                        if 'central_freq' not in columns:
+                            trigs.add_column(
+                                0.5*(trigs['fstart'] + trigs['fend']),
+                                name='central_freq')
+                    if ('tstart' in columns and
+                            'tend' in columns and
+                            'duration' not in columns):
+                        trigs.add_column(trigs['tend'] - trigs['tstart'],
+                                         name='duration')
+
                 # record triggers
                 if trigs is not None:
                     # add metadata
@@ -260,6 +278,14 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
                 raise KeyError
             TableClass = get_etg_table(etg)
         except KeyError:  # build simple table
+            if 'fstart' in columns and 'fend' in columns:
+                for colval in ['bandwidth', 'central_freq']:
+                    if colval not in columns:
+                        columns.extend(colval)
+            if ('tstart' in columns and
+                    'tend' in columns and
+                    'duration' not in columns):
+                columns.extend('duration')
             tab = EventTable(names=columns)
         else:  # map to LIGO_LW table with full column listing
             tab = EventTable(lsctables.New(TableClass))

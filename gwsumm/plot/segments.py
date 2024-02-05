@@ -32,7 +32,7 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
-from matplotlib.colors import (rgb2hex, is_color_like)
+from matplotlib.colors import (rgb2hex, is_color_like, TABLEAU_COLORS)
 from matplotlib.patches import Rectangle
 
 from glue import iterutils
@@ -1399,12 +1399,6 @@ class NetworkDutyBarPlot(SegmentBarPlot):
         6: 'sextuple',
     }
     NETWORK_COLOR = GW_OBSERVATORY_COLORS.copy()
-    NETWORK_COLOR.update({
-        'H1L1V1': '#33ff55',
-        'H1L1': '#000000',
-        'L1V1': '#ff33dd',
-        'H1V1': '#ffbb33',
-    })
     defaults = SegmentBarPlot.defaults.copy()
     # remove SegmentBarPlot default colors as they overwrite
     # the ones defined later.
@@ -1435,6 +1429,7 @@ class NetworkDutyBarPlot(SegmentBarPlot):
         networkflags = []
         colors = []
         labels = []
+        color_id = 0
         for network, values in networks.items():
             i = values[0]
             ifoset = values[1]
@@ -1465,8 +1460,12 @@ class NetworkDutyBarPlot(SegmentBarPlot):
             if self.NETWORK_COLOR.get(combined_flag) is not None:
                 colors.append(self.NETWORK_COLOR.get(combined_flag))
             else:
-                # select a random color when it is not defined
-                colors.append(numpy.random.rand(3,))
+                # if color is not defined, use standard matplotlib colors
+                colors.append(list(TABLEAU_COLORS.values())[color_id])
+                if color_id < len(TABLEAU_COLORS) - 1:
+                    color_id += 1
+                else:
+                    color_id = 0
 
         self.pargs.setdefault('colors', colors)
         self.pargs.setdefault('edgecolor', colors)

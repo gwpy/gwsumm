@@ -212,7 +212,41 @@ class DataPlot(SummaryPlot):
     #: plot() call style
     _single_call = False
     #: dict of default plotting kwargs
-    defaults = {}
+    defaults = {
+        'animation.convert_args': ['-layers', 'OptimizePlus'],
+        'axes.axisbelow': False,
+        'axes.edgecolor': 'gray',
+        'axes.formatter.limits': [-3, 4],
+        'axes.formatter.use_mathtext': True,
+        'axes.grid': True,
+        'axes.labelpad': 5.0,
+        'axes.labelsize': 18.0,
+        'axes.titlesize': 22.0,
+        'contour.algorithm': 'mpl2014',
+        'figure.figsize': [12.0, 6.0],
+        'figure.labelsize': 'large',
+        'figure.labelweight': 'normal',
+        'font.sans-serif': ['Roboto'],
+        'grid.alpha': 0.5,
+        'grid.linewidth': 0.5,
+        'legend.edgecolor': 'inherit',
+        'legend.fancybox': False,
+        'legend.fontsize': 10.0,
+        'legend.handlelength': 1.0,
+        'legend.numpoints': 2,
+        'mathtext.bf': 'Roboto',
+        'mathtext.cal': 'Calligraffiti',
+        'mathtext.fontset': 'custom',
+        'mathtext.it': 'Roboto:italic',
+        'mathtext.rm': 'Roboto',
+        'mathtext.sf': 'Roboto',
+        'mathtext.tt': 'Roboto Slab',
+        'savefig.transparent': True,
+        'svg.fonttype': 'none',
+        'text.parse_math': True,
+        'xtick.labelsize': 14.0,
+        'ytick.labelsize': 14.0,
+    }
     #: list of parameters parsed for `plot()` calls
     DRAW_PARAMS = list(putils.ARTIST_PARAMS)
 

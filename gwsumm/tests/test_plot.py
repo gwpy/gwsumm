@@ -250,7 +250,7 @@ class TestDataPlot(TestSummaryPlot):
         assert plot.channels == [get_channel('X1:TEST'),
                                  get_channel('Y1:TEST')]
         assert plot.pargs == {'marker': 'o'}
-        assert plot.rcParams == {'figure.figsize': (2, 1)}
+        assert plot.rcParams['figure.figsize'] == (2, 1)
 
         cp.set('plot', 'type', 'blah')
         with pytest.warns(UserWarning):

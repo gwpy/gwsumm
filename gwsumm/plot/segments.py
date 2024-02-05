@@ -1405,7 +1405,7 @@ class NetworkDutyBarPlot(SegmentBarPlot):
     defaults.pop('color')
     defaults.pop('edgecolor')
     defaults.update({
-        'title': 'Network duty factord sad adas ',
+        'title': 'Network duty factor',
         'ylabel': 'Duty factor [%]',
     })
 

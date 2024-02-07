@@ -718,7 +718,7 @@ class TimeSeriesHistogramPlot(DataPlot):
                 # use xlim if manually set (user or INI)
                 xlim=None if ax.get_autoscalex_on() else ax.get_xlim(),
             )
-            
+
             # plot histogram
             _, _, patches = ax.hist(arr, **pargs)
 
@@ -759,20 +759,20 @@ class TimeSeriesHistogramPlot(DataPlot):
 
     def _get_range(self, data, range=None, xlim=None):
         if range is not None:
-                if range == 'autoscaling':
-                    return None
-                else:
-                    range = list(range)
-                    try:
-                        if range[0] == 'min':
-                            range[0] = numpy.min(data)
-                        if range[1] == 'max':
-                            range[1] = numpy.max(data)
-                        if range[0] < range[1]:
-                            return range
-                    except (ValueError, IndexError) as exc:
-                        if not str(exc).startswith('zero-size array'):
-                            raise
+            if range == 'autoscaling':
+                return None
+            else:
+                range = list(range)
+                try:
+                    if range[0] == 'min':
+                        range[0] = numpy.min(data)
+                    if range[1] == 'max':
+                        range[1] = numpy.max(data)
+                    if range[0] < range[1]:
+                        return range
+                except (ValueError, IndexError) as exc:
+                    if not str(exc).startswith('zero-size array'):
+                        raise
         if xlim is not None:
             return xlim
         try:

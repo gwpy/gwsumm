@@ -710,30 +710,15 @@ class TimeSeriesHistogramPlot(DataPlot):
 
         # plot
         for ax, arr, pargs in zip(cycle(axes), data, histargs):
-            # set range if not given
-            if pargs.get('range') is None:
-                pargs['range'] = self._get_range(
-                    data,
-                    # use range from first dataset if already calculated
-                    range=histargs[0].get('range'),
-                    # use xlim if manually set (user or INI)
-                    xlim=None if ax.get_autoscalex_on() else ax.get_xlim(),
-                )
-
-            # Add the option to enable autoscaling
-            if pargs.get('range') == 'autoscaling':
-                pargs['range'] = None
-            if arr.size:
-                # Add option to set the minimum range based on the data
-                if pargs.get('range')[0] == 'min':
-                    pargs['range'] = (arr.min().value, pargs['range'][1])
-                # Add option to set the maximum range based on the data
-                if pargs.get('range')[1] == 'max':
-                    pargs['range'] = (pargs['range'][0], arr.max().value)
-            else:
-                # If arr is empty reset the range parameter
-                pargs['range'] = None
-
+            # set range
+            pargs['range'] = self._get_range(
+                data,
+                # use range from first dataset if already calculated
+                range=histargs[0].get('range'),
+                # use xlim if manually set (user or INI)
+                xlim=None if ax.get_autoscalex_on() else ax.get_xlim(),
+            )
+            
             # plot histogram
             _, _, patches = ax.hist(arr, **pargs)
 
@@ -773,8 +758,23 @@ class TimeSeriesHistogramPlot(DataPlot):
         return self.finalize(outputfile=outputfile)
 
     def _get_range(self, data, range=None, xlim=None):
-        if range is not None or xlim is not None:
-            return range or xlim
+        if range is not None:
+                if range == 'autoscaling':
+                    return None
+                else:
+                    range = list(range)
+                    try:
+                        if range[0] == 'min':
+                            range[0] = numpy.min(data)
+                        if range[1] == 'max':
+                            range[1] = numpy.max(data)
+                        if range[0] < range[1]:
+                            return range
+                    except (ValueError, IndexError) as exc:
+                        if not str(exc).startswith('zero-size array'):
+                            raise
+        if xlim is not None:
+            return xlim
         try:
             return numpy.min(data), numpy.max(data)
         except ValueError as exc:

@@ -98,6 +98,7 @@ from .range import (
     RangeSpectrogramDataPlot,
     RangeSpectrumDataPlot,
     RangeCumulativeSpectrumDataPlot,
+    RangeCumulativeHistogramPlot,
     SimpleTimeVolumeDataPlot,
     GWpyTimeVolumeDataPlot,
 )

@@ -80,6 +80,7 @@ from .segments import (
     ODCDataPlot,
     SegmentPiePlot,
     NetworkDutyPiePlot,
+    NetworkDutyBarPlot,
     SegmentBarPlot,
     SegmentHistogramPlot,
 )

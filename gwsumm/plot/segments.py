@@ -32,7 +32,7 @@ from dateutil.relativedelta import relativedelta
 
 from matplotlib import rcParams
 from matplotlib.artist import setp
-from matplotlib.colors import (rgb2hex, is_color_like)
+from matplotlib.colors import (rgb2hex, is_color_like, TABLEAU_COLORS)
 from matplotlib.patches import Rectangle
 
 from glue import iterutils
@@ -1286,7 +1286,6 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
         'color': GREEN,
         'edgecolor': 'green',
         'alpha': .6,
-        'align': 'edge',  # FIXME, updated for mpl 2.0, can simplify code
     }
     SCALE_UNIT = {
         None: 'seconds',
@@ -1297,17 +1296,24 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
     }
 
     def draw(self, outputfile=None):
+        # Check if ylabel has been previously defined
+        # to avoid overwriting it
+        if 'ylabel' in self.pargs:
+            set_ylabel = False
+        else:
+            set_ylabel = True
+
         plot = self.init_plot(projection='rectilinear')
         ax = plot.gca()
 
         if self.state:
             self.pargs.setdefault(
                 'suptitle',
-                '[%s-%s, state: %s]' % (self.span[0], self.span[1],
-                                        texify(str(self.state))))
+                f'[{self.span[0]}-{self.span[1]},'
+                f'state: {texify(str(self.state))}]')
         else:
             self.pargs.setdefault(
-                'suptitle', '[%s-%s]' % (self.span[0], self.span[1]))
+                'suptitle', f'[{self.span[0]}-{self.span[1]}]')
         suptitle = self.pargs.pop('suptitle', None)
         if suptitle:
             plot.suptitle(suptitle, y=0.993, va='top')
@@ -1317,11 +1323,13 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
             self.pargs.setdefault('ylim', (0, 100))
         elif isinstance(scale, (int, float)):
             self.pargs.setdefault('ylim', (0, abs(self.span) / scale))
-        try:
-            self.pargs.setdefault('ylabel', 'Livetime [%s]'
-                                  % self.SCALE_UNIT[scale])
-        except KeyError:
-            self.pargs.setdefault('ylabel', 'Livetime')
+
+        if set_ylabel:
+            try:
+                self.pargs.setdefault('ylabel',
+                                      f'Livetime [{self.SCALE_UNIT[scale]}]')
+            except KeyError:
+                self.pargs.setdefault('ylabel', 'Livetime')
 
         # extract plotting arguments
         sort = self.pargs.pop('sorted', False)
@@ -1352,7 +1360,7 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
 
         # make bar chart
         width = plotargs.pop('width', .8)
-        x = numpy.arange(len(data)) - width/2.
+        x = numpy.arange(len(data))
         ax.bar(x, data, width=width, **plotargs)
 
         # set labels
@@ -1374,6 +1382,105 @@ class SegmentBarPlot(BarPlot, SegmentDataPlot):
 
 
 register_plot(SegmentBarPlot)
+
+
+class NetworkDutyBarPlot(SegmentBarPlot):
+
+    """Special case of the `SegmentPiePlot` for network duty factors.
+    """
+    type = 'network-duty-segment-bar'
+    NETWORK_NAME = {
+        0: 'no',
+        1: 'single',
+        2: 'double',
+        3: 'triple',
+        4: 'quadruple',
+        5: 'quintuple',
+        6: 'sextuple',
+    }
+    NETWORK_COLOR = GW_OBSERVATORY_COLORS.copy()
+    defaults = SegmentBarPlot.defaults.copy()
+    # remove SegmentBarPlot default colors as they overwrite
+    # the ones defined later.
+    defaults.pop('color')
+    defaults.pop('edgecolor')
+    defaults.update({
+        'title': 'Network duty factor',
+        'ylabel': 'Duty factor [%]',
+    })
+
+    def draw(self):
+        # get segments
+        if self.state and not self.all_data:
+            valid = self.state.active
+        else:
+            valid = SegmentList([self.span])
+
+        # construct compound flags for each network size
+        flags = dict((f[:2], f) for f in self.flags)
+        # construct all possible network combinations
+        networks = {}
+        for size in range(1, len(flags) + 1):
+            ifocombs = combinations(sorted(set(flags)), size)
+            for ifocomb in ifocombs:
+                key = "".join(ifocomb)
+                networks[key] = (size, ifocomb)
+
+        networkflags = []
+        colors = []
+        labels = []
+        color_id = 0
+        for network, values in networks.items():
+            i = values[0]
+            ifoset = values[1]
+            name = self.NETWORK_NAME[i]
+            if i == 1:
+                # this avoid having a redundant X1:single
+                # in the Segment information table
+                flag = flags[network]
+
+            else:
+                flag = f'{network}:{name}'
+
+                networksegs = DataQualityFlag(flag, known=valid)
+                if not ifoset:
+                    compound = f"!{'!'.join(list(flags.values()))}"
+                else:
+                    compound = '&'.join(flags[ifo] for ifo in ifoset)
+
+                segs = get_segments(compound, validity=valid, query=False,
+                                    padding=self.padding).coalesce()
+                networksegs += segs
+                globalv.SEGMENTS[flag] = networksegs.copy()
+            combined_flag = flag.split(':')[0]
+            if flag.startswith(tuple(networks.keys())):
+                networkflags.append(flag)
+
+            labels.append(combined_flag)
+            if self.NETWORK_COLOR.get(combined_flag) is not None:
+                colors.append(self.NETWORK_COLOR.get(combined_flag))
+            else:
+                # if color is not defined, use standard matplotlib colors
+                colors.append(list(TABLEAU_COLORS.values())[color_id])
+                if color_id < len(TABLEAU_COLORS) - 1:
+                    color_id += 1
+                else:
+                    color_id = 0
+
+        self.pargs.setdefault('colors', colors)
+        self.pargs.setdefault('edgecolor', colors)
+        self.pargs.setdefault('labels', labels)
+
+        # reset flags and generate plot
+        flags_ = self.flags
+        outputfile = self.outputfile
+        self.flags = networkflags
+        out = super(NetworkDutyBarPlot, self).draw(outputfile=outputfile)
+        self.flags = flags_
+        return out
+
+
+register_plot(NetworkDutyBarPlot)
 
 
 class SegmentHistogramPlot(get_plot('histogram'), SegmentDataPlot):

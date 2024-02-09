@@ -153,6 +153,23 @@ class RangeDataHistogramPlot(RangePlotMixin, get_plot('histogram')):
 register_plot(RangeDataHistogramPlot)
 
 
+class RangeCumulativeHistogramPlot(RangePlotMixin, get_plot('histogram')):
+    type = 'range-cumulative-histogram'
+    defaults = get_plot('histogram').defaults.copy()
+    defaults.update(RangePlotMixin.defaults.copy())
+    defaults.update({
+        'xlabel': 'Angle-averaged range [Mpc]',
+        'ylabel': 'Cumulative time duration',
+        'log': False,
+        'cumulative': True,
+        'density': True,
+        'range': (1, 'max'),
+    })
+
+
+register_plot(RangeCumulativeHistogramPlot)
+
+
 class RangeSpectrogramDataPlot(RangePlotMixin, get_plot('spectrogram')):
     type = 'range-spectrogram'
     defaults = get_plot('spectrogram').defaults.copy()

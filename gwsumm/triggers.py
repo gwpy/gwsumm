@@ -281,11 +281,11 @@ def get_triggers(channel, etg, segments, config=GWSummConfigParser(),
             if 'fstart' in columns and 'fend' in columns:
                 for colval in ['bandwidth', 'central_freq']:
                     if colval not in columns:
-                        columns.extend(colval)
+                        columns.extend([colval])
             if ('tstart' in columns and
                     'tend' in columns and
                     'duration' not in columns):
-                columns.extend('duration')
+                columns.extend(['duration'])
             tab = EventTable(names=columns)
         else:  # map to LIGO_LW table with full column listing
             tab = EventTable(lsctables.New(TableClass))

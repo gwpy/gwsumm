@@ -52,6 +52,8 @@ GETENV_VARIABLES = [
     # address of NDS2 server
     "NDSSERVER",
     # -- software stuff
+    # Conda (to generate package list for HTML)
+    "CONDA_EXE",
     # GWpy customisations
     "GWPY*",
     # -- Auth handling

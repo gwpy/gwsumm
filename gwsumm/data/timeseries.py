@@ -554,7 +554,7 @@ def _get_timeseries_dict(channels, segments, config=None,
     if nds is None and cache is not None:
         nds = False
     elif nds is None:
-        nds = 'LIGO_DATAFIND_SERVER' not in os.environ
+        nds = 'GWDATAFIND_SERVER' not in os.environ
 
     # read new data
     query &= (abs(new) > 0)

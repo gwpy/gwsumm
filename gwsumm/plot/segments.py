@@ -35,7 +35,7 @@ from matplotlib.artist import setp
 from matplotlib.colors import (rgb2hex, is_color_like, TABLEAU_COLORS)
 from matplotlib.patches import Rectangle
 
-from glue import iterutils
+from lal import iterutils
 
 from gwpy.plot.colors import (GW_OBSERVATORY_COLORS, tint)
 from gwpy.plot.segments import SegmentRectangle

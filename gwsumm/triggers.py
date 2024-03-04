@@ -86,9 +86,9 @@ ETG_READ_KW = {
         'format': 'ascii',
     },
     'omicron': {
-        'format': 'ligolw',
-        'tablename': 'sngl_burst',
-        'use_numpy_dtypes': True,
+        'format': 'hdf5',
+        'path': '/triggers',
+        'trigfind-ext': 'h5',
     },
     'pycbc_live': {
         'format': 'hdf5.pycbc_live',

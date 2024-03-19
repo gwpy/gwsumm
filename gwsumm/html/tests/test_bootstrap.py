@@ -83,11 +83,11 @@ def test_state_switcher():
     assert parse_html(str(switcher)) == parse_html(
         '<ul class="nav navbar-nav">\n<li class="nav-item dropdown">\n'
         '<a class="nav-link dropdown-toggle" href="#" id="states" role='
-        '"button" title="Show/hide state menu" data-toggle="dropdown">Test</a>'
-        '\n<div class="dropdown-menu dropdown-menu-right state-switch shadow" '
-        'id="statemenu">\n<h6 class="dropdown-header">Select below to view '
-        'this page in another state (different time segments).</h6>\n<div '
-        'class="dropdown-divider"></div>\n<a class="dropdown-item state" '
+        '"button" title="Show/hide state menu" data-bs-toggle="dropdown">Test'
+        '</a>\n<div class="dropdown-menu dropdown-menu-right state-switch '
+        'shadow" id="statemenu">\n<h6 class="dropdown-header">Select below to '
+        'view this page in another state (different time segments).</h6>\n'
+        '<div class="dropdown-divider"></div>\n<a class="dropdown-item state" '
         'title="Test" id="state_test" onclick="jQuery(this).load_state'
         '(&quot;#test&quot;);">Test</a>\n</div>\n</li>\n</ul>')
 
@@ -102,6 +102,6 @@ def test_base_map_dropdown():
     assert parse_html(str(menu_wbases)) == parse_html(
         '<div class="dropdown base-map">\n<a href="#" class="navbar-brand '
         'nav-link border border-white rounded dropdown-toggle" role="button" '
-        'data-toggle="dropdown">test</a>\n<div class="dropdown-menu '
+        'data-bs-toggle="dropdown">test</a>\n<div class="dropdown-menu '
         'dropdown-1-col shadow">\n<a title="key" class="dropdown-item" '
         'data-new-base="value">key</a>\n</div>\n</div>')

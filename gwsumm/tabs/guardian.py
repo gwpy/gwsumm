@@ -293,7 +293,7 @@ class GuardianTab(DataTab):
             page.div(class_='card-header text-white bg-info')
             page.a('%s [%d]' % (name, bit), href='#collapse-%d' % bit,
                    class_='card-link cis-link collapsed',
-                   **{'data-toggle': 'collapse', 'aria-expandedt': 'false'})
+                   **{'data-bs-toggle': 'collapse', 'aria-expanded': 'false'})
             page.div.close()  # card-header
 
             # body

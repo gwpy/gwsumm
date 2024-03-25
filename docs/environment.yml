@@ -28,6 +28,6 @@ dependencies:
   # docs
   - numpydoc
   - sphinx
-  - sphinx-automodapi
+  - sphinx-automodapi !=0.17.0
   - sphinx_bootstrap_theme
   - sphinxcontrib-programoutput

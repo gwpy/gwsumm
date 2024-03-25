@@ -786,7 +786,7 @@ class DataTab(ProcessedTab, ParentTab):
                 page.div(class_='card border-info mb-1 shadow-sm')
                 page.div(class_='card-header text-white bg-info')
                 page.a(flag.name, class_='card-link cis-link collapsed',
-                       href='#flag%d' % i, **{'data-toggle': 'collapse',
+                       href='#flag%d' % i, **{'data-bs-toggle': 'collapse',
                                               'aria-expanded': 'false'})
                 page.div.close()  # card-header
                 page.div(id_='flag%d' % i, class_='collapse',

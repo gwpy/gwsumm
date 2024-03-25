@@ -150,7 +150,7 @@ def state_switcher(states, default=0):
     page.li(class_='nav-item dropdown')
     page.a(str(current), class_='nav-link dropdown-toggle', href='#',
            id_='states', role='button', title='Show/hide state menu',
-           **{'data-toggle': 'dropdown'})
+           **{'data-bs-toggle': 'dropdown'})
     page.div(
         class_='dropdown-menu dropdown-menu-right state-switch shadow',
         id_='statemenu',

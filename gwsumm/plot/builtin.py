@@ -527,7 +527,8 @@ class SpectrumDataPlot(DataPlot):
             else:
                 try:
                     data = get_spectrum(str(channel), valid, query=False,
-                                        format=sdform, method=method)
+                                        format=sdform, method=method,
+                                        state=valid)
                 except ValueError as exc:
                     # math op failed beacuse one of the datasets is empty
                     if (

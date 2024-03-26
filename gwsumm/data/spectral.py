@@ -328,8 +328,8 @@ def apply_transfer_function_series(specgram, tfunc):
 def get_spectrum(channel, segments, config=None, cache=None,
                  query=True, nds=None, format='power', return_=True,
                  frametype=None, nproc=1, datafind_error='raise',
-                 **fftparams):
-    """Retrieve the time-series and generate a spectrogram of the given
+                 state=None, **fftparams):
+    """Retrieve the time-series and generate a spectrum of the given
     channel
     """
     channel = get_channel(channel)
@@ -338,7 +338,7 @@ def get_spectrum(channel, segments, config=None, cache=None,
         segments = segments.active
     else:
         name = channel.ndsname
-    name += ',%s' % format
+    name += f',{format}'
 
     # read data for all sub-channels
     specs = []
@@ -351,6 +351,7 @@ def get_spectrum(channel, segments, config=None, cache=None,
                                    return_=return_, frametype=frametype,
                                    nproc=nproc,
                                    datafind_error=datafind_error,
+                                   state=state,
                                    **fftparams))
     if return_ and len(channels) == 1:
         return specs[0]
@@ -363,8 +364,8 @@ def get_spectrum(channel, segments, config=None, cache=None,
 
 def _get_spectrum(channel, segments, config=None, cache=None, query=True,
                   nds=None, format='power', return_=True, which='all',
-                  **fftparams):
-    """Retrieve the time-series and generate a spectrogram of the given
+                  state=None, **fftparams):
+    """Retrieve the time-series and generate a spectrum of the given
     channel
     """
     channel = get_channel(channel)
@@ -373,9 +374,9 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
         segments = segments.active
     else:
         name = channel.ndsname
-    name += ',%s' % format
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
+    name += f',{format},{state}'
+    cmin = f'{name}.min'
+    cmax = f'{name}.max'
 
     if name not in globalv.SPECTRUM:
         if os.path.isfile(channel.ndsname):
@@ -424,4 +425,4 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
         return globalv.SPECTRUM[cmin]
     if which == 'max':
         return globalv.SPECTRUM[cmax]
-    raise ValueError("Unrecognised value for `which`: %r" % which)
+    raise ValueError(f"Unrecognised value for `which`: {which}")

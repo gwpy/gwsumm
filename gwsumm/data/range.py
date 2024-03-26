@@ -125,13 +125,13 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
 def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
                        nds=None, return_=True, nproc=1, datafind_error='raise',
                        frametype=None, stride=60, fftlength=None, overlap=None,
-                       method=None, which='all', **rangekwargs):
+                       method=None, which='all', state=None, **rangekwargs):
     """Compute percentile spectra of the range integrand from a set of
     spectrograms
     """
-    name = str(channel)
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
+    name = str(channel) + f',{state}'
+    cmin = f'{name}.min'
+    cmax = f'{name}.max'
 
     if name not in globalv.SPECTRUM:
         speclist = get_range_spectrogram(
@@ -164,4 +164,4 @@ def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
         return globalv.SPECTRUM[cmin]
     if which == 'max':
         return globalv.SPECTRUM[cmax]
-    raise ValueError("Unrecognised value for `which`: %r" % which)
+    raise ValueError(f"Unrecognised value for `which`: {which}")

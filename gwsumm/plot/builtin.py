@@ -512,10 +512,11 @@ class SpectrumDataPlot(DataPlot):
                 data = get_coherence_spectrum(
                     [str(channel), str(channel2)], valid, query=False)
             elif self.type == 'range-spectrum':
-                data = get_range_spectrum(str(channel), valid, query=False)
+                data = get_range_spectrum(str(channel), valid, query=False,
+                                          state=valid)
             elif self.type == 'cumulative-range-spectrum':
-                data = get_range_spectrum(
-                    str(channel), valid, query=False, which='mean')
+                data = get_range_spectrum(str(channel), valid, query=False,
+                                          which='mean', state=valid)
                 if str(data.unit) == 'Mpc':
                     data = (data**3).cumsum() ** (1/3.)
                 else:

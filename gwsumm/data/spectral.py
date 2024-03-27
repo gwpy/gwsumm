@@ -333,12 +333,6 @@ def get_spectrum(channel, segments, config=None, cache=None,
     channel
     """
     channel = get_channel(channel)
-    if isinstance(segments, DataQualityFlag):
-        name = ','.join([channel.ndsname, segments.name])
-        segments = segments.active
-    else:
-        name = channel.ndsname
-    name += f',{format}'
 
     # read data for all sub-channels
     specs = []
@@ -369,12 +363,8 @@ def _get_spectrum(channel, segments, config=None, cache=None, query=True,
     channel
     """
     channel = get_channel(channel)
-    if isinstance(segments, DataQualityFlag):
-        name = ','.join([channel.ndsname, segments.name])
-        segments = segments.active
-    else:
-        name = channel.ndsname
-    name += f',{format},{state}'
+
+    name = f'{channel.ndsname},{state},{format}'
     cmin = f'{name}.min'
     cmax = f'{name}.max'
 

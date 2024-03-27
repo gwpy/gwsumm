@@ -152,7 +152,7 @@ def state_switcher(states, default=0):
            id_='states', role='button', title='Show/hide state menu',
            **{'data-bs-toggle': 'dropdown'})
     page.div(
-        class_='dropdown-menu dropdown-menu-right state-switch shadow',
+        class_='dropdown-menu dropdown-menu-end state-switch shadow',
         id_='statemenu',
     )
     page.h6('Select below to view this page in another state (different '

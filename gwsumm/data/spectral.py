@@ -34,7 +34,6 @@ from scipy import interpolate
 
 from astropy import units
 
-from gwpy.segments import DataQualityFlag
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 

@@ -117,7 +117,6 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
             add_spectrogram(outspec if 'energy' in rangekwargs else
                             outspec**(1/2.), key=key)
 
-
     if not return_:
         return
 

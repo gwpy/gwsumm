@@ -327,7 +327,7 @@ def apply_transfer_function_series(specgram, tfunc):
 def get_spectrum(channel, segments, config=None, cache=None,
                  query=True, nds=None, format='power', return_=True,
                  frametype=None, nproc=1, datafind_error='raise',
-                 state='', **fftparams):
+                 state=None, **fftparams):
     """Retrieve the time-series and generate a spectrum of the given
     channel
     """
@@ -357,13 +357,15 @@ def get_spectrum(channel, segments, config=None, cache=None,
 
 def _get_spectrum(channel, segments, config=None, cache=None, query=True,
                   nds=None, format='power', return_=True, which='all',
-                  state='', **fftparams):
+                  state=None, **fftparams):
     """Retrieve the time-series and generate a spectrum of the given
     channel
     """
     channel = get_channel(channel)
 
-    name = f'{channel.ndsname},{state},{format}'
+    name = f'{channel.ndsname},{format}'
+    if state:
+        name = f'{channel.ndsname},{state},{format}'
     cmin = f'{name}.min'
     cmax = f'{name}.max'
 

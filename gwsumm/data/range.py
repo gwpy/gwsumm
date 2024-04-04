@@ -139,11 +139,13 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
 def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
                        nds=None, return_=True, nproc=1, datafind_error='raise',
                        frametype=None, stride=60, fftlength=None, overlap=None,
-                       method=None, which='all', state='', **rangekwargs):
+                       method=None, which='all', state=None, **rangekwargs):
     """Compute percentile spectra of the range integrand from a set of
     spectrograms
     """
-    name = str(channel) + f',{state}'
+    name = str(channel)
+    if state:
+        name += f',{state}'
     cmin = f'{name}.min'
     cmax = f'{name}.max'
 

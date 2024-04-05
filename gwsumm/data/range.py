@@ -117,21 +117,37 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
             add_spectrogram(outspec if 'energy' in rangekwargs else
                             outspec**(1/2.), key=key)
 
-    if return_:
-        return globalv.SPECTROGRAMS.get(key, SpectrogramList())
+    if not return_:
+        return
+
+    # return correct data, according to state segment
+    out = SpectrogramList()
+    for specgram in globalv.SPECTROGRAMS[key]:
+        for seg in segments:
+            if abs(seg) < specgram.dt.value:
+                continue
+            if specgram.span.intersects(seg):
+                common = specgram.span & type(seg)(seg[0],
+                                                   seg[1] + specgram.dt.value)
+                s = specgram.crop(*common)
+                if s.shape[0]:
+                    out.append(s)
+    return out.coalesce()
 
 
 @use_segmentlist
 def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
                        nds=None, return_=True, nproc=1, datafind_error='raise',
                        frametype=None, stride=60, fftlength=None, overlap=None,
-                       method=None, which='all', **rangekwargs):
+                       method=None, which='all', state=None, **rangekwargs):
     """Compute percentile spectra of the range integrand from a set of
     spectrograms
     """
     name = str(channel)
-    cmin = '%s.min' % name
-    cmax = '%s.max' % name
+    if state:
+        name += f',{state}'
+    cmin = f'{name}.min'
+    cmax = f'{name}.max'
 
     if name not in globalv.SPECTRUM:
         speclist = get_range_spectrogram(
@@ -164,4 +180,4 @@ def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
         return globalv.SPECTRUM[cmin]
     if which == 'max':
         return globalv.SPECTRUM[cmax]
-    raise ValueError("Unrecognised value for `which`: %r" % which)
+    raise ValueError(f"Unrecognised value for `which`: {which}")

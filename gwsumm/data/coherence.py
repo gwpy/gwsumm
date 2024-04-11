@@ -134,6 +134,19 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     for ck in ckeys:
         globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
 
+    # check if coherence componnents have the same segments
+    # if not, restart coherence components and its corresponding
+    # spectrogram to avoid incompatible shape ValueError traceback
+    coherence_segs = [globalv.COHERENCE_COMPONENTS.get(ck, SpectrogramList()).segments for ck in ckeys]
+    if not all(span == coherence_segs[0] for span in coherence_segs):
+        warnings.warn(f"archived {key} coherence components have different segments, removing current data...")
+        globalv.SPECTROGRAMS.update({key: SpectrogramList()})
+        globalv.COHERENCE_COMPONENTS.update({ck: SpectrogramList() for ck in ckeys})
+
+
+    # check how much of this component still needs to be calculated
+    req = new - min(coherence_segs)
+
     # get data if query=True or if there are new segments
     query &= abs(new) != 0
 
@@ -142,23 +155,19 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         # the intersecting segments will be calculated when needed
         intersection = None
 
+        try:
+            filter_ = channel1.frequency_response
+        except AttributeError:
+            filter_ = None
+        else:
+            if isinstance(filter_, str):
+                filter_ = safe_eval(filter_, strict=True)
+
         # loop over components needed to calculate coherence
         for comp in components:
 
             # key used to store this component in globalv (incl sample rate)
             ckey = ckeys[components.index(comp)]
-
-            try:
-                filter_ = channel1.frequency_response
-            except AttributeError:
-                filter_ = None
-            else:
-                if isinstance(filter_, str):
-                    filter_ = safe_eval(filter_, strict=True)
-
-            # check how much of this component still needs to be calculated
-            req = new - globalv.COHERENCE_COMPONENTS.get(
-                            ckey, SpectrogramList()).segments
 
             # get data if there are new segments
             if abs(req) != 0:

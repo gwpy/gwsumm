@@ -131,21 +131,37 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         sampling = None
 
     # initialize component lists if they don't exist yet
+    # store compnents in a backup variable
+    coherence_bkp = {}
     for ck in ckeys:
         globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
+        coherence_bkp[ck] = globalv.COHERENCE_COMPONENTS[ck]
 
-    # check if coherence componnents have the same segments
-    # if not, restart coherence components and its corresponding
-    # spectrogram to avoid incompatible shape ValueError traceback
-    coherence_segs = [globalv.COHERENCE_COMPONENTS.get(ck, SpectrogramList()).segments for ck in ckeys]
-    if not all(span == coherence_segs[0] for span in coherence_segs):
-        warnings.warn(f"archived {key} coherence components have different segments, removing current data...")
-        globalv.SPECTROGRAMS.update({key: SpectrogramList()})
-        globalv.COHERENCE_COMPONENTS.update({ck: SpectrogramList() for ck in ckeys})
+    # When coherence components contain different segments, 
+    # computing coherence for new segments can result in a 
+    # ValueError traceback due to incompatible shapes.
+    # To prevent this issue, we collect segments from all components,
+    # clear them from the global variable, and then restore from the
+    # coherence_bkp only the data that the segments available in
+    # coherence all components.
 
+    # get the segment spans from all components
+    spans = [SegmentList([
+        spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
+    ]) for ck in ckeys]
+    # keep only the intersection of the segments
+    spans = reduce(operator.and_, spans).coalesce()
+    # clean the components in the global variable
+    globalv.COHERENCE_COMPONENTS.update({ck: SpectrogramList() for ck in ckeys})
 
-    # check how much of this component still needs to be calculated
-    req = new - min(coherence_segs)
+    # restore the data for segments available in all components
+    for seg in spans:
+        for ck in ckeys:
+            spec = _get_from_list(coherence_bkp[ck], seg)
+            add_coherence_component_spectrogram(spec, key=ck)
+
+    # explicitly delete the backup variable to decrease RAM consuption
+    del coherence_bkp
 
     # get data if query=True or if there are new segments
     query &= abs(new) != 0
@@ -155,16 +171,23 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         # the intersecting segments will be calculated when needed
         intersection = None
 
-        try:
-            filter_ = channel1.frequency_response
-        except AttributeError:
-            filter_ = None
-        else:
-            if isinstance(filter_, str):
-                filter_ = safe_eval(filter_, strict=True)
-
         # loop over components needed to calculate coherence
         for comp in components:
+
+            # key used to store this component in globalv (incl sample rate)
+            ckey = ckeys[components.index(comp)]
+
+            try:
+                filter_ = channel1.frequency_response
+            except AttributeError:
+                filter_ = None
+            else:
+                if isinstance(filter_, str):
+                    filter_ = safe_eval(filter_, strict=True)
+
+            # check how much of this component still needs to be calculated
+            req = new - globalv.COHERENCE_COMPONENTS.get(
+                            ckey, SpectrogramList()).segments
 
             # key used to store this component in globalv (incl sample rate)
             ckey = ckeys[components.index(comp)]

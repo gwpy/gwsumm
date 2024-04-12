@@ -137,8 +137,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
         coherence_bkp[ck] = globalv.COHERENCE_COMPONENTS[ck]
 
-    # When coherence components contain different segments, 
-    # computing coherence for new segments can result in a 
+    # When coherence components contain different segments,
+    # computing coherence for new segments can result in a
     # ValueError traceback due to incompatible shapes.
     # To prevent this issue, we collect segments from all components,
     # clear them from the global variable, and then restore from the
@@ -152,7 +152,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     # keep only the intersection of the segments
     spans = reduce(operator.and_, spans).coalesce()
     # clean the components in the global variable
-    globalv.COHERENCE_COMPONENTS.update({ck: SpectrogramList() for ck in ckeys})
+    globalv.COHERENCE_COMPONENTS.update(
+        {ck: SpectrogramList() for ck in ckeys})
 
     # restore the data for segments available in all components
     for seg in spans:

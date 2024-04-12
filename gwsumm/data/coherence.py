@@ -189,9 +189,6 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             req = new - globalv.COHERENCE_COMPONENTS.get(
                             ckey, SpectrogramList()).segments
 
-            # key used to store this component in globalv (incl sample rate)
-            ckey = ckeys[components.index(comp)]
-
             # get data if there are new segments
             if abs(req) != 0:
 

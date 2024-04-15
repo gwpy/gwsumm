@@ -139,7 +139,6 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
     return out.coalesce()
 
 
-
 @use_segmentlist
 def get_range_spectrum(channel, segments, config=None, cache=None, query=True,
                        nds=None, return_=True, nproc=1, datafind_error='raise',

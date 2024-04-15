@@ -128,8 +128,8 @@ def get_range_spectrogram(channel, segments, config=None, cache=None,
                 if abs(seg) < specgram.dt.value:
                     continue
                 if specgram.span.intersects(seg):
-                    common = specgram.span & type(seg)(seg[0],
-                                                    seg[1] + specgram.dt.value)
+                    common = specgram.span & type(seg)(
+                        seg[0], seg[1] + specgram.dt.value)
                     s = specgram.crop(*common)
                     if s.shape[0]:
                         out.append(s)

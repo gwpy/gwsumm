@@ -29,7 +29,7 @@ import numpy
 
 from astropy import units
 
-from gwpy.segments import (DataQualityFlag, SegmentList, 
+from gwpy.segments import (DataQualityFlag, SegmentList,
                            Segment, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList

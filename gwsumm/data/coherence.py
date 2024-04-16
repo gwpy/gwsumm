@@ -29,7 +29,7 @@ import numpy
 
 from astropy import units
 
-from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
+from gwpy.segments import (DataQualityFlag, SegmentList, Segment, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
@@ -135,7 +135,7 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     coherence_bkp = {}
     for ck in ckeys:
         globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
-        coherence_bkp[ck] = globalv.COHERENCE_COMPONENTS[ck]
+        coherence_bkp[ck] = globalv.COHERENCE_COMPONENTS.get(ck, SpectrogramList())
 
     # When coherence components contain different segments,
     # computing coherence for new segments can result in a
@@ -146,11 +146,12 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
     # coherence all components.
 
     # get the segment spans from all components
-    spans = [SegmentList([
-        spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]
-    ]) for ck in ckeys]
+    spans = SegmentListDict()
+    for ck in ckeys:
+        spans[ck] = SegmentList([spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]])
     # keep only the intersection of the segments
-    spans = reduce(operator.and_, spans).coalesce()
+    spans = spans.intersection(list(ckeys))
+
     # clean the components in the global variable
     globalv.COHERENCE_COMPONENTS.update(
         {ck: SpectrogramList() for ck in ckeys})

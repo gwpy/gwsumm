@@ -302,18 +302,48 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
 def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
     """Find the daily archives spanning the given GPS [start, end) interval
+
+    Parameters
+    ----------
+    start : `float`, `~datetime.datetime`, `~astropy.time.Time`, `str`
+        start time of the archive file to find, any object that can be
+        converted into a `LIGOTimeGPS`, `~astropy.time.Time`, or
+        `~datetime.datetime` is acceptable
+    end : `float`, `~datetime.datetime`, `~astropy.time.Time`, `str`
+        end time of the archive file to find, any object that can be
+        converted into a `LIGOTimeGPS`, `~astropy.time.Time`, or
+        `~datetime.datetime` is acceptable
+    ifo : `str`
+        interferometer string, ex. 'H1'
+    tag : `str`
+        tag string for the archive file
+    basedir : `path-like`, optional
+        base path to archive files, default: '.'
+
+    Returns
+    -------
+    archives : `list`
+        list of matching archive files
+
+    Notes
+    -----
+    This will only search the day directories with the format `YYYYMMDD`
     """
     archives = []
+
+    # Convert start and end to properly formatted datetime objects
     s = from_gps(to_gps(start))
     e = from_gps(to_gps(end))
+
+    # append to the archives list as long as the iterating start time is
+    # earlier than the end time
     while s < e:
         daybase = mode.get_base(s, mode=mode.Mode.day)
         ds = to_gps(s)
         s += datetime.timedelta(days=1)
         de = to_gps(s)
         archivedir = os.path.join(basedir, daybase, 'archive')
-        arch = os.path.join(archivedir, '%s-%s-%d-%d.h5'
-                            % (ifo, tag, ds, de-ds))
+        arch = os.path.join(archivedir, f'{ifo}-{tag}-{ds}-{de-ds}.h5')
         if os.path.isfile(arch):
             archives.append(arch)
     return archives
@@ -323,6 +353,27 @@ def find_daily_archives(start, end, ifo, tag, basedir=os.curdir):
 
 def _write_object(data, *args, **kwargs):
     """Internal method to write something to HDF5 with error handling
+
+    Parameters
+    ----------
+    data : gwpy object
+        TimeSeries or FrequencySeries
+    args :
+        passed to underlying write method
+    kwargs :
+        passed to underlying write method
+
+    Warns
+    -----
+    TypeError
+    ValueError
+    RuntimeError
+        If the name already exists in the HDF5 file
+
+    Raises
+    ------
+    RuntimeError
+        Any error other than the object name already exists in the HDF5 file
     """
     try:
         return data.write(*args, **kwargs)
@@ -337,6 +388,16 @@ def _write_object(data, *args, **kwargs):
 
 def segments_to_array(segmentlist):
     """Convert a `SegmentList` to a 2-dimensional `numpy.ndarray`
+
+    Parameters
+    ----------
+    segmentlist : `~gwpy.segments.SegmentList`
+        input segment list to convert
+
+    Returns
+    -------
+    out : `float` `numpy.ndarray`
+        output segment list as a numpy array
     """
     out = ndarray((len(segmentlist), 2), dtype=float)
     for i, seg in enumerate(segmentlist):
@@ -346,6 +407,16 @@ def segments_to_array(segmentlist):
 
 def segments_from_array(array):
     """Convert a 2-dimensional `numpy.ndarray` to a `SegmentList`
+
+    Parameters
+    ----------
+    array : `float` `numpy.ndarray`
+        input numpy array to convert into a segment list
+
+    Returns
+    -------
+    out : `~gwpy.segments.SegmentList`
+        output segment list
     """
     out = SegmentList()
     for row in array:

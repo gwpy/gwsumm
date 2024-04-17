@@ -43,6 +43,18 @@ re_channel = re.compile(r'[A-Z]\d:[a-zA-Z0-9]+'  # core channel section L1:TEST
 # -- channel creation ---------------------------------------------------------
 
 def _match(channel):
+    """Find a matching channel in global memory variable
+
+    Parameters
+    ----------
+    channel : `str`, `~gwpy.detector.Channel`
+        name of a channel
+
+    Returns
+    -------
+    found : `Channel`
+        matching channel from global memory or an empty list
+    """
     channel = Channel(channel)
     name = str(channel)
     type_ = channel.type
@@ -69,22 +81,45 @@ def _find_parent(channel):
     This is either the raw channel from which a trend was generated, or the
     real channel for a mathematically-manipulated channel.
 
+    Parameters
+    ----------
+    channel : `~gwpy.detector.Channel`
+        trend channel or mathematically-manipulated channel
+
+    Returns
+    -------
+    parent_channel : `~gwpy.detector.Channel`
+        the raw channel from the trend or real channel from manipulated channel
+
     Raises
     ------
     ValueError
         if the parent cannot be parsed
     """
+    # If the channel is a trend, then get the part of the name before the dot
     if channel.trend:
         parent = str(channel).rsplit('.')[0]
     else:
         parent, = re_channel.findall(str(channel))
+    # If the parent and input channel are the same, then no parent is found
     if parent == str(channel):
-        raise ValueError("Cannot find parent for '{0!s}'".format(channel))
-    return get_channel(parent)
+        raise ValueError(f"Cannot find parent for '{str(channel)}'")
+    parent_channel = get_channel(parent)
+    return parent_channel
 
 
 def _update_dependent(channel):
     """Update a trend channel from its parent
+
+    TODO: what does this mean?
+
+    Parameters
+    ----------
+    channel : `~gwpy.detector.Channel`
+
+    Returns
+    -------
+    channel : `~gwpy.detector.Channel`
     """
     try:
         source = _find_parent(channel)
@@ -126,6 +161,22 @@ def _with_update_dependent(func):
 
 def _new(channel, find_parent=True):
     """Create a new `~gwpy.detector.Channel` in the globalv cache.
+
+    Parameters
+    ----------
+    channel : `str`, `~gwpy.detector.Channel`
+        channel string or object to create in the global memory
+    find_parent : `bool`, optional, default: `True`
+        query for raw version of trend channel (trends not in CIS)
+
+    Returns
+    -------
+    Channel : `~gwpy.detector.Channel`
+        newly created channel
+
+    Raises
+    ------
+    RuntimeError
     """
     # convert to Channel
     if isinstance(channel, Channel):
@@ -229,7 +280,19 @@ def get_channel(channel, find_parent=True, timeout=5):
 
 
 def get_channels(channels, **kwargs):
-    """Find (or create) multiple channels.
+    """Find (or create) multiple channels calling get_channel()
+
+    Parameters
+    ----------
+    channels : `list`
+        list of channels as `str` or `~gwpy.detector.Channel` objects
+    **kwargs
+        keyword arguments applied to each channel in the list
+
+    Returns
+    -------
+    ChannelList : `~gwpy.detector.ChannelList`
+        a list of channels
 
     See Also
     --------
@@ -252,6 +315,11 @@ def update_missing_channel_params(channel, **kwargs):
         channel to update
     **kwargs
         `(key, value)` pairs to set
+
+    Returns
+    -------
+    target : `~gwpy.detector.Channel`
+        the channel after updating parameters
     """
     target = get_channel(str(channel))
     if isinstance(channel, Channel):
@@ -292,6 +360,16 @@ def update_channel_params():
 def split(channelstring):
     """Split a comma-separated list of channels that may, or may not
     contain NDS2 channel types as well
+
+    Parameters
+    ----------
+    channelstring : `str`
+        comma-separated string of channels
+
+    Returns
+    -------
+    out : `list`
+        list of strings for each channel
     """
     out = []
     channelstring = re_quote.sub('', channelstring)
@@ -331,9 +409,13 @@ def split(channelstring):
 def split_combination(channelstring):
     """Split a math-combination of channels
 
+    Parameters
+    ----------
+    channelstring : `str`
+
     Returns
     -------
-    channels : `~gwpy.detector.ChannelList`
+    ChannelList : `~gwpy.detector.ChannelList`
     """
     return get_channels(re_channel.findall(str(channelstring)),
                         find_parent=False)

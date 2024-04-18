@@ -162,7 +162,7 @@ def state_switcher(states, default=0):
         page.a(str(state), class_='dropdown-item state', title=str(state),
                id_='state_%s' % re_cchar.sub('_', str(state)).lower(),
                onclick='jQuery(this).load_state(\'%s\');' % href)
-    page.div.close()  # dropdown-menu dropdown-menu-right
+    page.div.close()  # dropdown-menu dropdown-menu-end
     page.li.close()  # nav-item dropdown state-switch
     page.ul.close()  # nav navbar-nav
     return page

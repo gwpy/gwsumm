@@ -39,7 +39,7 @@ classifiers = [
 dependencies = [
   "astropy >=3.0.0",
   "gwdatafind >=1.1.1",
-  "gwdetchar >=2.2.4",
+  "gwdetchar >=2.2.5",
   "gwpy >=2.0.0",
   "gwtrigfind",
   "lalsuite",

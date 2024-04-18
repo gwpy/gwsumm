@@ -34,7 +34,7 @@ CSS = OrderedDict((
                      'font-awesome/6.5.1/css/fontawesome.min.css'),
     ('font-awesome-solid', 'https://cdnjs.cloudflare.com/ajax/libs/'
                            'font-awesome/6.5.1/css/solid.min.css'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.5/'
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.6/'
                     'lib/gwbootstrap.min.css'),
 ))
 
@@ -51,7 +51,7 @@ JS = OrderedDict((
     ('datepicker', 'https://cdnjs.cloudflare.com/ajax/libs/'
                    'bootstrap-datepicker/1.9.0/js/'
                    'bootstrap-datepicker.min.js'),
-    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.5/'
+    ('gwbootstrap', 'https://cdn.jsdelivr.net/npm/gwbootstrap@1.3.6/'
                     'lib/gwbootstrap-extra.min.js'),
 ))
 

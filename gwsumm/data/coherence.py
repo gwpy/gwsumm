@@ -29,7 +29,8 @@ import numpy
 
 from astropy import units
 
-from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
+from gwpy.segments import (DataQualityFlag, SegmentList,
+                           Segment, SegmentListDict)
 from gwpy.frequencyseries import FrequencySeries
 from gwpy.spectrogram import SpectrogramList
 
@@ -131,8 +132,41 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
         sampling = None
 
     # initialize component lists if they don't exist yet
+    # store compnents in a backup variable
+    coherence_bkp = {}
     for ck in ckeys:
         globalv.COHERENCE_COMPONENTS.setdefault(ck, SpectrogramList())
+        coherence_bkp[ck] = globalv.COHERENCE_COMPONENTS.get(
+            ck, SpectrogramList())
+
+    # When coherence components contain different segments,
+    # computing coherence for new segments can result in a
+    # ValueError traceback due to incompatible shapes.
+    # To prevent this issue, we collect segments from all components,
+    # clear them from the global variable, and then restore from the
+    # coherence_bkp only the data that the segments available in
+    # coherence all components.
+
+    # get the segment spans from all components
+    spans = SegmentListDict()
+    for ck in ckeys:
+        spans[ck] = SegmentList(
+            [spec.span for spec in globalv.COHERENCE_COMPONENTS[ck]])
+    # keep only the intersection of the segments
+    spans = spans.intersection(list(ckeys))
+
+    # clean the components in the global variable
+    globalv.COHERENCE_COMPONENTS.update(
+        {ck: SpectrogramList() for ck in ckeys})
+
+    # restore the data for segments available in all components
+    for seg in spans:
+        for ck in ckeys:
+            spec = _get_from_list(coherence_bkp[ck], seg)
+            add_coherence_component_spectrogram(spec, key=ck)
+
+    # explicitly delete the backup variable to decrease RAM consuption
+    del coherence_bkp
 
     # get data if query=True or if there are new segments
     query &= abs(new) != 0

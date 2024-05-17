@@ -289,6 +289,8 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             if not numpy.any(numpy.isnan(csg)):
                 globalv.SPECTROGRAMS[key].append(csg)
                 globalv.SPECTROGRAMS[key].coalesce()
+            else:
+                warnings.warn('NaN values found in the spectrogram, skipping...')
 
     if not return_:
         return

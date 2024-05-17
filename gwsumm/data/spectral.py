@@ -246,6 +246,8 @@ def add_spectrogram(specgram, key=None, coalesce=True):
         globalv.SPECTROGRAMS[key].append(specgram)
         if coalesce:
             globalv.SPECTROGRAMS[key].coalesce()
+    else:
+        warnings.warn('NaN values found in the spectrogram, skipping...')
 
 
 @use_segmentlist

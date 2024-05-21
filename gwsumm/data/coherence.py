@@ -290,7 +290,9 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
                 globalv.SPECTROGRAMS[key].append(csg)
                 globalv.SPECTROGRAMS[key].coalesce()
             else:
-                warnings.warn('NaN values found in the spectrogram.')
+                warnings.warn('NaN values found in the spectrogram.'
+                                         ' Spectrogram will not be appended to'
+                                         ' global memory value')
 
     if not return_:
         return

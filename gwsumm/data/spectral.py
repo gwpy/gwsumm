@@ -248,8 +248,8 @@ def add_spectrogram(specgram, key=None, coalesce=True):
             globalv.SPECTROGRAMS[key].coalesce()
     else:
         warnings.warn('NaN values found in the spectrogram.'
-                                 ' Spectrogram will not be appended to'
-                                 ' global memory value')
+                      ' Spectrogram will not be appended to'
+                      ' global memory value')
 
 
 @use_segmentlist

@@ -239,12 +239,17 @@ def _get_spectrogram(channel, segments, config=None, cache=None,
 def add_spectrogram(specgram, key=None, coalesce=True):
     """Add a `Spectrogram` to the global memory cache
     """
-    if key is None:
-        key = specgram.name or str(specgram.channel)
-    globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
-    globalv.SPECTROGRAMS[key].append(specgram)
-    if coalesce:
-        globalv.SPECTROGRAMS[key].coalesce()
+    if not numpy.any(numpy.isnan(specgram)):
+        if key is None:
+            key = specgram.name or str(specgram.channel)
+        globalv.SPECTROGRAMS.setdefault(key, SpectrogramList())
+        globalv.SPECTROGRAMS[key].append(specgram)
+        if coalesce:
+            globalv.SPECTROGRAMS[key].coalesce()
+    else:
+        warnings.warn('NaN values found in the spectrogram.'
+                      ' Spectrogram will not be appended to'
+                      ' global memory value')
 
 
 @use_segmentlist

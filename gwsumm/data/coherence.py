@@ -286,8 +286,13 @@ def _get_coherence_spectrogram(channel_pair, segments, config=None,
             cxy, cxx, cyy = [_get_from_list(
                 globalv.COHERENCE_COMPONENTS[ck], seg) for ck in ckeys]
             csg = abs(cxy)**2 / cxx / cyy
-            globalv.SPECTROGRAMS[key].append(csg)
-            globalv.SPECTROGRAMS[key].coalesce()
+            if not numpy.any(numpy.isnan(csg)):
+                globalv.SPECTROGRAMS[key].append(csg)
+                globalv.SPECTROGRAMS[key].coalesce()
+            else:
+                warnings.warn('NaN values found in the spectrogram.'
+                              ' Spectrogram will not be appended to'
+                              ' global memory value')
 
     if not return_:
         return

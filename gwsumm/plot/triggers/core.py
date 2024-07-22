@@ -296,7 +296,7 @@ class TriggerDataPlot(TriggerPlotMixin, TimeSeriesDataPlot):
             colstr = get_column_string(col)
             # format row value
             try:
-                valstr = f"{row[col]:.2f}".rstrip('.0')
+                valstr = f"{row[col]:.2f}".removesuffix('.00')
             except ValueError:  # not float()able
                 valstr = str(row[col])
             txt.append(f'{colstr} = {valstr}')

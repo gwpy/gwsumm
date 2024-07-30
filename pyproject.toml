@@ -40,7 +40,7 @@ dependencies = [
   "astropy >=3.0.0",
   "gwdatafind >=1.1.1",
   "gwdetchar >=2.2.7",
-  "gwpy >=2.0.0, <=3.0.8",
+  "gwpy >=3.0.9",
   "gwtrigfind",
   "lalsuite",
   "ligo-segments",
@@ -53,7 +53,7 @@ dependencies = [
   "pygments >=2.7.0",
   "python-dateutil",
   "python-ligo-lw",
-  "scipy >=1.2.0, <1.14",
+  "scipy >=1.2.0",
 ]
 
 dynamic = ["version"]

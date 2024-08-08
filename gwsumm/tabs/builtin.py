@@ -455,7 +455,7 @@ class PlotTab(Tab):
         k = i = 0
         fbkw.setdefault('rel', 'fancybox')
         fbkw.setdefault('target', '_blank')
-        fbkw.setdefault('data-fancybox', 'gallery')
+        fbkw.setdefault('data-fancybox', 'summary')
         fbkw.setdefault('data-fancybox-group', 'images')
 
         for j, plot in enumerate(plots):

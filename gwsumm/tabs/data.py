@@ -305,6 +305,7 @@ class DataTab(ProcessedTab, ParentTab):
                     if type_:
                         plot = PlotClass.from_ini(cp, pdef, start, end,
                                                   sources, state=state,
+                                                  statebar=job.statebar,
                                                   outdir=plotdir, **mods)
                     else:
                         plot = PlotClass(sources, start, end, state=state,
@@ -332,7 +333,7 @@ class DataTab(ProcessedTab, ParentTab):
         except ValueError:
             allstate = generate_all_state(self.start, self.end)
         allstate.fetch(config=config, segdb_error=segdb_error, **kwargs)
-        for state in self.states:
+        for state in self.states + [self.statebar]:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
 
     def process(self, config=ConfigParser(), nproc=1, **stateargs):
@@ -356,10 +357,9 @@ class DataTab(ProcessedTab, ParentTab):
             segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
-        vprint("States finalised [%d total]\n" % len(self.states))
-        for state in self.states:
-            vprint("    {0.name}: {1} segments | {2} seconds".format(
-                state, len(state.active), abs(state.active)))
+        vprint(f"States finalised [{len(self.states) + len([self.statebar])} total]\n" )
+        for state in self.states + [self.statebar]:
+            vprint(f"    {state.name}: {len(state.active)} segments | {abs(state.active)} seconds")
             if state is self.defaultstate:
                 vprint(" [DEFAULT]")
             vprint('\n')

@@ -41,7 +41,7 @@ from ..utils import re_cchar
 from ..data import (get_timeseries, get_spectrogram,
                     get_coherence_spectrogram, get_range_spectrogram,
                     get_spectrum, get_coherence_spectrum, get_range_spectrum)
-from ..state import ALLSTATE
+from ..state import (ALLSTATE, SummaryState)
 from .registry import (get_plot, register_plot)
 from .mixins import DataLabelSvgMixin
 
@@ -95,13 +95,23 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
             method.
         """
         # allow user to disable the state segments axes
+
+        state = self.state
+        # If the state is not set or is set to "All",
+        # update the state to match the statebar's state.
+        # This allows the statebar's state to be included
+        # as a segment in the time series plot.
+        if isinstance(self.statebar, SummaryState) and (
+            state is None or (state.name.lower() == ALLSTATE)):
+            state = self.statebar
+
         if self.pargs.pop('no-state-segments', False):
             visible = False
-        if visible is None and self.state is not None and (
-                self.state.name.lower() != ALLSTATE):
+        if visible is None and state is not None and (
+                state.name.lower() != ALLSTATE):
             visible = True
         if visible:
-            sax = self.plot.add_segments_bar(self.state, ax, height=.14,
+            sax = self.plot.add_segments_bar(state, ax, height=.14,
                                              pad=.1,  **kwargs)
             sax.tick_params(axis='y', which='major', labelsize=12)
             sax.yaxis.set_ticks_position('none')

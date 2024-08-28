@@ -287,11 +287,12 @@ class DataTab(ProcessedTab, ParentTab):
                 mods.setdefault('all-data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
-                                              state=None, outdir=plotdir,
-                                              **mods)
+                                              state=None, statebar=job.statebar,
+                                              outdir=plotdir, **mods)
                 else:
                     plot = PlotClass(sources, start, end, state=None,
-                                     outdir=plotdir, **mods)
+                                     statebar=job.statebar, outdir=plotdir,
+                                     **mods)
                 job.plots.append(plot)
                 if subidx == index:
                     for span in subplots:
@@ -309,7 +310,8 @@ class DataTab(ProcessedTab, ParentTab):
                                                   outdir=plotdir, **mods)
                     else:
                         plot = PlotClass(sources, start, end, state=state,
-                                         outdir=plotdir, **mods)
+                                         statebar=job.statebar, outdir=plotdir,
+                                         **mods)
                     job.plots.append(plot)
                     if subidx == index:
                         for span in subplots:

@@ -674,7 +674,7 @@ class StateTab(PlotTab):
 
     @statebar.setter
     def statebar(self, state):
-        if not isinstance(state, SummaryState):
+        if not isinstance(state, SummaryState) and state is not None:
             state = get_state(state)
         self._statebar = state
 

@@ -338,8 +338,9 @@ class DataTab(ProcessedTab, ParentTab):
         for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
         # finilize statebar
-        if self.statebar:
-            self.statebar.fetch(config=config, segdb_error=segdb_error, **kwargs)
+        if self.statebar is not None:
+            self.statebar.fetch(config=config, segdb_error=segdb_error,
+                                **kwargs)
 
 
     def process(self, config=ConfigParser(), nproc=1, **stateargs):
@@ -365,11 +366,15 @@ class DataTab(ProcessedTab, ParentTab):
             nproc=nproc, nds=stateargs.get('nds', None))
         vprint(f"States finalised [{len(self.states) + len([self.statebar])}"
                " total]\n")
-        for state in self.states + [self.statebar]:
+        for state in self.states:
             vprint(f"    {state.name}: {len(state.active)} segments"
-                   " | {abs(state.active)} seconds")
+                   f" | {abs(state.active)} seconds")
             if state is self.defaultstate:
                 vprint(" [DEFAULT]")
+            vprint('\n')
+        if self.statebar is not None:
+            vprint(f"    {self.statebar.name}: {len(self.statebar.active)}"
+                   f" segments | {abs(state.active)} seconds")
             vprint('\n')
 
         # pre-process requests for 'all-data' plots

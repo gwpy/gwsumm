@@ -335,8 +335,12 @@ class DataTab(ProcessedTab, ParentTab):
         except ValueError:
             allstate = generate_all_state(self.start, self.end)
         allstate.fetch(config=config, segdb_error=segdb_error, **kwargs)
-        for state in self.states + [self.statebar]:
+        for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
+        # finilize statebar
+        if self.statebar:
+            self.statebar.fetch(config=config, segdb_error=segdb_error, **kwargs)
+
 
     def process(self, config=ConfigParser(), nproc=1, **stateargs):
         """Process data for this tab

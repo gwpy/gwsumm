@@ -342,7 +342,6 @@ class DataTab(ProcessedTab, ParentTab):
             self.statebar.fetch(config=config, segdb_error=segdb_error,
                                 **kwargs)
 
-
     def process(self, config=ConfigParser(), nproc=1, **stateargs):
         """Process data for this tab
 

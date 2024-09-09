@@ -102,8 +102,8 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         # This allows the statebar's state to be included
         # as a segment in the time series plot.
         if isinstance(self.statebar, SummaryState) and (
-            state is None or (state.name.lower() == ALLSTATE)):
-                state = self.statebar
+                state is None or (state.name.lower() == ALLSTATE)):
+            state = self.statebar
 
         if self.pargs.pop('no-state-segments', False):
             visible = False

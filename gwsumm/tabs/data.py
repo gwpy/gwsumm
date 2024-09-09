@@ -360,7 +360,7 @@ class DataTab(ProcessedTab, ParentTab):
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
         vprint(f"States finalised [{len(self.states) + len([self.statebar])}"
-               " total]\n" )
+               " total]\n")
         for state in self.states + [self.statebar]:
             vprint(f"    {state.name}: {len(state.active)} segments"
                    " | {abs(state.active)} seconds")

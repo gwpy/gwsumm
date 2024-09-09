@@ -597,7 +597,7 @@ class StateTab(PlotTab):
     """
     type = 'state'
 
-    def __init__(self, name, states=list(),statebar=None, **kwargs):
+    def __init__(self, name, states=list(), statebar=None, **kwargs):
         """Initialise a new `Tab`.
         """
         if kwargs.get('mode', None) is None:
@@ -710,7 +710,7 @@ class StateTab(PlotTab):
             # if a list is given, consider just the first element
             kwargs.setdefault(
                 'statebar', [re_quote.sub('', s).strip() for s in
-                           cp.get(section, 'statebar').split(',')][0])
+                             cp.get(section, 'statebar').split(',')][0])
         else:
             kwargs.setdefault('statebar', None)
 

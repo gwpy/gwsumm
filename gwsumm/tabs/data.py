@@ -287,8 +287,8 @@ class DataTab(ProcessedTab, ParentTab):
                 mods.setdefault('all-data', True)
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
-                                              state=None, statebar=job.statebar,
-                                              outdir=plotdir, **mods)
+                                              state=None, outdir=plotdir,
+                                              statebar=job.statebar, **mods)
                 else:
                     plot = PlotClass(sources, start, end, state=None,
                                      statebar=job.statebar, outdir=plotdir,
@@ -359,9 +359,11 @@ class DataTab(ProcessedTab, ParentTab):
             segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
-        vprint(f"States finalised [{len(self.states) + len([self.statebar])} total]\n" )
+        vprint(f"States finalised [{len(self.states) + len([self.statebar])}"
+               " total]\n" )
         for state in self.states + [self.statebar]:
-            vprint(f"    {state.name}: {len(state.active)} segments | {abs(state.active)} seconds")
+            vprint(f"    {state.name}: {len(state.active)} segments"
+                   " | {abs(state.active)} seconds")
             if state is self.defaultstate:
                 vprint(" [DEFAULT]")
             vprint('\n')

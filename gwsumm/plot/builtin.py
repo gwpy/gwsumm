@@ -103,7 +103,7 @@ class TimeSeriesDataPlot(DataLabelSvgMixin, DataPlot):
         # as a segment in the time series plot.
         if isinstance(self.statebar, SummaryState) and (
             state is None or (state.name.lower() == ALLSTATE)):
-            state = self.statebar
+                state = self.statebar
 
         if self.pargs.pop('no-state-segments', False):
             visible = False

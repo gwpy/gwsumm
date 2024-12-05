@@ -64,14 +64,17 @@ class SummaryState(DataQualityFlag):
         logical combination of flags that define known and active segments
         for this state (see :attr:`documentation <SummaryState.definition>`
         for details)
+    hours : optional
     key : `str`, optional
         registry key for this state, defaults to :attr:`~SummaryState.name`
+    filename : `str`, optional
+    host : `str`, optional
     """
     MATH_DEFINITION = re.compile(r'(%s)' % '|'.join(MATHOPS.keys()))
 
     def __init__(self, name, known=SegmentList(), active=SegmentList(),
                  description=None, definition=None, hours=None, key=None,
-                 filename=None, url=None):
+                 filename=None, host=None):
         """Initialise a new `SummaryState`
         """
         # allow users to specify known as (start, end)
@@ -88,7 +91,7 @@ class SummaryState(DataQualityFlag):
             self.definition = None
         self.key = key
         self.hours = hours
-        self.url = url
+        self.host = host
         if known and active:
             self.ready = True
         else:
@@ -244,7 +247,7 @@ class SummaryState(DataQualityFlag):
         return cls(name, known=[(start, end)], hours=hours, **params)
 
     def _fetch_segments(self, config=GWSummConfigParser(), **kwargs):
-        kwargs.setdefault('url', self.url)
+        kwargs.setdefault('host', self.host)
         segs = get_segments([self.definition], self.known, config=config,
                             **kwargs)[self.definition].round(contract=True)
         self.known = segs.known

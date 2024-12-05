@@ -45,18 +45,12 @@ from .utils import (
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-
-SEGDB_URLS = [
-    'https://segdb.ligo.caltech.edu',
-    'https://metaserver.phy.syr.edu',
-    'https://geosegdb.atlas.aei.uni-hannover.de',
-    'http://10.20.50.30'  # geosegdb internal
-]
+__credits__ = 'Evan Goetz <evan.goetz@ligo.org>'
 
 
 def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                  query=True, return_=True, coalesce=True, padding=None,
-                 ignore_undefined=False, segdb_error='raise', url=None,
+                 ignore_undefined=False, segdb_error='raise', host=None,
                  **read_kw):
     """Retrieve the segments for a given flag
 
@@ -83,8 +77,8 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
 
         - ``gps-start-time``, and ``gps-end-time``, if ``validity`` is
           not given
-        - ``url`` (the remote hostname for the segment database) if
-          the ``url`` keyword is not given
+        - ``host`` (the remote hostname for the segment database) if
+          the ``host`` keyword is not given
 
     cache : :class:`glue.lal.Cache`, optional
         a cache of files from which to read segments, otherwise segments
@@ -111,7 +105,7 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
           segments
         - ``'ignore'`` : silently ignore the error and return no segments
 
-    url : `str`, optional
+    host : `str`, optional
         the remote hostname for the target segment database
 
     return_ : `bool`, optional, default: `True`
@@ -211,9 +205,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 new[f].active &= newsegs
                 if coalesce:
                     new[f].coalesce()
-                vprint("    Read %d segments for %s (%.2f%% coverage).\n"
-                       % (len(new[f].active), f,
-                          float(abs(new[f].known))/float(abs(newsegs))*100))
+                cov = float(abs(new[f].known))/float(abs(newsegs))*100
+                vprint(f"    Read {len(new[f].active)} segments for "
+                       f"{f} ({cov:.2f}%% coverage).\n")
         else:
             if len(newsegs) >= 10:
                 qsegs = span
@@ -221,30 +215,28 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 qsegs = newsegs
             # parse configuration for query
             kwargs = {}
-            if url is not None:
-                kwargs['url'] = url
+            if host is not None:
+                kwargs['host'] = host
             else:
                 try:
-                    kwargs['url'] = config.get('segment-database', 'url')
+                    kwargs['host'] = config.get('segment-database', 'host')
                 except (NoSectionError, NoOptionError):
                     pass
-            if kwargs.get('url', None) in SEGDB_URLS:
-                query_func = DataQualityDict.query_segdb
-            else:
-                query_func = DataQualityDict.query_dqsegdb
             try:
-                new = query_func(allflags, qsegs, on_error=segdb_error,
-                                 **kwargs)
+                new = DataQualityDict.query_dqsegdb(
+                    allflags,
+                    qsegs,
+                    on_error=segdb_error,
+                    **kwargs)
             except Exception as e:
                 # ignore error from SegDB
                 if segdb_error in ['ignore', None]:
                     pass
                 # convert to warning
                 elif segdb_error in ['warn']:
-                    print('%sWARNING: %sCaught %s: %s [gwsumm.segments]'
-                          % (WARNC, ENDC, type(e).__name__, str(e)),
-                          file=sys.stderr)
-                    warnings.warn('%s: %s' % (type(e).__name__, str(e)))
+                    print(f"{WARNC}WARNING: {ENDC}Caught {type(e).__name__}: "
+                          f"{str(e)} [gwsumm.segments]", file=sys.stderr)
+                    warnings.warn(f"{type(e).__name__}: {str(e)}")
                 # otherwise raise as normal
                 else:
                     raise
@@ -254,9 +246,9 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
                 new[f].active &= newsegs
                 if coalesce:
                     new[f].coalesce()
-                vprint("    Downloaded %d segments for %s (%.2f%% coverage).\n"
-                       % (len(new[f].active), f,
-                          float(abs(new[f].known))/float(abs(newsegs))*100))
+                cov = float(abs(new[f].known))/float(abs(newsegs))*100
+                vprint(f"    Downloaded {len(new[f].active)} segments for "
+                       f"{f} ({cov:.2f}%% coverage).\n")
         # record new segments
         globalv.SEGMENTS += new
         for f in new:

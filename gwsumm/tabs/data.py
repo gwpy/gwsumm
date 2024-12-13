@@ -288,10 +288,11 @@ class DataTab(ProcessedTab, ParentTab):
                 if type_:
                     plot = PlotClass.from_ini(cp, pdef, start, end, sources,
                                               state=None, outdir=plotdir,
-                                              **mods)
+                                              statebar=job.statebar, **mods)
                 else:
                     plot = PlotClass(sources, start, end, state=None,
-                                     outdir=plotdir, **mods)
+                                     statebar=job.statebar, outdir=plotdir,
+                                     **mods)
                 job.plots.append(plot)
                 if subidx == index:
                     for span in subplots:
@@ -305,10 +306,12 @@ class DataTab(ProcessedTab, ParentTab):
                     if type_:
                         plot = PlotClass.from_ini(cp, pdef, start, end,
                                                   sources, state=state,
+                                                  statebar=job.statebar,
                                                   outdir=plotdir, **mods)
                     else:
                         plot = PlotClass(sources, start, end, state=state,
-                                         outdir=plotdir, **mods)
+                                         statebar=job.statebar, outdir=plotdir,
+                                         **mods)
                     job.plots.append(plot)
                     if subidx == index:
                         for span in subplots:
@@ -334,6 +337,10 @@ class DataTab(ProcessedTab, ParentTab):
         allstate.fetch(config=config, segdb_error=segdb_error, **kwargs)
         for state in self.states:
             state.fetch(config=config, segdb_error=segdb_error, **kwargs)
+        # finilize statebar
+        if self.statebar is not None:
+            self.statebar.fetch(config=config, segdb_error=segdb_error,
+                                **kwargs)
 
     def process(self, config=ConfigParser(), nproc=1, **stateargs):
         """Process data for this tab
@@ -356,12 +363,17 @@ class DataTab(ProcessedTab, ParentTab):
             segdb_error=stateargs.get('segdb_error', 'raise'),
             datafind_error=stateargs.get('datafind_error', 'raise'),
             nproc=nproc, nds=stateargs.get('nds', None))
-        vprint("States finalised [%d total]\n" % len(self.states))
+        vprint(f"States finalised [{len(self.states) + len([self.statebar])}"
+               " total]\n")
         for state in self.states:
-            vprint("    {0.name}: {1} segments | {2} seconds".format(
-                state, len(state.active), abs(state.active)))
+            vprint(f"    {state.name}: {len(state.active)} segments"
+                   f" | {abs(state.active)} seconds")
             if state is self.defaultstate:
                 vprint(" [DEFAULT]")
+            vprint('\n')
+        if self.statebar is not None:
+            vprint(f"    {self.statebar.name}: {len(self.statebar.active)}"
+                   f" segments | {abs(state.active)} seconds")
             vprint('\n')
 
         # pre-process requests for 'all-data' plots

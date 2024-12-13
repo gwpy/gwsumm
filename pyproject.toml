@@ -37,10 +37,11 @@ classifiers = [
 ]
 
 dependencies = [
-  "astropy >=3.0.0",
+  "astropy >=5.0.0",
+  "dqsegdb2 >=1.2.0",
   "gwdatafind >=1.1.1",
   "gwdetchar >=2.2.7",
-  "gwpy >=2.0.0, <=3.0.8",
+  "gwpy >=3.0.10",
   "gwtrigfind",
   "lalsuite",
   "ligo-segments",
@@ -48,12 +49,12 @@ dependencies = [
   "lxml",
   "markdown",
   "MarkupPy",
-  "matplotlib >=3.5",
-  "numpy >=1.16,<2.0",
+  "matplotlib >=3.1.0,<=3.7.1",
+  "numpy >=1.19.5",
   "pygments >=2.7.0",
   "python-dateutil",
   "python-ligo-lw",
-  "scipy >=1.2.0, <1.14",
+  "scipy >=1.6.0",
 ]
 
 dynamic = ["version"]

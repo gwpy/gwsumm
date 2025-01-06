@@ -22,7 +22,7 @@
 from collections import OrderedDict
 from functools import wraps
 
-from ligo.segments import segmentlist as LigoSegmentList
+from igwn_segments import segmentlist as LigoSegmentList
 
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 

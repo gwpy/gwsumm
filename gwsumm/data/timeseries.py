@@ -656,8 +656,8 @@ def _get_timeseries_dict(channels, segments, config=None,
                                       verbose=vstr.format(segment), **ioargs)
             else:  # read
                 # NOTE: this sieve explicitly casts our segment to
-                #       ligo.segments.segment to prevent `TypeError` from
-                #       a mismatch with ligo.segments.segment
+                #       igwn_segments.segment to prevent `TypeError` from
+                #       a mismatch with igwn_segments.segment
                 segcache = sieve_cache(fcache, segment=segment)
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,

@@ -23,11 +23,10 @@ import os
 import pytest
 import shutil
 
-from unittest import mock
-
 from .. import batch
 
 __author__ = 'Alex Urban <alexander.urban@ligo.org>'
+__credits__ = 'Evan Goetz <evan.goetz@ligo.org>'
 
 
 # -- utilities ----------------------------------------------------------------
@@ -39,7 +38,6 @@ def _get_inputs():
     inputs = (
         os.path.join(indir, "global.ini"),
         os.path.join(indir, "k1-test.ini"),
-        os.path.join(indir, "x509.cert"),
     )
     # write empty input files
     for filename in inputs:
@@ -50,17 +48,9 @@ def _get_inputs():
 
 # -- cli tests ----------------------------------------------------------------
 
-@mock.patch(
-    'gwsumm.batch.find_credential',
-)
-@mock.patch(
-    'gwpy.io.kerberos.kinit',
-    return_value=None,
-)
-def test_main(krb, x509, tmpdir, caplog):
+def test_main(tmpdir, caplog):
     outdir = str(tmpdir)
-    (global_, k1test, x509cert) = _get_inputs()
-    x509.return_value = (x509cert, x509cert)
+    (global_, k1test,) = _get_inputs()
     args = [
         '--verbose',
         '--ifo', 'K1',
@@ -79,8 +69,6 @@ def test_main(krb, x509, tmpdir, caplog):
     # test log output
     batch.main(args)
     assert "Copied all INI configuration files to ./etc" in caplog.text
-    assert ("Configured Condor and Kerberos for NFS-shared credentials"
-            in caplog.text)
     assert " -- Configured HTML htmlnode job" in caplog.text
     assert " -- Configured job for config {}".format(
         os.path.join(outdir, "etc", os.path.basename(k1test))) in caplog.text
@@ -97,12 +85,11 @@ def test_main(krb, x509, tmpdir, caplog):
     }
     assert set(os.listdir(os.path.join(outdir, "etc"))) == {
         os.path.basename(k1test),
-        os.path.basename(x509cert),
         os.path.basename(global_),
     }
     assert set(os.listdir(os.path.join(outdir, "logs"))) == set()
     # clean up
-    for filename in (global_, k1test, x509cert):
+    for filename in (global_, k1test,):
         os.remove(filename)
     shutil.rmtree(outdir, ignore_errors=True)
 
@@ -117,7 +104,7 @@ def test_main(krb, x509, tmpdir, caplog):
 )
 def test_main_loop_over_modes(tmpdir, caplog, mode):
     outdir = str(tmpdir)
-    (global_, k1test, x509cert) = _get_inputs()
+    (global_, k1test,) = _get_inputs()
     args = [
         '--verbose',
         '--ifo', 'K1',
@@ -136,7 +123,7 @@ def test_main_loop_over_modes(tmpdir, caplog, mode):
     assert "Setup complete, DAG written to: {}".format(
         os.path.join(outdir, "gw_summary_pipe.dag")) in caplog.text
     # clean up
-    for filename in (global_, k1test, x509cert):
+    for filename in (global_, k1test,):
         os.remove(filename)
     shutil.rmtree(outdir, ignore_errors=True)
 

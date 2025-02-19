@@ -597,7 +597,7 @@ class StateTab(PlotTab):
     """
     type = 'state'
 
-    def __init__(self, name, states=list(), **kwargs):
+    def __init__(self, name, states=list(), statebar=None, **kwargs):
         """Initialise a new `Tab`.
         """
         if kwargs.get('mode', None) is None:
@@ -608,6 +608,9 @@ class StateTab(PlotTab):
         if not isinstance(states, (tuple, list)):
             states = [states]
         self.states = states
+
+        # process statebar
+        self.statebar = statebar
 
     # -------------------------------------------
     # StateTab properties
@@ -666,6 +669,16 @@ class StateTab(PlotTab):
         self._defaultstate = state
 
     @property
+    def statebar(self):
+        return self._statebar
+
+    @statebar.setter
+    def statebar(self, state):
+        if not isinstance(state, SummaryState) and state is not None:
+            state = get_state(state)
+        self._statebar = state
+
+    @property
     def frames(self):
         # write page for each state
         statelinks = []
@@ -689,6 +702,18 @@ class StateTab(PlotTab):
         else:
             # otherwise use 'all' state - full span with no gaps
             kwargs.setdefault('states', ['All'])
+
+        # Load statebar, used for adding a state segment to a timeseries plot.
+        # This is only applied to the "All" or unassigned (None) state.
+        if cp.has_option(section, 'statebar'):
+            # statebar should be a single element
+            # if a list is given, consider just the first element
+            kwargs.setdefault(
+                'statebar', [re_quote.sub('', s).strip() for s in
+                             cp.get(section, 'statebar').split(',')][0])
+        else:
+            kwargs.setdefault('statebar', None)
+
         # parse core Tab information
         return super(StateTab, cls).from_ini(cp, section, *args, **kwargs)
 

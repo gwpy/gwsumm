@@ -42,7 +42,6 @@ dependencies = [
   "gwdetchar >=2.2.7",
   "gwpy >=2.0.0, <=3.0.8",
   "gwtrigfind",
-  "igwn-segments",
   "lalsuite",
   "lscsoft-glue >=1.60.0",
   "lxml",

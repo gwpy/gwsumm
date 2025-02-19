@@ -657,7 +657,7 @@ def _get_timeseries_dict(channels, segments, config=None,
             else:  # read
                 # NOTE: this sieve explicitly casts our segment to
                 #       igwn_segments.segment to prevent `TypeError` from
-                #       a mismatch with igwn_segments.segment
+                #       a mismatch with gwpy.segments.Segment
                 segcache = sieve_cache(fcache, segment=segment)
                 segstart, segend = map(float, segment)
                 tsd = DictClass.read(segcache, qchannels, start=segstart,

@@ -22,8 +22,6 @@
 from collections import OrderedDict
 from functools import wraps
 
-from igwn_segments import segmentlist as LigoSegmentList
-
 from gwpy.segments import (DataQualityFlag, SegmentList, Segment)
 
 from ..channels import get_channel
@@ -44,7 +42,7 @@ def use_segmentlist(f):
     def decorated_func(arg1, segments, *args, **kwargs):
         if isinstance(segments, DataQualityFlag):
             segments = segments.active
-        elif not isinstance(segments, LigoSegmentList):
+        elif not isinstance(segments, SegmentList):
             segments = SegmentList([Segment(*x) for x in segments])
         return f(arg1, segments, *args, **kwargs)
     return decorated_func

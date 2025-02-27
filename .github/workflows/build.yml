@@ -53,26 +53,22 @@ jobs:
       with:
         fetch-depth: 0
 
-    # EG 13 Dec 2024: commenting out broken cache
-    # - name: Cache conda packages
-    #   uses: actions/cache@v4
-    #   env:
-    #     # increment to reset cache
-    #     CACHE_NUMBER: 0
-    #   with:
-    #     path: ~/conda_pkgs_dir
-    #     key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
-    #     restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
+    - name: Cache conda packages
+      uses: actions/cache@v4
+      env:
+        # increment to reset cache
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
+        restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
 
     - name: Configure conda
       uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
-        channels: conda-forge
+        miniforge-version: latest
         python-version: ${{ matrix.python-version }}
-        # this is needed for caching to work properly:
-        # EG 13 Dec 2024: commenting out broken cache
-        # use-only-tar-bz2: true
 
     - name: Conda info
       run: conda info --all

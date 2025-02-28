@@ -521,7 +521,7 @@ class SpectrumDataPlot(DataPlot):
                     data = (data**3).cumsum() ** (1/3.)
                 else:
                     # implement Eq. 10 from https://arxiv.org/abs/2502.07253
-                    data = (data**2).cumsum() / (data**2).sum()
+                    data = (data**2).cumsum() / (data**2).sum() ** (1/2.)
                 try:
                     data = (100 * data / data[-1],)
                 except IndexError:

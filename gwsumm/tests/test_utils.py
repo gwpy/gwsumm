@@ -20,11 +20,9 @@
 
 """
 
-import os.path
 import time
 import re
 import sys
-import shutil
 from math import pi
 
 import pytest
@@ -57,16 +55,6 @@ def test_vprint(capsys):
     utils.vprint('anything\n', stream=sys.stdout)
     out, err = capsys.readouterr()
     assert re.match(r'\Aanything \(\d+\.\d\d\)\n\Z', out) is not None
-
-
-def test_mkdir():
-    d = 'test-dir/test-dir2'
-    try:
-        utils.mkdir(d)
-        assert os.path.isdir(d)
-    finally:
-        if os.path.isdir(d):
-            shutil.rmtree(d)
 
 
 def test_nat_sorted():

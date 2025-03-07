@@ -71,7 +71,6 @@ from .tabs import (
 )
 from .utils import (
     get_default_ifo,
-    mkdir,
     re_flagdiv,
 )
 from .data import get_timeseries_dict
@@ -611,10 +610,10 @@ def main(args=None):
         globalv.HTMLONLY = True
 
     # build directories
-    mkdir(args.output_dir)
+    os.makedirs(args.output_dir, exist_ok=True)
     os.chdir(args.output_dir)
     plotdir = os.path.join(path, 'plots')
-    mkdir(plotdir)
+    os.makedirs(plotdir, exist_ok=True)
 
     # -- setup --------------------------------------
 
@@ -681,7 +680,7 @@ def main(args=None):
 
     if args.archive:
         archivedir = os.path.join(path, 'archive')
-        mkdir(archivedir)
+        os.makedirs(archivedir, exist_ok=True)
         args.archive = os.path.join(archivedir, '%s-%s-%d-%d.h5'
                                     % (ifo, args.archive, args.gpsstart,
                                        args.gpsend - args.gpsstart))
@@ -771,7 +770,7 @@ def main(args=None):
     # write config page
     about = get_tab('about')(span=span, parent=None, path=path)
     if not args.no_html:
-        mkdir(about.path)
+        os.makedirs(about.path, exist_ok=True)
         about.write_html(
             css=css, js=javascript, tabs=tabs, config=config.files,
             prog=PROG, ifo=ifo, ifomap=ifobases, about=about.index,
@@ -847,7 +846,7 @@ def main(args=None):
                         segdb_error=args.on_segdb_error,
                         datafind_error=args.on_datafind_error, **cache)
         if not tab.hidden and not isinstance(tab, get_tab('link')):
-            mkdir(tab.href)
+            os.makedirs(tab.href, exist_ok=True)
             tab.write_html(
                 css=css, js=javascript, tabs=tabs, ifo=ifo,
                 ifomap=ifobases, about=about.index, base=base,

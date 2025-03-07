@@ -715,8 +715,8 @@ class BaseTab(object):
         """
         # setup directories
         outdir = os.path.split(self.index)[0]
-        if outdir and not os.path.isdir(outdir):
-            os.makedirs(outdir)
+        if outdir:
+            os.makedirs(outdir, exist_ok=True)
 
         # get default style and scripts
         if css is None:

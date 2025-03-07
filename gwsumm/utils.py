@@ -19,7 +19,6 @@
 """Utilities for GWSumm
 """
 
-import os
 import re
 import sys
 from socket import getfqdn
@@ -75,15 +74,6 @@ def vprint(message, verbose=True, stream=sys.stdout, profile=True):
     if verbose:
         stream.write(message)
         stream.flush()
-
-
-def mkdir(*paths):
-    """Conditional mkdir operation, for convenience
-    """
-    for path in paths:
-        path = os.path.normpath(path)
-        if not os.path.isdir(path):
-            os.makedirs(path)
 
 
 def nat_sorted(iterable, key=None):

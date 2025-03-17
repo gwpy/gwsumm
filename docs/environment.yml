@@ -13,7 +13,6 @@ dependencies:
   - gwdetchar >=2.0.0
   - gwpy >=3.0.0
   - gwtrigfind
-  - igwn-segments
   - lalsuite
   - lscsoft-glue >=1.60.0
   - lxml

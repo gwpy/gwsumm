@@ -30,17 +30,17 @@ import sys
 
 from glue import pipeline
 
-from gwdatafind.utils import find_credential
-
-from gwpy.io import kerberos as gwkerberos
-
 from gwdetchar import cli
 
 from . import __version__
 from .utils import mkdir
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
-__credits__ = 'Alex Urban <alexander.urban@ligo.org>'
+__credits__ = ('Alex Urban <alexander.urban@ligo.org>, '
+               'Evan Goetz <evan.goetz@ligo.org>, '
+               'Iara Ota <iara.ota@ligo.org>'
+               )
+
 
 PROG = ('python -m gwsumm.batch' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
@@ -474,23 +474,9 @@ def main(args=None):
         args.config_file[i] = ','.join(inicopy)
     logger.debug("Copied all INI configuration files to %s" % etcdir)
 
-    # -- configure X509 and kerberos for condor -----
-
-    if args.universe != 'local':
-        # copy X509 grid certificate into local location
-        (x509cert, _) = find_credential()
-        x509copy = os.path.join(etcdir, os.path.basename(x509cert))
-        shutil.copyfile(x509cert, x509copy)
-
-        # rerun kerberos with new path
-        krb5cc = os.path.abspath(os.path.join(etcdir, 'krb5cc.krb5'))
-        gwkerberos.kinit(krb5ccname=krb5cc)
-        logger.debug("Configured Condor and Kerberos "
-                     "for NFS-shared credentials")
-
     # -- build DAG ----------------------------------
 
-    dag = pipeline.CondorDAG(os.path.join(htclogdir, '%s.log' % args.file_tag))
+    dag = pipeline.CondorDAG(os.path.join(htclogdir, f'{args.file_tag}.log'))
     dag.set_dag_file(os.path.join(outdir, args.file_tag))
 
     universe = args.universe
@@ -501,23 +487,25 @@ def main(args=None):
     condorcmds = {}
     if args.condor_timeout:
         condorcmds['periodic_remove'] = (
-            'CurrentTime-EnteredCurrentStatus > %d' %
-            (3600 * args.condor_timeout)
+            f'CurrentTime-EnteredCurrentStatus > {3600 * args.condor_timeout}'
         )
     for cmd_ in args.condor_command:
         (key, value) = cmd_.split('=', 1)
         condorcmds[key.rstrip().lower()] = value.strip()
 
-    if args.universe != 'local':
-        # add X509 to environment
-        for (env_, val_) in zip(['X509_USER_PROXY', 'KRB5CCNAME'],
-                                [os.path.abspath(x509copy), krb5cc]):
-            condorenv = '%s=%s' % (env_, val_)
-            if ('environment' in condorcmds and
-                    env_ not in condorcmds['environment']):
-                condorcmds['environment'] += ';%s' % condorenv
-            elif 'environment' not in condorcmds:
-                condorcmds['environment'] = condorenv
+    # Use scitokens
+    condorcmds['use_oauth_services'] = 'scitokens'
+    if ('environment' in condorcmds and
+            'BEARER_TOKEN_FILE' not in condorcmds['environment']):
+        condorcmds['environment'] += (
+            ';BEARER_TOKEN_FILE='
+            '$$(CondorScratchDir)/.condor_creds/scitokens.use'
+            )
+    elif 'environment' not in condorcmds:
+        condorcmds['environment'] = (
+            'BEARER_TOKEN_FILE='
+            '$$(CondorScratchDir)/.condor_creds/scitokens.use'
+            )
 
     # -- build individual gw_summary jobs -----------
 
@@ -527,7 +515,7 @@ def main(args=None):
     if not args.skip_html_wrapper:
         htmljob = GWSummaryJob(
             'local', subdir=outdir, logdir=logdir,
-            tag='%s_local' % args.file_tag, **condorcmds)
+            tag=f'{args.file_tag}_local', **condorcmds)
         jobs.append(htmljob)
     if not args.html_wrapper_only:
         datajob = GWSummaryJob(

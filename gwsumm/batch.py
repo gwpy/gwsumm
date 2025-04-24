@@ -33,7 +33,6 @@ from glue import pipeline
 from gwdetchar import cli
 
 from . import __version__
-from .utils import mkdir
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Alex Urban <alexander.urban@ligo.org>, '
@@ -446,18 +445,19 @@ def main(args=None):
 
     # move to output directory
     indir = os.getcwd()
-    mkdir(args.output_dir)
+    os.makedirs(args.output_dir, exist_ok=True)
     os.chdir(args.output_dir)
     outdir = os.curdir
 
     # set node log path, and condor log path
     logdir = os.path.join(outdir, 'logs')
     htclogdir = args.log_dir or logdir
-    mkdir(logdir, htclogdir)
+    os.makedirs(logdir, exist_ok=True)
+    os.makedirs(htclogdir, exist_ok=True)
 
     # set config directory and copy config files
     etcdir = os.path.join(outdir, 'etc')
-    mkdir(etcdir)
+    os.makedirs(etcdir, exist_ok=True)
 
     for (i, fp) in enumerate(args.global_config):
         inicopy = os.path.join(etcdir, os.path.basename(fp))

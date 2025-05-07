@@ -34,7 +34,7 @@ import re
 import datetime
 import os
 
-from numpy import (unicode_, ndarray)
+from numpy import (issubdtype, ndarray)
 from h5py import File
 
 from astropy.table import Table
@@ -456,7 +456,7 @@ def archive_table(table, key, parent):
     except KeyError:
         pass
     for col in table.columns:
-        if table[col].dtype.type is unicode_:
+        if issubdtype(table[col].dtype, str):
             table.replace_column(col, table[col].astype(str))
     table.write(parent, path=key, format='hdf5')
     return key

@@ -149,10 +149,8 @@ class SeiWatchDogPlot(get_plot('data')):
             ax.set_ylabel('')
             ax.set_title(texify(channel.name), fontsize=10)
             ax.xaxis.set_minor_locator(NullLocator())
-            for tick in ax.yaxis.get_major_ticks():
-                tick.label.set_fontsize(10)
-            for tick in ax.xaxis.get_major_ticks():
-                tick.label.set_fontsize(16)
+            ax.tick_params(axis='x', which='major', labelsize=16)
+            ax.tick_params(axis='y', which='major', labelsize=10)
         plot.text(0.5, 0.02, 'Time [seconds] from trip (%s)' % self.gpstime,
                   ha='center', va='bottom', fontsize=24)
         plot.text(0.01, 0.5, 'Amplitude %s' % self.unit, ha='left',

@@ -188,7 +188,7 @@ class SEIWatchDogTab(base):
                     causes = ['%s Unknown' % stage]
                 else:
                     allbits = numpy.nonzero(
-                        map(int, bin(int(bits))[2:][::-1]),
+                        numpy.atleast_1d(map(int, bin(int(bits))[2:][::-1])),
                     )[0]
                     causes = [latch.bits[b] for b in allbits]
                 t2 = Time(t, format='gps', scale='utc')

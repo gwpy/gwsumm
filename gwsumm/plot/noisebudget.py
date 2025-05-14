@@ -133,10 +133,9 @@ class NoiseBudgetPlot(get_plot('spectrum')):
             d.override_unit(darmdata.unit)  # enforce consistent units
             sum_ += d ** 2
         ax.plot(sum_ ** (1/2.), zorder=1, **sumargs)
-        ax.lines.insert(1, ax.lines.pop(-1))
 
         # plot residual of noises
-        if not self.pargs.pop('no-residual', False):
+        if not self.pargs.get('no-residual', False):
             resargs = self.parse_residual_params()
             try:
                 residual = (darmdata ** 2 - sum_) ** (1/2.)
@@ -146,11 +145,18 @@ class NoiseBudgetPlot(get_plot('spectrum')):
                 else:  # other error
                     raise
             ax.plot(residual, zorder=-1000, **resargs)
-            ax.lines.insert(1, ax.lines.pop(-1))
+
+        # Reorder legend
+        lines = ax.get_lines()
+        if not self.pargs.pop('no-residual', False):
+            lines.insert(1, lines.pop(-1))
+            lines.insert(2, lines.pop(-1))
+        else:
+            lines.insert(1, lines.pop(-1))
 
         # finalize
         self.apply_parameters(ax, **self.pargs)
-        ax.legend(**legendargs)
+        ax.legend(handles=lines, **legendargs)
 
         return self.finalize()
 

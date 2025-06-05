@@ -38,6 +38,9 @@ import re
 import sys
 import warnings
 
+from astropy.config import get_config_dir
+from astropy.config.paths import get_cache_dir
+
 from collections import OrderedDict
 from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
 from dateutil.relativedelta import relativedelta
@@ -609,11 +612,22 @@ def main(args=None):
     if args.html_only:
         globalv.HTMLONLY = True
 
-    # build directories
+    # build output directories
     os.makedirs(args.output_dir, exist_ok=True)
     os.chdir(args.output_dir)
     plotdir = os.path.join(path, 'plots')
     os.makedirs(plotdir, exist_ok=True)
+
+    # build astropy XDG directories
+    # The functions get_config_dir() and get_cache_dir() either return the
+    # default ~/.astropy/config, ~/.astropy/cache directories or the
+    # directories specified by the XDG_CONFIG_HOME and XDG_CACHE_HOME
+    # environment variables. We only need to create directories if the
+    # variables are set
+    if os.environ.get('XDG_CONFIG_HOME', None):
+        os.makedirs(os.path.join(get_config_dir(), 'astropy'), exist_ok=True)
+    if os.environ.get('XDG_CACHE_HOME', None):
+        os.makedirs(os.path.join(get_cache_dir(), 'astropy'), exist_ok=True)
 
     # -- setup --------------------------------------
 

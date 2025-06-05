@@ -498,13 +498,32 @@ def main(args=None):
     if ('environment' in condorcmds and
             'BEARER_TOKEN_FILE' not in condorcmds['environment']):
         condorcmds['environment'] += (
-            ';BEARER_TOKEN_FILE='
+            ' BEARER_TOKEN_FILE='
             '$$(CondorScratchDir)/.condor_creds/scitokens.use'
             )
     elif 'environment' not in condorcmds:
         condorcmds['environment'] = (
             'BEARER_TOKEN_FILE='
             '$$(CondorScratchDir)/.condor_creds/scitokens.use'
+            )
+
+    # set XDG_CONFIG_HOME and XDG_CACHE_HOME vars for astropy
+    # see https://docs.astropy.org/en/stable/environment_variables.html
+    # the logic here is that if 'environment' exists in condorcmds then
+    # if XDG_CONFIG_HOME or XDG_CACHE_HOME doesn't exist then add it (space
+    # separated list), or if 'environment' doesn't exist then we've already
+    # started with BEARER_TOKEN_FILE above and now we add the XDG variables
+    if (('environment' in condorcmds and
+         'XDG_CONFIG_HOME' not in condorcmds['environment']) or
+            'environment' not in condorcmds):
+        condorcmds['environment'] += (
+            ' XDG_CONFIG_HOME=$$(CondorScratchDir)/tmp/config'
+            )
+    if (('environment' in condorcmds and
+         'XDG_CACHE_HOME' not in condorcmds['environment']) or
+            'environment' not in condorcmds):
+        condorcmds['environment'] += (
+            ' XDG_CACHE_HOME=$$(CondorScratchDir)/tmp/cache'
             )
 
     # -- build individual gw_summary jobs -----------

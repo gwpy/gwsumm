@@ -62,10 +62,7 @@ def create(data, **metadata):
     return d
 
 
-# -- tests --------------------------------------------------------------------
-
-def test_write_archive(delete=True):
-    empty_globalv()
+def add_data():
     data.add_timeseries(TEST_DATA)
     data.add_timeseries(create([1, 2, 3, 4, 5],
                                dt=60., channel='X1:TEST-TREND.mean'))
@@ -78,6 +75,13 @@ def test_write_archive(delete=True):
     t = EventTable(random.random((100, 5)), names=['time', 'a', 'b', 'c', 'd'])
     t.meta['segments'] = SegmentList([Segment(0, 100)])
     triggers.add_triggers(t, 'X1:TEST-TABLE,testing')
+
+
+# -- tests --------------------------------------------------------------------
+
+def test_write_archive(delete=True):
+    empty_globalv()
+    add_data()
     fname = tempfile.mktemp(suffix='.h5', prefix='gwsumm-tests-')
     try:
         archive.write_data_archive(fname)
@@ -85,11 +89,16 @@ def test_write_archive(delete=True):
     finally:
         if delete and os.path.isfile(fname):
             os.remove(fname)
-    return fname
 
 
 def test_read_archive():
-    fname = test_write_archive(delete=False)
+    empty_globalv()
+    add_data()
+    fname = tempfile.mktemp(suffix='.h5', prefix='gwsumm-tests-')
+    try:
+        archive.write_data_archive(fname)
+    except Exception:
+        raise
     empty_globalv()
     try:
         archive.read_data_archive(fname)

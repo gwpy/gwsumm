@@ -526,6 +526,12 @@ def main(args=None):
             ' XDG_CACHE_HOME=$$(CondorScratchDir)/tmp/cache'
             )
 
+    # Make sure the environment is a quotation marked string
+    if not condorcmds['environment'].startswith('"'):
+        condorcmds['environment'] = f"\"{condorcmds['environment']}"
+    if not condorcmds['environment'].endswith('"'):
+        condorcmds['environment'] = f"{condorcmds['environment']}\""
+
     # -- build individual gw_summary jobs -----------
 
     globalconfig = ','.join(args.global_config)

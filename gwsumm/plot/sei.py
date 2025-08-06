@@ -20,7 +20,7 @@
 """
 
 import re
-from configparser import NoOptionError
+from configparser import NoSectionError, NoOptionError
 
 from matplotlib.pyplot import subplots
 from matplotlib.ticker import NullLocator
@@ -45,9 +45,8 @@ class SeiWatchDogPlot(get_plot('data')):
                  duration=30, nds=False, datacache=None):
         """Configure a new `SeiWatchDogPlot`.
         """
-        super(SeiWatchDogPlot, self).__init__([],
-                                              int(gpstime) - duration/2.,
-                                              int(gpstime) + duration/2.)
+        super().__init__(
+            [], int(gpstime) - duration/2., int(gpstime) + duration/2.)
 
         # get params
         if ifo is None:
@@ -59,27 +58,29 @@ class SeiWatchDogPlot(get_plot('data')):
         self.duration = duration
         self.outputfile = outfile
         self.use_nds = nds
+        try:
+            self.host = config.get('datafind', 'server')
+        except (NoSectionError, NoOptionError):
+            self.host = None
 
         system = (sensor.split(' ')[0] == 'HEPI' and
                   'HPI' or sensor.split(' ')[0])
 
         # get channels
-        mapsec = 'sei-wd-map-%s' % sensor
+        mapsec = f'sei-wd-map-{sensor}'
         if not config.has_section(mapsec) and re.match(r'ISI ST\d ', sensor):
-            mapsec = ('sei-wd-map-%s'
-                      % (' '.join(sensor.split(' ', 2)[::2])))
+            mapsec = ('sei-wd-map-'
+                      f"{' '.join(sensor.split(' ', 2)[::2])}")
         stubs = list(zip(*sorted(
             [o for o in config.items(mapsec) if o[0].isdigit()],
             key=lambda x: x[0],
         )))[1]
         if re.search(r'ISI ST\d ', sensor):
             stage = sensor.split(' ')[1]
-            channels = [get_channel('%s:%s-%s_%s_%s'
-                                    % (ifo, system, chamber, stage, stub))
+            channels = [get_channel(f'{ifo}:{system}-{chamber}_{stage}_{stub}')
                         for stub in stubs]
         else:
-            channels = [get_channel('%s:%s-%s_%s'
-                                    % (ifo, system, chamber, stub))
+            channels = [get_channel(f'{ifo}:{system}-{chamber}_{stub}')
                         for stub in stubs]
 
         # set types
@@ -98,7 +99,7 @@ class SeiWatchDogPlot(get_plot('data')):
             raise ValueError("Geometry does not match number of channels.")
 
         try:
-            self.unit = '[%s]' % re_quote.sub('', config.get(mapsec, 'unit'))
+            self.unit = f"[{re_quote.sub('', config.get(mapsec, 'unit'))}]"
         except NoOptionError:
             self.unit = ''
 
@@ -122,7 +123,8 @@ class SeiWatchDogPlot(get_plot('data')):
         else:
             from gwdatafind import find_urls
             cache = find_urls(self.ifo[0], f'{self.ifo}_R',
-                              self.start, self.end, urltype='file')
+                              self.start, self.end, urltype='file',
+                              host=self.host)
             if len(cache) == 0:
                 data = {}
             else:

@@ -165,6 +165,227 @@ class ExternalTab(Tab):
 register_tab(ExternalTab)
 
 
+class ExternalStateTab(ExternalTab):
+    """A tab to link HTML from an external source with states
+
+    Parameters
+    ----------
+    name : `str`
+        name of this tab (required)
+    states : `list`
+        a list of states for this tab. Each state can take any form,
+        but must be castable to a `str` in order to be printed.
+    url : `str`
+        Base URL of the external content to be linked into this tab.
+    index : `str`
+        HTML file in which to write. By default each tab is written to
+        an index.html file in its own directory. Use :attr:`~Tab.index`
+        to find out the default index, if not given.
+    shortname : `str`
+        shorter name for this tab to use in the navigation bar. By
+        default the regular name is used
+    parent : :class:`~gwsumm.tabs.Tab`
+        parent of this tab. This is used to position this tab in the
+        navigation bar.
+    children : `list`
+        list of child :class:`Tabs <~gwsumm.tabs.Tab>` of this one. This
+        is used to position this tab in the navigation bar.
+    group : `str`
+        name of containing group for this tab in the navigation bar
+        dropdown menu. This is only relevant if this tab has a parent.
+    path : `str`
+        base output directory for this tab (should be the same directory
+        for all tabs in this run).
+
+    Configuration
+    -------------
+
+    """
+    type = 'external-state'
+
+    def __init__(self, name, url, states=list(), error=True, success=None,
+                 **kwargs):
+        """Initialise a new `ExternalStateTab`.
+        """
+        super().__init__(name, url, error=error, success=success, **kwargs)
+        if not isinstance(states, (tuple, list)):
+            states = [states]
+        self.states = states
+
+    # -------------------------------------------
+    # StateTab properties
+
+    @property
+    def states(self):
+        """The set of :class:`states <gwsumm.state.SummaryState>` over
+        whos times this tab's data will be processed.
+
+        The set of states will be linked in the given order with a switch
+        on the far-right of the HTML navigation bar.
+        """
+        return self._states
+
+    @states.setter
+    def states(self, statelist, default=None):
+        self._states = []
+        for state in statelist:
+            # allow default indication by trailing asterisk
+            if state == default:
+                default_ = True
+            elif (default is None and isinstance(state, str) and
+                    state.endswith('*')):
+                state = state[:-1]
+                default_ = True
+            else:
+                default_ = False
+            self.add_state(state, default=default_)
+
+    def add_state(self, state, default=False):
+        """Add a `SummaryState` to this tab
+
+        Parameters
+        ----------
+        state : `str`, :class:`~gwsumm.state.SummaryState`
+            either the name of a state, or a `SummaryState`.
+        register : `bool`, default: `False`
+            automatically register all new states
+        """
+        if not isinstance(state, SummaryState):
+            state = get_state(state)
+        self._states.append(state)
+        if default:
+            self.defaultstate = state
+
+    @property
+    def defaultstate(self):
+        try:
+            return self._defaultstate
+        except AttributeError:
+            self._defaultstate = self.states[0]
+            return self._defaultstate
+
+    @defaultstate.setter
+    def defaultstate(self, state):
+        self._defaultstate = state
+
+    @property
+    def frames(self):
+        # write page for each state
+        statelinks = []
+        outdir = os.path.split(self.index)[0]
+        for i, state in enumerate(self.states):
+            statelinks.append(os.path.join(
+                outdir, f"{re_cchar.sub('_', str(state).lower())}.html"))
+        return statelinks
+
+    @classmethod
+    def from_ini(cls, cp, section, *args, **kwargs):
+        """Configure a new `ExternalStateTab` from a `ConfigParser` section
+
+        Parameters
+        ----------
+        cp : :class:`~gwsumm.config.ConfigParser`
+            configuration to parse.
+        section : `str`
+            name of section to read
+
+        See Also
+        --------
+        Tab.from_ini :
+            for documentation of the standard configuration
+            options
+
+        Notes
+        -----
+        On top of the standard configuration options, the `ExternalStateTab`
+        can be configured with the ``state`` option, specifying the URL of the
+        external content to be included:
+
+        .. code-block:: ini
+
+           [tab-external-state]
+           name = External data
+           type = external
+           url = https://www.example.org/index.html
+
+
+        """
+        kwargs.setdefault('url', cp.get(section, 'url'))
+        if cp.has_option(section, 'error'):
+            kwargs.setdefault(
+                'error', re_quote.sub('', cp.get(section, 'error')))
+        if cp.has_option(section, 'success'):
+            kwargs.setdefault(
+                'success', re_quote.sub('', cp.get(section, 'success')))
+        # parse states and retrieve their definitions
+        if cp.has_option(section, 'states'):
+            # states listed individually
+            kwargs.setdefault(
+                'states', [re_quote.sub('', s).strip() for s in
+                           cp.get(section, 'states').split(',')])
+        else:
+            # otherwise use 'all' state - full span with no gaps
+            kwargs.setdefault('states', ['All'])
+        return super(ExternalTab, cls).from_ini(
+            cp, section, *args, **kwargs)
+
+    def html_navbar(self, help_=None, **kwargs):
+        """Build the navigation bar for this `Tab`.
+
+        The navigation bar will consist of a switch for this page linked
+        to other interferometer servers, followed by the navbar brand,
+        then the full dropdown-based navigation menus configured for the
+        given ``tabs`` and their descendents.
+
+        Parameters
+        ----------
+        help_ : `str`, :class:`~MarkupPy.markup.page`
+            content for upper-right of navbar
+
+        ifo : `str`, optional
+            prefix for this IFO.
+
+        ifomap : `dict`, optional
+            `dict` of (ifo, {base url}) pairs to map to summary pages for
+            other IFOs.
+
+        tabs : `list`, optional
+            list of parent tabs (each with a list of children) to include
+            in the navigation bar.
+
+        Returns
+        -------
+        page : `~MarkupPy.markup.page`
+            a markup page containing the navigation bar.
+        """
+        if len(self.states) > 1 or str(self.states[0]) != ALLSTATE:
+            default = self.states.index(self.defaultstate)
+            help_ = str(html.state_switcher(
+                list(zip(self.states, self.frames)), default))
+        return super().html_navbar(help_=help_, **kwargs)
+
+    def html_content(self, state):
+        wrappedcontent = html.load(state, id_='content', error=self.error,
+                                   success=self.success)
+        return super().html_content(wrappedcontent)
+
+    def write_html(self, **kwargs):
+        """Write the HTML page for this tab.
+
+        See Also
+        --------
+        gwsumm.tabs.Tab.write_html : for details of all valid keyword
+        arguments
+        """
+        if not kwargs.pop('writehtml', True):
+            return
+        kwargs.setdefault('footer', self.url.split()[0])
+        return super().write_html('', **kwargs)
+
+
+register_tab(ExternalStateTab)
+
+
 class PlotTab(Tab):
     """A simple tab to layout some figures in the #main div.
 

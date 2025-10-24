@@ -66,9 +66,9 @@ class EventTriggerTab(get_tab('default')):
         later (but before running :meth:`~DataTab.process`) via
         :meth:`~DataTab.add_state`.
     table : `type`, `str`, optional
-        LIGO_LW `~glue.ligolw.table.Table` class to use for this ETG,
-        e.g. use `~glue.ligolw.lsctables.SnglBurstTable` for Omicron, or
-        `~glue.ligolw.lsctables.SnglInspiralTable` for CBC
+        LIGO_LW `~igwn_ligolw.ligolw.Table` class to use for this ETG,
+        e.g. use `~igwn_ligolw.lsctables.SnglBurstTable` for Omicron, or
+        `~igwn_ligolw.lsctables.SnglInspiralTable` for CBC
     cache : `~glue.lal.Cache`, `str`, optional
         `Cache` object, or path to a LAL-format cache file on disk,
         from which to read the event triggers. If no cache is given,

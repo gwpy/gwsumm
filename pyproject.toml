@@ -50,7 +50,7 @@ dependencies = [
   "numpy >=1.16",
   "pygments >=2.7.0",
   "python-dateutil",
-  "python-ligo-lw",
+  "igwn-ligolw",
   "scipy >=1.2.0",
 ]
 

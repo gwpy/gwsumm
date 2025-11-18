@@ -28,7 +28,7 @@ from glue.lal import Cache
 from gwpy.segments import (DataQualityDict, SegmentList)
 
 from gwdetchar.io import html
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ..config import GWSummConfigParser
 from .registry import (get_tab, register_tab)

@@ -30,7 +30,7 @@ from configparser import DEFAULTSECT
 
 from gwpy.time import to_gps
 
-from gwdetchar.cli import logger
+from gwdetchar.utils.cli import logger
 
 from ... import globalv
 from ...archive import (write_data_archive, read_data_archive)

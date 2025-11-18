@@ -37,7 +37,7 @@ from glue.lal import Cache
 from gwpy.segments import DataQualityDict
 
 from gwdetchar.io import html
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from .. import globalv
 from ..config import GWSummConfigParser

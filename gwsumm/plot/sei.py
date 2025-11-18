@@ -28,7 +28,7 @@ from matplotlib.ticker import NullLocator
 from gwpy.plot import Plot
 from gwpy.timeseries import TimeSeriesDict
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ..channels import get_channel
 from ..utils import re_quote

@@ -42,7 +42,7 @@ from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList, DataQualityFlag)
 from gwpy.time import (from_gps, to_gps)
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from .. import globalv
 from ..mode import (Mode, get_mode)

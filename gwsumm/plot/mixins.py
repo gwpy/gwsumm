@@ -26,7 +26,7 @@ from io import StringIO
 
 from lxml import etree
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 re_bit_label = re.compile(r'\[(?P<idx>.*)\] (?P<label>.*)')
 re_source_label = re.compile(r'(?P<label>.*) \[(?P<flag>.*)\]')

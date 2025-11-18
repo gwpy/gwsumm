@@ -35,7 +35,7 @@ from gwpy.segments import Segment
 from gwpy.detector import ChannelList
 from gwpy.plot import Plot
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ..channels import (get_channel, split as split_channels,
                         split_combination as split_channel_combination)

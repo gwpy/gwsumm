@@ -25,7 +25,7 @@ import numpy
 
 from gwpy.segments import SegmentList
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ..data import get_spectrum
 from .registry import (get_plot, register_plot)

@@ -26,7 +26,7 @@ import shutil
 
 from markdown import markdown
 
-from gwdetchar.utils import parse_html
+from gwdetchar.utils.utils import parse_html
 
 from .. import html5
 

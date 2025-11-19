@@ -37,7 +37,6 @@ jobs:
           - macOS
           - Ubuntu
         python-version:
-          - "3.9"
           - "3.10"
           - "3.11"
     runs-on: ${{ matrix.os }}-latest
@@ -49,7 +48,7 @@ jobs:
 
     steps:
     - name: Get source code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         fetch-depth: 0
 
@@ -110,14 +109,15 @@ jobs:
       run: python -m coverage report --show-missing
 
     - name: Publish coverage to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5.5.1
       with:
         files: coverage.xml
-        flags: ${{ runner.os }},python${{ matrix.python-version }}
+        flags: ${{ runner.os }}-python${{ matrix.python-version }}
+        token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
         path: pytest.xml

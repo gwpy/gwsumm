@@ -10,7 +10,7 @@ build-backend = "setuptools.build_meta"
 name = "gwsumm"
 description = "A python toolbox used by the LIGO Scientific Collaboration for detector characterisation"
 readme = "README.rst"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 authors = [
   { name = "Alex Urban", email = "alex.urban@ligo.org" },
   { name = "Duncan Macleod", email = "duncan.macleod@ligo.org" },
@@ -28,7 +28,6 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering",
@@ -39,7 +38,7 @@ classifiers = [
 dependencies = [
   "astropy >=3.0.0",
   "gwdatafind >=1.1.1",
-  "gwdetchar >=2.2.7",
+  "gwdetchar >=2.3.2",
   "gwpy >=3.0.9",
   "gwtrigfind",
   "lalsuite",

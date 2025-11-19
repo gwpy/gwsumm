@@ -53,7 +53,7 @@ from gwpy.segments import (Segment, SegmentList)
 from gwpy.signal.spectral import _lal as fft_lal
 from gwpy.time import (Time, _tconvert, tconvert, to_gps)
 
-from gwdetchar.cli import logger
+from gwdetchar.utils.cli import logger
 
 from . import (
     __version__,

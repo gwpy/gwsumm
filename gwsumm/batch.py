@@ -30,7 +30,7 @@ import sys
 
 from glue import pipeline
 
-from gwdetchar import cli
+from gwdetchar.utils import cli
 
 from . import __version__
 

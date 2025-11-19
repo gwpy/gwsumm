@@ -24,7 +24,7 @@ __author__ = 'Alex Urban <alexander.urban@ligo.org>'
 import pytest
 from datetime import datetime
 
-from gwdetchar.utils import parse_html
+from gwdetchar.utils.utils import parse_html
 
 from .. import bootstrap
 

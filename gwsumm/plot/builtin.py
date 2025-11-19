@@ -33,7 +33,7 @@ from gwpy.plot.colors import tint
 from gwpy.plot.gps import GPSTransform
 from gwpy.segments import SegmentList
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from .. import (globalv, io)
 from ..mode import (Mode, get_mode)

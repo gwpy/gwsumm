@@ -31,7 +31,7 @@ from glue.lal import Cache
 from gwpy.segments import Segment
 from gwpy.time import to_gps
 
-from gwdetchar.cli import logger
+from gwdetchar.utils.cli import logger
 
 from ...segments import get_segments
 from ...triggers import (get_triggers, keep_in_segments)

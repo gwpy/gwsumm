@@ -32,7 +32,7 @@ from gwpy.plot.gps import GPSTransform
 from gwpy.plot.utils import (color_cycle, marker_cycle)
 from gwpy.segments import SegmentList
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ... import globalv
 from ...channels import get_channel

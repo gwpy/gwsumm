@@ -31,7 +31,7 @@ import gwpy.astro
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import TimeSeries
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from .registry import (get_plot, register_plot)
 from .utils import hash

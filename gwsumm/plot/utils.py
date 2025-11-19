@@ -30,7 +30,7 @@ from gwpy.plot.utils import (  # noqa: F401
     AXES_PARAMS,
 )
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 

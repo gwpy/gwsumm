@@ -25,7 +25,7 @@ from gwpy.plot.colors import tint
 from gwpy.plot.segments import SegmentRectangle
 from gwpy.segments import (Segment, SegmentList)
 
-from gwdetchar.plot import texify
+from gwdetchar.utils.plot import texify
 
 from ...data import get_timeseries
 from ...segments import get_segments

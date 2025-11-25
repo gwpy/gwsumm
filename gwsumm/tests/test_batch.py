@@ -57,6 +57,8 @@ def test_main(tmpdir, caplog):
         '--maxjobs', '5',
         '--condor-timeout', '3',
         '--condor-command', 'notification=false',
+        '--condor-command', 'environment=VAR1=VAL1',
+        '--condor-command', 'environment=VAR2=VAL2',
         '--config-file', k1test,
         '--global-config', global_,
         '--nds',
@@ -69,6 +71,7 @@ def test_main(tmpdir, caplog):
     # test log output
     batch.main(args)
     assert "Copied all INI configuration files to ./etc" in caplog.text
+    assert "Appending VAR2=VAL2 to condor 'environment' value" in caplog.text
     assert " -- Configured HTML htmlnode job" in caplog.text
     assert " -- Configured job for config {}".format(
         os.path.join(outdir, "etc", os.path.basename(k1test))) in caplog.text

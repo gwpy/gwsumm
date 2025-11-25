@@ -66,7 +66,6 @@ class GWSummaryJob(pipeline.CondorDAGJob):
                 logdir, '%s-%s.err' % (tag, self.logtag)))
             self.set_stdout_file(os.path.join(
                 logdir, '%s-%s.out' % (tag, self.logtag)))
-        cmds.setdefault('getenv', 'True')
         for key, val in cmds.items():
             if hasattr(self, 'set_%s' % key.lower()):
                 getattr(self, 'set_%s' % key.lower())(val)
@@ -491,7 +490,18 @@ def main(args=None):
         )
     for cmd_ in args.condor_command:
         (key, value) = cmd_.split('=', 1)
-        condorcmds[key.rstrip().lower()] = value.strip()
+        # TODO: the next lines either add the key-value to the condorcmds
+        #  dictionary or they *append* the value to the existing value already
+        #  in the condorcmds dictionary. It's not a preferred solution, but
+        #  the reason it is done this way is because of the way the
+        #  LIGO summary pages configuration scripts work (the echo_and_run
+        #  command). We would need to decide if the scripts or function
+        #  should be rewritten
+        if key in condorcmds:
+            logger.debug(f"Appending {value.strip()} to condor '{key}' value")
+            condorcmds[key] += f" {value.strip()}"
+        else:
+            condorcmds[key.rstrip().lower()] = value.strip()
 
     # Use scitokens
     condorcmds['use_oauth_services'] = 'scitokens'
@@ -532,6 +542,10 @@ def main(args=None):
     if not condorcmds['environment'].endswith('"'):
         condorcmds['environment'] = f"{condorcmds['environment']}\""
 
+    # Environment variables from the access point
+    envvars = ('DEFAULT_SEGMENT_SERVER, GWDATAFIND_SERVER, NDSSERVER, '
+               'CONDA_EXE')
+
     # -- build individual gw_summary jobs -----------
 
     globalconfig = ','.join(args.global_config)
@@ -540,12 +554,16 @@ def main(args=None):
     if not args.skip_html_wrapper:
         htmljob = GWSummaryJob(
             'local', subdir=outdir, logdir=logdir,
-            tag=f'{args.file_tag}_local', **condorcmds)
+            tag=f'{args.file_tag}_local', **condorcmds,
+            getenv=envvars,
+        )
         jobs.append(htmljob)
     if not args.html_wrapper_only:
         datajob = GWSummaryJob(
             universe, subdir=outdir, logdir=logdir,
-            tag=args.file_tag, **condorcmds)
+            tag=args.file_tag, **condorcmds,
+            getenv=envvars,
+        )
         jobs.append(datajob)
 
     # add common command-line options

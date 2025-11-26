@@ -10,19 +10,19 @@ dependencies:
   # install
   - astropy >=3.0.0
   - gwdatafind >=1.1.1
-  - gwdetchar >=2.0.0
-  - gwpy >=3.0.0
+  - gwdetchar >=2.3.2
+  - gwpy >=3.0.9
   - gwtrigfind
   - lalsuite
   - lscsoft-glue >=1.60.0
   - lxml
   - markdown
   - MarkupPy
-  - matplotlib >=3.1
+  - matplotlib >=3.5
   - numpy >=1.16
   - pygments >=2.7.0
   - python-dateutil
-  - python-ligo-lw
+  - igwn-ligolw
   - scipy >=1.2.0
   # docs
   - numpydoc

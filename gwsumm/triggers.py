@@ -26,7 +26,7 @@ from astropy.table import vstack as vstack_tables
 
 from lal.utils import CacheEntry
 
-from ligo.lw import lsctables
+from igwn_ligolw import lsctables
 
 from glue.lal import Cache
 
@@ -116,7 +116,7 @@ def get_etg_table(etg):
 
     Returns
     -------
-    table : `type`, subclass of `~ligo.lw.table.Table`
+    table : `type`, subclass of `~igwn_ligolw.ligolw.Table`
         LIGO_LW table registered to the given ETG
 
     Raises

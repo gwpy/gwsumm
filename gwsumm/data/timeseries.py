@@ -40,7 +40,6 @@ from gwpy.io.gwf import data_segments
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.timeseries import (TimeSeriesList, TimeSeriesDict,
                              StateVector, StateVectorList, StateVectorDict)
-from gwpy.timeseries.io.gwf import get_default_gwf_api
 from gwpy.utils.mp import multiprocess_with_queues
 
 from .. import globalv
@@ -85,13 +84,6 @@ FRAMETYPE_REGEX = {
     'DMT SenseMon on front-end h(t)': re.compile(
         r'SenseMonitor_CAL_[A-Z][0-9]_M\Z'),
 }
-
-# list of GWF frametypes that contain only ADC channels
-# (allows big memory/time savings when reading with frameCPP)
-try:
-    GWF_API = get_default_gwf_api()
-except ImportError:
-    GWF_API = None
 
 # frameCPP I/O optimisations
 ADC_TYPES = {

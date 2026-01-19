@@ -713,8 +713,11 @@ def _get_timeseries_dict(channels, segments, config=None,
                     data.override_unit(channel.unit)
 
                 # update channel type for trends
-                if data.channel.type is None and (
-                        data.channel.trend is not None):
+                if (
+                    data.channel is not None
+                    and data.channel.type is None
+                    and data.channel.trend is not None
+                ):
                     if data.dt.to('s').value == 1:
                         data.channel.type = 's-trend'
                     elif data.dt.to('s').value == 60:

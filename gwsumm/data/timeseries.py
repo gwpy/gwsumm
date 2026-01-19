@@ -393,10 +393,12 @@ def all_adc(cache):
     """
     for path in cache:
         try:
-            tag = os.path.basename(path).split('-')[1]
+            path = os.path.basename(path)
         except (AttributeError, TypeError):  # CacheEntry
             tag = path.description
             path = path.path
+        else:
+            tag = path.split('-')[1]
         if not path.endswith('.gwf') or tag not in ADC_TYPES:
             return False
     return True

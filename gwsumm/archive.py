@@ -210,7 +210,8 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
     # down the whole workflow, requiring manual intervention. Here, we attempt
     # to automatically catch a common failure
     try:
-        h5file = File(sourcefile, 'r')
+        with File(sourcefile, 'r'):
+            pass
     except FileNotFoundError:
         raise
     except OSError as exc:  # file is corrupt, so we remove it to start fresh

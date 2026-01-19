@@ -73,8 +73,8 @@ class TestGWSummConfigParser(object):
         TEST_CONFIG.seek(0)
         return cp
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def cnfg(cls):
         return cls.new()
 

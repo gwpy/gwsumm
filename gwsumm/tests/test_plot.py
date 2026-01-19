@@ -103,8 +103,8 @@ class TestSummaryPlot(object):
             return cls.PLOT(*args, **kwargs)
         return cls.PLOT(*cls.DEFAULT_ARGS, **cls.DEFAULT_KWARGS)
 
+    @pytest.fixture
     @classmethod
-    @pytest.fixture()
     def plot(cls):
         return cls.create()
 

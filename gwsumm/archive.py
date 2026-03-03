@@ -210,7 +210,8 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
     # down the whole workflow, requiring manual intervention. Here, we attempt
     # to automatically catch a common failure
     try:
-        h5file = File(sourcefile, 'r')
+        with File(sourcefile, 'r'):
+            pass
     except FileNotFoundError:
         raise
     except OSError as exc:  # file is corrupt, so we remove it to start fresh
@@ -250,7 +251,8 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
         # -- timeseries -------------------------
 
-        for dataset in h5file.get('timeseries', {}).values():
+        for name in h5file.get('timeseries', {}):
+            dataset = h5file['timeseries'][name]
             ts = TimeSeries.read(dataset, format='hdf5')
             if (re.search(r'\.(rms|min|mean|max|n)\Z', ts.channel.name) and
                     ts.sample_rate.value == 1.0):
@@ -271,7 +273,8 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
         # -- statevector -- ---------------------
 
-        for dataset in h5file.get('statevector', {}).values():
+        for name in h5file.get('statevector', {}):
+            dataset = h5file['statevector'][name]
             sv = StateVector.read(dataset, format='hdf5')
             sv.channel = get_channel(sv.channel)
             add_timeseries(sv, key=sv.channel.ndsname)
@@ -279,9 +282,11 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
         # -- spectrogram ------------------------
 
         for tag, add_ in zip(
-                ['spectrogram', 'coherence-components'],
-                [add_spectrogram, add_coherence_component_spectrogram]):
-            for key, dataset in h5file.get(tag, {}).items():
+            ['spectrogram', 'coherence-components'],
+            [add_spectrogram, add_coherence_component_spectrogram],
+        ):
+            for key in h5file.get(tag, {}):
+                dataset = h5file[tag][key]
                 key = key.rsplit(',', 1)[0]
                 spec = Spectrogram.read(dataset, format='hdf5')
                 spec.channel = get_channel(spec.channel)
@@ -289,14 +294,16 @@ def read_data_archive(sourcefile, rm_source_on_fail=True):
 
         # -- segments ---------------------------
 
-        for name, dataset in h5file.get('segments', {}).items():
+        for name in h5file.get('segments', {}):
+            dataset = h5file['segments'][name]
             dqflag = DataQualityFlag.read(h5file, path=dataset.name,
                                           format='hdf5')
             globalv.SEGMENTS += {name: dqflag}
 
         # -- triggers ---------------------------
 
-        for dataset in h5file.get('triggers', {}).values():
+        for name in h5file.get('triggers', {}):
+            dataset = h5file['triggers'][name]
             load_table(dataset)
 
 

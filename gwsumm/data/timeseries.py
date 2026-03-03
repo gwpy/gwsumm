@@ -385,10 +385,12 @@ def all_adc(cache):
     """
     for path in cache:
         try:
-            tag = os.path.basename(path).split('-')[1]
+            path = os.path.basename(path)
         except (AttributeError, TypeError):  # CacheEntry
             tag = path.description
             path = path.path
+        else:
+            tag = path.split('-')[1]
         if not path.endswith('.gwf') or tag not in ADC_TYPES:
             return False
     return True
@@ -703,8 +705,11 @@ def _get_timeseries_dict(channels, segments, config=None,
                     data.override_unit(channel.unit)
 
                 # update channel type for trends
-                if data.channel.type is None and (
-                        data.channel.trend is not None):
+                if (
+                    data.channel is not None
+                    and data.channel.type is None
+                    and data.channel.trend is not None
+                ):
                     if data.dt.to('s').value == 1:
                         data.channel.type = 's-trend'
                     elif data.dt.to('s').value == 60:

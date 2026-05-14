@@ -20,9 +20,7 @@
 """Utilities for segment handling and display
 """
 
-import sys
 import operator
-import warnings
 from collections import OrderedDict
 from configparser import (
     DEFAULTSECT,
@@ -40,8 +38,6 @@ from . import globalv
 from .utils import (
     re_flagdiv,
     vprint,
-    WARNC,
-    ENDC,
 )
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
@@ -214,33 +210,18 @@ def get_segments(flag, validity=None, config=ConfigParser(), cache=None,
             else:
                 qsegs = newsegs
             # parse configuration for query
-            kwargs = {}
-            if host is not None:
-                kwargs['host'] = host
-            else:
-                try:
-                    kwargs['host'] = config.get('segment-database', 'host')
-                except (NoSectionError, NoOptionError):
-                    pass
             try:
-                new = DataQualityDict.query_dqsegdb(
-                    allflags,
-                    qsegs,
-                    on_error=segdb_error,
-                    **kwargs)
-            except Exception as e:
-                # ignore error from SegDB
-                if segdb_error in ['ignore', None]:
-                    pass
-                # convert to warning
-                elif segdb_error in ['warn']:
-                    print(f"{WARNC}WARNING: {ENDC}Caught {type(e).__name__}: "
-                          f"{str(e)} [gwsumm.segments]", file=sys.stderr)
-                    warnings.warn(f"{type(e).__name__}: {str(e)}")
-                # otherwise raise as normal
-                else:
-                    raise
-                new = DataQualityDict()
+                host = config.get('segment-database', 'host')
+            except (NoSectionError, NoOptionError):
+                host = None
+            segdb_error = segdb_error or 'ignore'  # if None, set to 'ignore'
+            # query segment database
+            new = DataQualityDict.query_dqsegdb(
+                allflags,
+                qsegs,
+                on_error=segdb_error,
+                host=host,
+            )
             for f in new:
                 new[f].known &= newsegs
                 new[f].active &= newsegs

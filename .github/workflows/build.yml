@@ -63,7 +63,7 @@ jobs:
         restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
 
     - name: Configure conda
-      uses: conda-incubator/setup-miniconda@v3
+      uses: conda-incubator/setup-miniconda@v4
       with:
         auto-update-conda: true
         miniforge-version: latest

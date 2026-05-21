@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Copyright (C) Duncan Macleod (2013)
+#               Evan Goetz (2026)
 #
 # This file is part of GWSumm.
 #
@@ -23,16 +24,18 @@ This module constructs a directed acyclic graph (DAG) that defines
 a workflow to be submitted via the HTCondor scheduler.
 """
 
-import argparse
 import os
+from pathlib import Path
 import shutil
 import sys
 
 from glue import pipeline
 
 from gwdetchar.utils import cli
+from gwpy.time import tconvert
 
-from . import __version__
+from . import mode
+from .utils import create_parser
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
 __credits__ = ('Alex Urban <alexander.urban@ligo.org>, '
@@ -52,12 +55,12 @@ class GWSummaryJob(pipeline.CondorDAGJob):
     """
     logtag = '$(cluster)-$(process)'
 
-    def __init__(self, universe, tag='gw_summary',
+    def __init__(self, universe, executable='python3', tag='gw_summary',
                  subdir=None, logdir=None, **cmds):
-        pipeline.CondorDAGJob.__init__(self, universe, sys.executable)
+        pipeline.CondorDAGJob.__init__(self, universe, executable)
         if subdir:
             subdir = os.path.abspath(subdir)
-            self.set_sub_file(os.path.join(subdir, '%s.sub' % (tag)))
+            self.set_sub_file(os.path.join(subdir, '%s.sub' % tag))
         if logdir:
             logdir = os.path.abspath(logdir)
             self.set_log_file(os.path.join(
@@ -72,7 +75,10 @@ class GWSummaryJob(pipeline.CondorDAGJob):
             else:
                 self.add_condor_cmd(key, val)
         # add python module sub-command
-        self._command = ' '.join(['-m', __package__])
+        if executable != 'python3':
+            self._command = 'exec'
+        else:
+            self._command = ' '.join(['-m', __package__])
 
     def add_opt(self, opt, value=''):
         pipeline.CondorDAGJob.add_opt(self, opt, str(value))
@@ -109,315 +115,12 @@ class GWSummaryDAGNode(pipeline.CondorDAGNode):
         ])
 
 
-# -- parse command-line -------------------------------------------------------
-
-class GWHelpFormatter(argparse.HelpFormatter):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('indent_increment', 4)
-        super(GWHelpFormatter, self).__init__(*args, **kwargs)
-
-
-def create_parser():
-    """Create a command-line parser for this entry point
-    """
-    # initialize argument parser
-    usage = ('%(prog)s --global-config defaults.ini --config-file '
-             'myconfig.ini [--config-file myconfig2.ini] [options]')
-    parser = argparse.ArgumentParser(
-        prog=PROG,
-        usage=usage,
-        description=__doc__,
-        formatter_class=GWHelpFormatter,
-    )
-    bopts = parser.add_argument_group("Basic options")
-    htcopts = parser.add_argument_group("Condor options")
-    copts = parser.add_argument_group(
-        "Configuration options",
-        "Each --global-config file will be used in all nodes of the workflow, "
-        "while a single node will be created for each other --config-file",
-    )
-    popts = parser.add_argument_group(
-        "Process options",
-        "Configure how this summary will be processed.",
-    )
-    outopts = parser.add_argument_group("Output options")
-    topts = parser.add_argument_group(
-        "Time mode options",
-        "Choose a stadard time mode, or a GPS [start, stop) interval",
-    )
-
-    # general arguments
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        default=False,
-        help="show verbose output, default: %(default)s",
-    )
-    parser.add_argument(
-        "-V",
-        "--version",
-        action="version",
-        help="show program's version number and exit",
-    )
-    parser.version = __version__
-
-    # basic options
-    bopts.add_argument(
-        '-i',
-        '--ifo',
-        action='store',
-        type=str,
-        metavar='IFO',
-        help="Instrument to process. If this option is set in "
-             "the [DEFAULT] of any of the INI files, giving it "
-             "here is redundant.",
-    )
-    wrapgroup = bopts.add_mutually_exclusive_group()
-    wrapgroup.add_argument(
-        '-w',
-        '--skip-html-wrapper',
-        action='store_true',
-        default=False,
-        help="Do not configure first job for HTML htmlnode, default: "
-             "%(default)s. Useful for separating large summary pipeline "
-             "across multiple DAGs",
-    )
-    wrapgroup.add_argument(
-        '-W',
-        '--html-wrapper-only',
-        action='store_true',
-        help="Only run first job for HTML htmlnode.",
-    )
-    bopts.add_argument(
-        '-t',
-        '--file-tag',
-        action='store',
-        type=str,
-        default='gw_summary_pipe',
-        help="file tag for pipeline files, default: %(default)s",
-    )
-
-    # HTCondor options
-    htcopts.add_argument(
-        '-u',
-        '--universe',
-        action='store',
-        type=str,
-        default='vanilla',
-        help="Universe for condor jobs, default: %(default)s",
-    )
-    htcopts.add_argument(
-        '-l',
-        '--log-dir',
-        action='store',
-        type=str,
-        default=os.environ.get('LOCALDIR', None),
-        help="Directory path for condor log files, default: %(default)s",
-    )
-    htcopts.add_argument(
-        '-m',
-        '--maxjobs',
-        action='store',
-        type=int,
-        default=None,
-        metavar='N',
-        help="Restrict the DAG to submit only N jobs at any one "
-             "time, default: %(default)s",
-    )
-    htcopts.add_argument(
-        '-T',
-        '--condor-timeout',
-        action='store',
-        type=float,
-        default=None,
-        metavar='T',
-        help='Configure condor to terminate jobs after T hours '
-             'to prevent idling, default: %(default)s',
-    )
-    htcopts.add_argument(
-        '-c',
-        '--condor-command',
-        action='append',
-        type=str,
-        default=[],
-        help="Extra condor submit commands to add to gw_summary submit file. "
-             "Can be given multiple times in the form \"key=value\"",
-    )
-
-    # configuration options
-    copts.add_argument(
-        '-f',
-        '--config-file',
-        action='append',
-        type=str,
-        metavar='FILE',
-        default=[],
-        help="INI file for analysis, may be given multiple times",
-    )
-    copts.add_argument(
-        '-g',
-        '--global-config',
-        action='append',
-        type=str,
-        metavar='FILE',
-        default=[],
-        help="INI file for use in all workflow jobs, may be given "
-             "multiple times",
-    )
-    copts.add_argument(
-        '-p',
-        '--priority',
-        action='append',
-        type=str,
-        default=[],
-        help="priority for DAG node, should be given once "
-             "for each --config-file in the same order",
-    )
-
-    # process options
-    popts.add_argument(
-        '--nds',
-        action='store_true',
-        default='guess',
-        help='use NDS as the data source, default: %(default)s',
-    )
-    popts.add_argument(
-        '--single-process',
-        action='store_true',
-        default=False,
-        help="restrict gw_summary to a single process, mainly for "
-             "debugging purposes, default: %(default)s",
-    )
-    popts.add_argument(
-        '--multi-process',
-        action='store',
-        type=int,
-        default=None,
-        help="maximum number of concurrent sub-processes for each "
-             "gw_summary job, {number of CPUs} / {min(number of jobs, 4)}",
-    )
-    popts.add_argument(
-        '-a',
-        '--archive',
-        action='store_true',
-        default=False,
-        help="Read archived data from the FILE, and "
-             "write back to it at the end",
-    )
-    popts.add_argument(
-        '-S',
-        '--on-segdb-error',
-        action='store',
-        type=str,
-        default='raise',
-        choices=['raise', 'ignore', 'warn'],
-        help="action upon error fetching segments from SegDB",
-    )
-    popts.add_argument(
-        '-G',
-        '--on-datafind-error',
-        action='store',
-        type=str,
-        default='raise',
-        choices=['raise', 'ignore', 'warn'],
-        help="action upon error querying for frames from the "
-             "datafind server: default: %(default)s",
-    )
-    popts.add_argument(
-        '--data-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of TimeSeries data files',
-    )
-    popts.add_argument(
-        '--event-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of event trigger files',
-    )
-    popts.add_argument(
-        '--segment-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of state '
-             'or data-quality segment files',
-    )
-    popts.add_argument(
-        '--no-htaccess',
-        action='store_true',
-        default=False,
-        help='tell gw_summary to not write .htaccess files',
-    )
-
-    # output options
-    outopts.add_argument(
-        '-o',
-        '--output-dir',
-        action='store',
-        type=str,
-        metavar='OUTDIR',
-        default=os.curdir,
-        help="Output directory for summary information, "
-             "default: '%(default)s'",
-    )
-
-    # time mode options
-    topts.add_argument(
-        "--day",
-        action="store",
-        type=str,
-        metavar='YYYYMMDD',
-        help="UTC date to process",
-    )
-    topts.add_argument(
-        "--week",
-        action="store",
-        type=str,
-        metavar="YYYYMMDD",
-        help="week to process (by UTC starting date)",
-    )
-    topts.add_argument(
-        "--month",
-        action="store",
-        type=str,
-        metavar="YYYYMM",
-        help="calendar month to process",
-    )
-    topts.add_argument(
-        "--year",
-        action="store",
-        type=str,
-        metavar="YYYY",
-        help="calendar year to process",
-    )
-    topts.add_argument(
-        "-s",
-        "--gps-start-time",
-        action="store",
-        type=int,
-        metavar="GPSSTART",
-        help="GPS start time",
-    )
-    topts.add_argument(
-        "-e",
-        "--gps-end-time",
-        action="store",
-        type=int,
-        metavar="GPSEND",
-        help="GPS end time",
-    )
-
-    # return the argument parser
-    return parser
-
-
 # -- main code block ----------------------------------------------------------
 
 def main(args=None):
     """Run the command-line Omega scan tool in batch mode
     """
-    parser = create_parser()
+    parser = create_parser(include_condor_opts=True)
     args = parser.parse_args(args=args)
 
     # initialize logger
@@ -426,12 +129,16 @@ def main(args=None):
         level='DEBUG' if args.verbose else 'INFO',
     )
 
-    # check time options
-    N = sum([args.day is not None, args.month is not None,
-             args.gps_start_time is not None, args.gps_end_time is not None])
-    if N > 1 and not (args.gps_start_time and args.gps_end_time):
-        raise parser.error("Please give only one of --day, --month, or "
-                           "--gps-start-time and --gps-end-time.")
+    # set mode and output directory
+    # This will set the output directory to be day/YYYYMMDD, week/YYYYMMDD,
+    # month/YYYYMM, or gps/<gps start>-<gps end>.
+    mode.set_mode(args.mode)
+    try:
+        utc = tconvert(args.gpsstart)
+        outpath = mode.get_base(utc)
+        outpath = str(Path(outpath).parent)
+    except ValueError:
+        outpath = 'gps'
 
     for (i, cf) in enumerate(args.config_file):
         args.config_file[i] = ','.join(map(os.path.abspath, cf.split(',')))
@@ -477,8 +184,6 @@ def main(args=None):
 
     dag = pipeline.CondorDAG(os.path.join(htclogdir, f'{args.file_tag}.log'))
     dag.set_dag_file(os.path.join(outdir, args.file_tag))
-
-    universe = args.universe
 
     # -- parse condor commands ----------------------
 
@@ -551,47 +256,100 @@ def main(args=None):
     globalconfig = ','.join(args.global_config)
 
     jobs = []
-    if not args.skip_html_wrapper:
+    # Define an HTML only job which runs in the local universe.
+    # This is always just one job, based on the structure we've defined.
+    if args.html_only or not args.no_html:
         htmljob = GWSummaryJob(
-            'local', subdir=outdir, logdir=logdir,
+            'local', executable='apptainer',
+            subdir=outdir, logdir=logdir,
             tag=f'{args.file_tag}_local', **condorcmds,
             getenv=envvars,
         )
         jobs.append(htmljob)
-    if not args.html_wrapper_only:
+    # Define data jobs which run either in the local or container universe. We
+    # need to handle the case where jobs may not have completed previously
+    # so there may be no archive file.
+    if not args.html_only or args.no_html:
+        # HTCondor file transfer commands
+        transfer_aux_files = []
+        if args.universe != 'local':
+            # set executable
+            executable = 'python3'
+            # Set transfer commands
+            for cmd, val in {'should_transfer_files': 'YES',
+                             'transfer_input_files': '$(inputfiles)',
+                             'transfer_output_files': outpath,
+                             'container_image': args.container_path}.items():
+                if cmd not in condorcmds:
+                    condorcmds[cmd] = val
+            # Change the environment variable definitions when transferring
+            # files to an execute point.
+            # List the all of the environment variables set by the submit file
+            condor_envvars = condorcmds['environment'].split(' ')
+            # When an environment variable points to a directory or file,
+            # change the environment variable just to the name and add the
+            # path to the list of files to be transferred.
+            for idx, entry in enumerate(condor_envvars):
+                var, val = entry.split('=', 1)
+                if (testpath := Path(val)).exists():
+                    transfer_aux_files.append(str(testpath))
+                    updated_env = testpath.name
+                    condor_envvars[idx] = (f'{var}=$$(CondorScratchDir)/'
+                                           f'{updated_env}')
+            # Now rejoin the environment variables
+            condorcmds['environment'] = ' '.join(condor_envvars)
+            # Join the auxiliary files in a comma separated list
+            transfer_aux_files = ','.join(transfer_aux_files)
+
+            # container universe jobs condor commands
+            for cmd_ in args.condor_command_container:
+                (key, value) = cmd_.split('=', 1)
+                if key in condorcmds:
+                    logger.debug(f"Appending {value.strip()} to condor '{key}'"
+                                 f" value")
+                    condorcmds[key] += f" {value.strip()}"
+                else:
+                    condorcmds[key.rstrip()] = value.strip()
+        else:
+            executable = 'apptainer'
+        # A data job
         datajob = GWSummaryJob(
-            universe, subdir=outdir, logdir=logdir,
+            args.universe, executable=executable,
+            subdir=outdir, logdir=logdir,
             tag=args.file_tag, **condorcmds,
             getenv=envvars,
         )
+        # A data job with no archive file
+        datajob_noarchive = GWSummaryJob(
+            args.universe, executable=executable,
+            subdir=outdir, logdir=logdir,
+            tag=f'{args.file_tag}_noarchive', **condorcmds,
+            getenv=envvars,
+        )
         jobs.append(datajob)
+        jobs.append(datajob_noarchive)
 
     # add common command-line options
     for job in jobs:
-        if args.day:
-            job.set_command('day')
-            job.add_arg(args.day)
-        elif args.week:
-            job.set_command('week')
-            job.add_arg(args.week)
-        elif args.month:
-            job.set_command('month')
-            job.add_arg(args.month)
-        elif args.year:
-            job.set_command('year')
-            job.add_arg(args.year)
-        elif args.gps_start_time or args.gps_end_time:
-            job.set_command('gps')
-            job.add_arg(str(args.gps_start_time))
-            job.add_arg(str(args.gps_end_time))
-        else:
-            job.set_command('day')
+        if job.get_universe() == 'local':
+            job.set_command(
+                f'{os.path.abspath(args.container_path)} python3 -m '
+                f'{__package__}'
+            )
+        job.set_command(args.mode)
+        if args.mode == 'day':
+            job.add_arg(args.day.strftime("%Y%m%d"))
+        elif args.mode == 'week':
+            job.add_arg(args.week.strftime("%Y%m%d"))
+        elif args.mode == 'month':
+            job.add_arg(args.month.strftime("%Y%m"))
+        elif args.mode == 'gps':
+            job.add_arg(str(args.gpsstart))
+            job.add_arg(str(args.gpsend))
         if args.nds is True:
             job.add_opt('nds')
-        if args.single_process:
-            job.add_opt('single-process')
-        elif args.multi_process is not None:
-            job.add_opt('multi-process', args.multi_process)
+        if args.multiprocess is not None:
+            job.add_opt('multi-process', args.multiprocess)
         if args.verbose:
             job.add_opt('verbose')
         if args.ifo:
@@ -606,47 +364,111 @@ def main(args=None):
                 job.add_arg('%s %s' % (opt, (' %s ' % opt).join(fplist)))
         if args.no_htaccess:
             job.add_opt('no-htaccess')
+        # If the job is in the container universe, the transferred archive file
+        # will be in the flat directory so set the archive read directory for
+        # the job to read from the flat directory
+        if ('noarchive' not in job.get_sub_file() and
+                args.archive and
+                job.get_universe() == 'container'):
+            job.add_opt('archive-read-dir', '.')
+        if (args.archive and job.get_universe() == 'container' and
+                args.archive_write_dir):
+            job.add_opt('archive-write-dir', args.archive_write_dir)
 
     # make surrounding HTML first
-    if not args.skip_html_wrapper:
+    if args.html_only or not args.no_html:
         htmljob.add_opt('html-only', '')
         htmljob.add_opt('config-file', ','.join(
             [globalconfig]+args.config_file).strip(','))
 
         htmlnode = GWSummaryDAGNode(htmljob)
-        for configfile in args.config_file:
-            htmlnode.add_input_file(args.config_file)
+        htmlnode.add_input_file(args.config_file)
         htmlnode.set_category('gw_summary')
         dag.add_node(htmlnode)
         logger.debug(" -- Configured HTML htmlnode job")
 
     # create node for each config file
-    if not args.html_wrapper_only:
+    if not args.html_only or args.no_html:
         # add html opts
         datajob.add_opt('no-html', '')
+        datajob_noarchive.add_opt('no-html', '')
         if args.archive:
             datajob.add_condor_cmd('+SummaryNodeType', '"$(macroarchive)"')
+            datajob_noarchive.add_condor_cmd(
+                '+SummaryNodeType', '"$(macroarchive)"'
+            )
         # configure each data node
         for (i, configfile) in enumerate(args.config_file):
-            node = GWSummaryDAGNode(datajob)
-            node.add_var_arg('--config-file %s' % ','.join(
-                [globalconfig, configfile]).strip(','))
+            # If we are using archive files, then we need to transfer any
+            # HDF5 archive files with the tag in args.archive if running in
+            # the container universe
+            files = ''  # Comma separated list of existing archive files
             if args.archive:
+                # First figure out the archive tag
                 jobtag = os.path.splitext(os.path.basename(configfile))[0]
                 archivetag = jobtag.upper().replace('-', '_')
-                if args.ifo and archivetag.startswith('%s_' %
-                                                      args.ifo.upper()):
+                if args.ifo and archivetag.startswith(f'{args.ifo.upper()}_'):
                     archivetag = archivetag[3:]
+
+                # If running in the container universe, check to see if any
+                # archive file already exists. If it does then we need to
+                # transfer it there.
+                # Both datajob types have the same universe, so only check one
+                if datajob.get_universe() == 'container':
+                    # If we find any matching archive files make a comma
+                    # separated string with those files
+                    if len(archives := sorted(Path(args.archive_read_dir).glob(
+                            f'*-{archivetag}-*.h5'))) > 0:
+                        archives = [str(f) for f in archives]
+                        files = ','.join(archives).strip(',')
+
+                # If there was no archive file found for this config group and
+                # running in the container universe for the data jobs, then
+                # this node will be a "no archive". We don't transfer an
+                # archive file, and we don't give the --archive-read-dir .
+                # option.
+                if len(files) == 0 and datajob.get_universe() == 'container':
+                    node = GWSummaryDAGNode(datajob_noarchive)
+                else:
+                    node = GWSummaryDAGNode(datajob)
+
+                # Finally, we have a node, so add the --archive <archivetag>
+                # option
                 node.add_var_opt('archive', archivetag)
-            for cf in configfile.split(','):
-                node.add_input_file(cf)
+            else:
+                node = GWSummaryDAGNode(datajob)
+
+            # Configuration files for gw_summary jobs are going to be
+            # given as the full path (local universe jobs), or just the
+            # file name (container universe jobs)
+            if datajob.get_universe() == 'local':
+                config_files = ','.join([globalconfig, configfile]).strip(',')
+            elif datajob.get_universe() == 'container':
+                # Use just the file name
+                config_files = ','.join(
+                    [Path(f).name for f in
+                     ','.join(
+                         [globalconfig.strip(','), configfile.strip(',')]
+                     ).split(',')]
+                )
+                # Transferred files are the paths to file relative to the
+                # submit location (usually ~detchar/public_html/summary).
+                # The comma separated string is added to the dag as a macro
+                # variable inputfiles
+                txfr_files = ','.join(
+                    [globalconfig, configfile, transfer_aux_files, files]
+                ).strip(',')
+                node.add_macro('inputfiles', txfr_files)
+            else:
+                raise ValueError(f"Unknown universe {node.get_universe()}")
+            node.add_var_opt('config-file', config_files)
             node.set_category('gw_summary')
             try:
                 node.set_priority(args.priority[i])
             except IndexError:
                 node.set_priority(0)
             node.set_retry(1)
-            if not args.skip_html_wrapper:
+            if not args.no_html:
                 node.add_parent(htmlnode)
             dag.add_node(node)
             logger.debug(" -- Configured job for config %s" % configfile)

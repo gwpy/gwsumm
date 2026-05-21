@@ -27,7 +27,7 @@ from dateutil import tz
 
 import numpy
 
-from matplotlib.cm import get_cmap
+from matplotlib.pyplot import get_cmap
 from matplotlib.colors import Normalize
 
 from astropy.time import Time

@@ -1,5 +1,6 @@
 # coding=utf-8
 # Copyright (C) Duncan Macleod (2013)
+#               Evan Goetz (2026)
 #
 # This file is part of GWSumm.
 #
@@ -29,9 +30,7 @@ Run '%(prog)s <mode> --help' for details of the specific arguments and
 options available for each mode.
 """
 
-import argparse
 import calendar
-import datetime
 import getpass
 import os
 import re
@@ -43,7 +42,7 @@ from astropy.config.paths import get_cache_dir
 
 from collections import OrderedDict
 from configparser import (DEFAULTSECT, NoOptionError, NoSectionError)
-from dateutil.relativedelta import relativedelta
+from matplotlib import font_manager as fm
 from urllib.parse import urlparse
 
 from glue.lal import (Cache, LIGOTimeGPS)
@@ -51,12 +50,11 @@ from glue.lal import (Cache, LIGOTimeGPS)
 from gwpy import time
 from gwpy.segments import (Segment, SegmentList)
 from gwpy.signal.spectral import _lal as fft_lal
-from gwpy.time import (Time, _tconvert, tconvert, to_gps)
+from gwpy.time import (Time, _tconvert, tconvert)
 
 from gwdetchar.utils.cli import logger
 
 from . import (
-    __version__,
     archive,
     globalv,
     mode,
@@ -73,8 +71,8 @@ from .tabs import (
     get_tab,
 )
 from .utils import (
-    get_default_ifo,
     re_flagdiv,
+    create_parser,
 )
 from .data import get_timeseries_dict
 
@@ -88,439 +86,16 @@ time.LIGOTimeGPS = LIGOTimeGPS
 _tconvert.LIGOTimeGPS = LIGOTimeGPS
 
 __author__ = 'Duncan Macleod <duncan.macleod@ligo.org>'
+__credits__ = "Evan Goetz <evan.goetz@ligo.org>"
 
 # set defaults
 VERBOSE = False
 PROFILE = False
-try:
-    DEFAULT_IFO = get_default_ifo()
-except ValueError:
-    DEFAULT_IFO = None
 
 # initialize logger
 PROG = ('python -m gwsumm' if sys.argv[0].endswith('.py')
         else os.path.basename(sys.argv[0]))
 LOGGER = logger(name=PROG.split('python -m ').pop())
-
-# find today's date
-TODAY = datetime.datetime.utcnow().strftime('%Y%m%d')
-
-
-# -- argparse utilities -------------------------------------------------------
-
-class GWArgumentParser(argparse.ArgumentParser):
-    def __init__(self, *args, **kwargs):
-        super(GWArgumentParser, self).__init__(*args, **kwargs)
-        self._positionals.title = 'Positional arguments'
-        self._optionals.title = 'Optional arguments'
-
-
-class GWHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
-    def __init__(self, *args, **kwargs):
-        kwargs.setdefault('indent_increment', 4)
-        super(GWHelpFormatter, self).__init__(*args, **kwargs)
-
-
-class DateAction(argparse.Action):
-    TIMESCALE = {'days': 1}
-
-    @staticmethod
-    def set_gps_times(namespace, startdate, enddate):
-        setattr(namespace, 'gpsstart', to_gps(startdate))
-        setattr(namespace, 'gpsend', to_gps(enddate))
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        try:
-            date = datetime.datetime.strptime(values, self.DATEFORMAT)
-        except ValueError:
-            raise parser.error("%s malformed: %r. Please format as %s"
-                               % (self.dest.title(), values, self.METAVAR))
-        else:
-            self.set_gps_times(namespace, date,
-                               date + relativedelta(**self.TIMESCALE))
-            setattr(namespace, self.dest, date)
-        return date
-
-
-class DayAction(DateAction):
-    TIMESCALE = {'days': 1}
-    DATEFORMAT = '%Y%m%d'
-    METAVAR = 'YYYYMMDD'
-
-
-class WeekAction(DayAction):
-    TIMESCALE = {'days': 7}
-
-
-class MonthAction(DateAction):
-    TIMESCALE = {'months': 1}
-    DATEFORMAT = '%Y%m'
-    METAVAR = 'YYYYMM'
-
-
-class YearAction(DateAction):
-    TIMESCALE = {'years': 1}
-    DATEFORMAT = '%Y'
-    METAVAR = 'YYYY'
-
-
-class GPSAction(argparse.Action):
-    def __call__(self, parser, namespace, values, option_string=False):
-        try:
-            values = float(values)
-        except (TypeError, ValueError):
-            pass
-        setattr(namespace, self.dest, to_gps(values))
-
-
-# -- parse command-line -------------------------------------------------------
-
-def add_output_options(parser_):
-    """Add outuput options to the subparser
-
-    This is only needed because argparse can't handle mutually exclusive
-    groups in a parent parser handed to a subparser for some reason.
-    """
-    outopts = parser_.add_argument_group("Output options")
-    outopts.add_argument(
-        '-o',
-        '--output-dir',
-        action='store',
-        type=str,
-        metavar='DIR',
-        default=os.curdir,
-        help="Output directory for summary information",
-    )
-    htmlopts = outopts.add_mutually_exclusive_group()
-    htmlopts.add_argument(
-        '-m',
-        '--html-only',
-        action='store_true',
-        default=False,
-        help="Generate container HTML and navigation only",
-    )
-    htmlopts.add_argument(
-        '-n',
-        '--no-html',
-        action='store_true',
-        default=False,
-        help="Generate inner HTML and contents only, not supporting HTML",
-    )
-    outopts.add_argument(
-        '-N',
-        '--no-htaccess',
-        action='store_true',
-        default=False,
-        help="don't create a .htaccess file to customise 404 errors",
-    )
-
-
-def add_archive_options(parser_):
-    """Add archiving options to the subparser
-
-    This is only needed because argparse can't handle mutually exclusive
-    groups in a parent parser handed to a subparser for some reason.
-    """
-    hierarchopts = parser_.add_argument_group('Archive options')
-    hierarchchoice = hierarchopts.add_mutually_exclusive_group()
-    hierarchchoice.add_argument(
-        '-a',
-        '--archive',
-        metavar='FILE_TAG',
-        default=False,
-        const='GW_SUMMARY_ARCHIVE',
-        nargs='?',
-        help="Read archived data from, and write processed data to "
-             "an HDF archive file written with the FILE_TAG. If not "
-             "given, no archive will be used, if given with no file "
-             "tag, a default of '%(const)s' will be used.",
-    )
-    hierarchchoice.add_argument(
-        '-d',
-        '--daily-archive',
-        metavar='FILE_TAG',
-        default=False,
-        const='GW_SUMMARY_ARCHIVE',
-        nargs='?',
-        help="Read data from the daily archives, with the given FILE_TAG."
-             "If not given, daily archives will be used, if given with no "
-             "file tag, a default of '%(const)s' will be used.",
-    )
-
-
-def create_parser():
-    """Create a command-line parser for this entry point
-    """
-    # initialize top-level argument parser
-    parser = GWArgumentParser(
-        formatter_class=GWHelpFormatter,
-        prog=PROG,
-        description=__doc__,
-        fromfile_prefix_chars="@",
-        epilog="Arguments and options may be written into files and passed as "
-               "positional arguments prepended with '@', e.g. '%(prog)s "
-               "@args.txt'. In this format, options must be give as "
-               "'--argument=value', and not '--argument value'.",
-    )
-
-    # global arguments
-    parser.add_argument(
-        '-V',
-        '--version',
-        action='version',
-        version=__version__,
-        help="show program's version number and exit",
-    )
-
-    # shared arguments
-    sharedopts = GWArgumentParser(add_help=False)
-    sharedopts.title = 'Progress arguments'
-    sharedopts.add_argument(
-        '-v',
-        '--verbose',
-        action='store_true',
-        default=False,
-        help="show verbose logging output",
-    )
-    sharedopts.add_argument(
-        '-D',
-        '--debug',
-        action='store_true',
-        default=False,
-        help="show information that could be useful in debugging",
-    )
-
-    # configuration arguments
-    copts = sharedopts.add_argument_group(
-        "Configuration options",
-        "Provide a number of INI-format configuration files",
-    )
-    copts.add_argument(
-        '-i',
-        '--ifo',
-        default=DEFAULT_IFO,
-        metavar='IFO',
-        help="IFO prefix for interferometer to process. "
-             "If this option is set in the [DEFAULT] of any of "
-             "the INI files, giving it here is redundant.",
-    )
-    copts.add_argument(
-        '-f',
-        '--config-file',
-        action='append',
-        type=str,
-        metavar='FILE',
-        default=[],
-        help="INI file for analysis, may be given multiple times",
-    )
-    copts.add_argument(
-        '-t',
-        '--process-tab',
-        action='append',
-        type=str,
-        help="process only this tab, can be given multiple times",
-    )
-
-    # process options
-    popts = sharedopts.add_argument_group(
-        "Process options",
-        "Configure how this summary will be processed.",
-    )
-    popts.add_argument(
-        '--nds',
-        action='store_true',
-        default=None,
-        help="use NDS as the data source, default: 'guess'",
-    )
-    popts.add_argument(
-        '-j',
-        '--multi-process',
-        action='store',
-        type=int,
-        default=1,
-        dest='multiprocess',
-        metavar='N',
-        help="use a maximum of N parallel processes at any time",
-    )
-    popts.add_argument(
-        '-b',
-        '--bulk-read',
-        action='store_true',
-        default=False,
-        help="read all data up-front at the start of the job, "
-             "rather than when it is needed for a tab",
-    )
-    popts.add_argument(
-        '-S',
-        '--on-segdb-error',
-        action='store',
-        type=str,
-        default='raise',
-        choices=['raise', 'ignore', 'warn'],
-        help="action upon error fetching segments from SegDB",
-    )
-    popts.add_argument(
-        '-G',
-        '--on-datafind-error',
-        action='store',
-        type=str,
-        default='raise',
-        choices=['raise', 'ignore', 'warn'],
-        help="action upon error querying for frames from the "
-             "datafind server, default: %(default)s",
-    )
-    popts.add_argument(
-        '--data-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of TimeSeries data files',
-    )
-    popts.add_argument(
-        '--event-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of event trigger files',
-    )
-    popts.add_argument(
-        '--segment-cache',
-        action='append',
-        default=[],
-        help='path to LAL-format cache of state '
-             'or data-quality segment files',
-    )
-
-    # define sub-parser handler
-    subparsers = parser.add_subparsers(
-        dest='mode',
-        title='Modes',
-        description='Note: all dates are defined with UTC boundaries.\n'
-                    'The valid modes are:',
-    )
-    subparser = dict()
-
-    # DAY mode
-    daydoc = """
-    Run %s over a full UTC day, and link this day to others with a calendar
-    built into the HTML navigation bar. In this mode you can also archive data
-    in HDF-format files to allow progressive processing of live data without
-    restarting from scratch every time.""" % parser.prog
-    subparser['day'] = subparsers.add_parser(
-        'day',
-        description=daydoc,
-        epilog=parser.epilog,
-        parents=[sharedopts],
-        formatter_class=GWHelpFormatter,
-        help="Process one day of data",
-    )
-    subparser['day'].add_argument(
-        'day',
-        action=DayAction,
-        type=str,
-        nargs='?',
-        metavar=DayAction.METAVAR,
-        default=TODAY,
-        help="Day to process",
-    )
-    add_output_options(subparser['day'])
-
-    darchopts = subparser['day'].add_argument_group(
-        'Archive options',
-        'Choose if, and how, to archive data from this run',
-    )
-    darchopts.add_argument(
-        '-a',
-        '--archive',
-        metavar='FILE_TAG',
-        default=False,
-        const='GW_SUMMARY_ARCHIVE',
-        nargs='?',
-        help="Read archived data from, and write processed "
-             "data to, an HDF archive file written with the "
-             "FILE_TAG. If not given, no archive will be used, "
-             "if given with no file tag, a default of "
-             "'%(const)s' will be used.",
-    )
-
-    # WEEK mode
-    subparser['week'] = subparsers.add_parser(
-        'week',
-        parents=[sharedopts],
-        epilog=parser.epilog,
-        formatter_class=GWHelpFormatter,
-        help="Process one week of data",
-    )
-    subparser['week'].add_argument(
-        'week',
-        action=WeekAction,
-        type=str,
-        metavar=WeekAction.METAVAR,
-        help="Week to process (given as starting day)",
-    )
-    add_output_options(subparser['week'])
-    add_archive_options(subparser['week'])
-
-    # MONTH mode
-    subparser['month'] = subparsers.add_parser(
-        'month',
-        parents=[sharedopts],
-        epilog=parser.epilog,
-        formatter_class=GWHelpFormatter,
-        help="Process one month of data",
-    )
-    subparser['month'].add_argument(
-        'month',
-        action=MonthAction,
-        type=str,
-        metavar=MonthAction.METAVAR,
-        help="Month to process",
-    )
-    add_output_options(subparser['month'])
-    add_archive_options(subparser['month'])
-
-    # GPS mode
-    subparser['gps'] = subparsers.add_parser(
-        'gps',
-        parents=[sharedopts],
-        epilog=parser.epilog,
-        formatter_class=GWHelpFormatter,
-        help="Process GPS interval",
-    )
-    subparser['gps'].add_argument(
-        'gpsstart',
-        action=GPSAction,
-        type=str,
-        metavar='GPSSTART',
-        help='GPS start time',
-    )
-    subparser['gps'].add_argument(
-        'gpsend',
-        action=GPSAction,
-        type=str,
-        metavar='GPSEND',
-        help='GPS end time.',
-    )
-
-    garchopts = subparser['gps'].add_argument_group(
-        'Archive options',
-        'Choose if, and how, to archive data from this run',
-    )
-    garchopts.add_argument(
-        '-a',
-        '--archive',
-        metavar='FILE_TAG',
-        default=False,
-        const='GW_SUMMARY_ARCHIVE',
-        nargs='?',
-        help="Read archived data from, and write processed "
-             "data to, an HDF archive file written with the "
-             "FILE_TAG. If not given, no archive will be used, "
-             "if given with no file tag, a default of "
-             "'%(const)s' will be used.")
-
-    add_output_options(subparser['gps'])
-
-    # return the argument parser
-    return parser
 
 
 # -- main code block ----------------------------------------------------------
@@ -540,11 +115,6 @@ def main(args=None):
     # find all config files
     args.config_file = [os.path.expanduser(fp) for csv in args.config_file for
                         fp in csv.split(',')]
-
-    # check segdb option
-    if args.on_segdb_error not in ['raise', 'warn', 'ignore']:
-        parser.error("Invalid option --on-segdb-error='%s'" %
-                     args.on_segdb_error)
 
     # read configuration file
     config = GWSummConfigParser()
@@ -598,6 +168,10 @@ def main(args=None):
         path = mode.get_base(utc)
     except ValueError:
         path = os.path.join('gps', f'{args.gpsstart}-{args.gpsend}')
+        if args.archive_write_dir is None:
+            args.archive_write_dir = f'{path}/archive'
+        if args.archive_read_dir is None:
+            args.archive_read_dir = f'{path}/archive'
 
     # set LAL FFT plan wisdom level
     duration = min(globalv.NOW, args.gpsend) - args.gpsstart
@@ -641,6 +215,16 @@ def main(args=None):
     LOGGER.debug("Output directory: {}".format(
         os.path.abspath(os.path.join(args.output_dir, path))))
 
+    # Set fonts
+    if ('XDG_DATA_HOME' in os.environ and
+            os.path.exists(
+                p := os.path.join(os.environ['XDG_DATA_HOME'], 'fonts')
+            )):
+        LOGGER.debug(f"Adding fonts for matplotlib from {p}")
+        font_files = fm.findSystemFonts(fontpaths=p)
+        for f in font_files:
+            fm.fontManager.addfont(f)
+
     # -- Finalise configuration
     LOGGER.info("Loading configuration")
     plugins = config.load_plugins()
@@ -681,8 +265,9 @@ def main(args=None):
 
     # -- read archive -------------------------------
 
-    if not hasattr(args, 'archive'):
-        args.archive = False
+    # EG: I don't know why this would be needed. Commenting out for now
+    # if not hasattr(args, 'archive'):
+    #     args.archive = False
 
     if args.html_only:
         args.archive = False
@@ -690,31 +275,43 @@ def main(args=None):
     elif args.archive is True:
         args.archive = 'GW_SUMMARY_ARCHIVE'
 
-    archives = []
+    archives_read = []
+    archives_write = []
 
     if args.archive:
-        archivedir = os.path.join(path, 'archive')
-        os.makedirs(archivedir, exist_ok=True)
-        args.archive = os.path.join(archivedir, '%s-%s-%d-%d.h5'
-                                    % (ifo, args.archive, args.gpsstart,
-                                       args.gpsend - args.gpsstart))
-        if os.path.isfile(args.archive):
-            archives.append(args.archive)
+        os.makedirs(args.archive_write_dir, exist_ok=True)
+        archive_file_read = os.path.join(
+            args.archive_read_dir,
+            (f'{ifo}-{args.archive}-{args.gpsstart}-'
+             f'{args.gpsend - args.gpsstart}.h5')
+        )
+        archive_file_write = os.path.join(
+            args.archive_write_dir,
+            (f'{ifo}-{args.archive}-{args.gpsstart}-'
+             f'{args.gpsend - args.gpsstart}.h5')
+        )
+        if not os.path.isfile(archive_file_read):
+            LOGGER.debug(f"No archive found in {archive_file_read}, one will"
+                         f" be created at {archive_file_write}")
         else:
-            LOGGER.debug(
-                "No archive found in %s, one will be created at the end"
-                % args.archive)
+            archives_read.append(archive_file_read)
+        archives_write.append(archive_file_write)
 
     # read daily archive for week/month/... mode
     if hasattr(args, 'daily_archive') and args.daily_archive:
         # find daily archive files
-        archives.extend(archive.find_daily_archives(
-            args.gpsstart, args.gpsend, ifo, args.daily_archive, archivedir))
+        archives_read.extend(archive.find_daily_archives(
+            args.gpsstart,
+            args.gpsend,
+            ifo,
+            args.daily_archive,
+            args.archive_read_dir,
+        ))
         # then don't read any actual data
         cache['datacache'] = Cache()
 
-    for arch in archives:
-        LOGGER.info("Reading archived data from %s" % arch)
+    for arch in archives_read:
+        LOGGER.info(f"Reading archived data from {arch}")
         archive.read_data_archive(arch)
         LOGGER.debug("Archive data loaded")
 
@@ -871,9 +468,9 @@ def main(args=None):
         if args.archive:
             LOGGER.info("Writing data to archive")
             try:
-                archive.write_data_archive(args.archive)
+                archive.write_data_archive(archives_write[0])
                 LOGGER.debug(
-                    f"Archive written to {os.path.abspath(args.archive)}")
+                    f"Archive written to {os.path.abspath(archives_write[0])}")
             except Exception:
                 LOGGER.warning(
                     "New data archiving failed. Previous archive preserved.")

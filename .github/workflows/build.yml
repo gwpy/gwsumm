@@ -109,7 +109,7 @@ jobs:
       run: python -m coverage report --show-missing
 
     - name: Publish coverage to Codecov
-      uses: codecov/codecov-action@v6.0.0
+      uses: codecov/codecov-action@v6.0.1
       with:
         files: coverage.xml
         flags: ${{ runner.os }}-python${{ matrix.python-version }}

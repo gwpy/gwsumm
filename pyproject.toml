@@ -46,7 +46,7 @@ dependencies = [
   "lxml",
   "markdown",
   "MarkupPy",
-  "matplotlib >=3.5",
+  "matplotlib >=3.6",
   "numpy >=1.16",
   "pygments >=2.7.0",
   "python-dateutil",

@@ -21,6 +21,7 @@
 
 import re
 from configparser import NoSectionError, NoOptionError
+from math import ceil, floor
 
 from matplotlib.pyplot import subplots
 from matplotlib.ticker import NullLocator
@@ -46,7 +47,7 @@ class SeiWatchDogPlot(get_plot('data')):
         """Configure a new `SeiWatchDogPlot`.
         """
         super().__init__(
-            [], int(gpstime) - duration/2., int(gpstime) + duration/2.,
+            [], floor(gpstime - duration/2.), ceil(gpstime + duration/2.),
         )
 
         # get params

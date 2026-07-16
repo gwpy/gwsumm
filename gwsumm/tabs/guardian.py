@@ -27,7 +27,7 @@ from dateutil import tz
 
 import numpy
 
-from matplotlib.cm import get_cmap
+from matplotlib import colormaps
 from matplotlib.colors import Normalize
 
 from astropy.time import Time
@@ -113,7 +113,7 @@ class GuardianTab(DataTab):
         labels = ['[%d] %s' % (grdidxs[state], state) for state in pstates]
 
         # define colours
-        cmap = get_cmap('brg')(Normalize(-1, 1)(
+        cmap = colormaps['brg'](Normalize(-1, 1)(
             numpy.linspace(-1, 1, len(pstates))))[::-1]
         th = len(flags) > 8 and (new.span[1] - new.span[0])/200. or 0
 

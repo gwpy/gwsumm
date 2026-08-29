@@ -37,6 +37,7 @@ from .core import (
 )
 from .builtin import (
     ExternalTab,
+    ExternalStateTab,
     PlotTab,
     StateTab,
     UrlTab,

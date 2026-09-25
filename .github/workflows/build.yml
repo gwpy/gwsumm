@@ -1,8 +1,7 @@
 # -----------------------
 #
 # Run a full build-and-test from the git repo
-# using a combination of conda and pip to install
-# all optional dependencies.
+# using uv to install all dependencies.
 #
 # This is the 'full' test suite.
 #
@@ -41,72 +40,39 @@ jobs:
           - "3.11"
     runs-on: ${{ matrix.os }}-latest
 
-    # this is needed for conda environments to activate automatically
-    defaults:
-      run:
-        shell: bash -el {0}
-
     steps:
     - name: Get source code
       uses: actions/checkout@v7
       with:
         fetch-depth: 0
 
-    - name: Cache conda packages
-      uses: actions/cache@v6
-      env:
-        # increment to reset cache
-        CACHE_NUMBER: 0
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
       with:
-        path: ~/conda_pkgs_dir
-        key: ${{ runner.os }}-conda-${{ matrix.python-version }}-${{ env.CACHE_NUMBER }}
-        restore-keys: ${{ runner.os }}-conda-${{ matrix.python-version }}-
-
-    - name: Configure conda
-      uses: conda-incubator/setup-miniconda@v4
-      with:
-        auto-update-conda: true
-        miniforge-version: latest
         python-version: ${{ matrix.python-version }}
 
-    - name: Conda info
-      run: conda info --all
-
-    - name: Install dependencies
-      run: |
-        # parse requirements to install as much as possible with conda
-        conda create --name pip2conda pip2conda
-        conda run -n pip2conda pip2conda \
-            --all \
-            --output environment.txt \
-            --python-version ${{ matrix.python-version }}
-        echo "-----------------"
-        cat environment.txt
-        echo "-----------------"
-        conda install --quiet --yes --name test --file environment.txt
-
-    - name: Install GWSumm
-      run: python -m pip install . --no-build-isolation -vv
+    - name: Install the project
+      run: uv sync --all-extras --dev
 
     - name: Package list
-      run: conda list --name test
+      run: uv pip list
 
     - name: Run test suite
-      run: python -m pytest -ra --color yes --cov gwsumm --pyargs gwsumm --cov-report=xml --junitxml=pytest.xml
+      run: uv run  -m pytest -ra --color yes --cov gwsumm --pyargs gwsumm --cov-report=xml --junitxml=pytest.xml
 
     - name: Test command-line interfaces
       run: |
-        python -m coverage run --append --source gwsumm -m gwsumm --help
-        python -m coverage run --append --source gwsumm -m gwsumm day --help
-        python -m coverage run --append --source gwsumm -m gwsumm week --help
-        python -m coverage run --append --source gwsumm -m gwsumm month --help
-        python -m coverage run --append --source gwsumm -m gwsumm gps --help
-        python -m coverage run --append --source gwsumm -m gwsumm.batch --help
-        python -m coverage run --append --source gwsumm -m gwsumm.plot.triggers --help
-        python -m coverage run --append --source gwsumm -m gwsumm.plot.guardian --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm day --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm week --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm month --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm gps --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm.batch --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm.plot.triggers --help
+        uv run -m coverage run --append --source gwsumm -m gwsumm.plot.guardian --help
 
     - name: Coverage report
-      run: python -m coverage report --show-missing
+      run: uv run -m coverage report --show-missing
 
     - name: Publish coverage to Codecov
       uses: codecov/codecov-action@v7.0.0
@@ -119,5 +85,5 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v7
       with:
-        name: pytest-conda-${{ matrix.os }}-${{ matrix.python-version }}
+        name: pytest-${{ matrix.os }}-${{ matrix.python-version }}
         path: pytest.xml

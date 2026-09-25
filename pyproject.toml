@@ -65,7 +65,6 @@ test = [
 dev = [
   "h5py",
   "ligo-gracedb >= 2.0.0",
-  "pykerberos",
 ]
 doc = [
   "numpydoc",

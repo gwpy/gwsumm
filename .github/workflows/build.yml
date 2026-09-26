@@ -75,7 +75,7 @@ jobs:
       run: uv run -m coverage report --show-missing
 
     - name: Publish coverage to Codecov
-      uses: codecov/codecov-action@v7.0.0
+      uses: codecov/codecov-action@v7.1.1
       with:
         files: coverage.xml
         flags: ${{ runner.os }}-python${{ matrix.python-version }}

@@ -20,8 +20,8 @@
 """
 
 import os
+from pathlib import Path
 import pytest
-import shutil
 
 from .. import batch
 
@@ -34,15 +34,14 @@ __credits__ = 'Evan Goetz <evan.goetz@ligo.org>'
 def _get_inputs():
     """Prepare and return paths to input data products
     """
-    indir = os.getcwd()
     inputs = (
-        os.path.join(indir, "global.ini"),
-        os.path.join(indir, "k1-test.ini"),
+        "global.ini",
+        "k1-test.ini",
+        "K1-TEST-1.h5"
     )
     # write empty input files
     for filename in inputs:
-        with open(filename, 'w') as f:
-            f.write("")
+        Path(filename).touch()
     return inputs
 
 
@@ -50,8 +49,9 @@ def _get_inputs():
 
 def test_main(tmpdir, caplog):
     outdir = str(tmpdir)
-    (global_, k1test,) = _get_inputs()
+    (global_, k1test, archivefile) = _get_inputs()
     args = [
+        'day',
         '--verbose',
         '--ifo', 'K1',
         '--maxjobs', '5',
@@ -64,9 +64,11 @@ def test_main(tmpdir, caplog):
         '--nds',
         '--multi-process', '4',
         '--archive',
+        '--archive-read-dir', str(Path('.').absolute()),
         '--event-cache', '/this/cache/is/not/real.cache',
         '--no-htaccess',
         '--output-dir', outdir,
+        '--container-path', str(Path('./fake_container.sif').absolute()),
     ]
     # test log output
     batch.main(args)
@@ -92,33 +94,38 @@ def test_main(tmpdir, caplog):
     }
     assert set(os.listdir(os.path.join(outdir, "logs"))) == set()
     # clean up
-    for filename in (global_, k1test,):
-        os.remove(filename)
-    shutil.rmtree(outdir, ignore_errors=True)
+    for filename in (global_, k1test, archivefile):
+        Path(filename).unlink()
+    for filename in Path(outdir, 'etc').iterdir():
+        Path(filename).unlink()
+    Path(outdir, 'etc').rmdir()
+    Path(outdir, 'logs').rmdir()
+    for filename in Path(outdir).iterdir():
+        Path(filename).unlink()
+    Path(outdir).rmdir()
 
 
 @pytest.mark.parametrize(
     'mode',
-    (['--day', '20170209'],
-     ['--week', '20170209'],
-     ['--month', '201702'],
-     ['--year', '2017'],
-     ['--gps-start-time', '1170633618', '--gps-end-time', '1170720018']),
+    (['day', '20170209'],
+     ['week', '20170209'],
+     ['month', '201702'],
+     ['gps', '1170633618', '1170720018']),
 )
 def test_main_loop_over_modes(tmpdir, caplog, mode):
     outdir = str(tmpdir)
-    (global_, k1test,) = _get_inputs()
+    (global_, k1test, archivefile) = _get_inputs()
     args = [
         '--verbose',
         '--ifo', 'K1',
         '--universe', 'local',
         '--config-file', k1test,
         '--global-config', global_,
-        '--single-process',
         '--output-dir', outdir,
+        '--container-path', str(Path('./fake_container.sif').absolute()),
     ]
     # test log output
-    batch.main(args + mode)
+    batch.main(mode + args)
     assert "Copied all INI configuration files to ./etc" in caplog.text
     assert " -- Configured HTML htmlnode job" in caplog.text
     assert " -- Configured job for config {}".format(
@@ -126,20 +133,12 @@ def test_main_loop_over_modes(tmpdir, caplog, mode):
     assert "Setup complete, DAG written to: {}".format(
         os.path.join(outdir, "gw_summary_pipe.dag")) in caplog.text
     # clean up
-    for filename in (global_, k1test,):
-        os.remove(filename)
-    shutil.rmtree(outdir, ignore_errors=True)
-
-
-def test_main_invalid_modes(capsys):
-    args = [
-        '--ifo', 'V1',
-        '--day', '20170209',
-        '--month', '201702',
-    ]
-    # test output
-    with pytest.raises(SystemExit):
-        batch.main(args)
-    (_, err) = capsys.readouterr()
-    assert err.endswith("Please give only one of --day, --month, or "
-                        "--gps-start-time and --gps-end-time.\n")
+    for filename in (global_, k1test, archivefile):
+        Path(filename).unlink()
+    for filename in Path(outdir, 'etc').iterdir():
+        Path(filename).unlink()
+    Path(outdir, 'etc').rmdir()
+    Path(outdir, 'logs').rmdir()
+    for filename in Path(outdir).iterdir():
+        Path(filename).unlink()
+    Path(outdir).rmdir()

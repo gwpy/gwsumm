@@ -898,7 +898,7 @@ def resample_timeseries_dict(tsd, nproc=1, **sampling_dict):
 
 
 def filter_timeseries(ts, filt):
-    """Filter a `TimeSeris` using a function or a ZPK definition.
+    """Filter a `TimeSeries` using a function or a ZPK definition.
     """
     # filter with function
     if callable(filt):
@@ -913,4 +913,12 @@ def filter_timeseries(ts, filt):
 
     # filter with gain
     else:
-        return ts.filter(*filt)
+        # TODO: gwpy filter API changed so when we no longer support gwpy3,
+        #  we should change this below
+        try:
+            # gwpy-3 assumes two inputs *filt and **kwargs
+            return ts.filter(*filt)
+        except TypeError:
+            # gwpy-4 one positional argument and all others keyword
+            # filtfilt changed from False to True
+            return ts.filter(filt, filtfilt=False)
